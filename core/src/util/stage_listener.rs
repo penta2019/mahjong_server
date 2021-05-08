@@ -70,10 +70,10 @@ impl fmt::Debug for dyn StageListener {
     }
 }
 
-// StageConsoleViewer
-pub struct StageConsoleViewer {}
+// StageConsolePrinter
+pub struct StageConsolePrinter {}
 
-impl StageConsoleViewer {
+impl StageConsolePrinter {
     fn print_score_change(&self, stage: &Stage, delta_scores: &[i32; SEAT]) {
         for s in 0..SEAT {
             let delta = delta_scores[s];
@@ -85,7 +85,7 @@ impl StageConsoleViewer {
     }
 }
 
-impl StageListener for StageConsoleViewer {
+impl StageListener for StageConsolePrinter {
     fn notify_op_roundnew(
         &mut self,
         stage: &Stage,

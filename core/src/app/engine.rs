@@ -1120,7 +1120,7 @@ impl App {
                 Box::new(RandomDiscardOperator::new(seed + 2)),
                 Box::new(RandomDiscardOperator::new(seed + 3)),
             ],
-            listeners: vec![Box::new(StageConsoleViewer {})],
+            listeners: vec![Box::new(StageConsolePrinter {})],
         };
 
         Self {

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="seat.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   id="svg8"
+   version="1.1"
+   viewBox="-100 -100 200 200"
+   height="200mm"
+   width="200mm">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     inkscape:window-maximized="1"
+     inkscape:window-y="0"
+     inkscape:window-x="1920"
+     inkscape:window-height="1015"
+     inkscape:window-width="1920"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="mm"
+     inkscape:cy="271.32446"
+     inkscape:cx="-226.48575"
+     inkscape:zoom="0.7"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base"
+     fit-margin-top="-100"
+     fit-margin-left="-100"
+     fit-margin-right="100"
+     fit-margin-bottom="100"
+     lock-margins="false" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     style="display:inline"
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="Layer 1">
+    <path
+       id="path859"
+       d="M -99.512461,0.18131 V -99.037071 L -49.903268,-49.427876 -0.294072,0.18131 -49.903268,49.79051 -99.512461,99.3997 Z"
+       style="fill:#0000ff;fill-opacity:1;stroke-width:0.377976"
+       inkscape:label="seat3" />
+    <path
+       id="path861"
+       d="M -49.430617,-50.089514 -98.944416,-99.604396 H 0.27325 99.49092 l -49.5138,49.514882 C 22.74453,-22.856326 0.37779,-0.574636 0.27325,-0.574636 c -0.10454,0 -22.471276,-22.28169 -49.703867,-49.514878 z"
+       style="fill:#00ff00;fill-opacity:1;stroke-width:0.377976"
+       inkscape:label="seat2" />
+    <path
+       id="path863"
+       d="M 50.07108,49.41217 0.65123,-0.008756 50.16611,-49.522552 99.68099,-99.036348 v 98.934722 c 0,54.414096 -0.0428,98.934726 -0.095,98.934726 -0.0523,0 -22.33396,-22.23942 -49.51487,-49.42093 z"
+       style="fill:#ff0000;fill-opacity:1;stroke-width:0.377976"
+       inkscape:label="seat1" />
+    <path
+       id="path865"
+       d="M -49.619603,50.26316 0.08319,0.55929 49.6931,50.16812 c 27.28545,27.28486 49.60991,49.65161 49.60991,49.70387 0,0.0523 -44.69071,0.095 -99.3127,0.095 h -99.312705 z"
+       style="fill:#ff8c00;fill-opacity:1;stroke-width:0.377976"
+       inkscape:label="seat0" />
+    <rect
+       transform="rotate(-45)"
+       y="-3"
+       x="-150"
+       height="6"
+       width="300"
+       id="rect875"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.289836"
+       inkscape:label="01to10" />
+    <rect
+       transform="rotate(45)"
+       style="display:inline;fill:#ffffff;fill-opacity:1;stroke-width:0.289835"
+       id="rect875-3"
+       width="300"
+       height="6"
+       x="-150"
+       y="-3"
+       inkscape:label="00to11" />
+    <circle
+       r="50"
+       cy="0"
+       cx="0"
+       id="path867"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+       inkscape:label="circle_white" />
+    <circle
+       r="45"
+       cy="2.6645353e-15"
+       cx="2.6645353e-15"
+       id="path894"
+       style="fill:#000000;fill-opacity:1;stroke-width:0.297656"
+       inkscape:label="circle_black" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.1753px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;display:inline;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.704383"
+       x="-29.8517"
+       y="82.201714"
+       id="text24"
+       inkscape:label="text_seat3"
+       transform="scale(-0.99306404,-1.0069844)"><tspan
+         y="82.201714"
+         x="-29.8517"
+         id="tspan25"
+         sodipodi:role="line">対家</tspan></text>
+    <text
+       transform="matrix(0,0.99306404,-1.0069844,0,0,0)"
+       inkscape:label="text_seat2"
+       id="text24-9"
+       y="85.180916"
+       x="-29.851662"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.1752px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;display:inline;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.704384"
+       xml:space="preserve"><tspan
+         y="85.180916"
+         x="-29.851662"
+         id="tspan27"
+         sodipodi:role="line">上家</tspan></text>
+    <text
+       transform="matrix(0,-0.99306404,1.0069844,0,0,0)"
+       inkscape:label="text_seat1"
+       id="text24-7"
+       y="85.180786"
+       x="-29.851532"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.1752px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;display:inline;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.704384"
+       xml:space="preserve"><tspan
+         y="85.180786"
+         x="-29.851532"
+         id="tspan23"
+         sodipodi:role="line">下家</tspan></text>
+    <text
+       transform="scale(0.99306404,1.0069844)"
+       inkscape:label="text_seat0"
+       id="text24-1"
+       y="85.180786"
+       x="-29.851694"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28.1752px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.704384"
+       xml:space="preserve"><tspan
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0.704384"
+         y="85.180786"
+         x="-29.851694"
+         id="tspan34-15"
+         sodipodi:role="line">自家</tspan></text>
+  </g>
+</svg>

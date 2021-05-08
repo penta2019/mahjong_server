@@ -1085,7 +1085,8 @@ impl App {
         use std::process::exit;
 
         use crate::operator::manual::ManualOperator;
-        use crate::operator::random::RandomDiscardOperator;
+        // use crate::operator::random::RandomDiscardOperator;
+        use crate::operator::bot1::Bot1; // 七対子bot
 
         let mut seed: u64 = 0;
         let mut it = args.iter();
@@ -1112,13 +1113,17 @@ impl App {
             initial_score: 25000,
             operators: [
                 Box::new(ManualOperator::new()),
-                // Box::new(ManualOperator::new(1)),
-                // Box::new(ManualOperator::new(2)),
-                // Box::new(ManualOperator::new(3)),
+                // Box::new(ManualOperator::new()),
+                // Box::new(ManualOperator::new()),
+                // Box::new(ManualOperator::new()),
                 // Box::new(RandomDiscardOperator::new(seed + 0)),
-                Box::new(RandomDiscardOperator::new(seed + 1)),
-                Box::new(RandomDiscardOperator::new(seed + 2)),
-                Box::new(RandomDiscardOperator::new(seed + 3)),
+                // Box::new(RandomDiscardOperator::new(seed + 1)),
+                // Box::new(RandomDiscardOperator::new(seed + 2)),
+                // Box::new(RandomDiscardOperator::new(seed + 3)),
+                // Box::new(Bot1 {}),
+                Box::new(Bot1 {}),
+                Box::new(Bot1 {}),
+                Box::new(Bot1 {}),
             ],
             listeners: vec![Box::new(StageConsolePrinter {})],
         };

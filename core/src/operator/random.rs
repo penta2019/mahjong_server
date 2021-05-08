@@ -39,6 +39,6 @@ impl Operator for RandomDiscardOperator {
     }
 
     fn debug_string(&self) -> String {
-        String::from("RandomDiscardOperator")
+        "RandomDiscardOperator".to_string()
     }
 }

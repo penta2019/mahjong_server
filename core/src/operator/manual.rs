@@ -154,7 +154,7 @@ impl Operator for ManualOperator {
     }
 
     fn debug_string(&self) -> String {
-        String::from("AlgoEmpty")
+        "AlgoEmpty".to_string()
     }
 }
 

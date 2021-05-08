@@ -26,6 +26,6 @@ impl Operator for Bot1 {
     }
 
     fn debug_string(&self) -> String {
-        String::from("Bot1")
+        "Bot1".to_string()
     }
 }

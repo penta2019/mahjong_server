@@ -235,8 +235,9 @@ impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        use crate::operator::manual::ManualOperator;
+        // use crate::operator::manual::ManualOperator;
         // use crate::operator::random::RandomDiscardOperator;
+        use crate::operator::bot1::Bot1;
 
         let mut file_in = "".to_string();
         let mut need_write = false;
@@ -266,7 +267,7 @@ impl App {
             wws_send_recv: create_ws_server(52001), // for Web-interface
             cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
             file_in,
-            operator: Box::new(ManualOperator::new()),
+            operator: Box::new(Bot1 {}),
         }
     }
 

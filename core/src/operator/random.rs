@@ -20,7 +20,7 @@ impl Operator for RandomDiscardOperator {
         &mut self,
         stage: &Stage,
         seat: Seat,
-        ops: &Vec<PlayerOperation>,
+        _ops: &Vec<PlayerOperation>,
     ) -> (usize, usize) {
         let h = &stage.players[seat].hand;
         let mut n: u32 = self.rng.gen_range(0, 13);

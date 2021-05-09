@@ -488,6 +488,7 @@ impl App {
 }
 
 // Utility ====================================================================
+
 fn tile_from_symbol(s: &str) -> Tile {
     let b = s.as_bytes();
     let n = b[0] - b'0';

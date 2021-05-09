@@ -38,6 +38,7 @@ pub const DR: usize = 7; // Doragon: Red   (中)
 pub const UK: usize = 8; // Unknown
 
 // Tile =======================================================================
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)
 
@@ -195,6 +196,7 @@ pub type TileTable = [TileRow; TYPE];
 // }
 
 // Discard ====================================================================
+
 #[derive(Debug, Serialize)]
 pub struct Discard {
     pub step: usize,
@@ -210,6 +212,7 @@ impl fmt::Display for Discard {
 }
 
 // Meld =======================================================================
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum MeldType {
     Chii,
@@ -237,6 +240,7 @@ impl fmt::Display for Meld {
 }
 
 // Kita =======================================================================
+
 #[derive(Debug, Serialize)]
 pub struct Kita {
     pub step: usize,
@@ -251,6 +255,7 @@ impl fmt::Display for Kita {
 }
 
 // Player =====================================================================
+
 #[derive(Debug, Default, Serialize)]
 pub struct Player {
     pub seat: Seat,             // 座席番号(場・局が変わってもゲーム終了まで不変)
@@ -324,6 +329,7 @@ impl fmt::Display for Player {
 }
 
 // TileStateType ==============================================================
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(tag = "t", content = "c")]
 pub enum TileStateType {
@@ -365,6 +371,7 @@ impl fmt::Display for TileStateType {
 
 // Stage ======================================================================
 // このクラスは局開ごとに新しく生成する
+
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
     pub round: usize,                    // 場 (東:0, 南:1, 西:2, 北:3)

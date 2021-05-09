@@ -4,6 +4,7 @@ use serde_json::json;
 use crate::hand::win::*;
 use crate::hand::*;
 use crate::model::*;
+use crate::util::common::*;
 use crate::util::player_operation::*;
 use crate::util::stage_listener::*;
 use crate::util::ws_server::*;
@@ -1128,7 +1129,7 @@ impl App {
 
     pub fn run(&mut self) {
         if self.seed == 0 {
-            self.seed = crate::util::common::unixtime_now();
+            self.seed = unixtime_now();
             println!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
                 self.seed
@@ -1143,16 +1144,16 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        use crate::operator::manual::ManualOperator;
-        // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::bot1::Bot1; // 七対子bot
+        use crate::operator::bot1::Bot1;
+        // use crate::operator::manual::ManualOperator;
+        use crate::operator::random::RandomDiscardOperator; // 七対子bot
 
         let config = Config {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
-                Box::new(ManualOperator::new()),
+                // Box::new(ManualOperator::new()),
                 // Box::new(ManualOperator::new()),
                 // Box::new(ManualOperator::new()),
                 // Box::new(ManualOperator::new()),
@@ -1161,9 +1162,13 @@ impl App {
                 // Box::new(RandomDiscardOperator::new(seed + 2)),
                 // Box::new(RandomDiscardOperator::new(seed + 3)),
                 // Box::new(Bot1 {}),
-                Box::new(Bot1 {}),
-                Box::new(Bot1 {}),
-                Box::new(Bot1 {}),
+                // Box::new(Bot1 {}),
+                // Box::new(Bot1 {}),
+                // Box::new(Bot1 {}),
+                Box::new(Bot1::new()),
+                Box::new(Bot1::new()),
+                Box::new(Bot1::new()),
+                Box::new(RandomDiscardOperator::new(0)),
             ],
             listeners: vec![Box::new(StageConsolePrinter {})],
         };
@@ -1210,6 +1215,7 @@ impl App {
 
         let mut n_game = 0;
         let mut n_thread = 0;
+        let mut n_game_end = 0;
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
         let operators: [Box<dyn Operator>; 4] = [
@@ -1219,11 +1225,12 @@ impl App {
             Box::new(RandomDiscardOperator::new(0)),
         ];
 
+        let mut total_score_delta = [0; SEAT];
+        let mut total_rank_sum = [0; SEAT];
         loop {
             if n_game < self.n_game && n_thread < self.n_thread {
                 n_game += 1;
                 n_thread += 1;
-                println!("n_game: {}, n_thread: {}", n_game, n_thread);
 
                 let seed = rng.next_u64();
                 let mut shuffle_table = [0, 1, 2, 3];
@@ -1254,14 +1261,27 @@ impl App {
                             break;
                         }
                     }
-                    tx2.send(engine).unwrap();
+                    tx2.send((shuffle_table, engine)).unwrap();
                 });
             }
 
             loop {
-                if let Ok(v) = rx.try_recv() {
+                if let Ok((shuffle, engine)) = rx.try_recv() {
+                    let stage = engine.get_stage();
+                    let scores = stage.players.iter().map(|pl| pl.score).collect();
+                    let ranks = rank_by_rank_vec(&scores);
+
+                    print!("{:5}, seed: {:20}", n_game_end, engine.config.seed);
+                    for s in 0..SEAT {
+                        let i = shuffle[s];
+                        total_score_delta[i] += scores[s] - engine.config.initial_score;
+                        total_rank_sum[i] += ranks[s] + 1;
+                        print!(", op{}: {:5}({})", i, scores[s], ranks[s] + 1);
+                    }
+                    println!();
+
                     n_thread -= 1;
-                    // println!("n_game: {}, n_thread: {}, seed: {}", n_game, n_thread, v);
+                    n_game_end += 1;
                 }
                 if n_thread < self.n_thread {
                     break;
@@ -1270,6 +1290,15 @@ impl App {
             }
 
             if n_thread == 0 && n_game == self.n_game {
+                for i in 0..SEAT {
+                    println!(
+                        "op{} avg_rank: {:.2}, avg_score_delta: {:6}",
+                        i,
+                        total_rank_sum[i] as f32 / n_game as f32,
+                        total_score_delta[i] / n_game,
+                    );
+                }
+                println!();
                 break;
             }
         }

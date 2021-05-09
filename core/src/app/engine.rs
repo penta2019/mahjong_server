@@ -1144,16 +1144,16 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        use crate::operator::bot1::Bot1;
-        // use crate::operator::manual::ManualOperator;
-        use crate::operator::random::RandomDiscardOperator; // 七対子bot
+        use crate::operator::bot1::Bot1; // 七対子bot
+        use crate::operator::manual::ManualOperator;
+        // use crate::operator::random::RandomDiscardOperator;
 
         let config = Config {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
-                // Box::new(ManualOperator::new()),
+                Box::new(ManualOperator::new()),
                 // Box::new(ManualOperator::new()),
                 // Box::new(ManualOperator::new()),
                 // Box::new(ManualOperator::new()),
@@ -1168,7 +1168,6 @@ impl App {
                 Box::new(Bot1::new()),
                 Box::new(Bot1::new()),
                 Box::new(Bot1::new()),
-                Box::new(RandomDiscardOperator::new(0)),
             ],
             listeners: vec![Box::new(StageConsolePrinter {})],
         };

@@ -708,7 +708,7 @@ fn is_ryuuiisou(ctx: &Context) -> bool {
 
 // 字一色
 fn is_tuuiisou(ctx: &Context) -> bool {
-    ctx.counts.tis[TZ] == 5
+    (ctx.parsed_hand.len() == 5 && ctx.counts.tis[TZ] == 5) || ctx.counts.tis[TZ] == 7
 }
 
 // 九蓮宝燈

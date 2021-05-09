@@ -5,6 +5,7 @@ use crate::util::player_operation::*;
 
 use PlayerOperation::*;
 
+#[derive(Clone)]
 pub struct ManualOperator {}
 
 impl ManualOperator {

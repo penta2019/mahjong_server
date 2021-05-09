@@ -6,6 +6,7 @@ use crate::util::player_operation::*;
 use PlayerOperation::*;
 use TileStateType::*;
 
+#[derive(Clone)]
 pub struct Bot1 {}
 
 // 七対子Bot 試作

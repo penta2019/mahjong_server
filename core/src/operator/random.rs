@@ -3,6 +3,7 @@ use rand::Rng;
 use crate::model::*;
 use crate::util::player_operation::*;
 
+#[derive(Clone)]
 pub struct RandomDiscardOperator {
     rng: rand::rngs::StdRng,
 }

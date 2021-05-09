@@ -29,7 +29,7 @@ pub fn dec_discard(i: usize) -> (Tile, bool) {
     (Tile(ti, ni), m)
 }
 
-pub trait Operator {
+pub trait Operator: OperatorClone + Send {
     fn handle_operation(
         &mut self,
         stage: &Stage,
@@ -45,8 +45,29 @@ impl fmt::Debug for dyn Operator {
     }
 }
 
+// https://stackoverflow.com/questions/30353462/how-to-clone-a-struct-storing-a-boxed-trait-object
+pub trait OperatorClone {
+    fn clone_box(&self) -> Box<dyn Operator>;
+}
+
+impl<T> OperatorClone for T
+where
+    T: 'static + Operator + Clone,
+{
+    fn clone_box(&self) -> Box<dyn Operator> {
+        Box::new(self.clone())
+    }
+}
+
 // NullOperator
+#[derive(Clone)]
 pub struct NullOperator {}
+
+impl NullOperator {
+    pub fn new() -> Self {
+        NullOperator {}
+    }
+}
 
 impl Operator for NullOperator {
     fn handle_operation(

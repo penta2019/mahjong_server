@@ -14,12 +14,12 @@ use TileStateType::*;
 
 #[derive(Debug)]
 enum StageOperation {
-    New,        // 局開始 loop {
-    Turn,       //   ツモ番のプレイヤーの操作 (打牌, ツモなど)
-    Call,       //   ツモ番以外のプレイヤーの操作 (鳴き, ロンなど)
-    Deal,       //   ツモ(リンシャン牌を含む)
-    End,        // } 局終了
-    GameResult, // 対戦終了
+    New,      // 局開始 loop {
+    Turn,     //   ツモ番のプレイヤーの操作 (打牌, ツモなど)
+    Call,     //   ツモ番以外のプレイヤーの操作 (鳴き, ロンなど)
+    Deal,     //   ツモ(リンシャン牌を含む)
+    End,      // } 局終了
+    GameOver, // 対戦終了
 }
 
 #[derive(Debug)]
@@ -111,7 +111,7 @@ impl MahjongEngine {
             self.next_op = End;
         }
         if self.is_game_end {
-            self.next_op = GameResult;
+            self.next_op = GameOver;
         }
 
         match self.next_op {
@@ -135,7 +135,7 @@ impl MahjongEngine {
                 self.do_round_end();
                 self.next_op = New;
             }
-            GameResult => {
+            GameOver => {
                 self.do_game_result();
                 return true;
             }
@@ -415,7 +415,6 @@ impl MahjongEngine {
                 op!(self, dealtile, s, Some(t));
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
-                println!("{} {} {}", self.wall_count, self.kan_count, self.wall.len());
             }
         }
         assert!(self.stage.left_tile_count + self.wall_count + self.kan_count == self.wall.len());
@@ -1076,19 +1075,18 @@ fn get_prohibited_discards(op: &Option<PlayerOperation>) -> Vec<Tile> {
 // Application ================================================================
 
 pub struct App {
-    entity: MahjongEngine,
-    send_recv: SendRecv,
+    seed: u64,
+    n_game: i32,
+    n_thread: i32,
 }
 
 impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        use crate::operator::manual::ManualOperator;
-        // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::bot1::Bot1; // 七対子bot
-
         let mut seed: u64 = 0;
+        let mut n_game: i32 = 0;
+        let mut n_thread: i32 = 8;
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
@@ -1100,6 +1098,20 @@ impl App {
                         exit(0);
                     }
                 }
+                "-g" => {
+                    if let Some(n) = it.next() {
+                        n_game = n.parse().unwrap();
+                    } else {
+                        println!("-g: n_game missing");
+                    }
+                }
+                "-t" => {
+                    if let Some(n) = it.next() {
+                        n_thread = n.parse().unwrap();
+                    } else {
+                        println!("-t: n_thread missing");
+                    }
+                }
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -1107,8 +1119,36 @@ impl App {
             }
         }
 
+        Self {
+            seed,
+            n_game,
+            n_thread,
+        }
+    }
+
+    pub fn run(&mut self) {
+        if self.seed == 0 {
+            self.seed = crate::util::common::unixtime_now();
+            println!(
+                "Random seed is not specified. Unix timestamp '{}' is used as seed.",
+                self.seed
+            );
+        }
+
+        if self.n_game == 0 {
+            self.run_single_game();
+        } else {
+            self.run_multiple_game();
+        }
+    }
+
+    fn run_single_game(&mut self) {
+        use crate::operator::manual::ManualOperator;
+        // use crate::operator::random::RandomDiscardOperator;
+        use crate::operator::bot1::Bot1; // 七対子bot
+
         let config = Config {
-            seed: seed,
+            seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
@@ -1128,18 +1168,13 @@ impl App {
             listeners: vec![Box::new(StageConsolePrinter {})],
         };
 
-        Self {
-            entity: MahjongEngine::new(config),
-            send_recv: create_ws_server(52001),
-        }
-    }
+        let mut engine = MahjongEngine::new(config);
+        let send_recv = create_ws_server(52001);
 
-    pub fn run(&mut self) {
         loop {
-            let e = &mut self.entity;
-            let end = e.next_step();
+            let end = engine.next_step();
 
-            if let Some((s, r)) = self.send_recv.lock().unwrap().as_ref() {
+            if let Some((s, r)) = send_recv.lock().unwrap().as_ref() {
                 // 送られてきたメッセージをすべて表示
                 loop {
                     match r.try_recv() {
@@ -1155,12 +1190,86 @@ impl App {
                 // stageの状態をjsonにエンコードして送信
                 let value = json!({
                     "type": "stage",
-                    "data": self.entity.get_stage(),
+                    "data": engine.get_stage(),
                 });
                 s.send(value.to_string()).ok();
             }
 
             if end {
+                break;
+            }
+        }
+    }
+
+    fn run_multiple_game(&mut self) {
+        use crate::operator::bot1::Bot1; // 七対子bot
+        use crate::operator::random::RandomDiscardOperator;
+
+        use std::sync::mpsc;
+        use std::{thread, time};
+
+        let mut n_game = 0;
+        let mut n_thread = 0;
+        let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
+        let (tx, rx) = mpsc::channel();
+        let operators: [Box<dyn Operator>; 4] = [
+            Box::new(Bot1::new()),
+            Box::new(Bot1::new()),
+            Box::new(Bot1::new()),
+            Box::new(RandomDiscardOperator::new(0)),
+        ];
+
+        loop {
+            if n_game < self.n_game && n_thread < self.n_thread {
+                n_game += 1;
+                n_thread += 1;
+                println!("n_game: {}, n_thread: {}", n_game, n_thread);
+
+                let seed = rng.next_u64();
+                let mut shuffle_table = [0, 1, 2, 3];
+                shuffle_table.shuffle(&mut rng);
+
+                let mut shuffled_operators: [Box<dyn Operator>; 4] = [
+                    Box::new(NullOperator::new()),
+                    Box::new(NullOperator::new()),
+                    Box::new(NullOperator::new()),
+                    Box::new(NullOperator::new()),
+                ];
+                for s in 0..SEAT {
+                    shuffled_operators[s] = operators[shuffle_table[s]].clone_box();
+                }
+
+                let tx2 = tx.clone();
+                thread::spawn(move || {
+                    let config = Config {
+                        seed: seed,
+                        n_round: 2,
+                        initial_score: 25000,
+                        operators: shuffled_operators,
+                        listeners: vec![],
+                    };
+                    let mut engine = MahjongEngine::new(config);
+                    loop {
+                        if engine.next_step() {
+                            break;
+                        }
+                    }
+                    tx2.send(engine).unwrap();
+                });
+            }
+
+            loop {
+                if let Ok(v) = rx.try_recv() {
+                    n_thread -= 1;
+                    // println!("n_game: {}, n_thread: {}, seed: {}", n_game, n_thread, v);
+                }
+                if n_thread < self.n_thread {
+                    break;
+                }
+                thread::sleep(time::Duration::from_millis(10));
+            }
+
+            if n_thread == 0 && n_game == self.n_game {
                 break;
             }
         }

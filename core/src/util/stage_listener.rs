@@ -5,7 +5,7 @@ use crate::model::*;
 use crate::util::common::vec_to_string;
 
 // StageListener (Observer Pattern)
-pub trait StageListener {
+pub trait StageListener: Send {
     fn notify_op_roundnew(
         &mut self,
         _stage: &Stage,

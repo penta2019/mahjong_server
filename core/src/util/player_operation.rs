@@ -2,6 +2,8 @@ use std::fmt;
 
 use crate::model::*;
 
+use TileStateType::*;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum PlayerOperation {
     Nop,                     // キャンセル (鳴き,ロンのスキップ)
@@ -29,6 +31,7 @@ pub fn dec_discard(i: usize) -> (Tile, bool) {
     (Tile(ti, ni), m)
 }
 
+// Operator trait
 pub trait Operator: OperatorClone + Send {
     fn handle_operation(
         &mut self,
@@ -36,12 +39,14 @@ pub trait Operator: OperatorClone + Send {
         seat: Seat,
         operatons: &Vec<PlayerOperation>,
     ) -> (Index, Index);
-    fn debug_string(&self) -> String;
+    fn debug_string(&self) -> String {
+        "Operator".to_string()
+    }
 }
 
 impl fmt::Debug for dyn Operator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Algo{{{}}}", self.debug_string())
+        write!(f, "{}", self.debug_string())
     }
 }
 
@@ -82,4 +87,23 @@ impl Operator for NullOperator {
     fn debug_string(&self) -> String {
         "NullOperator".to_string()
     }
+}
+
+// util
+pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
+    let mut n = 0;
+    for &st in &stage.tile_states[tile.0][tile.1] {
+        match st {
+            U => {
+                n += 1;
+            }
+            H(s) => {
+                if s != seat {
+                    n += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    n
 }

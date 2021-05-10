@@ -1,5 +1,3 @@
-// use std::io::{stdout, Write};
-
 use crate::model::*;
 use crate::util::player_operation::*;
 

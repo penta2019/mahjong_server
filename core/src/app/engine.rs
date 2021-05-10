@@ -65,7 +65,7 @@ struct MahjongEngine {
     kita_count: usize,                // 北抜きの回数
     is_suukansanra: bool,             // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
-    is_game_end: bool,
+    is_game_over: bool,
     // 牌山
     wall: Vec<Tile>,             // 牌山全体
     dora_wall: Vec<Tile>,        // ドラ表示牌
@@ -89,9 +89,8 @@ impl MahjongEngine {
             next_op: New,
             melding: None,
             round_result: None,
-            is_game_end: false,
+            is_game_over: false,
             kan_dora: None,
-            // kita: false,
             wall_count: 0,
             kan_count: 0,
             kita_count: 0,
@@ -103,15 +102,11 @@ impl MahjongEngine {
         }
     }
 
-    fn get_stage(&self) -> &Stage {
-        &self.stage
-    }
-
     fn next_step(&mut self) -> bool {
         if let Some(_) = self.round_result {
             self.next_op = End;
         }
-        if self.is_game_end {
+        if self.is_game_over {
             self.next_op = GameOver;
         }
 
@@ -574,13 +569,13 @@ impl MahjongEngine {
 
         // 対戦終了判定
         if stg.round == self.config.n_round {
-            self.is_game_end = true;
+            self.is_game_over = true;
         }
 
         // 飛びによる対戦終了
         for s in 0..SEAT {
             if stg.players[s].score < 0 {
-                self.is_game_end = true;
+                self.is_game_over = true;
             }
         }
 
@@ -1194,7 +1189,7 @@ impl App {
                 // stageの状態をjsonにエンコードして送信
                 let value = json!({
                     "type": "stage",
-                    "data": engine.get_stage(),
+                    "data": &engine.stage,
                 });
                 s.send(value.to_string()).ok();
             }
@@ -1266,7 +1261,7 @@ impl App {
 
             loop {
                 if let Ok((shuffle, engine)) = rx.try_recv() {
-                    let stage = engine.get_stage();
+                    let stage = &engine.stage;
                     let scores = stage.players.iter().map(|pl| pl.score).collect();
                     let ranks = rank_by_rank_vec(&scores);
 

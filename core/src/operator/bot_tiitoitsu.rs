@@ -2,19 +2,18 @@ use crate::model::*;
 use crate::util::player_operation::*;
 
 use PlayerOperation::*;
-use TileStateType::*;
 
 #[derive(Clone)]
-pub struct Bot1 {}
+pub struct TiitoitsuBot {}
 
 // 七対子Bot 試作
-impl Bot1 {
+impl TiitoitsuBot {
     pub fn new() -> Self {
-        Bot1 {}
+        Self {}
     }
 }
 
-impl Operator for Bot1 {
+impl Operator for TiitoitsuBot {
     fn handle_operation(
         &mut self,
         stage: &Stage,

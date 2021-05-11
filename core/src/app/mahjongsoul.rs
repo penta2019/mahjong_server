@@ -25,17 +25,13 @@ impl Mahjongsoul {
         s
     }
 
-    fn get_stage(&self) -> &Stage {
-        &self.stage
-    }
-
     fn apply(&mut self, act: &Value) {
         let step = as_usize(&act["step"]);
         let name = as_str(&act["name"]);
         let data = &act["data"];
 
         if step == 0 {
-            self.stage = Stage::default();
+            self.stage = Stage::new(0);
             self.step = 0;
             self.seat = NO_SEAT;
             self.actions.clear();
@@ -224,7 +220,7 @@ impl Mahjongsoul {
 // Application ================================================================
 
 pub struct App {
-    entity: Mahjongsoul,
+    game: Mahjongsoul,
     wws_send_recv: SendRecv,
     cws_send_recv: SendRecv,
     file_in: String,
@@ -237,7 +233,7 @@ impl App {
 
         // use crate::operator::manual::ManualOperator;
         // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::bot1::Bot1;
+        use crate::operator::bot_tiitoitsu::TiitoitsuBot;
 
         let mut file_in = "".to_string();
         let mut need_write = false;
@@ -263,11 +259,11 @@ impl App {
         }
 
         Self {
-            entity: Mahjongsoul::new(need_write),
+            game: Mahjongsoul::new(need_write),
             wws_send_recv: create_ws_server(52001), // for Web-interface
             cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
             file_in,
-            operator: Box::new(Bot1 {}),
+            operator: Box::new(TiitoitsuBot::new()),
         }
     }
 
@@ -292,8 +288,8 @@ impl App {
                         let mut buf = String::new();
                         stdin().read_line(&mut buf).ok();
 
-                        self.entity.apply(v);
-                        self.entity.get_stage().print();
+                        self.game.apply(v);
+                        self.game.stage.print();
                         self.send_stage_data();
                     }
                 }
@@ -342,8 +338,8 @@ impl App {
             "id_mjaction" => {
                 let dd = &data["data"];
                 if data["type"] == json!("message") {
-                    self.entity.apply(&dd);
-                    // self.entity.get_stage().print();
+                    self.game.apply(&dd);
+                    // self.game.get_stage().print();
                 }
             }
             "id_operation" => {
@@ -359,15 +355,14 @@ impl App {
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
                     let (op_idx, arg_idx) =
-                        self.operator
-                            .handle_operation(self.entity.get_stage(), seat, &ops);
+                        self.operator.handle_operation(&self.game.stage, seat, &ops);
                     match &ops[op_idx] {
                         Nop => {
                             self.action_cancel();
                         }
                         Discard(_) => {
                             let (t, m) = dec_discard(arg_idx);
-                            let idx = get_dapai_index(self.entity.get_stage(), seat, t, m);
+                            let idx = get_dapai_index(&self.game.stage, seat, t, m);
                             self.action_dapai(idx);
                         }
                         Ankan(_) => {
@@ -377,8 +372,7 @@ impl App {
                             self.action_gang(arg_idx);
                         }
                         Riichi(v) => {
-                            let idx =
-                                get_dapai_index(self.entity.get_stage(), seat, v[arg_idx], false);
+                            let idx = get_dapai_index(&self.game.stage, seat, v[arg_idx], false);
                             self.action_lizhi(idx);
                         }
                         Tsumo => {
@@ -413,7 +407,7 @@ impl App {
     }
 
     fn send_stage_data(&mut self) {
-        self.send_to_wws("stage", &json!(self.entity.get_stage()));
+        self.send_to_wws("stage", &json!(&self.game.stage));
     }
 
     // 打牌

@@ -1134,7 +1134,7 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        use crate::operator::bot1::Bot1; // 七対子bot
+        use crate::operator::bot_tiitoitsu::TiitoitsuBot; // 七対子bot
         use crate::operator::manual::ManualOperator;
         // use crate::operator::random::RandomDiscardOperator;
 
@@ -1144,29 +1144,19 @@ impl App {
             initial_score: 25000,
             operators: [
                 Box::new(ManualOperator::new()),
-                // Box::new(ManualOperator::new()),
-                // Box::new(ManualOperator::new()),
-                // Box::new(ManualOperator::new()),
                 // Box::new(RandomDiscardOperator::new(seed + 0)),
-                // Box::new(RandomDiscardOperator::new(seed + 1)),
-                // Box::new(RandomDiscardOperator::new(seed + 2)),
-                // Box::new(RandomDiscardOperator::new(seed + 3)),
-                // Box::new(Bot1 {}),
-                // Box::new(Bot1 {}),
-                // Box::new(Bot1 {}),
-                // Box::new(Bot1 {}),
-                Box::new(Bot1::new()),
-                Box::new(Bot1::new()),
-                Box::new(Bot1::new()),
+                Box::new(TiitoitsuBot::new()),
+                Box::new(TiitoitsuBot::new()),
+                Box::new(TiitoitsuBot::new()),
             ],
             listeners: vec![Box::new(StageConsolePrinter {})],
         };
 
-        let mut engine = MahjongEngine::new(config);
+        let mut game = MahjongEngine::new(config);
         let send_recv = create_ws_server(52001);
 
         loop {
-            let end = engine.next_step();
+            let end = game.next_step();
 
             if let Some((s, r)) = send_recv.lock().unwrap().as_ref() {
                 // 送られてきたメッセージをすべて表示
@@ -1184,7 +1174,7 @@ impl App {
                 // stageの状態をjsonにエンコードして送信
                 let value = json!({
                     "type": "stage",
-                    "data": &engine.stage,
+                    "data": &game.stage,
                 });
                 s.send(value.to_string()).ok();
             }
@@ -1196,7 +1186,7 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
-        use crate::operator::bot1::Bot1; // 七対子bot
+        use crate::operator::bot_tiitoitsu::TiitoitsuBot; // 七対子bot
         use crate::operator::random::RandomDiscardOperator;
 
         use std::sync::mpsc;
@@ -1208,9 +1198,9 @@ impl App {
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
         let operators: [Box<dyn Operator>; 4] = [
-            Box::new(Bot1::new()),
-            Box::new(Bot1::new()),
-            Box::new(Bot1::new()),
+            Box::new(TiitoitsuBot::new()),
+            Box::new(TiitoitsuBot::new()),
+            Box::new(TiitoitsuBot::new()),
             Box::new(RandomDiscardOperator::new(0)),
         ];
 
@@ -1244,24 +1234,24 @@ impl App {
                         operators: shuffled_operators,
                         listeners: vec![],
                     };
-                    let mut engine = MahjongEngine::new(config);
+                    let mut game = MahjongEngine::new(config);
                     loop {
-                        if engine.next_step() {
+                        if game.next_step() {
                             break;
                         }
                     }
-                    tx2.send((shuffle_table, engine)).unwrap();
+                    tx2.send((shuffle_table, game)).unwrap();
                 });
             }
 
             loop {
-                if let Ok((shuffle, engine)) = rx.try_recv() {
-                    print!("{:5}, seed: {:20}", n_game_end, engine.config.seed);
+                if let Ok((shuffle, game)) = rx.try_recv() {
+                    print!("{:5}, seed: {:20}", n_game_end, game.config.seed);
                     for s in 0..SEAT {
-                        let pl = &engine.stage.players[s];
+                        let pl = &game.stage.players[s];
                         let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
-                        total_score_delta[i] += score - engine.config.initial_score;
+                        total_score_delta[i] += score - game.config.initial_score;
                         total_rank_sum[i] += rank;
                         print!(", op{}: {:5}({})", i, score, rank);
                     }

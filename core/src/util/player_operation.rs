@@ -6,18 +6,20 @@ use TileStateType::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PlayerOperation {
-    Nop,                     // キャンセル (鳴き,ロンのスキップ)
-    Discard(Vec<Tile>),      // 打牌 (配列はチー後に捨てることができない牌)
+    Nop, // Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
+    // Turn Operations
+    Discard(Vec<Tile>), // 打牌 (配列はチー後に捨てることができない牌)
+    Ankan(Vec<Tile>),   // 暗槓
+    Kakan(Vec<Tile>),   // 加槓
+    Riichi(Vec<Tile>),  // リーチ
+    Tsumo,              // ツモ
+    Kyushukyuhai,       // 九種九牌
+    Kita,               // 北抜き
+    // Call Operations
     Chii(Vec<(Tile, Tile)>), // チー (配列は鳴きが可能な組み合わせ 以下同様)
     Pon(Vec<(Tile, Tile)>),  // ポン
-    Ankan(Vec<Tile>),        // 暗槓
     Minkan(Vec<Tile>),       // 明槓
-    Kakan(Vec<Tile>),        // 加槓
-    Riichi(Vec<Tile>),       // リーチ
-    Tsumo,                   // ツモ
     Ron,                     // ロン
-    Kyushukyuhai,            // 九種九牌
-    Kita,                    // 北抜き
 }
 
 pub fn enc_discard(t: Tile, m: bool) -> usize {

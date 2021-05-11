@@ -235,14 +235,8 @@ impl MahjongEngine {
             }
         }
 
-        let (op_idx, arg_idx) = if riichi && ops.len() == 1 {
-            // Nop, リーチ中は自動でツモ切り(Ankan, Tsumo, Kita は例外)
-            (0, 0)
-        } else {
-            self.config.operators[turn].handle_operation(&stg, turn, &ops)
-        };
-
         self.melding = None;
+        let (op_idx, arg_idx) = self.config.operators[turn].handle_operation(&stg, turn, &ops);
         match &ops[op_idx] {
             Nop => {
                 // ツモ切り

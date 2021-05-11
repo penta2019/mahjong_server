@@ -351,18 +351,23 @@ impl App {
                         return;
                     }
 
+                    let stg = &self.game.stage;
                     let seat = dd["seat"].as_i64().unwrap() as Seat;
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
-                    let op = self.operator.handle_operation(&self.game.stage, seat, &ops);
+                    let op = self.operator.handle_operation(stg, seat, &ops);
                     let (_, arg_idx) = get_operation_index(&ops, &op);
                     match &op {
                         Nop => {
-                            // TODO: ツモ切り
-                            self.action_cancel();
+                            if stg.turn == seat {
+                                let idx = 13 - stg.players[seat].melds.len() * 3;
+                                self.action_dapai(idx);
+                            } else {
+                                self.action_cancel();
+                            }
                         }
                         Discard(v) => {
-                            let idx = get_dapai_index(&self.game.stage, seat, v[0], false);
+                            let idx = get_dapai_index(stg, seat, v[0], false);
                             self.action_dapai(idx);
                         }
                         Ankan(_) => {
@@ -372,7 +377,7 @@ impl App {
                             self.action_gang(arg_idx); // TODO
                         }
                         Riichi(v) => {
-                            let idx = get_dapai_index(&self.game.stage, seat, v[0], false);
+                            let idx = get_dapai_index(stg, seat, v[0], false);
                             self.action_lizhi(idx);
                         }
                         Tsumo => {

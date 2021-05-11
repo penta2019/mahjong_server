@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::hand::win::*;
 use crate::hand::WinContext;
-use crate::util::common::vec_to_string;
+use crate::util::common::{rank_by_rank_vec, vec_to_string};
 
 use MeldType::*;
 use TileStateType::*;
@@ -267,6 +267,7 @@ pub struct Player {
     pub riichi: Option<Index>,  // リーチ宣言牌のdiscardsにおけるindex
     pub discards: Vec<Discard>, // 捨て牌一覧
     pub is_shown: bool,         // 手牌が見えるかどうか 見えない場合、手牌はすべてz8(=unknown)
+    pub rank: usize,            // 現在の順位
 
     // 聴牌
     pub winning_tiles: Vec<Tile>, // 聴牌時の和了牌
@@ -385,11 +386,21 @@ pub struct Stage {
     pub discards: Vec<(Seat, Index)>,    // プレイヤー全員の捨て牌
     pub last_tile: Option<(Seat, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
     pub players: [Player; SEAT],         // 各プレイヤー情報
-    pub is_3p: bool,                     // 三麻フラグ
+    pub is_3p: bool,                     // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileStateType; TILE]; TNUM]; TYPE],
 }
 
 impl Stage {
+    pub fn new(initila_score: i32) -> Self {
+        let mut stg = Self::default();
+        for s in 0..SEAT {
+            let pl = &mut stg.players[s];
+            pl.rank = s;
+            pl.score = initila_score;
+        }
+        stg
+    }
+
     pub fn table_edit(&mut self, tile: Tile, old: TileStateType, new: TileStateType) {
         let te = &mut self.tile_states[tile.0][tile.n()];
         // println!("[table_edit] {}: {:?} | {:?} => {:?}", tile, te, old, new);
@@ -816,15 +827,6 @@ impl Stage {
         }
     }
 
-    fn update_scores(&mut self, delta_scores: &[i32; SEAT]) {
-        for s in 0..SEAT {
-            let mut pl = &mut self.players[s];
-            let old = pl.score;
-            let new = old + delta_scores[s];
-            pl.score = new;
-        }
-    }
-
     fn update_furiten_other(&mut self) {
         if let Some((s, t)) = self.last_tile {
             for s2 in 0..SEAT {
@@ -835,6 +837,19 @@ impl Stage {
                 }
             }
             self.last_tile = None;
+        }
+    }
+
+    fn update_scores(&mut self, delta_scores: &[i32; SEAT]) {
+        for s in 0..SEAT {
+            let mut pl = &mut self.players[s];
+            pl.score = pl.score + delta_scores[s];
+        }
+
+        let scores = self.players.iter().map(|pl| pl.score).collect();
+        let ranks = rank_by_rank_vec(&scores);
+        for s in 0..SEAT {
+            self.players[s].rank = ranks[s];
         }
     }
 }

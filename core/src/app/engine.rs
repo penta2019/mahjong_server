@@ -60,8 +60,8 @@ struct MahjongEngine {
     next_op: StageOperation,
     melding: Option<PlayerOperation>, // 鳴き処理用
     kan_dora: Option<Tile>,           // 加槓・明槓の打牌後の槓ドラ更新用
-    kan_count: usize,                 // 槓した回数
     wall_count: usize,                // 牌山からツモを行った回数
+    kan_count: usize,                 // 槓した回数
     kita_count: usize,                // 北抜きの回数
     is_suukansanra: bool,             // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
@@ -75,16 +75,11 @@ struct MahjongEngine {
 
 impl MahjongEngine {
     fn new(config: Config) -> Self {
-        let mut stg = Stage::default();
-        for s in 0..SEAT {
-            let p = &mut stg.players[s];
-            p.score = config.initial_score;
-        }
-
-        let seed = config.seed;
+        let stg = Stage::new(config.initial_score);
+        let rng = rand::SeedableRng::seed_from_u64(config.seed);
         Self {
             config: config,
-            rng: rand::SeedableRng::seed_from_u64(seed),
+            rng: rng,
             stage: stg,
             next_op: New,
             melding: None,
@@ -247,11 +242,6 @@ impl MahjongEngine {
             self.config.operators[turn].handle_operation(&stg, turn, &ops)
         };
 
-        if let Some(kd) = self.kan_dora {
-            self.stage.add_dora(kd);
-            self.kan_dora = None;
-        }
-
         self.melding = None;
         match &ops[op_idx] {
             Nop => {
@@ -288,6 +278,11 @@ impl MahjongEngine {
                 self.melding = Some(Kita);
             }
             _ => panic!("Invalid operation"),
+        }
+
+        if let Some(kd) = self.kan_dora {
+            self.stage.add_dora(kd);
+            self.kan_dora = None;
         }
     }
 
@@ -1261,16 +1256,14 @@ impl App {
 
             loop {
                 if let Ok((shuffle, engine)) = rx.try_recv() {
-                    let stage = &engine.stage;
-                    let scores = stage.players.iter().map(|pl| pl.score).collect();
-                    let ranks = rank_by_rank_vec(&scores);
-
                     print!("{:5}, seed: {:20}", n_game_end, engine.config.seed);
                     for s in 0..SEAT {
+                        let pl = &engine.stage.players[s];
+                        let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
-                        total_score_delta[i] += scores[s] - engine.config.initial_score;
-                        total_rank_sum[i] += ranks[s] + 1;
-                        print!(", op{}: {:5}({})", i, scores[s], ranks[s] + 1);
+                        total_score_delta[i] += score - engine.config.initial_score;
+                        total_rank_sum[i] += rank;
+                        print!(", op{}: {:5}({})", i, score, rank);
                     }
                     println!();
 

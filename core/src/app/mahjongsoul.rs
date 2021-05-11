@@ -379,8 +379,7 @@ impl App {
                             self.action_zimo();
                         }
                         Kyushukyuhai => {
-                            // TODO
-                            self.action_dapai(0);
+                            self.action_jiuzhongjiupai();
                         }
                         Kita => {
                             self.action_babei();
@@ -410,14 +409,14 @@ impl App {
         self.send_to_wws("stage", &json!(&self.game.stage));
     }
 
-    // 打牌
-    fn action_dapai(&mut self, idx: Index) {
-        self.send_action(&format!("action_dapai({})", idx));
-    }
-
     // スキップ
     fn action_cancel(&mut self) {
         self.send_action(&format!("action_cancel()"));
+    }
+
+    // 打牌
+    fn action_dapai(&mut self, idx: Index) {
+        self.send_action(&format!("action_dapai({})", idx));
     }
 
     // チー
@@ -435,14 +434,14 @@ impl App {
         self.send_action(&format!("action_gang({})", idx));
     }
 
-    // 北抜き
-    fn action_babei(&mut self) {
-        self.send_action(&format!("action_babei()"));
-    }
-
     // リーチ
     fn action_lizhi(&mut self, idx: Index) {
         self.send_action(&format!("action_lizhi({})", idx));
+    }
+
+    // ツモ
+    fn action_zimo(&mut self) {
+        self.send_action(&format!("action_zimo()"));
     }
 
     // ロン
@@ -450,9 +449,14 @@ impl App {
         self.send_action(&format!("action_hu()"));
     }
 
-    // ツモ
-    fn action_zimo(&mut self) {
-        self.send_action(&format!("action_zimo()"));
+    // 九種九牌
+    fn action_jiuzhongjiupai(&mut self) {
+        self.send_action(&format!("action_jiuzhongjiupai()"));
+    }
+
+    // 北抜き
+    fn action_babei(&mut self) {
+        self.send_action(&format!("action_babei()"));
     }
 
     fn send_action(&mut self, func: &str) {
@@ -547,11 +551,10 @@ fn get_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usi
 }
 
 fn json_parse_operation(v: &Value) -> Vec<PlayerOperation> {
-    let mut ops_turn = vec![];
-    let mut ops_call = vec![Nop]; // Nop: スキップ
+    let mut ops = vec![Nop]; // Nop: ツモ切り or スキップ
     for op in v["operation_list"].as_array().unwrap() {
         match op["type"].as_i64().unwrap() {
-            0 => {}
+            0 => panic!(),
             1 => {
                 // 打牌
                 let combs = if op["combination"] != json!(null) {
@@ -559,65 +562,59 @@ fn json_parse_operation(v: &Value) -> Vec<PlayerOperation> {
                 } else {
                     vec![]
                 };
-                ops_turn.push(Discard(combs));
+                ops.push(Discard(combs));
             }
             2 => {
                 // チー
                 let combs = json_parse_combination_double(&op["combination"]);
-                ops_call.push(Chii(combs));
+                ops.push(Chii(combs));
             }
             3 => {
                 // ポン
                 let combs = json_parse_combination_double(&op["combination"]);
-                ops_call.push(Pon(combs));
+                ops.push(Pon(combs));
             }
             4 => {
                 // 暗槓
                 let combs = json_parse_combination_single(&op["combination"]);
-                ops_turn.push(Ankan(combs));
+                ops.push(Ankan(combs));
             }
             5 => {
                 // 明槓
                 let combs = json_parse_combination_single(&op["combination"]);
-                ops_call.push(Minkan(combs));
+                ops.push(Minkan(combs));
             }
             6 => {
                 // 加槓
                 let combs = json_parse_combination_single(&op["combination"]);
-                ops_turn.push(Kakan(combs));
+                ops.push(Kakan(combs));
             }
             7 => {
                 // リーチ
                 let combs = json_parse_combination_single(&op["combination"]);
-                ops_turn.push(Riichi(combs));
+                ops.push(Riichi(combs));
             }
             8 => {
                 // ツモ
-                ops_turn.push(Tsumo);
+                ops.push(Tsumo);
             }
             9 => {
                 // ロン
-                ops_call.push(Ron);
+                ops.push(Ron);
             }
             10 => {
                 // 九種九牌
-                ops_turn.push(Kyushukyuhai);
+                ops.push(Kyushukyuhai);
             }
             11 => {
                 // 北抜き
-                ops_turn.push(Kita);
+                ops.push(Kita);
             }
             _ => panic!(),
         }
     }
 
-    if ops_turn.len() > 0 {
-        ops_turn
-    } else if ops_call.len() > 1 {
-        ops_call
-    } else {
-        panic!();
-    }
+    ops
 }
 
 fn json_parse_combination_single(v: &Value) -> Vec<Tile> {

@@ -237,7 +237,7 @@ impl MahjongEngine {
 
         self.melding = None;
         let op = self.config.operators[turn].handle_operation(&stg, turn, &ops);
-        get_op_idx(&ops, &op); // opがops内に存在することを確認
+        get_operation_index(&ops, &op); // opがops内に存在することを確認
         match &op {
             Nop => {
                 // ツモ切り
@@ -320,7 +320,7 @@ impl MahjongEngine {
                 continue;
             }
             let op = self.config.operators[s].handle_operation(&stg, s, ops);
-            get_op_idx(&ops, &op); // opがops内に存在することを確認
+            get_operation_index(&ops, &op); // opがops内に存在することを確認
             match &op {
                 Nop => {}
                 Chii(v) => chii = Some((s, v[0].0, v[0].1)),

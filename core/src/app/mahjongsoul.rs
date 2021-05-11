@@ -355,7 +355,7 @@ impl App {
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
                     let op = self.operator.handle_operation(&self.game.stage, seat, &ops);
-                    let (_, arg_idx) = get_op_idx(&ops, &op);
+                    let (_, arg_idx) = get_operation_index(&ops, &op);
                     match &op {
                         Nop => {
                             // TODO: ツモ切り

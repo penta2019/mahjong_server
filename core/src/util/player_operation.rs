@@ -124,7 +124,7 @@ macro_rules! op_with_arg {
     }};
 }
 
-pub fn get_op_idx(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
+pub fn get_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
     match op {
         Nop => op_without_arg!(Nop, ops),
         Discard(_) => return (0, 0),

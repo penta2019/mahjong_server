@@ -19,13 +19,13 @@ impl Operator for Bot2 {
         stage: &Stage,
         seat: Seat,
         ops: &Vec<PlayerOperation>,
-    ) -> (usize, usize) {
+    ) -> PlayerOperation {
         let h = &stage.players[seat].hand;
 
         if stage.turn == seat {
         } else {
         }
-        (0, 0) // Nop
+        Nop
     }
 
     fn debug_string(&self) -> String {

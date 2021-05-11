@@ -236,27 +236,27 @@ impl MahjongEngine {
         }
 
         self.melding = None;
-        let (op_idx, arg_idx) = self.config.operators[turn].handle_operation(&stg, turn, &ops);
-        match &ops[op_idx] {
+        let op = self.config.operators[turn].handle_operation(&stg, turn, &ops);
+        get_op_idx(&ops, &op); // opがops内に存在することを確認
+        match &op {
             Nop => {
                 // ツモ切り
                 let t = self.stage.players[turn].drawn.unwrap();
                 op!(self, discardtile, turn, t, true, false);
             }
-            Discard(_) => {
-                let (t, m) = dec_discard(arg_idx);
-                op!(self, discardtile, turn, t, m, false);
+            Discard(v) => {
+                op!(self, discardtile, turn, v[0], false, false);
             }
             Ankan(v) => {
-                op!(self, ankankakan, turn, MeldType::Ankan, v[arg_idx]);
-                self.melding = Some(Ankan(vec![v[arg_idx]]));
+                op!(self, ankankakan, turn, MeldType::Ankan, v[0]);
+                self.melding = Some(op);
             }
             Kakan(v) => {
-                op!(self, ankankakan, turn, MeldType::Kakan, v[arg_idx]);
-                self.melding = Some(Kakan(vec![v[arg_idx]]));
+                op!(self, ankankakan, turn, MeldType::Kakan, v[0]);
+                self.melding = Some(op);
             }
             Riichi(v) => {
-                let t = v[arg_idx];
+                let t = v[0];
                 let pl = &self.stage.players[turn];
                 let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
                 op!(self, discardtile, turn, t, m, true);
@@ -271,7 +271,7 @@ impl MahjongEngine {
                 op!(self, kita, turn, false);
                 self.melding = Some(Kita);
             }
-            _ => panic!("Invalid operation"),
+            op2 => panic!("Operation '{:?}' not found in {:?}", op2, ops),
         }
 
         if let Some(kd) = self.kan_dora {
@@ -319,14 +319,15 @@ impl MahjongEngine {
             if s == turn || ops.len() == 1 {
                 continue;
             }
-            let (op_idx, arg_idx) = self.config.operators[s].handle_operation(&stg, s, ops);
-            match &ops[op_idx] {
+            let op = self.config.operators[s].handle_operation(&stg, s, ops);
+            get_op_idx(&ops, &op); // opがops内に存在することを確認
+            match &op {
                 Nop => {}
-                Chii(v) => chii = Some((s, v[arg_idx].0, v[arg_idx].1)),
-                Pon(v) => pon = Some((s, v[arg_idx].0, v[arg_idx].1)),
-                Minkan(v) => minkan = Some((s, v[arg_idx])),
+                Chii(v) => chii = Some((s, v[0].0, v[0].1)),
+                Pon(v) => pon = Some((s, v[0].0, v[0].1)),
+                Minkan(v) => minkan = Some((s, v[0])),
                 Ron => rons.push(s),
-                _ => panic!("Invalid operation"),
+                op2 => panic!("Operation '{:?}' not found in {:?}", op2, ops),
             }
         }
 

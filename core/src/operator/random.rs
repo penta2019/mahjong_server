@@ -3,6 +3,8 @@ use rand::Rng;
 use crate::model::*;
 use crate::util::player_operation::*;
 
+use PlayerOperation::*;
+
 #[derive(Clone)]
 pub struct RandomDiscardOperator {
     rng: rand::rngs::StdRng,
@@ -22,7 +24,11 @@ impl Operator for RandomDiscardOperator {
         stage: &Stage,
         seat: Seat,
         _ops: &Vec<PlayerOperation>,
-    ) -> (usize, usize) {
+    ) -> PlayerOperation {
+        if stage.turn != seat {
+            return Nop;
+        }
+
         let h = &stage.players[seat].hand;
         let mut n: u32 = self.rng.gen_range(0, 13);
         loop {
@@ -30,7 +36,7 @@ impl Operator for RandomDiscardOperator {
                 for ni in 1..TNUM {
                     if h[ti][ni] > 0 {
                         if n == 0 {
-                            return (0, enc_discard(Tile(ti, ni), false));
+                            return Discard(vec![Tile(ti, ni)]);
                         }
                         n -= 1;
                     }

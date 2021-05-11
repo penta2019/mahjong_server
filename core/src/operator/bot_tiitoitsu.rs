@@ -19,17 +19,13 @@ impl Operator for TiitoitsuBot {
         stage: &Stage,
         seat: Seat,
         ops: &Vec<PlayerOperation>,
-    ) -> (usize, usize) {
+    ) -> PlayerOperation {
         let h = &stage.players[seat].hand;
 
         if stage.turn == seat {
-            // ツモ番
-            // 七対子完成形の場合は和了る
-            for (op_idx, op) in ops.iter().enumerate() {
-                match op {
-                    Tsumo => return (op_idx, 0),
-                    _ => {}
-                }
+            // turn
+            if ops.contains(&Tsumo) {
+                return Tsumo;
             }
 
             let mut ones = vec![]; // 手牌に1枚のみある牌(left_count, Tile)
@@ -37,9 +33,9 @@ impl Operator for TiitoitsuBot {
                 for ni in 1..TNUM {
                     let t = Tile(ti, ni);
                     match h[ti][ni] {
-                        0 | 2 => {} // 何もしない
+                        0 | 2 => {}
                         3 | 4 => {
-                            return (0, enc_discard(t, false));
+                            return Discard(vec![t]);
                         }
                         1 => {
                             ones.push((count_left_tile(stage, seat, t), t));
@@ -52,18 +48,15 @@ impl Operator for TiitoitsuBot {
             // 1枚の牌で最も残り枚数が少ない牌から切る
             ones.sort();
             if !ones.is_empty() {
-                return (0, enc_discard(ones[0].1, false));
+                return Discard(vec![ones[0].1]);
             }
         } else {
-            // 他人のツモ番
-            for (op_idx, op) in ops.iter().enumerate() {
-                match op {
-                    Ron => return (op_idx, 0),
-                    _ => {}
-                }
+            // call
+            if ops.contains(&Ron) {
+                return Ron;
             }
         }
-        (0, 0) // Nop
+        Nop
     }
 
     fn debug_string(&self) -> String {

@@ -354,25 +354,25 @@ impl App {
                     let seat = dd["seat"].as_i64().unwrap() as Seat;
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
-                    let (op_idx, arg_idx) =
-                        self.operator.handle_operation(&self.game.stage, seat, &ops);
-                    match &ops[op_idx] {
+                    let op = self.operator.handle_operation(&self.game.stage, seat, &ops);
+                    let (_, arg_idx) = get_op_idx(&ops, &op);
+                    match &op {
                         Nop => {
+                            // TODO: ツモ切り
                             self.action_cancel();
                         }
-                        Discard(_) => {
-                            let (t, m) = dec_discard(arg_idx);
-                            let idx = get_dapai_index(&self.game.stage, seat, t, m);
+                        Discard(v) => {
+                            let idx = get_dapai_index(&self.game.stage, seat, v[0], false);
                             self.action_dapai(idx);
                         }
                         Ankan(_) => {
-                            self.action_gang(arg_idx);
+                            self.action_gang(arg_idx); // TODO
                         }
                         Kakan(_) => {
-                            self.action_gang(arg_idx);
+                            self.action_gang(arg_idx); // TODO
                         }
                         Riichi(v) => {
-                            let idx = get_dapai_index(&self.game.stage, seat, v[arg_idx], false);
+                            let idx = get_dapai_index(&self.game.stage, seat, v[0], false);
                             self.action_lizhi(idx);
                         }
                         Tsumo => {
@@ -392,7 +392,7 @@ impl App {
                             self.action_peng(arg_idx);
                         }
                         Minkan(_) => {
-                            self.action_gang(arg_idx);
+                            self.action_gang(arg_idx); // TODO
                         }
                         Ron => {
                             self.action_hu();

@@ -20,7 +20,7 @@ impl Operator for ManualOperator {
         stage: &Stage,
         seat: Seat,
         ops: &Vec<PlayerOperation>,
-    ) -> (usize, usize) {
+    ) -> PlayerOperation {
         println!("{}", &stage.players[seat]);
         if stage.turn == seat {
             println!("{:?}", ops);
@@ -41,7 +41,7 @@ impl Operator for ManualOperator {
 
             let mut chars = buf.chars();
             let c = chars.next().unwrap();
-            let (a0, a1) = match c {
+            match c {
                 'm' | 'p' | 's' | 'z' => {
                     let ti = match c {
                         'm' => TM,
@@ -57,7 +57,17 @@ impl Operator for ManualOperator {
                             continue;
                         }
                     };
-                    (0, enc_discard(Tile(ti, ni), false))
+
+                    let h = &stage.players[seat].hand;
+                    let t = Tile(ti, ni);
+                    if t.0 > TZ || t.1 > 9 {
+                        println!("Invalid tile: {:?}", t);
+                        continue;
+                    } else if h[t.0][t.1] == 0 {
+                        println!("Tile not found: {}", t);
+                        continue;
+                    }
+                    return Discard(vec![Tile(ti, ni)]);
                 }
                 '!' => {
                     match &buf[1..] {
@@ -80,77 +90,80 @@ impl Operator for ManualOperator {
                         continue;
                     }
 
-                    let mut ok = true;
                     let mut arg = [0usize; 2];
                     for i in 0..2 {
                         match v[i].trim().parse() {
                             Ok(n) => arg[i] = n,
                             Err(_) => {
-                                println!("input must be usize");
-                                ok = false;
+                                println!("input must be number");
+                                continue;
                             }
                         }
                     }
 
-                    if !ok {
+                    let (a0, a1) = (arg[0], arg[1]);
+                    if !(a0 < ops.len()) {
+                        println!("invalid op_idx");
                         continue;
                     }
 
-                    (arg[0], arg[1])
+                    match &ops[a0] {
+                        Nop => return Nop,
+                        Discard(v) => {
+                            let h = &stage.players[seat].hand;
+                            let t = v[0];
+                            if t.0 > TZ || t.1 > 9 {
+                                println!("Invalid tile: {:?}", t);
+                                continue;
+                            } else if h[t.0][t.1] == 0 {
+                                println!("Tile not found: {}", t);
+                                continue;
+                            }
+                            return Discard(vec![t]);
+                        }
+                        Ankan(v) => {
+                            if !check_vec_idx(v, a1) {
+                                continue;
+                            }
+                            return Ankan(vec![v[a1]]);
+                        }
+                        Kakan(v) => {
+                            if !check_vec_idx(v, a1) {
+                                continue;
+                            }
+                            return Kakan(vec![v[a1]]);
+                        }
+                        Riichi(v) => {
+                            if !check_vec_idx(v, a1) {
+                                continue;
+                            }
+                            return Riichi(vec![v[a1]]);
+                        }
+                        Tsumo => return Tsumo,
+                        Kyushukyuhai => return Kyushukyuhai,
+                        Kita => return Kita,
+                        Chii(v) => {
+                            if !check_vec_idx(v, a1) {
+                                continue;
+                            }
+                            return Chii(vec![v[a1]]);
+                        }
+                        Pon(v) => {
+                            if !check_vec_idx(v, a1) {
+                                continue;
+                            }
+                            return Pon(vec![v[a1]]);
+                        }
+                        Minkan(v) => {
+                            if !check_vec_idx(v, a1) {
+                                continue;
+                            }
+                            return Minkan(vec![v[a1]]);
+                        }
+                        Ron => return Ron,
+                    }
                 }
             };
-
-            if !(a0 < ops.len()) {
-                println!("invalid op_idx");
-                continue;
-            }
-
-            match &ops[a0] {
-                Discard(_) => {
-                    let h = &stage.players[seat].hand;
-                    let (t, _) = dec_discard(a1);
-                    if t.0 > TZ || t.1 > 9 {
-                        println!("Invalid tile: {:?}", t);
-                        continue;
-                    } else if h[t.0][t.1] == 0 {
-                        println!("Tile not found: {}", t);
-                        continue;
-                    }
-                }
-                Chii(v) => {
-                    if !check_vec_idx(v, a1) {
-                        continue;
-                    }
-                }
-                Pon(v) => {
-                    if !check_vec_idx(v, a1) {
-                        continue;
-                    }
-                }
-                Ankan(v) => {
-                    if !check_vec_idx(v, a1) {
-                        continue;
-                    }
-                }
-                Minkan(v) => {
-                    if !check_vec_idx(v, a1) {
-                        continue;
-                    }
-                }
-                Kakan(v) => {
-                    if !check_vec_idx(v, a1) {
-                        continue;
-                    }
-                }
-                Riichi(v) => {
-                    if !check_vec_idx(v, a1) {
-                        continue;
-                    }
-                }
-                _ => {}
-            }
-
-            return (a0, a1);
         }
     }
 

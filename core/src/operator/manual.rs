@@ -168,7 +168,7 @@ impl Operator for ManualOperator {
     }
 
     fn debug_string(&self) -> String {
-        "AlgoEmpty".to_string()
+        "ManualOperator".to_string()
     }
 }
 

@@ -60,6 +60,6 @@ impl Operator for TiitoitsuBot {
     }
 
     fn debug_string(&self) -> String {
-        "Bot1".to_string()
+        "TiitoitsuBot".to_string()
     }
 }

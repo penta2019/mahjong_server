@@ -15,10 +15,6 @@ pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
     vs.join(" ")
 }
 
-// pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
-//     v.remove(v.iter().position(|x| x == e).unwrap());
-// }
-
 pub fn unixtime_now() -> u64 {
     use std::time::*;
     SystemTime::now()

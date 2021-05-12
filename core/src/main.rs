@@ -41,7 +41,7 @@ fn silence_unused_warning() {
 
 #[test]
 fn test_hand1() {
-    use hand::evaluate_hand;
+    use hand::evaluate::evaluate_hand;
     use hand::yaku::YakuFlags;
     use model::*;
 

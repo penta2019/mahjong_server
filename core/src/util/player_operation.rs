@@ -100,31 +100,29 @@ pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
     n
 }
 
-macro_rules! op_without_arg {
-    ($x:pat, $ops:expr) => {
-        for (op_idx, op2) in $ops.iter().enumerate() {
-            if let $x = op2 {
-                return (op_idx, 0);
+pub fn get_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
+    macro_rules! op_without_arg {
+        ($x:pat, $ops:expr) => {
+            for (op_idx, op2) in $ops.iter().enumerate() {
+                if let $x = op2 {
+                    return (op_idx, 0);
+                }
             }
-        }
-    };
-}
-
-macro_rules! op_with_arg {
-    ($x:ident, $ops:expr, $v:expr) => {{
-        for (op_idx, op2) in $ops.iter().enumerate() {
-            if let $x(v2) = op2 {
-                for (arg_idx, &e) in v2.iter().enumerate() {
-                    if e == $v[0] {
-                        return (op_idx, arg_idx);
+        };
+    }
+    macro_rules! op_with_arg {
+        ($x:ident, $ops:expr, $v:expr) => {{
+            for (op_idx, op2) in $ops.iter().enumerate() {
+                if let $x(v2) = op2 {
+                    for (arg_idx, &e) in v2.iter().enumerate() {
+                        if e == $v[0] {
+                            return (op_idx, arg_idx);
+                        }
                     }
                 }
             }
-        }
-    }};
-}
-
-pub fn get_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
+        }};
+    }
     match op {
         Nop => op_without_arg!(Nop, ops),
         Discard(_) => return (0, 0),

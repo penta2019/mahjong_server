@@ -2,8 +2,8 @@ use std::fmt;
 
 use serde::Serialize;
 
+use crate::hand::evaluate::WinContext;
 use crate::hand::win::*;
-use crate::hand::WinContext;
 use crate::util::common::{rank_by_rank_vec, vec_to_string};
 
 use MeldType::*;
@@ -125,75 +125,6 @@ pub const Z8: Tile = Tile(TZ, UK); // unknown tile
 
 pub type TileRow = [usize; TNUM];
 pub type TileTable = [TileRow; TYPE];
-
-// trait TileCollectionMethods<T> {
-//     fn get(&self, t: T) -> usize;
-//     fn set(&mut self, t: T, v: usize);
-//     fn inc(&mut self, t: T);
-//     fn dec(&mut self, t: T);
-// }
-
-// impl TileCollectionMethods<usize> for TileRow {
-//     #[inline]
-//     fn get(&self, n: usize) -> usize {
-//         self[n]
-//     }
-
-//     #[inline]
-//     fn set(&mut self, n: usize, v: usize) {
-//         self[n] = v;
-//         if n == 0 {
-//             self[5] = v;
-//         }
-//     }
-
-//     #[inline]
-//     fn inc(&mut self, n: usize) {
-//         self[n] += 1;
-//         if n == 0 {
-//             self[5] += 1;
-//         }
-//     }
-
-//     #[inline]
-//     fn dec(&mut self, n: usize) {
-//         self[n] -= 1;
-//         if n == 0 {
-//             self[5] -= 1;
-//         }
-//     }
-// }
-
-// impl TileCollectionMethods<Tile> for TileTable {
-//     #[inline]
-//     fn get(&self, t: Tile) -> usize {
-//         self[t.0][t.1]
-//     }
-
-//     #[inline]
-//     fn set(&mut self, t: Tile, v: usize) {
-//         self[t.0][t.1] = v;
-//         if t.1 == 0 {
-//             self[t.0][5] = v;
-//         }
-//     }
-
-//     #[inline]
-//     fn inc(&mut self, t: Tile) {
-//         self[t.0][t.1] += 1;
-//         if t.1 == 0 {
-//             self[t.0][5] += 1;
-//         }
-//     }
-
-//     #[inline]
-//     fn dec(&mut self, t: Tile) {
-//         self[t.0][t.1] -= 1;
-//         if t.1 == 0 {
-//             self[t.0][5] -= 1;
-//         }
-//     }
-// }
 
 // Discard ====================================================================
 
@@ -329,7 +260,7 @@ impl fmt::Display for Player {
     }
 }
 
-// TileStateType ==============================================================
+// misc =======================================================================
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(tag = "t", content = "c")]
@@ -348,15 +279,6 @@ impl Default for TileStateType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-pub enum DrawType {
-    Kyushukyuhai,   // 九種九牌
-    Suufuurenda,    // 四風連打
-    Suukansanra,    // 四槓散了
-    Suuchariichi,   // 四家立直
-    Kouhaiheikyoku, // 荒廃平局
-}
-
 impl fmt::Display for TileStateType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -370,8 +292,16 @@ impl fmt::Display for TileStateType {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum DrawType {
+    Kyushukyuhai,   // 九種九牌
+    Suufuurenda,    // 四風連打
+    Suukansanra,    // 四槓散了
+    Suuchariichi,   // 四家立直
+    Kouhaiheikyoku, // 荒廃平局
+}
+
 // Stage ======================================================================
-// このクラスは局開ごとに新しく生成する
 
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {

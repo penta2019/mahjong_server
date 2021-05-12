@@ -31,7 +31,6 @@ impl Mahjongsoul {
         let data = &act["data"];
 
         if step == 0 {
-            self.stage = Stage::new(0);
             self.step = 0;
             self.seat = NO_SEAT;
             self.actions.clear();

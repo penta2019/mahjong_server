@@ -152,6 +152,12 @@ msc.get_status = function () {
     return data;
 };
 
+// Utility
+msc.sleep = function (msec) {
+    return new Promise(function (resolve) {
+        setTimeout(function () { resolve() }, msec);
+    });
+}
 
 // UI操作
 msc.MouseController = class {
@@ -211,6 +217,7 @@ msc.UiController = class {
             auto_nofulu_button: { x: 35, y: 635 },
             auto_moqie_button: { x: 35, y: 695 },
         }
+        this.timer = null;
     }
 
     // 内部関数
@@ -365,6 +372,53 @@ msc.UiController = class {
             let ui = this.get_op_ui();
             this.click_element(ui.op_btns.btn_babei);
         });
+    }
+
+    // ゲームを開始
+    // rank: 0 => 胴の間, 1 => 銀の間, 2 => 金の間, 3 => 玉の間
+    // round: 0 => 四人東, 1 => 四人南
+    async check_and_start_rank_match(rank, round) {
+        if (!window.uiscript.UI_Lobby.Inst.page0.me.visible) {
+            return;
+        }
+        window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run();
+        await msc.sleep(1000);
+        window.uiscript.UI_Lobby.Inst.page_rank.content0.getChildByName(`btn${rank}`)
+            .getChildByName("container").getChildByName("btn").clickHandler.run();
+        await msc.sleep(1000);
+        window.uiscript.UI_Lobby.Inst.page_east_north.btns[round]
+            .getChildByName("btn").clickHandler.run();
+    }
+
+    // 局が終了していれば確認ボタンをクリック
+    check_and_click_ok_button() {
+        let insts = [
+            window.uiscript.UI_ScoreChange.Inst,
+            window.uiscript.UI_Win.Inst,
+            window.uiscript.UI_GameEnd.Inst,
+        ];
+        for (let inst of insts) {
+            if (inst && inst.enable) {
+                this.click(this.positions.ok_button);
+            }
+        }
+    }
+
+    enable_auto_match(rank, round) {
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
+        this.timer = setInterval(() => {
+            this.check_and_start_rank_match(rank, round);
+            this.check_and_click_ok_button();
+        }, 1000);
+    }
+
+    disable_auto_match() {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
     }
 };
 
@@ -579,8 +633,8 @@ msc.search_object = function (
     obj, matcher, max_depth = 8,
     search_type = ['object', 'function'],
     exclude_prop = ['_parent'],
-    exclude_obj = [window.webkitStorageInfo, window.applicationCache]) {
-
+    exclude_obj = [window.webkitStorageInfo, window.applicationCache],
+) {
     let visited = new Set([obj]);
     let anchor = { depth: 1 };
     let queue = [anchor, [obj, ''/* path */]];

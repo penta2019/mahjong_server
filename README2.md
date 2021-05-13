@@ -313,10 +313,11 @@ window.view
         .seat                - 席番 playersのインデックス番号
 window.uiscript              - UI操作
     .UI_ScoreChange.Inst     - 局終了時のスコア確認画面
-        .btn_confirm         - "確認"ボタン
+        .enable              - 有効かどうか
+        .btn_confirm.clickHandler.run() - "確認"ボタンを押す
     .UI_GameEnd.Inst         - 対局終了後のリザルト画面
         .duringshowing       - 表示中かどうか
-        .btn_next            - "確認"ボタン
+        .btn_next.clickHandler.run() - "確認"ボタンを押す
     .UI_LiQiZiMo.Inst        - 自家のツモ番のアクション 立直、ツモ、カンなど
     .UI_UI_ChiPengHu.Inst    - 他家のツモ番のアクション チー、ポン、ロンなど
 ```
@@ -324,13 +325,13 @@ window.uiscript              - UI操作
 #### UI操作メモ
 ```
 段位戦
-window.uiscript.UI_Lobby.Inst.page0.run()
-    銀の間
-    window.uiscript.UI_Lobby.Inst.page_rank.me._childs[0]
-    ._childs[0]._content._childs[1]._childs[0]._childs[0]._clickHandler.run()
-        四人東
-            window.uiscript.UI_Lobby.Inst.page_east_north.btns[0]._childs[0]._clickHandler.run()
-
+window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run()
+    window.uiscript.UI_Lobby.Inst.page_rank.content0.getChildByName("btn2").getChildByName("container").getChildByName("btn").clickHandler.run()
+    銀の間　getChildByName("btn1")
+    金の間  getChildByName("btn2")
+        window.uiscript.UI_Lobby.Inst.page_east_north.btns[0].getChildByName("btn").clickHandler.run()
+        四人東: btns[0]
+        四人南: btns[1]
 クリック音
     window.view.AudioMgr.PlayAudio(103);
 ```

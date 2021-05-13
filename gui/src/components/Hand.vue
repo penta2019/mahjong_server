@@ -22,7 +22,18 @@ function parse_hands(stage, seat) {
   if (!stage) return [];
 
   let res = [];
-  let hand = stage.players[seat].hand;
+  let hand = stage.players[seat].hand.slice();
+  let drawn = stage.players[seat].drawn;
+
+  if (drawn) {
+    if (drawn[1] == 0) {
+      hand[drawn[0]][0] -= 1;
+      hand[drawn[0]][5] -= 1;
+    } else {
+      hand[drawn[0]][drawn[1]] -= 1;
+    }
+  }
+
   for (let ti = 0; ti < 4; ++ti) {
     for (let ni = 1; ni < 10; ++ni) {
       let n = hand[ti][ni];
@@ -35,6 +46,19 @@ function parse_hands(stage, seat) {
         });
       }
     }
+  }
+
+  if (drawn) {
+    res.push({
+      tile: "z9",
+      type: 3,
+      index: 9,
+    });
+    res.push({
+      tile: tile_types[drawn[0]] + drawn[1],
+      type: drawn[0],
+      index: drawn[1],
+    });
   }
 
   return res;

@@ -1064,15 +1064,17 @@ pub struct App {
     seed: u64,
     n_game: i32,
     n_thread: i32,
+    debug: bool,
 }
 
 impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        let mut seed: u64 = 0;
-        let mut n_game: i32 = 0;
-        let mut n_thread: i32 = 8;
+        let mut seed = 0;
+        let mut n_game = 0;
+        let mut n_thread = 8;
+        let mut debug = false;
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
@@ -1098,6 +1100,9 @@ impl App {
                         println!("-t: n_thread missing");
                     }
                 }
+                "-d" => {
+                    debug = true;
+                }
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -1109,6 +1114,7 @@ impl App {
             seed,
             n_game,
             n_thread,
+            debug,
         }
     }
 
@@ -1139,7 +1145,7 @@ impl App {
             initial_score: 25000,
             operators: [
                 Box::new(ManualOperator::new()),
-                // Box::new(RandomDiscardOperator::new(seed + 0)),
+                // Box::new(RandomDiscardOperator::new(self.seed + 0)),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
@@ -1151,8 +1157,13 @@ impl App {
         let send_recv = create_ws_server(52001);
 
         loop {
-            let end = game.next_step();
+            let stop = if let Deal = &game.next_op {
+                true
+            } else {
+                false
+            };
 
+            let end = game.next_step();
             if let Some((s, r)) = send_recv.lock().unwrap().as_ref() {
                 // 送られてきたメッセージをすべて表示
                 loop {
@@ -1172,6 +1183,14 @@ impl App {
                     "data": &game.stage,
                 });
                 s.send(value.to_string()).ok();
+            }
+
+            if self.debug && stop {
+                use std::io::{stdin, stdout, Write};
+                print!("step={} Enter>", game.stage.step);
+                stdout().flush().unwrap();
+                let mut buf = String::new();
+                stdin().read_line(&mut buf).ok();
             }
 
             if end {

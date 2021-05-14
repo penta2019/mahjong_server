@@ -249,6 +249,9 @@ msc.UiController = class {
         this.mouse.move(pos);
         setTimeout(() => {
             this.mouse.click(pos);
+            setTimeout(() => {
+                this.mouse.move({ x: 10, y: 10 });
+            }, 300);
         }, 200);
     }
 
@@ -280,7 +283,7 @@ msc.UiController = class {
         // 選択画面などが表示されていれば閉じてからアクションを実行する
         let ui = this.get_op_ui();
         let ui_detail = ui.container_Detail;
-        if (ui_detail.visible) { // チーの選択画面
+        if (ui_detail.visible) { // 鳴きの選択画面
             this.click_element(ui.btn_detail_back);
             setTimeout(() => { func(); }, 500);
         } else if (ui.btn_cancel._parent.visible && ui.btn_cancel.visible) {
@@ -291,21 +294,15 @@ msc.UiController = class {
         }
     }
 
-    action_dapai(n, safe = true) { // 一番左をの牌を0番目として左からn番目を捨てる。
-        let f = () => {
+    action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
+        this.safe_action(() => {
             let p = this.positions
             let pos = {
                 x: p.leftmost_pai.x + p.pai_interval * n,
                 y: p.leftmost_pai.y,
             }
             this.click(pos);
-        }
-
-        if (safe) {
-            this.safe_action(f);
-        } else {
-            f();
-        }
+        });
     }
 
     action_cancel() { // スキップ

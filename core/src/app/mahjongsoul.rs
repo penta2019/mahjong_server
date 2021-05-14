@@ -352,6 +352,12 @@ impl App {
 
                     let stg = &self.game.stage;
                     let seat = dd["seat"].as_i64().unwrap() as Seat;
+
+                    // ゲーム側の演出待ちのため最初の打牌は少し待機
+                    if stg.turn == seat && stg.players[seat].discards.len() == 0 {
+                        std::thread::sleep(std::time::Duration::from_millis(2000));
+                    }
+
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
                     let op = self.operator.handle_operation(stg, seat, &ops);

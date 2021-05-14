@@ -1073,7 +1073,7 @@ impl App {
 
         let mut seed = 0;
         let mut n_game = 0;
-        let mut n_thread = 8;
+        let mut n_thread = 16;
         let mut debug = false;
         let mut it = args.iter();
         while let Some(s) = it.next() {

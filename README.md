@@ -197,7 +197,7 @@ seat3: m2 => [Nop, Chii([(Tile(0, 3), Tile(0, 4))])]
 (出力結果省略)
 ```
 
-可能な操作一覧 (/core/src/util/player_operation.rs から抜粋)
+可能な操作一覧 (/core/src/util/operator.rs から抜粋)
 ```
 pub enum PlayerOperation {
     Nop,                     // キャンセル (鳴き,ロンのスキップ)

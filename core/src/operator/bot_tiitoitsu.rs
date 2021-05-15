@@ -1,5 +1,5 @@
 use crate::model::*;
-use crate::util::player_operation::*;
+use crate::util::operator::*;
 
 use PlayerOperation::*;
 

@@ -1,4 +1,4 @@
 pub mod common;
-pub mod player_operation;
+pub mod operator;
 pub mod stage_listener;
 pub mod ws_server;

@@ -81,25 +81,6 @@ impl Operator for NullOperator {
     }
 }
 
-// util
-pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
-    let mut n = 0;
-    for &st in &stage.tile_states[tile.0][tile.1] {
-        match st {
-            U => {
-                n += 1;
-            }
-            H(s) => {
-                if s != seat {
-                    n += 1;
-                }
-            }
-            _ => {}
-        }
-    }
-    n
-}
-
 pub fn get_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
     macro_rules! op_without_arg {
         ($x:pat, $ops:expr) => {
@@ -139,3 +120,70 @@ pub fn get_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> 
     }
     panic!("Operation '{:?}' not found id '{:?}'", op, ops);
 }
+
+pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
+    let mut n = 0;
+    for &st in &stage.tile_states[tile.0][tile.1] {
+        match st {
+            U => {
+                n += 1;
+            }
+            H(s) => {
+                if s != seat {
+                    n += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    n
+}
+
+// Block Info
+struct BlockInfo {
+    tile: Tile, // ブロックのスタート位置
+    len: usize, // ブロックの長さ
+    num: usize, // ブロック内の牌の数
+}
+
+impl BlockInfo {
+    fn new() -> Self {
+        Self {
+            tile: Tile(TZ, UK),
+            len: 0,
+            num: 0,
+        }
+    }
+}
+
+// fn get_block_info(hand: &TileTable) -> Vec<BlockInfo> {
+//     let mut vbi = vec![];
+//     let mut bi = BlockInfo::new();
+//     for ti in 0..TZ {
+//         for ni in 1..TNUM {
+//             let c = hand[ti][ni];
+//             if bi.len == 0 {
+//                 if c == 0 {
+//                     // pass
+//                 } else {
+//                     // ブロック始端
+//                     bi.tile = Tile(ti, ni);
+//                     bi.len = 1;
+//                     bi.num = c;
+//                 }
+//             } else {
+//                 if c == 0 {
+//                     if bi.tile.1 + bi.len < ni {
+//                         // ブロック終端
+//                         vbi.push(bi);
+//                         bi = BlockInfo::new();
+//                     } else {
+//                         // pass
+//                     }
+//                 } else {
+//                 }
+//             }
+//         }
+//     }
+//     vbi
+// }

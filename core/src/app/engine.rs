@@ -5,7 +5,7 @@ use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::player_operation::*;
+use crate::util::operator::*;
 use crate::util::stage_listener::*;
 use crate::util::ws_server::*;
 

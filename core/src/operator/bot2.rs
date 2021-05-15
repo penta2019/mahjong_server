@@ -1,8 +1,7 @@
 use crate::model::*;
-use crate::util::player_operation::*;
+use crate::util::operator::*;
 
 use PlayerOperation::*;
-use TileStateType::*;
 
 #[derive(Clone)]
 pub struct Bot2 {}

@@ -202,7 +202,7 @@ pub fn get_tiles_to_chiitoitsu_win(hand: &TileTable) -> Vec<Tile> {
     let mut res = vec![];
     let mut n_pair = 0;
     for ti in 0..TYPE {
-        for ni in 0..TNUM {
+        for ni in 1..TNUM {
             match hand[ti][ni] {
                 1 => {
                     if res.is_empty() {

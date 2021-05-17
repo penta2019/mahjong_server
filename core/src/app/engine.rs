@@ -1131,11 +1131,16 @@ impl App {
             );
         }
 
+        let start = std::time::Instant::now();
         if self.n_game == 0 {
             self.run_single_game();
         } else {
             self.run_multiple_game();
         }
+        println!(
+            "total elapsed time: {:8.3}sec",
+            start.elapsed().as_nanos() as f32 / 1000000000.0
+        );
     }
 
     fn run_single_game(&mut self) {
@@ -1210,7 +1215,6 @@ impl App {
         use std::sync::mpsc;
         use std::{thread, time};
 
-        let start = std::time::Instant::now();
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
@@ -1253,7 +1257,7 @@ impl App {
                         operators: shuffled_operators,
                         listeners: vec![],
                     };
-                    let start = std::time::Instant::now();
+                    let start = time::Instant::now();
 
                     let mut game = MahjongEngine::new(config);
                     loop {
@@ -1269,14 +1273,14 @@ impl App {
             loop {
                 if let Ok((shuffle, game, elapsed)) = rx.try_recv() {
                     let ms = elapsed.as_nanos() / 1000000;
-                    print!("{:5}, {:4}ms, {:20}", n_game_end, ms, game.config.seed);
+                    print!("{:5},{:4}ms,{:20}", n_game_end, ms, game.config.seed);
                     for s in 0..SEAT {
                         let pl = &game.stage.players[s];
                         let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
                         total_score_delta[i] += score - game.config.initial_score;
                         total_rank_sum[i] += rank;
-                        print!(", op{}: {:5}({})", i, score, rank);
+                        print!(", op{}:{:5}({})", i, score, rank);
                     }
                     println!();
 
@@ -1301,10 +1305,5 @@ impl App {
                 break;
             }
         }
-
-        println!(
-            "total elapsed time: {:8.3}sec",
-            start.elapsed().as_nanos() as f32 / 1000000000.0
-        )
     }
 }

@@ -46,7 +46,7 @@ pub fn parse_melds(melds: &Vec<Meld>) -> ParsedHand {
 // 三連刻の場合2通り(刻子3つ, 順子3つ)の分割が存在する　四連刻は役満(四暗刻)なので無視
 // 予め分解可能であることを確認しておくこと(分解できない場合assertに失敗)
 // TileRowが空(すべて0)の場合は分解可能とみなし[[]]を返却
-fn split_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
+fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
     let mut ph = vec![];
     let (mut n0, mut n1, mut n2);
 
@@ -119,7 +119,7 @@ fn split_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
 }
 
 // 手牌が完成形(七対子・国士無双は除く)なら面子+雀頭に分解して返却
-pub fn split_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
+pub fn parse_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
     let pairs = get_possibole_pairs(&hand);
     if pairs.is_empty() {
         return vec![];
@@ -133,7 +133,7 @@ pub fn split_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
     let mut phs = vec![];
     for pair in pairs {
         tr[pair.1] -= 2;
-        let mut phs2 = split_row_into_sets(&tr, pair_ti);
+        let mut phs2 = parse_row_into_sets(&tr, pair_ti);
         tr[pair.1] += 2;
         for ph in &mut phs2 {
             ph.push(SetPair(Pair, pair));
@@ -145,7 +145,7 @@ pub fn split_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
     // 雀頭を含まない列
     for ti in 0..TYPE {
         if ti != pair_ti {
-            phs_list.push(split_row_into_sets(&hand[ti], ti));
+            phs_list.push(parse_row_into_sets(&hand[ti], ti));
         }
     }
 
@@ -163,7 +163,7 @@ pub fn split_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
 }
 
 // 手牌が完成形(七対子)ならすべて対子に分解して返却
-pub fn split_into_chiitoitsu_win(hand: &TileTable) -> Vec<ParsedHand> {
+pub fn parse_into_chiitoitsu_win(hand: &TileTable) -> Vec<ParsedHand> {
     let mut res = vec![];
     for ti in 0..TYPE {
         for ni in 1..TNUM {
@@ -186,7 +186,7 @@ pub fn split_into_chiitoitsu_win(hand: &TileTable) -> Vec<ParsedHand> {
 }
 
 // 手牌が完成形(国士無双)なら空のParsedHandが入ったリストを返却
-pub fn split_into_kokusimusou_win(hand: &TileTable) -> Vec<ParsedHand> {
+pub fn parse_into_kokusimusou_win(hand: &TileTable) -> Vec<ParsedHand> {
     if is_kokushimusou_win(hand) {
         vec![vec![]]
     } else {

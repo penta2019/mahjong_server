@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::model::*;
 
-use super::split::{ParsedHand, SetPair, SetPairType};
+use super::parse::{ParsedHand, SetPair, SetPairType};
 use super::win::is_kokushimusou_win;
 
 use SetPairType::*;

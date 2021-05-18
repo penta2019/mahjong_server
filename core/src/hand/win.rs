@@ -1,6 +1,6 @@
 use crate::model::*;
 
-use super::split::split_into_chiitoitsu_win;
+use super::parse::parse_into_chiitoitsu_win;
 
 // 完成形判定 (面子, 雀頭) =======================================================
 
@@ -116,7 +116,7 @@ pub fn is_normal_win(hand: &TileTable) -> bool {
 
 // 七対子
 pub fn is_chiitoitsu_win(hand: &TileTable) -> bool {
-    !split_into_chiitoitsu_win(&hand).is_empty()
+    !parse_into_chiitoitsu_win(&hand).is_empty()
 }
 
 // 国士無双

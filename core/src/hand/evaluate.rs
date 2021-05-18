@@ -1,7 +1,7 @@
 use crate::model::*;
 
+use super::parse::*;
 use super::score::*;
-use super::split::*;
 use super::yaku::*;
 
 #[derive(Debug)]
@@ -156,7 +156,7 @@ pub fn evaluate_hand(
 
     // 和了(通常)
     let pm = parse_melds(melds);
-    for mut ph in split_into_normal_win(hand).into_iter() {
+    for mut ph in parse_into_normal_win(hand).into_iter() {
         ph.append(&mut pm.clone());
         let ctx = Context::new(
             hand.clone(),
@@ -171,7 +171,7 @@ pub fn evaluate_hand(
     }
 
     // 和了(七対子)
-    for ph in split_into_chiitoitsu_win(hand).into_iter() {
+    for ph in parse_into_chiitoitsu_win(hand).into_iter() {
         let ctx = Context::new(
             hand.clone(),
             ph,
@@ -185,7 +185,7 @@ pub fn evaluate_hand(
     }
 
     // 和了(国士無双)
-    for ph in split_into_kokusimusou_win(hand).into_iter() {
+    for ph in parse_into_kokusimusou_win(hand).into_iter() {
         let ctx = Context::new(
             hand.clone(),
             ph,

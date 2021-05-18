@@ -22,7 +22,7 @@ pub fn calc_mods_cnts(hand: &TileTable) -> ([usize; 4], [usize; 3]) {
 
 // 雀頭+面子形で構成されているかの判定
 pub fn is_sets_pair(tr: &TileRow, ti: usize) -> bool {
-    !get_pair_candidate(tr, ti).is_empty()
+    !calc_pair_candidate(tr, ti).is_empty()
 }
 
 // 面子のみで構成されているかの判定
@@ -46,7 +46,7 @@ pub fn is_sets(tr: &TileRow, ti: usize) -> bool {
 
 // 牌種が完成面子+雀頭の場合において雀頭候補となる牌を返す
 // [1,4,7], [2,5,8], [3,6,9] のいずれか
-pub fn get_pair_candidate_index(tr: &TileRow) -> Vec<usize> {
+pub fn calc_pair_candidate_index(tr: &TileRow) -> Vec<usize> {
     // 面子の和は3で割り切れるので余りの値によって雀頭候補を絞り込める
     let mut sum = 0;
     for i in 1..TNUM {
@@ -63,11 +63,11 @@ pub fn get_pair_candidate_index(tr: &TileRow) -> Vec<usize> {
 
 // 牌種が完成面子+雀頭のみで構成されている場合、雀頭のリストを返す。
 // 基本的に1つだが、3113、3111113のような形の場合2つ
-pub fn get_pair_candidate(tr: &TileRow, ti: usize) -> Vec<Tile> {
+pub fn calc_pair_candidate(tr: &TileRow, ti: usize) -> Vec<Tile> {
     // 雀頭候補それぞれについて外してみた結果が完成面子になっているかをチェック
     let mut tr = tr.clone();
     let mut res = vec![];
-    for ni in get_pair_candidate_index(&tr) {
+    for ni in calc_pair_candidate_index(&tr) {
         if tr[ni] < 2 {
             continue;
         }
@@ -82,7 +82,7 @@ pub fn get_pair_candidate(tr: &TileRow, ti: usize) -> Vec<Tile> {
 }
 
 // 14 - (副露数) * 3 枚の手牌において和了形である場合、雀頭候補のリストを返却
-pub fn get_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
+pub fn calc_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
     let (mods, cnts) = calc_mods_cnts(hand);
     let mut res = vec![];
 
@@ -92,7 +92,7 @@ pub fn get_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
 
     for ti in 0..TYPE {
         if mods[ti] == 2 {
-            let pairs = get_pair_candidate(&hand[ti], ti);
+            let pairs = calc_pair_candidate(&hand[ti], ti);
             if pairs.is_empty() {
                 return vec![];
             }
@@ -111,7 +111,7 @@ pub fn get_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
 
 // 通常形
 pub fn is_normal_win(hand: &TileTable) -> bool {
-    !get_possibole_pairs(&hand).is_empty()
+    !calc_possibole_pairs(&hand).is_empty()
 }
 
 // 七対子
@@ -145,7 +145,7 @@ pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
 // 聴牌していない場合は空のリストを返却
 
 // 通常形
-pub fn get_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
+pub fn calc_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
     let (mods, cnts) = calc_mods_cnts(hand);
     let mut res = vec![];
     if cnts[1] == 0 && cnts[2] == 2 {
@@ -198,7 +198,7 @@ pub fn get_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
 }
 
 // 七対子
-pub fn get_tiles_to_chiitoitsu_win(hand: &TileTable) -> Vec<Tile> {
+pub fn calc_tiles_to_chiitoitsu_win(hand: &TileTable) -> Vec<Tile> {
     let mut res = vec![];
     let mut n_pair = 0;
     for ti in 0..TYPE {
@@ -224,7 +224,7 @@ pub fn get_tiles_to_chiitoitsu_win(hand: &TileTable) -> Vec<Tile> {
 }
 
 // 国士無双
-pub fn get_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
+pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
     let mut wt = None; // 所有していない么九牌
     let mut n_end = 0; // 么九牌の数
     let mut check = |ti: usize, ni: usize| {
@@ -284,14 +284,14 @@ pub fn get_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
 // 主にリーチ宣言が可能かどうかを確認する用途
 
 // 通常形
-pub fn get_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+pub fn calc_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut res = vec![];
     let mut hand = hand.clone();
     for ti in 0..TYPE {
         for ni in 1..TNUM {
             if hand[ti][ni] > 0 {
                 hand[ti][ni] -= 1;
-                let v = get_tiles_to_normal_win(&hand);
+                let v = calc_tiles_to_normal_win(&hand);
                 if !v.is_empty() {
                     res.push((Tile(ti, ni), v));
                 }
@@ -303,7 +303,7 @@ pub fn get_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> 
 }
 
 // 七対子
-pub fn get_discards_to_chiitoitsu_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+pub fn calc_discards_to_chiitoitsu_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut v1 = vec![]; // 一枚の牌
     let mut v2 = vec![]; // 二枚の牌 (完成対子)
     let mut v3 = vec![]; // 三枚の牌
@@ -360,7 +360,7 @@ pub fn get_discards_to_chiitoitsu_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile
 }
 
 // 国士無双
-pub fn get_discards_to_kokushimusou_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+pub fn calc_discards_to_kokushimusou_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut n_end = 0;
     for ti in 0..TZ {
         if hand[ti][1] > 0 {
@@ -386,7 +386,7 @@ pub fn get_discards_to_kokushimusou_ready(hand: &TileTable) -> Vec<(Tile, Vec<Ti
         for ni in 1..TNUM {
             if hand[ti][ni] > 0 {
                 hand[ti][ni] -= 1;
-                let v = get_tiles_to_kokushimusou_win(&hand);
+                let v = calc_tiles_to_kokushimusou_win(&hand);
                 if !v.is_empty() {
                     res.push((Tile(ti, ni), v));
                 }

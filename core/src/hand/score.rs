@@ -49,7 +49,7 @@ const SCORE_NON_LEADER: [[i32; 11]; 13] = [
 const SCORE_YAKUMAN_LEADER: i32 = 48000;
 const SCORE_YAKUMAN_NON_LEADER: i32 = 32000;
 
-fn get_fu_index(fu: i32) -> usize {
+fn calc_fu_index(fu: i32) -> usize {
     match fu {
         20 => 0,
         25 => 1,
@@ -72,7 +72,7 @@ fn ceil100(n: i32) -> i32 {
 
 // 親の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
 pub fn get_pay_scores_leader(fu: i32, fan: usize) -> PayScores {
-    let fu_index = get_fu_index(fu);
+    let fu_index = calc_fu_index(fu);
     let score = if fan < 13 {
         SCORE_LEADER[fan][fu_index]
     } else {
@@ -83,7 +83,7 @@ pub fn get_pay_scores_leader(fu: i32, fan: usize) -> PayScores {
 
 // 子の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
 pub fn get_pay_scores_non_leader(fu: i32, fan: usize) -> PayScores {
-    let fu_index = get_fu_index(fu);
+    let fu_index = calc_fu_index(fu);
     let score = if fan < 13 {
         SCORE_NON_LEADER[fan][fu_index]
     } else {

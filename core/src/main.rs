@@ -36,7 +36,7 @@ fn silence_unused_warning() {
     let _ = hand::win::is_normal_win;
     let _ = hand::win::is_chiitoitsu_win;
     let _ = model::Tile::is_simple;
-    let _ = hand::win::get_tiles_to_chiitoitsu_win;
+    let _ = hand::win::calc_tiles_to_chiitoitsu_win;
 }
 
 #[test]

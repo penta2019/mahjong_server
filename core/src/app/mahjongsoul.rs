@@ -361,7 +361,7 @@ impl App {
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
                     let op = self.operator.handle_operation(stg, seat, &ops);
-                    let (_, arg_idx) = get_operation_index(&ops, &op);
+                    let (_, arg_idx) = calc_operation_index(&ops, &op);
                     match &op {
                         Nop => {
                             if stg.turn == seat {
@@ -372,7 +372,7 @@ impl App {
                             }
                         }
                         Discard(v) => {
-                            let idx = get_dapai_index(stg, seat, v[0], false);
+                            let idx = calc_dapai_index(stg, seat, v[0], false);
                             self.action_dapai(idx);
                         }
                         Ankan(_) => {
@@ -382,7 +382,7 @@ impl App {
                             self.action_gang(arg_idx); // TODO
                         }
                         Riichi(v) => {
-                            let idx = get_dapai_index(stg, seat, v[0], false);
+                            let idx = calc_dapai_index(stg, seat, v[0], false);
                             self.action_lizhi(idx);
                         }
                         Tsumo => {
@@ -510,7 +510,7 @@ fn tile_from_symbol(s: &str) -> Tile {
     Tile(t, n as usize)
 }
 
-fn get_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {
+fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {
     let pl = &stage.players[seat];
     let h = &pl.hand;
     let t = tile;

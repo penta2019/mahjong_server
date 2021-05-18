@@ -208,7 +208,7 @@ impl MahjongEngine {
             ops.push(Nop);
         } else {
             // 鳴き後に捨てられない牌を追加
-            ops.push(Discard(get_prohibited_discards(&self.melding)));
+            ops.push(Discard(calc_prohibited_discards(&self.melding)));
         }
 
         match &self.melding {
@@ -237,7 +237,7 @@ impl MahjongEngine {
 
         self.melding = None;
         let op = self.config.operators[turn].handle_operation(&stg, turn, &ops);
-        get_operation_index(&ops, &op); // opがops内に存在することを確認
+        calc_operation_index(&ops, &op); // opがops内に存在することを確認
         match &op {
             Nop => {
                 // ツモ切り
@@ -320,7 +320,7 @@ impl MahjongEngine {
                 continue;
             }
             let op = self.config.operators[s].handle_operation(&stg, s, ops);
-            get_operation_index(&ops, &op); // opがops内に存在することを確認
+            calc_operation_index(&ops, &op); // opがops内に存在することを確認
             match &op {
                 Nop => {}
                 Chii(v) => chii = Some((s, v[0].0, v[0].1)),
@@ -506,9 +506,9 @@ impl MahjongEngine {
                         let mut n_ready = 0;
                         for s in 0..SEAT {
                             let h = &stg.players[s].hand;
-                            is_ready[s] = !get_tiles_to_normal_win(h).is_empty()
-                                || !get_tiles_to_chiitoitsu_win(h).is_empty()
-                                || !get_tiles_to_kokushimusou_win(h).is_empty();
+                            is_ready[s] = !calc_tiles_to_normal_win(h).is_empty()
+                                || !calc_tiles_to_chiitoitsu_win(h).is_empty()
+                                || !calc_tiles_to_kokushimusou_win(h).is_empty();
                             if is_ready[s] {
                                 n_ready += 1;
                             }
@@ -685,9 +685,9 @@ fn check_riichi(stg: &Stage) -> Option<PlayerOperation> {
 
     let mut v = vec![];
     let mut f = TileTable::default();
-    let ds1 = get_discards_to_normal_ready(&pl.hand);
-    let ds2 = get_discards_to_chiitoitsu_ready(&pl.hand);
-    let ds3 = get_discards_to_kokushimusou_ready(&pl.hand);
+    let ds1 = calc_discards_to_normal_ready(&pl.hand);
+    let ds2 = calc_discards_to_chiitoitsu_ready(&pl.hand);
+    let ds3 = calc_discards_to_kokushimusou_ready(&pl.hand);
     for ds in &[ds1, ds2, ds3] {
         for &(d, _) in ds {
             if f[d.0][d.1] == 0 {
@@ -726,11 +726,11 @@ fn check_ankan(stg: &Stage) -> Option<PlayerOperation> {
             if pl.hand[t.0][t.1] == 4 {
                 let mut h = pl.hand.clone();
                 h[t.0][t.1] -= 1;
-                let mut v1 = get_tiles_to_normal_win(&h);
+                let mut v1 = calc_tiles_to_normal_win(&h);
                 v1.sort();
 
                 h[t.0][t.1] -= 3;
-                let mut v2 = get_tiles_to_normal_win(&h);
+                let mut v2 = calc_tiles_to_normal_win(&h);
                 v2.sort();
 
                 if v1 == v2 {
@@ -1011,7 +1011,7 @@ fn create_wall(seed: u64) -> Vec<Tile> {
     return wall;
 }
 
-fn get_prohibited_discards(op: &Option<PlayerOperation>) -> Vec<Tile> {
+fn calc_prohibited_discards(op: &Option<PlayerOperation>) -> Vec<Tile> {
     let mut v = vec![];
     match op {
         Some(Chii(v2)) => {

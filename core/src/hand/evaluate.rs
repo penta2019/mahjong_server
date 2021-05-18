@@ -167,7 +167,7 @@ pub fn evaluate_hand(
             is_self_drawn,
             yaku_flags.clone(),
         );
-        wins.push((ctx.get_fu(), ctx.get_yaku()));
+        wins.push((ctx.calc_fu(), ctx.calc_yaku()));
     }
 
     // 和了(七対子)
@@ -181,7 +181,7 @@ pub fn evaluate_hand(
             is_self_drawn,
             yaku_flags.clone(),
         );
-        wins.push((ctx.get_fu(), ctx.get_yaku()));
+        wins.push((ctx.calc_fu(), ctx.calc_yaku()));
     }
 
     // 和了(国士無双)
@@ -195,7 +195,7 @@ pub fn evaluate_hand(
             is_self_drawn,
             yaku_flags.clone(),
         );
-        wins.push((ctx.get_fu(), ctx.get_yaku()));
+        wins.push((ctx.calc_fu(), ctx.calc_yaku()));
     }
 
     if wins.is_empty() {

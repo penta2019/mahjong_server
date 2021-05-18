@@ -56,7 +56,7 @@ impl Context {
     }
 
     // (役一覧, 役満かどうか, 翻数または役満倍数)を返却
-    pub fn get_yaku(&self) -> (Vec<&'static Yaku>, bool, usize) {
+    pub fn calc_yaku(&self) -> (Vec<&'static Yaku>, bool, usize) {
         let mut yaku = vec![];
         for y in YAKU_LIST {
             if (y.func)(&self) {
@@ -90,7 +90,7 @@ impl Context {
         }
     }
 
-    pub fn get_fu(&self) -> i32 {
+    pub fn calc_fu(&self) -> i32 {
         if is_pinfu(&self) {
             return 20;
         }

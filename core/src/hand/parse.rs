@@ -1,7 +1,7 @@
 use crate::model::*;
 use crate::util::common::cartesian_product;
 
-use super::win::{get_possibole_pairs, is_kokushimusou_win};
+use super::win::{calc_possibole_pairs, is_kokushimusou_win};
 
 use SetPairType::*;
 
@@ -120,7 +120,7 @@ fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
 
 // 手牌が完成形(七対子・国士無双は除く)なら面子+雀頭に分解して返却
 pub fn parse_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
-    let pairs = get_possibole_pairs(&hand);
+    let pairs = calc_possibole_pairs(&hand);
     if pairs.is_empty() {
         return vec![];
     }

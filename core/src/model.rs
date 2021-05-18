@@ -517,9 +517,9 @@ impl Stage {
 
                 // 和了牌を集計
                 let mut wait = vec![];
-                wait.append(&mut get_tiles_to_kokushimusou_win(&pl.hand));
-                wait.append(&mut get_tiles_to_normal_win(&pl.hand));
-                wait.append(&mut get_tiles_to_chiitoitsu_win(&pl.hand));
+                wait.append(&mut calc_tiles_to_kokushimusou_win(&pl.hand));
+                wait.append(&mut calc_tiles_to_normal_win(&pl.hand));
+                wait.append(&mut calc_tiles_to_chiitoitsu_win(&pl.hand));
                 wait.sort();
                 let mut dedup = vec![];
                 if !wait.is_empty() {

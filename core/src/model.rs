@@ -565,6 +565,7 @@ impl Stage {
                 }
                 pl.winning_tiles = dedup;
             } else if pl.winning_tiles.contains(&t) {
+                // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
                 pl.is_furiten = true;
             }
         }

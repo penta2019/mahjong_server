@@ -81,7 +81,7 @@ impl Operator for NullOperator {
     }
 }
 
-pub fn get_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
+pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
     macro_rules! op_without_arg {
         ($x:pat, $ops:expr) => {
             for (op_idx, op2) in $ops.iter().enumerate() {
@@ -137,84 +137,4 @@ pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
         }
     }
     n
-}
-
-// Block Info
-#[derive(Debug)]
-pub struct BlockInfo {
-    pub tile: Tile, // ブロックのスタート位置
-    pub len: usize, // ブロックの長さ
-    pub num: usize, // ブロック内の牌の数
-}
-
-impl BlockInfo {
-    fn new() -> Self {
-        Self {
-            tile: Tile(TZ, UK),
-            len: 0,
-            num: 0,
-        }
-    }
-}
-
-pub fn get_block_info(hand: &TileTable) -> Vec<BlockInfo> {
-    let mut vbi = vec![];
-    let mut bi = BlockInfo::new();
-
-    // 数牌
-    for ti in 0..TZ {
-        for ni in 1..TNUM {
-            let c = hand[ti][ni];
-            if bi.len == 0 {
-                if c != 0 {
-                    // ブロック始端
-                    bi.tile = Tile(ti, ni);
-                    bi.len = 1;
-                    bi.num = c;
-                }
-            } else {
-                if c == 0 {
-                    if bi.tile.1 + bi.len < ni {
-                        // ブロック終端
-                        vbi.push(bi);
-                        bi = BlockInfo::new();
-                    }
-                } else {
-                    // ブロック延長
-                    bi.len = ni - bi.tile.1 + 1;
-                    bi.num += c;
-                }
-            }
-        }
-        if bi.len != 0 {
-            vbi.push(bi);
-            bi = BlockInfo::new();
-        }
-    }
-
-    // 字牌
-    for ni in 1..=DR {
-        let c = hand[TZ][ni];
-        if c != 0 {
-            vbi.push(BlockInfo {
-                tile: Tile(TZ, ni),
-                len: 1,
-                num: c,
-            });
-        }
-    }
-
-    vbi
-}
-
-#[test]
-fn test_block() {
-    let hand = [
-        [0, 0, 0, 0, 1, 1, 0, 0, 1, 1],
-        [0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
-        [0, 1, 0, 1, 0, 1, 0, 0, 3, 0],
-        [0, 2, 0, 3, 0, 0, 3, 3, 0, 0],
-    ];
-
-    println!("{:?}", get_block_info(&hand));
 }

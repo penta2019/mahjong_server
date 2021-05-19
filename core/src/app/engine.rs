@@ -75,7 +75,10 @@ struct MahjongEngine {
 
 impl MahjongEngine {
     fn new(config: Config) -> Self {
-        let stg = Stage::new(config.initial_score);
+        let mut stg = Stage::new();
+        for s in 0..SEAT {
+            stg.players[s].score = config.initial_score;
+        }
         let rng = rand::SeedableRng::seed_from_u64(config.seed);
         Self {
             config: config,

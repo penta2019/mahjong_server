@@ -128,13 +128,67 @@ fn parse_block_into_sets(row: &TileRow, block: &BlockInfo) -> Vec<(Vec<SetPair>,
     res
 }
 
+// 有効牌, 完成面子, 不要牌を返却
+fn calc_effective_tile(row: &TileRow, block: &BlockInfo) -> Vec<(usize, Vec<SetPair>, TileRow)> {
+    use std::cmp::{max, min};
+
+    let mut n_set = 0;
+    for (sets, _) in parse_block_into_sets(&row, &block) {
+        n_set = max(n_set, sets.len());
+    }
+
+    let t = block.tile;
+    let ni_from = max(t.1 - 1, 1);
+    let ni_to = min(t.1 + block.len + 1, 9);
+    let block2 = BlockInfo {
+        tile: Tile(t.0, ni_from),
+        len: ni_to - ni_from + 1,
+        num: block.num + 1,
+    };
+
+    let mut row = row.clone();
+    let mut effs = vec![];
+    let ni0 = block2.tile.1;
+    for ni in ni0..ni0 + block2.len {
+        if row[ni] == TILE {
+            continue;
+        }
+        row[ni] += 1;
+        let mut n_set2 = 0;
+        for (sets, tr) in parse_block_into_sets(&row, &block2) {
+            n_set2 = max(n_set2, sets.len());
+            if sets.len() > n_set {
+                effs.push((ni, sets, tr));
+                break;
+            }
+        }
+        row[ni] -= 1;
+    }
+
+    effs
+}
+
+fn calc_unnesesary_tiles(row: &TileRow, block: &BlockInfo, remain: &TileRow) -> TileRow {
+    let mut eff_count = TileRow::default();
+    for (ni, _, tr) in calc_effective_tile(&row, &block) {
+        for ni2 in 1..TNUM {
+            if tr[ni2] != 0 {
+                eff_count[ni2] += remain[ni];
+            }
+        }
+    }
+    eff_count
+}
+
 #[test]
 fn test_block() {
-    let row = [0, 3, 1, 1, 4, 0, 0, 0, 0, 0];
+    let remain = [0, 3, 1, 3, 1, 3, 3, 3, 3, 3];
+    let row___ = [0, 0, 3, 1, 3, 1, 1, 0, 0, 0];
     let block = BlockInfo {
         tile: Tile(0, 1),
-        len: 4,
-        num: 8,
+        len: 6,
+        num: 5,
     };
-    println!("{:?}", parse_block_into_sets(&row, &block));
+    println!("{:?}", calc_unnesesary_tiles(&row___, &block, &remain));
+    // println!("{:?}", parse_block_into_sets(&row, &block));
 }

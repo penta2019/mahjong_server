@@ -318,15 +318,16 @@ pub struct Stage {
     pub players: [Player; SEAT],         // 各プレイヤー情報
     pub is_3p: bool,                     // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileStateType; TILE]; TNUM]; TYPE],
+    pub tile_remains: [[usize; TNUM]; TYPE], // 牌の残り枚数 = 山+手牌(捨て牌,副露牌,ドラ表示牌以外)
 }
 
 impl Stage {
-    pub fn new(initila_score: i32) -> Self {
+    pub fn new() -> Self {
         let mut stg = Self::default();
+        stg.tile_remains = [[TILE; TNUM]; TYPE];
         for s in 0..SEAT {
             let pl = &mut stg.players[s];
             pl.rank = s;
-            pl.score = initila_score;
         }
         stg
     }
@@ -337,6 +338,17 @@ impl Stage {
         let i = te.iter().position(|&x| x == old).unwrap();
         te[i] = new.clone();
         te.sort();
+
+        if match old {
+            U => true,
+            H(_) => true,
+            _ => false,
+        } && match new {
+            H(_) => false,
+            _ => true,
+        } {
+            self.tile_remains[tile.0][tile.n()] -= 1;
+        }
     }
 
     pub fn print(&self) {
@@ -373,6 +385,9 @@ impl Stage {
             }
             println!();
         }
+        for ti in 0..TYPE {
+            println!("{:?}", self.tile_remains[ti]);
+        }
     }
 
     pub fn add_dora(&mut self, tile: Tile) {
@@ -390,7 +405,7 @@ impl Stage {
         scores: &[i32; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
-        std::mem::swap(self, &mut Self::default());
+        std::mem::swap(self, &mut Self::new());
 
         self.round = round;
         self.hand = hand;
@@ -403,7 +418,6 @@ impl Stage {
             let ph = &player_hands[s];
             let pl = &mut self.players[s];
             pl.seat = s;
-            pl.score = scores[s];
             pl.is_shown = !ph.is_empty();
             pl.is_menzen = true;
 
@@ -417,6 +431,7 @@ impl Stage {
                 pl.hand[TZ][UK] = if s == hand { 14 } else { 13 }; // 親:14, 子:13
             }
         }
+        self.update_scores(scores);
         self.turn = hand;
         self.players[hand].drawn = Some(Z8); // 天和のツモ判定unwrap()対策
 

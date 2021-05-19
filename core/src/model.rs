@@ -325,10 +325,11 @@ impl Stage {
     pub fn new() -> Self {
         let mut stg = Self::default();
         stg.tile_remains = [[TILE; TNUM]; TYPE];
-        for s in 0..SEAT {
-            let pl = &mut stg.players[s];
-            pl.rank = s;
-        }
+        let rem = &mut stg.tile_remains;
+        rem[TM][0] = 1;
+        rem[TP][0] = 1;
+        rem[TS][0] = 1;
+        rem[TZ][0] = 0;
         stg
     }
 
@@ -348,6 +349,9 @@ impl Stage {
             _ => true,
         } {
             self.tile_remains[tile.0][tile.n()] -= 1;
+            if tile.1 == 0 {
+                self.tile_remains[tile.0][0] -= 1;
+            }
         }
     }
 
@@ -469,7 +473,7 @@ impl Stage {
 
     pub fn op_discardtile(&mut self, seat: Seat, tile: Tile, is_drawn: bool, is_riichi: bool) {
         let s = seat;
-        let t = tile;
+        let mut t = tile;
         let riichi_no_meld = is_riichi && self.players.iter().all(|pl| pl.melds.is_empty());
 
         self.step += 1;
@@ -478,6 +482,12 @@ impl Stage {
         let pl = &mut self.players[s];
         pl.is_rinshan = false;
         pl.is_furiten_other = false;
+
+        // 5の牌を捨てようとしたとき赤5の牌しか手牌にない場合は赤5に変換
+        if t.1 == 5 && pl.hand[t.0][5] == 1 && pl.hand[t.0][0] == 1 {
+            t = Tile(t.0, 0);
+        }
+
         let is_drawn = if pl.is_shown {
             if pl.drawn == Some(t) {
                 if pl.hand[t.0][t.1] == 1 {

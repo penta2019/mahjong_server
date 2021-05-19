@@ -985,8 +985,10 @@ fn check_minkan(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
 fn check_ron(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     let mut v = vec![];
     for s in 0..SEAT {
-        if let Some(_) = evaluate_hand_ron(stg, &vec![], s) {
-            v.push((s, Ron));
+        if !stg.players[s].is_furiten && !stg.players[s].is_furiten_other {
+            if let Some(_) = evaluate_hand_ron(stg, &vec![], s) {
+                v.push((s, Ron));
+            }
         }
     }
     v

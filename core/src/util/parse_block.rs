@@ -139,7 +139,7 @@ fn calc_effective_tile(row: &TileRow, block: &BlockInfo) -> Vec<(usize, Vec<SetP
 
     let t = block.tile;
     let ni_from = max(t.1 - 1, 1);
-    let ni_to = min(t.1 + block.len + 1, 9);
+    let ni_to = min(t.1 + block.len, 9);
     let block2 = BlockInfo {
         tile: Tile(t.0, ni_from),
         len: ni_to - ni_from + 1,
@@ -168,12 +168,12 @@ fn calc_effective_tile(row: &TileRow, block: &BlockInfo) -> Vec<(usize, Vec<SetP
     effs
 }
 
-fn calc_unnesesary_tiles(row: &TileRow, block: &BlockInfo, remain: &TileRow) -> TileRow {
+pub fn calc_unnesesary_tiles(row: &TileRow, block: &BlockInfo, remain: &TileRow) -> TileRow {
     let mut eff_count = TileRow::default();
     for (ni, _, tr) in calc_effective_tile(&row, &block) {
         for ni2 in 1..TNUM {
             if tr[ni2] != 0 {
-                eff_count[ni2] += remain[ni];
+                eff_count[ni2] += remain[ni] - row[ni];
             }
         }
     }
@@ -182,8 +182,8 @@ fn calc_unnesesary_tiles(row: &TileRow, block: &BlockInfo, remain: &TileRow) -> 
 
 #[test]
 fn test_block() {
-    let remain = [0, 3, 1, 3, 1, 3, 3, 3, 3, 3];
-    let row___ = [0, 0, 3, 1, 3, 1, 1, 0, 0, 0];
+    let remain = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+    let row___ = [0, 0, 0, 0, 0, 3, 0, 1, 0, 0];
     let block = BlockInfo {
         tile: Tile(0, 1),
         len: 6,

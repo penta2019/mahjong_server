@@ -205,11 +205,9 @@ impl MahjongEngine {
         // op: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
         let stg = &self.stage;
         let turn = stg.turn;
-        let riichi = stg.players[turn].is_riichi;
-        let mut ops = vec![];
-        if riichi {
-            ops.push(Nop);
-        } else {
+        let mut ops = vec![Nop];
+        ops.push(Discard(calc_prohibited_discards(&self.melding)));
+        if !stg.players[turn].is_riichi {
             // 鳴き後に捨てられない牌を追加
             ops.push(Discard(calc_prohibited_discards(&self.melding)));
         }
@@ -1047,7 +1045,7 @@ fn calc_prohibited_discards(op: &Option<PlayerOperation>) -> Vec<Tile> {
             let (t, _) = v2[0];
             v.push(Tile(t.0, t.n()));
         }
-        _ => {}
+        _ => return vec![],
     }
 
     let mut has5 = false;
@@ -1149,6 +1147,7 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
+        // use crate::operator::bot2::Bot2;
         use crate::operator::bot_tiitoitsu::TiitoitsuBot; // 七対子bot
         use crate::operator::manual::ManualOperator;
         // use crate::operator::random::RandomDiscardOperator;
@@ -1160,6 +1159,7 @@ impl App {
             operators: [
                 Box::new(ManualOperator::new()),
                 // Box::new(RandomDiscardOperator::new(self.seed + 0)),
+                // Box::new(Bot2::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),

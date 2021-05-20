@@ -118,7 +118,7 @@ pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) ->
         Minkan(v) => op_with_arg!(Minkan, ops, v),
         Ron => op_without_arg!(Ron, ops),
     }
-    panic!("Operation '{:?}' not found id '{:?}'", op, ops);
+    panic!("Operation '{:?}' not found in '{:?}'", op, ops);
 }
 
 pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {

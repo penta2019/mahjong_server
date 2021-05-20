@@ -206,7 +206,6 @@ impl MahjongEngine {
         let stg = &self.stage;
         let turn = stg.turn;
         let mut ops = vec![Nop];
-        ops.push(Discard(calc_prohibited_discards(&self.melding)));
         if !stg.players[turn].is_riichi {
             // 鳴き後に捨てられない牌を追加
             ops.push(Discard(calc_prohibited_discards(&self.melding)));

@@ -427,17 +427,22 @@ impl Stage {
 
             self.turn = s; // player_inc_tile() 用
             if pl.is_shown {
+                if s == hand {
+                    pl.drawn = Some(*ph.last().unwrap());
+                }
                 for &t in ph {
                     self.player_inc_tile(t);
                     self.table_edit(t, U, H(s));
                 }
             } else {
+                if s == hand {
+                    pl.drawn = Some(Z8);
+                }
                 pl.hand[TZ][UK] = if s == hand { 14 } else { 13 }; // 親:14, 子:13
             }
         }
         self.update_scores(scores);
         self.turn = hand;
-        self.players[hand].drawn = Some(Z8); // 天和のツモ判定unwrap()対策
 
         for &d in doras {
             self.table_edit(d, U, R);

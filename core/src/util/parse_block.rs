@@ -77,7 +77,7 @@ fn parse_block_into_shuntsu(row: &TileRow, block: &BlockInfo) -> (Vec<SetPair>, 
     let mut res = vec![];
     loop {
         let (ni0, ni1, ni2) = (i, i + 1, i + 2);
-        if ni2 == block.tile.1 + block.len {
+        if ni2 >= block.tile.1 + block.len {
             break;
         }
         if row[ni0] > 0 && row[ni1] > 0 && row[ni2] > 0 {
@@ -145,6 +145,9 @@ fn calc_effective_tile(row: &TileRow, block: &BlockInfo) -> Vec<(usize, Vec<SetP
         len: ni_to - ni_from + 1,
         num: block.num + 1,
     };
+    use std::io::{stdout, Write};
+    println!("{:?}", block2);
+    stdout().flush().unwrap();
 
     let mut row = row.clone();
     let mut effs = vec![];
@@ -183,11 +186,11 @@ pub fn calc_unnesesary_tiles(row: &TileRow, block: &BlockInfo, remain: &TileRow)
 #[test]
 fn test_block() {
     let remain = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3];
-    let row___ = [0, 0, 0, 0, 0, 3, 0, 1, 0, 0];
+    let row___ = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2];
     let block = BlockInfo {
-        tile: Tile(0, 1),
-        len: 6,
-        num: 5,
+        tile: Tile(0, 9),
+        len: 1,
+        num: 2,
     };
     println!("{:?}", calc_unnesesary_tiles(&row___, &block, &remain));
     // println!("{:?}", parse_block_into_sets(&row, &block));

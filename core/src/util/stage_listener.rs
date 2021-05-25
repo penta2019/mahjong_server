@@ -6,6 +6,8 @@ use crate::util::common::vec_to_string;
 
 // StageListener (Observer Pattern)
 pub trait StageListener: Send {
+    fn notify_op_game_start(&mut self, _stage: &Stage) {}
+
     fn notify_op_roundnew(
         &mut self,
         _stage: &Stage,
@@ -50,6 +52,8 @@ pub trait StageListener: Send {
     ) {
     }
 
+    fn notify_op_dora(&mut self, _stage: &Stage, _tile: Tile) {}
+
     fn notify_op_kita(&mut self, _stage: &Stage, _seat: Seat, _is_drawn: bool) {}
 
     fn notify_op_roundend_win(
@@ -70,6 +74,8 @@ pub trait StageListener: Send {
         _delta_scores: &[i32; SEAT],
     ) {
     }
+
+    fn notify_op_game_over(&mut self, _stage: &Stage) {}
 }
 
 impl fmt::Debug for dyn StageListener {

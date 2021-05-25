@@ -35,7 +35,7 @@ struct Config {
     seed: u64,                            // 牌山生成用の乱数のシード値
     n_round: usize,                       // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
     initial_score: i32,                   // 初期得点
-    operators: [Box<dyn Operator>; SEAT], // プレイヤーまたはアルゴ
+    operators: [Box<dyn Operator>; SEAT], // プレイヤーまたはBot
     listeners: Vec<Box<dyn StageListener>>,
 }
 
@@ -278,7 +278,7 @@ impl MahjongEngine {
         }
 
         if let Some(kd) = self.kan_dora {
-            self.stage.add_dora(kd);
+            op!(self, dora, kd);
             self.kan_dora = None;
         }
     }
@@ -376,7 +376,7 @@ impl MahjongEngine {
                 Ankan(_) => {
                     let (r, kd) = self.draw_kan_tile();
                     op!(self, dealtile, turn, Some(r));
-                    self.stage.add_dora(kd); // 槓ドラは打牌前
+                    op!(self, dora, kd); // 槓ドラは打牌前
                     self.check_suukansanra_needed();
                 }
                 Minkan(_) => {
@@ -1149,9 +1149,9 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        use crate::operator::bot2::Bot2;
+        // use crate::operator::bot2::Bot2;
         use crate::operator::manual::ManualOperator;
-        use crate::operator::random::RandomDiscardOperator;
+        // use crate::operator::random::RandomDiscardOperator;
         use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
 
         let config = Config {

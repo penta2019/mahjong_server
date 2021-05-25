@@ -17,9 +17,10 @@ pub struct MjaiEndpoint {}
 
 impl MjaiEndpoint {
     pub fn new(addr: &str) -> Self {
-        // thread::spawn(move || {
-        //     let listener = TcpListener::bind(addr).unwrap();
-        // })
+        let listener = TcpListener::bind(addr).unwrap();
+        println!("MjaiEndpoint: Listening on {}", addr);
+
+        thread::spawn(move || {});
         Self {}
     }
 }

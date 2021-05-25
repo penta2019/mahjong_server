@@ -9,6 +9,14 @@ use PlayerOperation::*;
 
 const NO_SEAT: usize = 4;
 
+macro_rules! op {
+    ($self:expr, $name:ident, $($args:expr),*) => {
+        paste::item! {
+            $self.stage.[< op_ $name>]($($args),*)
+        }
+    };
+}
+
 #[derive(Debug, Default)]
 struct Mahjongsoul {
     stage: Stage,
@@ -93,7 +101,7 @@ impl Mahjongsoul {
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
                 let t = tile_from_symbol(as_str(doras.last().unwrap()));
-                stg.add_dora(t);
+                op!(self, dora, t);
             }
         }
     }
@@ -121,26 +129,27 @@ impl Mahjongsoul {
         for (s, score) in data["scores"].as_array().unwrap().iter().enumerate() {
             scores[s] = score.as_i64().unwrap() as i32;
         }
-        self.stage.op_roundnew(
+        op!(
+            self,
+            roundnew,
             round,
             hand,
             ben,
             riichi_sticks,
             &doras,
             &scores,
-            &player_lands,
+            &player_lands
         );
     }
 
     fn handler_dealtile(&mut self, data: &Value) {
-        let stg = &mut self.stage;
         let s = as_usize(&data["seat"]);
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            stg.op_dealtile(s, Some(t));
+            op!(self, dealtile, s, Some(t))
         } else {
-            stg.op_dealtile(s, None);
+            op!(self, dealtile, s, None)
         }
 
         self.update_doras(data);
@@ -151,7 +160,7 @@ impl Mahjongsoul {
         let t = tile_from_symbol(as_str(&data["tile"]));
         let m = data["moqie"].as_bool().unwrap();
         let r = data["is_liqi"].as_bool().unwrap();
-        self.stage.op_discardtile(s, t, m, r);
+        op!(self, discardtile, s, t, m, r);
         self.update_doras(data);
     }
 
@@ -173,7 +182,7 @@ impl Mahjongsoul {
             froms.push(as_usize(f));
         }
 
-        self.stage.op_chiiponkan(s, tp, &tiles, &froms);
+        op!(self, chiiponkan, s, tp, &tiles, &froms)
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -184,13 +193,13 @@ impl Mahjongsoul {
             _ => panic!("invalid gang type"),
         };
         let t = tile_from_symbol(as_str(&data["tiles"]));
-        self.stage.op_ankankakan(s, mt, t);
+        op!(self, ankankakan, s, mt, t)
     }
 
     fn handler_babei(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let m = data["moqie"].as_bool().unwrap();
-        self.stage.op_kita(s, m);
+        op!(self, kita, s, m);
     }
 
     fn handler_hule(&mut self, data: &Value) {
@@ -199,19 +208,19 @@ impl Mahjongsoul {
         for (s, score) in data["delta_scores"].as_array().unwrap().iter().enumerate() {
             delta_scores[s] = score.as_i64().unwrap() as i32;
         }
-        self.stage.op_roundend_win(&vec![], &vec![], &delta_scores);
+        op!(self, roundend_win, &vec![], &vec![], &delta_scores);
         self.write_to_file();
     }
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
-        self.stage.op_roundend_draw(DrawType::Kyushukyuhai);
+        op!(self, roundend_draw, DrawType::Kyushukyuhai);
         self.write_to_file();
     }
 
     fn handler_notile(&mut self, _data: &Value) {
         // TODO
-        // self.stage.op_roundend_notile();
+        op!(self, roundend_notile, &[false; SEAT], &[0; SEAT]);
         self.write_to_file();
     }
 }

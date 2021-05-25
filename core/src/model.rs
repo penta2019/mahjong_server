@@ -394,11 +394,6 @@ impl Stage {
         }
     }
 
-    pub fn add_dora(&mut self, tile: Tile) {
-        self.table_edit(tile, TileStateType::U, TileStateType::R);
-        self.doras.push(tile);
-    }
-
     pub fn op_roundnew(
         &mut self,
         round: usize,
@@ -721,6 +716,11 @@ impl Stage {
         }
 
         self.players[s].kitas.push(k);
+    }
+
+    pub fn op_dora(&mut self, tile: Tile) {
+        self.table_edit(tile, TileStateType::U, TileStateType::R);
+        self.doras.push(tile);
     }
 
     pub fn op_roundend_win(

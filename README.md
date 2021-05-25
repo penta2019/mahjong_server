@@ -222,3 +222,6 @@ pub enum PlayerOperation {
 ### 命名規則
 基本的に麻雀英語wikiの表記に従いますが、役の名称はすべて日本語で統一します。
 
+## TODO
+### akochan(https://github.com/critter-mj/akochan)に対応
+mjaiプロトコルを実装してmjai clientとしてakochanを実行

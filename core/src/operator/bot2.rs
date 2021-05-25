@@ -9,7 +9,7 @@ pub struct Bot2 {}
 
 impl Bot2 {
     pub fn new() -> Self {
-        Bot2 {}
+        Self {}
     }
 }
 
@@ -34,9 +34,27 @@ impl Operator for Bot2 {
             }
 
             let bis = calc_block_info(h);
+
+            // 孤立牌があれば一番端から切る
+            let mut dist = 0;
+            let mut t = Z8;
+            for bi in &bis {
+                if bi.num == 1 {
+                    let d = std::cmp::min(10 - bi.tile.1, bi.tile.1);
+                    if d > dist {
+                        dist = d;
+                        t = bi.tile;
+                    }
+                }
+            }
+            if t != Z8 {
+                return Discard(vec![t]);
+            }
+
+            // 有効牌が一番多くなるような不要牌を探して切る
             let mut n_eff = 0;
             let mut t = Z8;
-            for bi in bis {
+            for bi in &bis {
                 let ti = bi.tile.0;
                 if ti == TZ {
                     continue;
@@ -49,7 +67,7 @@ impl Operator for Bot2 {
                     }
                 }
             }
-            if n_eff != 0 {
+            if t != Z8 {
                 return Discard(vec![t]);
             }
         } else {

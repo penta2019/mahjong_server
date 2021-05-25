@@ -18,7 +18,9 @@ pub trait StageListener: Send {
         _player_hands: &[Vec<Tile>; SEAT],
     ) {
     }
+
     fn notify_op_dealtile(&mut self, _stage: &Stage, _seat: Seat, _tile: Option<Tile>) {}
+
     fn notify_op_discardtile(
         &mut self,
         _stage: &Stage,
@@ -28,6 +30,7 @@ pub trait StageListener: Send {
         _is_riichi: bool,
     ) {
     }
+
     fn notify_op_chiiponkan(
         &mut self,
         _stage: &Stage,
@@ -37,6 +40,7 @@ pub trait StageListener: Send {
         _froms: &Vec<Seat>,
     ) {
     }
+
     fn notify_op_ankankakan(
         &mut self,
         _stage: &Stage,
@@ -45,7 +49,9 @@ pub trait StageListener: Send {
         _tile: Tile,
     ) {
     }
+
     fn notify_op_kita(&mut self, _stage: &Stage, _seat: Seat, _is_drawn: bool) {}
+
     fn notify_op_roundend_win(
         &mut self,
         _stage: &Stage,
@@ -54,7 +60,9 @@ pub trait StageListener: Send {
         _delta_scores: &[i32; SEAT],
     ) {
     }
+
     fn notify_op_roundend_draw(&mut self, _stage: &Stage, _draw_type: DrawType) {}
+
     fn notify_op_roundend_notile(
         &mut self,
         _stage: &Stage,

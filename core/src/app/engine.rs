@@ -1146,19 +1146,19 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        // use crate::operator::bot2::Bot2;
+        use crate::operator::bot2::Bot2;
         use crate::operator::bot_tiitoitsu::TiitoitsuBot; // 七対子bot
-        use crate::operator::manual::ManualOperator;
-        // use crate::operator::random::RandomDiscardOperator;
+                                                          // use crate::operator::manual::ManualOperator;
+                                                          // use crate::operator::random::RandomDiscardOperator;
 
         let config = Config {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
-                Box::new(ManualOperator::new()),
+                // Box::new(ManualOperator::new()),
                 // Box::new(RandomDiscardOperator::new(self.seed + 0)),
-                // Box::new(Bot2::new()),
+                Box::new(Bot2::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),

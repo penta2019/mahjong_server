@@ -1,6 +1,7 @@
 use crate::model::*;
 use crate::util::operator::*;
 use crate::util::parse_block::*;
+use crate::util::stage_listener::StageListener;
 
 use PlayerOperation::*;
 
@@ -82,3 +83,5 @@ impl Operator for Bot2 {
         "Bot2".to_string()
     }
 }
+
+impl StageListener for Bot2 {}

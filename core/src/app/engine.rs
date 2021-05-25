@@ -39,13 +39,16 @@ struct Config {
     listeners: Vec<Box<dyn StageListener>>,
 }
 
-// Stageの更新を行うと同時に更新内容をlistenersすべてに通知するマクロ
+// Stageの更新を行うと同時に更新内容を全てのStageListener(Operatorを含む)に通知するマクロ
 macro_rules! op {
     ($self:expr, $name:ident, $($args:expr),*) => {
         paste::item! {
             $self.stage.[< op_ $name>]($($args),*);
             for l in &mut $self.config.listeners {
                 l.[<notify_op_ $name>](&$self.stage, $($args),*);
+            }
+            for op in &mut $self.config.operators {
+                op.[<notify_op_ $name>](&$self.stage, $($args),*);
             }
         }
     };
@@ -1147,18 +1150,18 @@ impl App {
 
     fn run_single_game(&mut self) {
         use crate::operator::bot2::Bot2;
-        use crate::operator::bot_tiitoitsu::TiitoitsuBot; // 七対子bot
-                                                          // use crate::operator::manual::ManualOperator;
-                                                          // use crate::operator::random::RandomDiscardOperator;
+        use crate::operator::manual::ManualOperator;
+        use crate::operator::random::RandomDiscardOperator;
+        use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
 
         let config = Config {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
-                // Box::new(ManualOperator::new()),
+                Box::new(ManualOperator::new()),
                 // Box::new(RandomDiscardOperator::new(self.seed + 0)),
-                Box::new(Bot2::new()),
+                // Box::new(Bot2::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
@@ -1213,8 +1216,8 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
-        use crate::operator::bot_tiitoitsu::TiitoitsuBot; // 七対子bot
         use crate::operator::random::RandomDiscardOperator;
+        use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
 
         use std::sync::mpsc;
         use std::{thread, time};

@@ -2,6 +2,7 @@ use rand::Rng;
 
 use crate::model::*;
 use crate::util::operator::*;
+use crate::util::stage_listener::StageListener;
 
 use PlayerOperation::*;
 
@@ -49,3 +50,5 @@ impl Operator for RandomDiscardOperator {
         "RandomDiscardOperator".to_string()
     }
 }
+
+impl StageListener for RandomDiscardOperator {}

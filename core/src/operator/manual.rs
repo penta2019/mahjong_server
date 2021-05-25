@@ -2,6 +2,7 @@ use std::io::{stdout, Write};
 
 use crate::model::*;
 use crate::util::operator::*;
+use crate::util::stage_listener::StageListener;
 
 use PlayerOperation::*;
 
@@ -171,6 +172,8 @@ impl Operator for ManualOperator {
         "ManualOperator".to_string()
     }
 }
+
+impl StageListener for ManualOperator {}
 
 fn check_vec_idx<T>(vec: &Vec<T>, idx: usize) -> bool {
     if idx < vec.len() {

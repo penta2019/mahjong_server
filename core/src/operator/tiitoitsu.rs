@@ -1,5 +1,6 @@
 use crate::model::*;
 use crate::util::operator::*;
+use crate::util::stage_listener::*;
 
 use PlayerOperation::*;
 
@@ -63,3 +64,5 @@ impl Operator for TiitoitsuBot {
         "TiitoitsuBot".to_string()
     }
 }
+
+impl StageListener for TiitoitsuBot {}

@@ -1,6 +1,7 @@
 use std::fmt;
 
 use crate::model::*;
+use crate::util::stage_listener::StageListener;
 
 use PlayerOperation::*;
 use TileStateType::*;
@@ -24,7 +25,7 @@ pub enum PlayerOperation {
 }
 
 // Operator trait
-pub trait Operator: OperatorClone + Send {
+pub trait Operator: StageListener + OperatorClone + Send {
     fn handle_operation(
         &mut self,
         stage: &Stage,
@@ -56,7 +57,8 @@ where
     }
 }
 
-// NullOperator
+// Utility ====================================================================
+
 #[derive(Clone)]
 pub struct NullOperator {}
 
@@ -80,6 +82,8 @@ impl Operator for NullOperator {
         "NullOperator".to_string()
     }
 }
+
+impl StageListener for NullOperator {}
 
 pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
     macro_rules! op_without_arg {

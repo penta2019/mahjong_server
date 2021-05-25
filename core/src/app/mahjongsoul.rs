@@ -232,7 +232,7 @@ impl App {
 
         // use crate::operator::manual::ManualOperator;
         // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::bot_tiitoitsu::TiitoitsuBot;
+        use crate::operator::tiitoitsu::TiitoitsuBot;
 
         let mut file_in = "".to_string();
         let mut need_write = false;

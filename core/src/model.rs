@@ -731,10 +731,10 @@ impl Stage {
         &mut self,
         _ura_doras: &Vec<Tile>,
         _contexts: &Vec<(Seat, WinContext)>,
-        delta_scores: &[i32; SEAT],
+        score_deltas: &[i32; SEAT],
     ) {
         self.step += 1;
-        self.update_scores(&delta_scores);
+        self.update_scores(&score_deltas);
     }
 
     pub fn op_roundend_draw(&mut self, _draw_type: DrawType) {
@@ -742,9 +742,9 @@ impl Stage {
         // 何もしない
     }
 
-    pub fn op_roundend_notile(&mut self, _is_ready: &[bool; SEAT], delta_scores: &[i32; SEAT]) {
+    pub fn op_roundend_notile(&mut self, _is_ready: &[bool; SEAT], score_deltas: &[i32; SEAT]) {
         self.step += 1;
-        self.update_scores(&delta_scores);
+        self.update_scores(&score_deltas);
     }
 
     #[inline]
@@ -805,10 +805,10 @@ impl Stage {
         }
     }
 
-    fn update_scores(&mut self, delta_scores: &[i32; SEAT]) {
+    fn update_scores(&mut self, score_deltas: &[i32; SEAT]) {
         for s in 0..SEAT {
             let mut pl = &mut self.players[s];
-            pl.score = pl.score + delta_scores[s];
+            pl.score = pl.score + score_deltas[s];
         }
 
         let scores = self.players.iter().map(|pl| pl.score).collect();

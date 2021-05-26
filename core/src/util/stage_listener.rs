@@ -61,7 +61,7 @@ pub trait StageListener: Send {
         _stage: &Stage,
         _ura_doras: &Vec<Tile>,
         _contexts: &Vec<(Seat, WinContext)>,
-        _delta_scores: &[i32; SEAT],
+        _score_deltas: &[i32; SEAT],
     ) {
     }
 
@@ -71,7 +71,7 @@ pub trait StageListener: Send {
         &mut self,
         _stage: &Stage,
         _is_ready: &[bool; SEAT],
-        _delta_scores: &[i32; SEAT],
+        _score_deltas: &[i32; SEAT],
     ) {
     }
 
@@ -88,9 +88,9 @@ impl fmt::Debug for dyn StageListener {
 pub struct StageConsolePrinter {}
 
 impl StageConsolePrinter {
-    fn print_score_change(&self, stage: &Stage, delta_scores: &[i32; SEAT]) {
+    fn print_score_change(&self, stage: &Stage, score_deltas: &[i32; SEAT]) {
         for s in 0..SEAT {
-            let delta = delta_scores[s];
+            let delta = score_deltas[s];
             let new = stage.players[s].score;
             let old = new - delta;
             println!("Player {}: {} -> {} ({:+})", s, old, new, delta);
@@ -120,12 +120,12 @@ impl StageListener for StageConsolePrinter {
         stage: &Stage,
         ura_doras: &Vec<Tile>,
         contexts: &Vec<(Seat, WinContext)>,
-        delta_scores: &[i32; SEAT],
+        score_deltas: &[i32; SEAT],
     ) {
         println!("[ROUNDEND]");
         println!("ura_dora: {}", vec_to_string(ura_doras));
         println!("{:?}", contexts);
-        self.print_score_change(&stage, &delta_scores);
+        self.print_score_change(&stage, &score_deltas);
         stage.print();
     }
 
@@ -140,11 +140,11 @@ impl StageListener for StageConsolePrinter {
         &mut self,
         stage: &Stage,
         is_ready: &[bool; SEAT],
-        delta_scores: &[i32; SEAT],
+        score_deltas: &[i32; SEAT],
     ) {
         println!("[ROUNDEND NOTILE]");
         println!("is_ready: {:?}", is_ready);
-        self.print_score_change(&stage, &delta_scores);
+        self.print_score_change(&stage, &score_deltas);
         stage.print();
     }
 }

@@ -308,7 +308,7 @@ pub struct Stage {
     pub round: usize,                    // 場 (東:0, 南:1, 西:2, 北:3)
     pub kyoku: usize,                    // 局 (0~3 = 親のseat)
     pub honba: usize,                    // 本場
-    pub riichi_sticks: usize,            // リーチ棒の供託
+    pub kyoutaku: usize,                 // リーチ棒の供託
     pub turn: Seat,                      // 順番
     pub step: usize,                     // ステップ op関数を呼び出す毎に+1する
     pub left_tile_count: usize,          // 牌山の残り枚数
@@ -357,12 +357,12 @@ impl Stage {
 
     pub fn print(&self) {
         println!(
-            "round: {}, hand: {}, honba: {}, riichi_sticks: {}\n\
+            "round: {}, hand: {}, honba: {}, kyoutaku: {}\n\
             turn: {}, left_tile_count: {}, doras: {}, last_tile: {:?}",
             self.round,
             self.kyoku,
             self.honba,
-            self.riichi_sticks,
+            self.kyoutaku,
             self.turn,
             self.left_tile_count,
             vec_to_string(&self.doras),
@@ -403,7 +403,7 @@ impl Stage {
         round: usize,
         kyoku: usize,
         honba: usize,
-        riichi_sticks: usize,
+        kyoutaku: usize,
         doras: &Vec<Tile>,
         scores: &[i32; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
@@ -413,7 +413,7 @@ impl Stage {
         self.round = round;
         self.kyoku = kyoku;
         self.honba = honba;
-        self.riichi_sticks = riichi_sticks;
+        self.kyoutaku = kyoutaku;
         self.step = 1;
         self.left_tile_count = 69;
 
@@ -514,7 +514,7 @@ impl Stage {
                 pl.is_daburii = true;
             }
             pl.score -= 1000;
-            self.riichi_sticks += 1;
+            self.kyoutaku += 1;
         } else {
             pl.is_ippatsu = false;
         }

@@ -183,26 +183,28 @@ impl StageListener for MjaiEndpoint {
         &mut self,
         _stage: &Stage,
         round: usize,
-        hand: usize,
+        kyoku: usize,
         honba: usize,
-        riichi_sticks: usize,
-        _doras: &Vec<Tile>,
+        kyoutaku: usize,
+        doras: &Vec<Tile>,
         _scores: &[i32; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
-        let kaze = ["E", "S", "W", "N"];
-        // let hands = vec![];
-        // for hands in player_hands {
-        //     for t in hands {}
-        // }
+        let wind = ["E", "S", "W", "N"];
+        let hands = create_tehais(player_hands, self.seat);
+
+        assert!(doras.len() == 1);
+        let dora_marker = mjai_tile_symbol(doras[0]);
+
+        // let dora
         self.data.lock().unwrap().record.push(json!({
             "type":"start_kyoku",
-            "bakaze": kaze[round],
-            "kyoku": hand,
+            "bakaze": wind[round],
+            "kyoku": kyoku,
             "honba": honba,
-            "kyoutaku": riichi_sticks,
-            "dora_marker": "",
-            "tehais": ""
+            "kyotaku": kyoutaku,
+            "dora_marker": dora_marker,
+            "tehais": hands
         }));
     }
 
@@ -261,6 +263,40 @@ impl StageListener for MjaiEndpoint {
     }
 
     fn notify_op_game_over(&mut self, _stage: &Stage) {}
+}
+
+// Utility ====================================================================
+
+fn mjai_tile_symbol(t: Tile) -> String {
+    if t.0 == TZ {
+        assert!(WE <= t.1 && t.1 <= DR);
+        let hornor = ["", "E", "S", "W", "N", "P", "F", "C"];
+        return hornor[t.1].to_string();
+    } else {
+        let tile_type = ["m", "p", "s"];
+        return format!(
+            "{}{}{}",
+            t.n(),
+            tile_type[t.0],
+            if t.1 == 0 { "r" } else { "" }
+        );
+    }
+}
+
+fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
+    let mut hands = vec![];
+    for (seat2, hands2) in player_hands.iter().enumerate() {
+        let mut hand = vec![];
+        for &t in hands2 {
+            if seat == seat2 {
+                hand.push(mjai_tile_symbol(t));
+            } else {
+                hand.push("?".to_string());
+            }
+        }
+        hands.push(hand);
+    }
+    hands
 }
 
 #[test]

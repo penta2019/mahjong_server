@@ -113,8 +113,8 @@ impl Mahjongsoul {
         for ps in data["tiles"].as_array().unwrap() {
             hand.push(tile_from_symbol(as_str(ps)));
         }
-        let mut player_lands = [vec![], vec![], vec![], vec![]];
-        player_lands[self.seat] = hand;
+        let mut player_hands = [vec![], vec![], vec![], vec![]];
+        player_hands[self.seat] = hand;
 
         let mut doras: Vec<Tile> = Vec::new();
         for ps in data["doras"].as_array().unwrap() {
@@ -122,9 +122,9 @@ impl Mahjongsoul {
         }
 
         let round = as_usize(&data["chang"]);
-        let hand = as_usize(&data["ju"]);
-        let honba = as_usize(&data["honba"]);
-        let riichi_sticks = as_usize(&data["liqibang"]);
+        let kyoku = as_usize(&data["ju"]);
+        let honba = as_usize(&data["ben"]);
+        let kyoutaku = as_usize(&data["liqibang"]);
         let mut scores = [0; SEAT];
         for (s, score) in data["scores"].as_array().unwrap().iter().enumerate() {
             scores[s] = score.as_i64().unwrap() as i32;
@@ -133,12 +133,12 @@ impl Mahjongsoul {
             self,
             roundnew,
             round,
-            hand,
+            kyoku,
             honba,
-            riichi_sticks,
+            kyoutaku,
             &doras,
             &scores,
-            &player_lands
+            &player_hands
         );
     }
 

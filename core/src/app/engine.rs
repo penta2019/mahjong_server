@@ -163,7 +163,7 @@ impl MahjongEngine {
         let round = stg.round;
         let kyoku = stg.kyoku;
         let honba = stg.honba;
-        let riichi_sticks = stg.riichi_sticks;
+        let kyoutaku = stg.kyoutaku;
         let is_3p = stg.is_3p;
         let mut scores = [0; 4];
         for s in 0..SEAT {
@@ -190,17 +190,7 @@ impl MahjongEngine {
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
-        op!(
-            self,
-            roundnew,
-            round,
-            kyoku,
-            honba,
-            riichi_sticks,
-            &doras,
-            &scores,
-            &ph
-        );
+        op!(self, roundnew, round, kyoku, honba, kyoutaku, &doras, &scores, &ph);
     }
 
     fn do_turn_operation(&mut self) {
@@ -414,7 +404,7 @@ impl MahjongEngine {
         let mut round = stg.round;
         let mut kyoku = stg.kyoku;
         let mut honba = stg.honba;
-        let mut riichi_sticks = stg.riichi_sticks;
+        let mut kyoutaku = stg.kyoutaku;
         let turn = stg.turn;
         let mut need_leader_change = false; // 親の交代
         match self.round_result.as_ref().unwrap() {
@@ -443,10 +433,10 @@ impl MahjongEngine {
                 }
 
                 // 供託
-                d_scores[turn] += riichi_sticks as i32 * 1000;
+                d_scores[turn] += kyoutaku as i32 * 1000;
 
                 // stage情報
-                riichi_sticks = 0;
+                kyoutaku = 0;
                 // 和了が子の場合　積み棒をリセットして親交代
                 if !stg.is_leader(turn) {
                     honba = 0;
@@ -483,14 +473,14 @@ impl MahjongEngine {
                     if s == s0 {
                         d_scores[turn] -= honba as i32 * 300;
                         d_scores[s] += honba as i32 * 300;
-                        d_scores[s] += riichi_sticks as i32 * 1000;
+                        d_scores[s] += kyoutaku as i32 * 1000;
                     }
 
                     contexts.push((s, ctx));
                 }
 
                 // stage情報
-                riichi_sticks = 0;
+                kyoutaku = 0;
                 // 子の和了がある場合は積み棒をリセット
                 if seats.iter().any(|&s| !stg.is_leader(s)) {
                     honba = 0;
@@ -549,7 +539,7 @@ impl MahjongEngine {
             kyoku += 1;
             if kyoku == SEAT {
                 kyoku = 0;
-                kyoku += 1;
+                round += 1;
             }
         }
 
@@ -558,7 +548,7 @@ impl MahjongEngine {
         stg.round = round;
         stg.kyoku = kyoku;
         stg.honba = honba;
-        stg.riichi_sticks = riichi_sticks;
+        stg.kyoutaku = kyoutaku;
 
         // 対戦終了判定
         if stg.round == self.config.n_round {

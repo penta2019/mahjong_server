@@ -15,12 +15,13 @@ use TileStateType::*;
 
 #[derive(Debug)]
 enum StageOperation {
-    New,      // 局開始 loop {
-    Turn,     //   ツモ番のプレイヤーの操作 (打牌, ツモなど)
-    Call,     //   ツモ番以外のプレイヤーの操作 (鳴き, ロンなど)
-    Deal,     //   ツモ(リンシャン牌を含む)
-    End,      // } 局終了
-    GameOver, // 対戦終了
+    GameStart, // 対戦開始
+    New,       // 局開始 loop {
+    Turn,      //   ツモ番のプレイヤーの操作 (打牌, ツモなど)
+    Call,      //   ツモ番以外のプレイヤーの操作 (鳴き, ロンなど)
+    Deal,      //   ツモ(リンシャン牌を含む)
+    End,       // } 局終了
+    GameOver,  // 対戦終了
 }
 
 #[derive(Debug)]
@@ -39,9 +40,8 @@ struct Config {
     listeners: Vec<Box<dyn StageListener>>,
 }
 
-// Stageの更新を行うと同時に更新内容を全てのStageListener(Operatorを含む)に通知するマクロ
 macro_rules! op {
-    ($self:expr, $name:ident, $($args:expr),*) => {
+    ($self:expr, $name:ident $(, $args:expr)*) => {
         paste::item! {
             $self.stage.[< op_ $name>]($($args),*);
             for l in &mut $self.config.listeners {
@@ -82,12 +82,13 @@ impl MahjongEngine {
         for s in 0..SEAT {
             stg.players[s].score = config.initial_score;
         }
+
         let rng = rand::SeedableRng::seed_from_u64(config.seed);
         Self {
             config: config,
             rng: rng,
             stage: stg,
-            next_op: New,
+            next_op: GameStart,
             melding: None,
             round_result: None,
             is_game_over: false,
@@ -112,6 +113,10 @@ impl MahjongEngine {
         }
 
         match self.next_op {
+            GameStart => {
+                self.do_game_start();
+                self.next_op = New;
+            }
             New => {
                 self.do_round_new();
                 self.next_op = Turn;
@@ -138,6 +143,10 @@ impl MahjongEngine {
             }
         }
         false
+    }
+
+    fn do_game_start(&mut self) {
+        op!(self, game_start);
     }
 
     fn do_round_new(&mut self) {
@@ -565,7 +574,9 @@ impl MahjongEngine {
         self.round_result = None;
     }
 
-    fn do_game_result(&mut self) {}
+    fn do_game_result(&mut self) {
+        op!(self, game_over);
+    }
 
     fn draw_tile(&mut self) -> Tile {
         let c = self.wall_count;
@@ -1119,7 +1130,7 @@ impl App {
 
     pub fn run(&mut self) {
         if self.seed == 0 {
-            self.seed = unixtime_now();
+            self.seed = unixtime_now() as u64;
             println!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
                 self.seed
@@ -1145,7 +1156,7 @@ impl App {
         use crate::operator::mjai::MjaiEndpoint;
         use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
 
-        let mut mjai = MjaiEndpoint::new("localhost:12345");
+        let mut mjai = MjaiEndpoint::new("127.0.0.1:12345");
         mjai.set_seat(0);
 
         let config = Config {

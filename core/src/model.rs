@@ -333,28 +333,6 @@ impl Stage {
         stg
     }
 
-    pub fn table_edit(&mut self, tile: Tile, old: TileStateType, new: TileStateType) {
-        let te = &mut self.tile_states[tile.0][tile.n()];
-        // println!("[table_edit] {}: {:?} | {:?} => {:?}", tile, te, old, new);
-        let i = te.iter().position(|&x| x == old).unwrap();
-        te[i] = new.clone();
-        te.sort();
-
-        if match old {
-            U => true,
-            H(_) => true,
-            _ => false,
-        } && match new {
-            H(_) => false,
-            _ => true,
-        } {
-            self.tile_remains[tile.0][tile.n()] -= 1;
-            if tile.1 == 0 {
-                self.tile_remains[tile.0][0] -= 1;
-            }
-        }
-    }
-
     pub fn print(&self) {
         println!(
             "round: {}, hand: {}, honba: {}, kyoutaku: {}\n\
@@ -397,6 +375,38 @@ impl Stage {
             println!("{}: {:?}", ['m', 'p', 's', 'z'][ti], self.tile_remains[ti]);
         }
     }
+
+    pub fn get_scores(&self) -> [i32; SEAT] {
+        let mut scores = [0; SEAT];
+        for s in 0..SEAT {
+            scores[s] = self.players[s].score;
+        }
+        scores
+    }
+
+    fn table_edit(&mut self, tile: Tile, old: TileStateType, new: TileStateType) {
+        let te = &mut self.tile_states[tile.0][tile.n()];
+        // println!("[table_edit] {}: {:?} | {:?} => {:?}", tile, te, old, new);
+        let i = te.iter().position(|&x| x == old).unwrap();
+        te[i] = new.clone();
+        te.sort();
+
+        if match old {
+            U => true,
+            H(_) => true,
+            _ => false,
+        } && match new {
+            H(_) => false,
+            _ => true,
+        } {
+            self.tile_remains[tile.0][tile.n()] -= 1;
+            if tile.1 == 0 {
+                self.tile_remains[tile.0][0] -= 1;
+            }
+        }
+    }
+
+    pub fn op_game_start(&mut self) {}
 
     pub fn op_roundnew(
         &mut self,
@@ -746,6 +756,8 @@ impl Stage {
         self.step += 1;
         self.update_scores(&score_deltas);
     }
+
+    pub fn op_game_over(&mut self) {}
 
     #[inline]
     pub fn is_leader(&self, seat: Seat) -> bool {

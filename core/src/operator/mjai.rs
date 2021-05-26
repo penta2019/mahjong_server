@@ -1,6 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 // use std::sync::mpsc;
 use std::io::prelude::*;
+use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 use std::{io, thread, time};
 
@@ -18,30 +19,20 @@ const NO_SEAT: usize = 4;
 // MjaiEndpoint ===============================================================
 
 fn send_json(stream: &mut TcpStream, value: &Value) -> io::Result<()> {
-    stream.write(value.to_string().as_bytes())?;
+    stream.write((value.to_string() + "\n").as_bytes())?;
+    println!("-> {:?}", value.to_string());
+    stdout().flush().unwrap();
     Ok(())
 }
 
 fn recv_json(stream: &mut TcpStream) -> io::Result<Value> {
-    let mut buf = [0; 4096];
-    stream.read(&mut buf)?;
-    if let Ok(s) = std::str::from_utf8(&buf) {
-        if let Some(r) = s.rfind('}') {
-            return Ok(serde_json::from_str(&s[..r + 1])?);
-        }
-    }
-    Err(io::Error::new(
-        io::ErrorKind::InvalidInput,
-        "Failed to convert input into json value",
-    ))
+    let mut buf_read = io::BufReader::new(stream);
+    let mut buf = String::new();
+    buf_read.read_line(&mut buf)?;
+    println!("<- {}", buf);
+    stdout().flush().unwrap();
+    return Ok(serde_json::from_str(&buf[..buf.len() - 1]).unwrap());
 }
-
-// fn try_recv_json(stream: &mut TcpStream) -> io::Result<Value> {
-//     stream.set_nonblocking(true)?;
-//     let v = recv_json(stream)?;
-//     stream.set_nonblocking(false)?;
-//     Ok(v)
-// }
 
 fn try_unwrap<T>(v: Option<T>) -> io::Result<T> {
     match v {
@@ -65,37 +56,54 @@ fn stream_handler(stream: &mut TcpStream, data: Arc<Mutex<SharedData>>) -> io::R
         return Ok(());
     }
 
-    let timeout_ms = 10;
-    stream.set_read_timeout(Some(time::Duration::new(0, timeout_ms * 1000000)))?;
+    // let timeout_ms = 10;
+    // stream.set_read_timeout(Some(time::Duration::new(0, timeout_ms * 1000000)))?;
     let mut cursor = 0;
     loop {
-        {
+        let len = data.lock().unwrap().record.len();
+        let is_last_record = cursor == len - 1;
+        if cursor < len - 1 {
             let d = data.lock().unwrap();
-            if cursor < d.record.len() {
-                send_json(stream, &d.record[cursor])?;
-                cursor += 1;
+            send_json(stream, &d.record[cursor])?;
+        } else if is_last_record {
+            if data.lock().unwrap().possible_actions == json!(null) {
+                // handle_operationがpossible_actionsを追加する可能性があるので待機
+                // data.lock()が開放されている必要があることに注意
+                println!("wait for possible action");
+                thread::sleep(time::Duration::from_millis(10));
             }
+
+            let d = data.lock().unwrap();
+            if d.possible_actions == json!(null) {
+                send_json(stream, &d.record[cursor])?;
+            } else {
+                // possible_actionsが存在する場合、送信用のjsonオブジェクトを生成して追加
+                let mut record = d.record[cursor].clone();
+                record["possible_actions"] = d.possible_actions.clone();
+                send_json(stream, &record)?;
+            }
+        } else {
+            thread::sleep(time::Duration::from_millis(10));
+            continue;
         }
+        cursor += 1;
 
         match recv_json(stream) {
-            Ok(v) => match try_unwrap(v["type"].as_str())? {
-                "none" => {}
-                m => println!("Unknown message type: {}", m),
-            },
-            Err(e) => match e.kind() {
-                io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut => {
-                    // linux: WouldBlock, windows: TimedOut
+            Ok(v) => {
+                if is_last_record {
+                    data.lock().unwrap().action = v;
                 }
-                _ => return Err(e),
-            },
+            }
+            Err(e) => return Err(e),
         }
     }
-    // Ok(())
 }
 
-#[derive(Default)]
+#[derive(Debug)]
 struct SharedData {
     record: Vec<Value>,
+    action: Value,
+    possible_actions: Value,
 }
 
 #[derive(Clone)]
@@ -106,7 +114,12 @@ pub struct MjaiEndpoint {
 
 impl MjaiEndpoint {
     pub fn new(addr: &str) -> Self {
-        let data = Arc::new(Mutex::new(SharedData::default()));
+        let shared_data = SharedData {
+            record: vec![],
+            action: json!(null),
+            possible_actions: json!(null),
+        };
+        let data = Arc::new(Mutex::new(shared_data));
         let obj = Self {
             seat: NO_SEAT,
             data: data.clone(),
@@ -152,6 +165,13 @@ impl MjaiEndpoint {
     pub fn set_seat(&mut self, seat: usize) {
         self.seat = seat;
     }
+
+    fn add_record(&mut self, record: Value) {
+        let mut d = self.data.lock().unwrap();
+        d.action = json!(null);
+        d.possible_actions = json!(null);
+        d.record.push(record);
+    }
 }
 
 impl Operator for MjaiEndpoint {
@@ -161,8 +181,21 @@ impl Operator for MjaiEndpoint {
         _seat: Seat,
         _ops: &Vec<PlayerOperation>,
     ) -> PlayerOperation {
-        let mut buf = String::new();
-        std::io::stdin().read_line(&mut buf).ok();
+        {
+            let mut d = self.data.lock().unwrap();
+            d.possible_actions = json!([]);
+        }
+
+        // let mut buf = String::new();
+        // std::io::stdin().read_line(&mut buf).ok();
+
+        loop {
+            thread::sleep(time::Duration::from_millis(20));
+            if self.data.lock().unwrap().action != json!(null) {
+                break;
+            }
+        }
+        println!("client action: {:?}", self.data.lock().unwrap().action);
         Nop
     }
 
@@ -174,7 +207,7 @@ impl Operator for MjaiEndpoint {
 impl StageListener for MjaiEndpoint {
     fn notify_op_game_start(&mut self, _stage: &Stage) {
         assert!(self.seat != NO_SEAT);
-        self.data.lock().unwrap().record.push(json!({
+        self.add_record(json!({
             "type":"start_game",
             "id":self.seat,
             "names":["Player0","Player1","Player2","Player3"],
@@ -183,7 +216,7 @@ impl StageListener for MjaiEndpoint {
 
     fn notify_op_roundnew(
         &mut self,
-        _stage: &Stage,
+        stage: &Stage,
         round: usize,
         kyoku: usize,
         honba: usize,
@@ -198,8 +231,7 @@ impl StageListener for MjaiEndpoint {
         assert!(doras.len() == 1);
         let dora_marker = mjai_tile_symbol(doras[0]);
 
-        // let dora
-        self.data.lock().unwrap().record.push(json!({
+        self.add_record(json!({
             "type":"start_kyoku",
             "bakaze": wind[round],
             "kyoku": kyoku,
@@ -208,6 +240,8 @@ impl StageListener for MjaiEndpoint {
             "dora_marker": dora_marker,
             "tehais": hands,
         }));
+
+        self.notify_op_dealtile(stage, kyoku, stage.players[kyoku].drawn);
     }
 
     fn notify_op_dealtile(&mut self, _stage: &Stage, seat: Seat, tile: Option<Tile>) {
@@ -216,7 +250,7 @@ impl StageListener for MjaiEndpoint {
         } else {
             "?".to_string()
         };
-        self.data.lock().unwrap().record.push(json!({
+        self.add_record(json!({
             "type": "tsumo",
             "actor": seat,
             "pai": t,
@@ -225,25 +259,36 @@ impl StageListener for MjaiEndpoint {
 
     fn notify_op_discardtile(
         &mut self,
-        _stage: &Stage,
+        stage: &Stage,
         seat: Seat,
         tile: Tile,
         is_drawn: bool,
         is_riichi: bool,
     ) {
         if is_riichi {
-            self.data.lock().unwrap().record.push(json!({
+            self.add_record(json!({
                 "type": "reach",
                 "actor": seat,
             }));
         }
 
-        self.data.lock().unwrap().record.push(json!({
+        self.add_record(json!({
             "type": "dahai",
             "actor": seat,
             "pai": mjai_tile_symbol(tile),
             "tsumogiri": is_drawn,
         }));
+
+        if is_riichi {
+            let mut deltas = [0, 0, 0, 0];
+            deltas[seat] = -1000;
+            self.add_record(json!({
+                "type": "reach_accepted",
+                "actor": seat,
+                "deltas": deltas,
+                "scores": stage.get_scores(),
+            }));
+        }
     }
 
     fn notify_op_chiiponkan(
@@ -273,7 +318,7 @@ impl StageListener for MjaiEndpoint {
             MeldType::Minkan => "daiminkan",
             _ => panic!(),
         };
-        self.data.lock().unwrap().record.push(json!({
+        self.add_record(json!({
             "type": type_,
             "actor": seat,
             "pai": pai,
@@ -291,7 +336,7 @@ impl StageListener for MjaiEndpoint {
                 for &t in meld.tiles.iter() {
                     consumed.push(mjai_tile_symbol(t))
                 }
-                self.data.lock().unwrap().record.push(json!({
+                self.add_record(json!({
                     "type": "ankan",
                     "actor": seat,
                     "consumed": consumed,
@@ -309,7 +354,7 @@ impl StageListener for MjaiEndpoint {
                 }
                 assert!(pai != "");
 
-                self.data.lock().unwrap().record.push(json!({
+                self.add_record(json!({
                     "type": "kakan",
                     "actor": seat,
                     "pai": pai,
@@ -321,7 +366,7 @@ impl StageListener for MjaiEndpoint {
     }
 
     fn notify_op_dora(&mut self, _stage: &Stage, tile: Tile) {
-        self.data.lock().unwrap().record.push(json!({
+        self.add_record(json!({
             "type": "dora",
             "dora_marker": mjai_tile_symbol(tile),
         }));
@@ -333,31 +378,63 @@ impl StageListener for MjaiEndpoint {
 
     fn notify_op_roundend_win(
         &mut self,
-        _stage: &Stage,
-        _ura_doras: &Vec<Tile>,
+        stage: &Stage,
+        ura_doras: &Vec<Tile>,
         contexts: &Vec<(Seat, WinContext)>,
         score_deltas: &[i32; SEAT],
     ) {
+        let ura: Vec<String> = ura_doras.iter().map(|&t| mjai_tile_symbol(t)).collect();
         for (seat, ctx) in contexts {
-            // TODO
-            self.data.lock().unwrap().record.push(json!({
+            self.add_record(json!({
                 "type": "hora",
                 "actor": seat,
+                "target": stage.turn,
+                "pai": mjai_tile_symbol(stage.last_tile.unwrap().1),
+                "uradora_markers": ura,
+                "hora_tehais": [], // TODO
+                "yakus": [], // TODO
+                "fu": ctx.fu,
+                "fan": ctx.fan_mag,
+                "hora_points": ctx.pay_scores.0,
+                "deltas": score_deltas,
+                "scores": stage.get_scores(),
             }));
         }
     }
 
-    fn notify_op_roundend_draw(&mut self, _stage: &Stage, _draw_type: DrawType) {}
+    fn notify_op_roundend_draw(&mut self, stage: &Stage, _draw_type: DrawType) {
+        self.add_record(json!({
+            "type": "ryukyoku",
+            "reason": "", // TODO
+            "tehais": [], // TODO
+            "tenpais": [false, false, false, false],
+            "deltas": [0, 0, 0, 0],
+            "scores": stage.get_scores(),
+        }));
+    }
 
     fn notify_op_roundend_notile(
         &mut self,
-        _stage: &Stage,
-        _is_ready: &[bool; SEAT],
-        _score_deltas: &[i32; SEAT],
+        stage: &Stage,
+        is_ready: &[bool; SEAT],
+        score_deltas: &[i32; SEAT],
     ) {
+        self.add_record(json!({
+            "type": "ryukyoku",
+            "reason": "fanpai",
+            "tehais": [], // TODO
+            "tenpais": is_ready,
+            "deltas": score_deltas,
+            "scores": stage.get_scores(),
+        }));
     }
 
-    fn notify_op_game_over(&mut self, _stage: &Stage) {}
+    fn notify_op_game_over(&mut self, stage: &Stage) {
+        self.add_record(json!({
+            "type": "end_game",
+            "scores": stage.get_scores(),
+        }));
+    }
 }
 
 // Utility ====================================================================
@@ -375,6 +452,34 @@ fn mjai_tile_symbol(t: Tile) -> String {
             tile_type[t.0],
             if t.1 == 0 { "r" } else { "" }
         );
+    }
+}
+
+fn from_mjai_tile_symbol(sym: &str) -> Tile {
+    match sym {
+        "?" => Z8,
+        "E" => Tile(TZ, WE),
+        "S" => Tile(TZ, WS),
+        "W" => Tile(TZ, WW),
+        "N" => Tile(TZ, WN),
+        "P" => Tile(TZ, DW),
+        "F" => Tile(TZ, DG),
+        "C" => Tile(TZ, DR),
+        _ => {
+            let sym = sym.as_bytes();
+            let ti = match sym[1] {
+                b'm' => 0,
+                b'p' => 1,
+                b's' => 2,
+                _ => panic!(),
+            } as usize;
+            let mut ni = (sym[0] - b'0') as usize;
+            if ni == 5 && sym.len() == 3 {
+                ni = 0;
+            }
+            assert!(ni < TNUM);
+            Tile(ti, ni)
+        }
     }
 }
 
@@ -396,7 +501,12 @@ fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<Strin
 
 #[test]
 fn test_mjai() {
-    let mjai = MjaiEndpoint::new("localhost:12345");
+    let mjai = MjaiEndpoint::new("127.0.0.1:12345");
     let mut buf = String::new();
     io::stdin().read_line(&mut buf).ok();
+}
+
+#[test]
+fn test_mjai2() {
+    println!("{}", from_mjai_tile_symbol("?"));
 }

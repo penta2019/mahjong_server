@@ -15,12 +15,12 @@ pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
     vs.join(" ")
 }
 
-pub fn unixtime_now() -> u64 {
-    use std::time::*;
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
+pub fn unixtime_now() -> f32 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
-        .as_secs()
+        .as_millis() as f32
+        / 1000.0
 }
 
 pub fn cartesian_product<'a, T>(vv: &'a Vec<Vec<T>>) -> Vec<Vec<&'a T>> {

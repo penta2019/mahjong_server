@@ -306,8 +306,8 @@ pub enum DrawType {
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
     pub round: usize,                    // 場 (東:0, 南:1, 西:2, 北:3)
-    pub hand: usize,                     // 局 (0~3 = 親のseat)
-    pub ben: usize,                      // 本場
+    pub kyoku: usize,                    // 局 (0~3 = 親のseat)
+    pub honba: usize,                    // 本場
     pub riichi_sticks: usize,            // リーチ棒の供託
     pub turn: Seat,                      // 順番
     pub step: usize,                     // ステップ op関数を呼び出す毎に+1する
@@ -357,11 +357,11 @@ impl Stage {
 
     pub fn print(&self) {
         println!(
-            "round: {}, hand: {}, ben: {}, riichi_sticks: {}\n\
+            "round: {}, hand: {}, honba: {}, riichi_sticks: {}\n\
             turn: {}, left_tile_count: {}, doras: {}, last_tile: {:?}",
             self.round,
-            self.hand,
-            self.ben,
+            self.kyoku,
+            self.honba,
             self.riichi_sticks,
             self.turn,
             self.left_tile_count,
@@ -369,12 +369,14 @@ impl Stage {
             self.last_tile,
         );
         println!();
+
         println!("-----------------------------------------------------------");
         for p in &self.players {
             println!("{}", p);
             println!("-----------------------------------------------------------");
         }
         println!();
+
         for ti in 0..TYPE {
             for i in 1..TNUM {
                 print!("{}{} ", ['m', 'p', 's', 'z'][ti], i);
@@ -389,16 +391,18 @@ impl Stage {
             }
             println!();
         }
+
+        println!("remaining tiles");
         for ti in 0..TYPE {
-            println!("{:?}", self.tile_remains[ti]);
+            println!("{}: {:?}", ['m', 'p', 's', 'z'][ti], self.tile_remains[ti]);
         }
     }
 
     pub fn op_roundnew(
         &mut self,
         round: usize,
-        hand: usize,
-        ben: usize,
+        kyoku: usize,
+        honba: usize,
         riichi_sticks: usize,
         doras: &Vec<Tile>,
         scores: &[i32; SEAT],
@@ -407,8 +411,8 @@ impl Stage {
         std::mem::swap(self, &mut Self::new());
 
         self.round = round;
-        self.hand = hand;
-        self.ben = ben;
+        self.kyoku = kyoku;
+        self.honba = honba;
         self.riichi_sticks = riichi_sticks;
         self.step = 1;
         self.left_tile_count = 69;
@@ -422,7 +426,7 @@ impl Stage {
 
             self.turn = s; // player_inc_tile() 用
             if pl.is_shown {
-                if s == hand {
+                if s == kyoku {
                     pl.drawn = Some(*ph.last().unwrap());
                 }
                 for &t in ph {
@@ -430,14 +434,14 @@ impl Stage {
                     self.table_edit(t, U, H(s));
                 }
             } else {
-                if s == hand {
+                if s == kyoku {
                     pl.drawn = Some(Z8);
                 }
-                pl.hand[TZ][UK] = if s == hand { 14 } else { 13 }; // 親:14, 子:13
+                pl.hand[TZ][UK] = if s == kyoku { 14 } else { 13 }; // 親:14, 子:13
             }
         }
         self.update_scores(scores);
-        self.turn = hand;
+        self.turn = kyoku;
 
         for &d in doras {
             self.table_edit(d, U, R);
@@ -745,7 +749,7 @@ impl Stage {
 
     #[inline]
     pub fn is_leader(&self, seat: Seat) -> bool {
-        seat == self.hand
+        seat == self.kyoku
     }
 
     #[inline]
@@ -755,7 +759,7 @@ impl Stage {
 
     #[inline]
     pub fn get_seat_wind(&self, seat: Seat) -> Tnum {
-        (seat + SEAT - self.hand) % SEAT + 1 // WE | WS | WW | WN
+        (seat + SEAT - self.kyoku) % SEAT + 1 // WE | WS | WW | WN
     }
 
     fn player_inc_tile(&mut self, tile: Tile) {

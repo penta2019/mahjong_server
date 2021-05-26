@@ -22,7 +22,7 @@ struct Mahjongsoul {
     stage: Stage,
     step: usize,
     seat: usize, // my seat
-    actions: Vec<serde_json::Value>,
+    actions: Vec<Value>,
     need_write: bool,
 }
 
@@ -92,7 +92,7 @@ impl Mahjongsoul {
 
         let file_name = format!("data/{}.json", unixtime_now().to_string());
         let mut f = std::fs::File::create(file_name).unwrap();
-        let arr = serde_json::Value::Array(self.actions.clone());
+        let arr = Value::Array(self.actions.clone());
         write!(f, "{}", serde_json::to_string_pretty(&arr).unwrap()).unwrap();
     }
 
@@ -123,7 +123,7 @@ impl Mahjongsoul {
 
         let round = as_usize(&data["chang"]);
         let hand = as_usize(&data["ju"]);
-        let ben = as_usize(&data["ben"]);
+        let honba = as_usize(&data["honba"]);
         let riichi_sticks = as_usize(&data["liqibang"]);
         let mut scores = [0; SEAT];
         for (s, score) in data["scores"].as_array().unwrap().iter().enumerate() {
@@ -134,7 +134,7 @@ impl Mahjongsoul {
             roundnew,
             round,
             hand,
-            ben,
+            honba,
             riichi_sticks,
             &doras,
             &scores,

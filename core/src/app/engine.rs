@@ -161,8 +161,8 @@ impl MahjongEngine {
         // 古い卓から必要な情報を抽出
         let stg = &self.stage;
         let round = stg.round;
-        let hand = stg.hand;
-        let ben = stg.ben;
+        let kyoku = stg.kyoku;
+        let honba = stg.honba;
         let riichi_sticks = stg.riichi_sticks;
         let is_3p = stg.is_3p;
         let mut scores = [0; 4];
@@ -185,7 +185,7 @@ impl MahjongEngine {
         }
         // 親の14枚目
         let t = self.draw_tile();
-        ph[hand].push(t);
+        ph[kyoku].push(t);
 
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
@@ -194,8 +194,8 @@ impl MahjongEngine {
             self,
             roundnew,
             round,
-            hand,
-            ben,
+            kyoku,
+            honba,
             riichi_sticks,
             &doras,
             &scores,
@@ -412,8 +412,8 @@ impl MahjongEngine {
     fn do_round_end(&mut self) {
         let stg = &self.stage;
         let mut round = stg.round;
-        let mut hand = stg.hand;
-        let mut ben = stg.ben;
+        let mut kyoku = stg.kyoku;
+        let mut honba = stg.honba;
         let mut riichi_sticks = stg.riichi_sticks;
         let turn = stg.turn;
         let mut need_leader_change = false; // 親の交代
@@ -425,8 +425,8 @@ impl MahjongEngine {
                 let (_, mut non_leader, mut leader) = score.pay_scores;
 
                 // 積み棒
-                non_leader += ben as i32 * 100;
-                leader += ben as i32 * 100;
+                non_leader += honba as i32 * 100;
+                leader += honba as i32 * 100;
 
                 for s in 0..SEAT {
                     if s != turn {
@@ -449,7 +449,7 @@ impl MahjongEngine {
                 riichi_sticks = 0;
                 // 和了が子の場合　積み棒をリセットして親交代
                 if !stg.is_leader(turn) {
-                    ben = 0;
+                    honba = 0;
                     need_leader_change = true;
                 }
 
@@ -481,8 +481,8 @@ impl MahjongEngine {
 
                     // 積み棒&供託(上家取り)
                     if s == s0 {
-                        d_scores[turn] -= ben as i32 * 300;
-                        d_scores[s] += ben as i32 * 300;
+                        d_scores[turn] -= honba as i32 * 300;
+                        d_scores[s] += honba as i32 * 300;
                         d_scores[s] += riichi_sticks as i32 * 1000;
                     }
 
@@ -493,7 +493,7 @@ impl MahjongEngine {
                 riichi_sticks = 0;
                 // 子の和了がある場合は積み棒をリセット
                 if seats.iter().any(|&s| !stg.is_leader(s)) {
-                    ben = 0;
+                    honba = 0;
                 }
                 // 和了が子しかいない場合は親交代
                 need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
@@ -534,30 +534,30 @@ impl MahjongEngine {
                         }
 
                         op!(self, roundend_notile, &is_ready, &d_scores);
-                        need_leader_change = !is_ready[hand];
+                        need_leader_change = !is_ready[kyoku];
                     }
                     _ => {
                         op!(self, roundend_draw, *draw_type);
                     }
                 }
-                ben += 1;
+                honba += 1;
             }
         }
 
         // 親交代
         if need_leader_change {
-            hand += 1;
-            if hand == SEAT {
-                hand = 0;
-                round += 1;
+            kyoku += 1;
+            if kyoku == SEAT {
+                kyoku = 0;
+                kyoku += 1;
             }
         }
 
         // stage情報更新
         let stg = &mut self.stage;
         stg.round = round;
-        stg.hand = hand;
-        stg.ben = ben;
+        stg.kyoku = kyoku;
+        stg.honba = honba;
         stg.riichi_sticks = riichi_sticks;
 
         // 対戦終了判定

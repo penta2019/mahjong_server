@@ -315,6 +315,7 @@ pub struct Stage {
     pub doras: Vec<Tile>,                // ドラ表示牌
     pub discards: Vec<(Seat, Index)>,    // プレイヤー全員の捨て牌
     pub last_tile: Option<(Seat, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
+    pub last_riichi: Option<Seat>,       // リーチがロンされずに成立した場合の供託更新用
     pub players: [Player; SEAT],         // 各プレイヤー情報
     pub is_3p: bool,                     // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileStateType; TILE]; TNUM]; TYPE],
@@ -460,7 +461,7 @@ impl Stage {
     }
 
     pub fn op_dealtile(&mut self, seat: Seat, tile: Option<Tile>) {
-        self.update_furiten_other();
+        self.update_after_discard_completed();
 
         let s = seat;
 
@@ -523,8 +524,7 @@ impl Stage {
             if pl.discards.is_empty() && riichi_no_meld {
                 pl.is_daburii = true;
             }
-            pl.score -= 1000;
-            self.kyoutaku += 1;
+            self.last_riichi = Some(s);
         } else {
             pl.is_ippatsu = false;
         }
@@ -595,7 +595,7 @@ impl Stage {
         tiles: &Vec<Tile>,
         froms: &Vec<Seat>,
     ) {
-        self.update_furiten_other();
+        self.update_after_discard_completed();
 
         let s = seat;
 
@@ -639,8 +639,6 @@ impl Stage {
     }
 
     pub fn op_ankankakan(&mut self, seat: Seat, meld_type: MeldType, tile: Tile) {
-        self.update_furiten_other();
-
         let s = seat;
 
         self.step += 1;
@@ -804,7 +802,8 @@ impl Stage {
         }
     }
 
-    fn update_furiten_other(&mut self) {
+    fn update_after_discard_completed(&mut self) {
+        // 他のプレイヤーの捨て牌、または加槓した牌の見逃しフリテン
         if let Some((s, t)) = self.last_tile {
             for s2 in 0..SEAT {
                 if s2 != s {
@@ -813,6 +812,13 @@ impl Stage {
                     }
                 }
             }
+        }
+
+        // リーチがロンされずに成立した場合の供託への点棒追加
+        if let Some(s) = self.last_riichi {
+            self.players[s].score -= 1000;
+            self.kyoutaku += 1;
+            self.last_riichi = None;
         }
     }
 

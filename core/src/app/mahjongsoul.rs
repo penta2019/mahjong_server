@@ -370,7 +370,7 @@ impl App {
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
                     let op = self.operator.handle_operation(stg, seat, &ops);
-                    let (_, arg_idx) = calc_operation_index(&ops, &op);
+                    let (_, arg_idx) = calc_operation_index(&ops, &op).unwrap();
                     match &op {
                         Nop => {
                             if stg.turn == seat {

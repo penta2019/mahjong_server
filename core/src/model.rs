@@ -813,7 +813,6 @@ impl Stage {
                     }
                 }
             }
-            self.last_tile = None;
         }
     }
 

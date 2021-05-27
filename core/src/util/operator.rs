@@ -85,12 +85,15 @@ impl Operator for NullOperator {
 
 impl StageListener for NullOperator {}
 
-pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) -> (usize, usize) {
+pub fn calc_operation_index(
+    ops: &Vec<PlayerOperation>,
+    op: &PlayerOperation,
+) -> Option<(usize, usize)> {
     macro_rules! op_without_arg {
         ($x:pat, $ops:expr) => {
             for (op_idx, op2) in $ops.iter().enumerate() {
                 if let $x = op2 {
-                    return (op_idx, 0);
+                    return Some((op_idx, 0));
                 }
             }
         };
@@ -101,7 +104,7 @@ pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) ->
                 if let $x(v2) = op2 {
                     for (arg_idx, &e) in v2.iter().enumerate() {
                         if e == $v[0] {
-                            return (op_idx, arg_idx);
+                            return Some((op_idx, arg_idx));
                         }
                     }
                 }
@@ -110,7 +113,7 @@ pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) ->
     }
     match op {
         Nop => op_without_arg!(Nop, ops),
-        Discard(_) => return (0, 0),
+        Discard(_) => return Some((0, 0)),
         Ankan(v) => op_with_arg!(Ankan, ops, v),
         Kakan(v) => op_with_arg!(Kakan, ops, v),
         Riichi(v) => op_with_arg!(Riichi, ops, v),
@@ -122,7 +125,7 @@ pub fn calc_operation_index(ops: &Vec<PlayerOperation>, op: &PlayerOperation) ->
         Minkan(v) => op_with_arg!(Minkan, ops, v),
         Ron => op_without_arg!(Ron, ops),
     }
-    panic!("Operation '{:?}' not found in '{:?}'", op, ops);
+    panic!();
 }
 
 pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {

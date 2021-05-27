@@ -1,11 +1,13 @@
 use std::net::{TcpListener, TcpStream};
 // use std::sync::mpsc;
+use std::io;
 use std::io::prelude::*;
 use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
-use std::{io, thread, time};
+use std::{thread, time};
 
-use serde_json::{json, Value};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Result, Value};
 
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
@@ -17,95 +19,6 @@ use PlayerOperation::*;
 const NO_SEAT: usize = 4;
 
 // MjaiEndpoint ===============================================================
-
-fn send_json(stream: &mut TcpStream, value: &Value) -> io::Result<()> {
-    stream.write((value.to_string() + "\n").as_bytes())?;
-    println!("-> {:?}", value.to_string());
-    stdout().flush().unwrap();
-    Ok(())
-}
-
-fn recv_json(stream: &mut TcpStream) -> io::Result<Value> {
-    let mut buf_read = io::BufReader::new(stream);
-    let mut buf = String::new();
-    buf_read.read_line(&mut buf)?;
-    println!("<- {}", buf);
-    stdout().flush().unwrap();
-    return Ok(serde_json::from_str(&buf[..buf.len() - 1]).unwrap());
-}
-
-fn try_unwrap<T>(v: Option<T>) -> io::Result<T> {
-    match v {
-        Some(v2) => Ok(v2),
-        None => Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "failed to unwrap Option",
-        )),
-    }
-}
-
-fn stream_handler(stream: &mut TcpStream, data: Arc<Mutex<SharedData>>) -> io::Result<()> {
-    // hello
-    let m = json!({"type":"hello","protocol":"mjsonp","protocol_version":3});
-    send_json(stream, &m)?;
-    let v = recv_json(stream)?;
-    if try_unwrap(v["type"].as_str())? == "join" {
-        println!("Player joined. name: {}", try_unwrap(v["name"].as_str())?);
-    } else {
-        println!("[Error] First message type must be 'join'");
-        return Ok(());
-    }
-
-    // let timeout_ms = 10;
-    // stream.set_read_timeout(Some(time::Duration::new(0, timeout_ms * 1000000)))?;
-    let mut cursor = 0;
-    loop {
-        let len = data.lock().unwrap().record.len();
-        let is_last_record = cursor == len - 1;
-        if cursor < len - 1 {
-            let d = data.lock().unwrap();
-            send_json(stream, &d.record[cursor])?;
-        } else if is_last_record {
-            if data.lock().unwrap().possible_actions == json!(null) {
-                // handle_operationがpossible_actionsを追加する可能性があるので待機
-                // data.lock()が開放されている必要があることに注意
-                println!("wait for possible action");
-                thread::sleep(time::Duration::from_millis(10));
-            }
-
-            let d = data.lock().unwrap();
-            if d.possible_actions == json!(null) {
-                send_json(stream, &d.record[cursor])?;
-            } else {
-                // possible_actionsが存在する場合、送信用のjsonオブジェクトを生成して追加
-                let mut record = d.record[cursor].clone();
-                record["possible_actions"] = d.possible_actions.clone();
-                send_json(stream, &record)?;
-            }
-        } else {
-            thread::sleep(time::Duration::from_millis(10));
-            continue;
-        }
-        cursor += 1;
-
-        match recv_json(stream) {
-            Ok(v) => {
-                if is_last_record {
-                    data.lock().unwrap().action = v;
-                }
-            }
-            Err(e) => return Err(e),
-        }
-    }
-}
-
-#[derive(Debug)]
-struct SharedData {
-    record: Vec<Value>,
-    action: Value,
-    possible_actions: Value,
-}
-
 #[derive(Clone)]
 pub struct MjaiEndpoint {
     seat: usize,
@@ -142,7 +55,7 @@ impl MjaiEndpoint {
                         let data = data.clone();
                         thread::spawn(move || {
                             println!("MjaiEndpoint: New connection {:?}", stream);
-                            match stream_handler(&mut stream, data) {
+                            match stream_handler(&mut stream, data, true) {
                                 Ok(_) => {}
                                 Err(e) => {
                                     println!("[Error]: {:?}", e);
@@ -177,26 +90,57 @@ impl MjaiEndpoint {
 impl Operator for MjaiEndpoint {
     fn handle_operation(
         &mut self,
-        _stage: &Stage,
-        _seat: Seat,
-        _ops: &Vec<PlayerOperation>,
+        stage: &Stage,
+        seat: Seat,
+        ops: &Vec<PlayerOperation>,
     ) -> PlayerOperation {
         {
             let mut d = self.data.lock().unwrap();
             d.possible_actions = json!([]);
         }
 
-        // let mut buf = String::new();
-        // std::io::stdin().read_line(&mut buf).ok();
-
         loop {
-            thread::sleep(time::Duration::from_millis(20));
+            thread::sleep(time::Duration::from_millis(10));
             if self.data.lock().unwrap().action != json!(null) {
                 break;
             }
         }
-        println!("client action: {:?}", self.data.lock().unwrap().action);
-        Nop
+
+        let v = std::mem::replace(&mut self.data.lock().unwrap().action, json!(null));
+        let cmsg = ClientMessage::from_value(v);
+        if let Err(_) = cmsg {
+            println!("[Error] Failed to parse mjai action");
+            return Nop;
+        }
+
+        let cmsg = cmsg.unwrap();
+        let mut op = Nop;
+        match cmsg.type_ {
+            MsgType::Dahai => {
+                let m = cmsg.dahai.unwrap();
+                if m.tsumogiri {
+                    op = Nop;
+                } else {
+                    op = Discard(vec![from_mjai_tile_symbol(&m.pai)]);
+                }
+            }
+            MsgType::Chi => {}
+            MsgType::Pon => {}
+            MsgType::Kakan => {}
+            MsgType::Daiminkan => {}
+            MsgType::Ankan => {}
+            MsgType::Reach => {}
+            MsgType::Hora => {}
+            MsgType::None => {}
+        };
+
+        if let None = calc_operation_index(ops, &op) {
+            return Nop;
+        }
+
+        println!("mjai operation: {:?}", op);
+        stdout().flush().unwrap();
+        op
     }
 
     fn debug_string(&self) -> String {
@@ -437,7 +381,103 @@ impl StageListener for MjaiEndpoint {
     }
 }
 
+#[derive(Debug)]
+struct SharedData {
+    record: Vec<Value>,
+    action: Value,
+    possible_actions: Value,
+}
+
+fn stream_handler(
+    stream: &mut TcpStream,
+    data: Arc<Mutex<SharedData>>,
+    debug: bool,
+) -> io::Result<()> {
+    let stream2 = &mut stream.try_clone().unwrap();
+    let mut send = |m: &Value| send_json(stream, m, debug);
+    let mut recv = || recv_json(stream2, debug);
+    let err = || io::Error::new(io::ErrorKind::InvalidData, "json field not found");
+
+    // hello
+    let m = json!({"type":"hello","protocol":"mjsonp","protocol_version":3});
+    send(&m)?;
+    let v = recv()?;
+
+    if v["type"].as_str().ok_or_else(err)? == "join" {
+        println!(
+            "Player joined. name: {}",
+            v["name"].as_str().ok_or_else(err)?
+        );
+    } else {
+        println!("[Error] First message type must be 'join'");
+        return Ok(());
+    }
+
+    let mut cursor = 0;
+    loop {
+        let len = data.lock().unwrap().record.len();
+        let is_last_record = cursor == len - 1;
+        if cursor < len - 1 {
+            let d = data.lock().unwrap();
+            send(&d.record[cursor])?;
+        } else if is_last_record {
+            if data.lock().unwrap().possible_actions == json!(null) {
+                // handle_operationがpossible_actionsを追加する可能性があるので待機
+                // data.lock()が開放されている必要があることに注意
+                println!("wait for possible action");
+                thread::sleep(time::Duration::from_millis(10));
+            }
+
+            let d = data.lock().unwrap();
+            if d.possible_actions == json!(null) {
+                send(&d.record[cursor])?;
+            } else {
+                // possible_actionsが存在する場合、送信用のjsonオブジェクトを生成して追加
+                let mut record = d.record[cursor].clone();
+                record["possible_actions"] = d.possible_actions.clone();
+                send(&record)?;
+            }
+        } else {
+            thread::sleep(time::Duration::from_millis(10));
+            continue;
+        }
+        cursor += 1;
+
+        let mut d = data.lock().unwrap();
+        let v = recv()?;
+        if is_last_record && d.possible_actions != json!(null) {
+            d.action = v;
+        }
+    }
+}
+
 // Utility ====================================================================
+
+fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<()> {
+    stream.write((value.to_string() + "\n").as_bytes())?;
+    if debug {
+        println!("-> {:?}", value.to_string());
+        stdout().flush().unwrap();
+    }
+    Ok(())
+}
+
+fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
+    let mut buf_read = io::BufReader::new(stream);
+    let mut buf = String::new();
+    buf_read.read_line(&mut buf)?;
+    if debug {
+        println!("<- {}", buf);
+        stdout().flush().unwrap();
+    }
+
+    serde_json::from_str(&buf[..buf.len() - 1]).or_else(|_| {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "recv invalid json data",
+        ))
+    })
+}
 
 fn mjai_tile_symbol(t: Tile) -> String {
     if t.0 == TZ {
@@ -499,6 +539,175 @@ fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<Strin
     hands
 }
 
+// Mjai client message =======================================================
+
+#[derive(Debug)]
+enum MsgType {
+    Dahai,
+    Pon,
+    Chi,
+    Kakan,
+    Daiminkan,
+    Ankan,
+    Reach,
+    Hora,
+    None,
+}
+
+impl Default for MsgType {
+    fn default() -> Self {
+        MsgType::None
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgDahai {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    pai: String,
+    tsumogiri: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgPon {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    target: usize,
+    pai: String,
+    consumed: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgChi {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    target: usize,
+    pai: String,
+    consumed: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgKakan {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    pai: String,
+    consumed: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgDaiminkan {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    target: usize,
+    pai: String,
+    consumed: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgAnkan {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    consumed: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgReach {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgHora {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    target: usize,
+    pai: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MsgNone {
+    #[serde(rename = "type")]
+    type_: String,
+}
+
+#[derive(Debug, Default)]
+struct ClientMessage {
+    type_: MsgType,
+    dahai: Option<MsgDahai>,
+    chi: Option<MsgChi>,
+    pon: Option<MsgPon>,
+    kakan: Option<MsgKakan>,
+    daiminkan: Option<MsgDaiminkan>,
+    ankan: Option<MsgAnkan>,
+    reach: Option<MsgReach>,
+    hora: Option<MsgHora>,
+    none: Option<MsgNone>,
+}
+
+impl ClientMessage {
+    fn from_value(v: Value) -> Result<ClientMessage> {
+        use serde_json::from_value;
+        let type_ = v["type"]
+            .as_str()
+            .ok_or(serde::de::Error::missing_field("type"))?;
+
+        let mut res = ClientMessage::default();
+        match type_ {
+            "dahai" => {
+                res.type_ = MsgType::Dahai;
+                res.dahai = from_value(v)?;
+            }
+            "chi" => {
+                res.type_ = MsgType::Chi;
+                res.chi = from_value(v)?;
+            }
+            "pon" => {
+                res.type_ = MsgType::Pon;
+                res.pon = from_value(v)?;
+            }
+            "kakan" => {
+                res.type_ = MsgType::Kakan;
+                res.kakan = from_value(v)?;
+            }
+            "daiminkan" => {
+                res.type_ = MsgType::Daiminkan;
+                res.daiminkan = from_value(v)?;
+            }
+            "ankan" => {
+                res.type_ = MsgType::Ankan;
+                res.ankan = from_value(v)?;
+            }
+            "reach" => {
+                res.type_ = MsgType::Reach;
+                res.reach = from_value(v)?;
+            }
+            "hora" => {
+                res.type_ = MsgType::Hora;
+                res.hora = from_value(v)?;
+            }
+            "none" => {
+                res.type_ = MsgType::None;
+                res.none = from_value(v)?;
+            }
+            t => {
+                return Err(serde::de::Error::invalid_value(
+                    serde::de::Unexpected::Str(t),
+                    &"type value",
+                ))
+            }
+        }
+        Ok(res)
+    }
+}
+
 #[test]
 fn test_mjai() {
     let mjai = MjaiEndpoint::new("127.0.0.1:12345");
@@ -507,6 +716,21 @@ fn test_mjai() {
 }
 
 #[test]
-fn test_mjai2() {
-    println!("{}", from_mjai_tile_symbol("?"));
+fn test_mjai_message() {
+    let dahai = r#"{"type":"dahai","actor":0,"pai":"6s","tsumogiri":false}"#;
+    let chi = r#"{"type":"chi","actor":0,"target":3,"pai":"4p","consumed":["5p","6p"]}"#;
+    let pon = r#"{"type":"pon","actor":0,"target":1,"pai":"5sr","consumed":["5s","5s"]}"#;
+    let kakan = r#"{"type":"kakan","actor":0,"pai":"6m","consumed":["6m","6m","6m"]}"#;
+    let daiminkan =
+        r#"{"type":"daiminkan","actor":3,"target":1,"pai":"5m","consumed":["5m","5m","5mr"]}"#;
+    let ankan = r#"{"type":"ankan","actor":1,"consumed":["N","N","N","N"]}"#;
+    let reach = r#"{"type":"reach","actor":1}"#;
+    let hora = r#"{"type":"hora","actor":1,"target":0,"pai":"7s"}"#;
+    let none = r#"{"type":"none"}"#;
+    let msgs = [dahai, chi, pon, kakan, daiminkan, ankan, reach, hora, none];
+
+    for &msg in &msgs {
+        let d = ClientMessage::from_value(serde_json::from_str(msg).unwrap()).unwrap();
+        println!("{}, {:?}", msg, d);
+    }
 }

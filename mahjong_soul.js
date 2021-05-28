@@ -295,14 +295,12 @@ msc.UiController = class {
     }
 
     action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
-        this.safe_action(() => {
-            let p = this.positions
-            let pos = {
-                x: p.leftmost_pai.x + p.pai_interval * n,
-                y: p.leftmost_pai.y,
-            }
-            this.click(pos);
-        });
+        let p = this.positions
+        let pos = {
+            x: p.leftmost_pai.x + p.pai_interval * n,
+            y: p.leftmost_pai.y,
+        }
+        this.click(pos);
     }
 
     action_cancel() { // スキップ

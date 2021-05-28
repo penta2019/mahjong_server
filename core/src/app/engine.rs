@@ -146,6 +146,9 @@ impl MahjongEngine {
     }
 
     fn do_game_start(&mut self) {
+        for s in 0..SEAT {
+            self.config.operators[s].set_seat(s);
+        }
         op!(self, game_start);
     }
 
@@ -1156,21 +1159,18 @@ impl App {
         use crate::operator::mjai::MjaiEndpoint;
         use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
 
-        let mut mjai = MjaiEndpoint::new("127.0.0.1:12345");
-        mjai.set_seat(0);
-
         let config = Config {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
-                Box::new(mjai),
                 // Box::new(ManualOperator::new()),
                 // Box::new(RandomDiscardOperator::new(self.seed + 0)),
                 // Box::new(Bot2::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
                 Box::new(TiitoitsuBot::new()),
+                Box::new(MjaiEndpoint::new("127.0.0.1:12345")),
             ],
             listeners: vec![Box::new(StageConsolePrinter {})],
         };

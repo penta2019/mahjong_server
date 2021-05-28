@@ -9,28 +9,44 @@ use PlayerOperation::*;
 
 const NO_SEAT: usize = 4;
 
+// macro_rules! op {
+//     ($self:expr, $name:ident $(, $args:expr)*) => {
+//         paste::item! {
+//             $self.stage.[< op_ $name>]($($args),*);
+//             $self.operator.[<notify_op_ $name>](&$self.stage, $($args),*);
+//         }
+//     };
+// }
+
 macro_rules! op {
-    ($self:expr, $name:ident, $($args:expr),*) => {
+    ($self:expr, $name:ident $(, $args:expr)*) => {
         paste::item! {
-            $self.stage.[< op_ $name>]($($args),*)
+            $self.stage.[< op_ $name>]($($args),*);
+            $self.operator.[<notify_op_ $name>](&$self.stage, $($args),*);
         }
     };
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Mahjongsoul {
     stage: Stage,
     step: usize,
     seat: usize, // my seat
     actions: Vec<Value>,
     need_write: bool,
+    operator: Box<dyn Operator>,
 }
 
 impl Mahjongsoul {
-    fn new(need_write: bool) -> Self {
-        let mut s = Self::default();
-        s.need_write = need_write;
-        s
+    fn new(need_write: bool, operator: Box<dyn Operator>) -> Self {
+        Self {
+            stage: Stage::default(),
+            step: 0,
+            seat: 0,
+            actions: vec![],
+            need_write: need_write,
+            operator: operator,
+        }
     }
 
     fn apply(&mut self, act: &Value) {
@@ -60,6 +76,7 @@ impl Mahjongsoul {
                 return;
             }
         }
+        self.operator.set_seat(self.seat);
 
         while self.step < self.actions.len() {
             let action = self.actions[self.step].clone();
@@ -106,29 +123,53 @@ impl Mahjongsoul {
         }
     }
 
-    fn handler_mjstart(&mut self, _data: &Value) {}
+    fn handler_mjstart(&mut self, _data: &Value) {
+        op!(self, game_start);
+    }
 
     fn handler_newround(&mut self, data: &Value) {
-        let mut hand: Vec<Tile> = Vec::new();
-        for ps in data["tiles"].as_array().unwrap() {
-            hand.push(tile_from_symbol(as_str(ps)));
-        }
-        let mut player_hands = [vec![], vec![], vec![], vec![]];
-        player_hands[self.seat] = hand;
+        let round = as_usize(&data["chang"]);
+        let kyoku = as_usize(&data["ju"]);
+        let honba = as_usize(&data["ben"]);
+        let kyoutaku = as_usize(&data["liqibang"]);
 
         let mut doras: Vec<Tile> = Vec::new();
         for ps in data["doras"].as_array().unwrap() {
             doras.push(tile_from_symbol(as_str(ps)));
         }
 
-        let round = as_usize(&data["chang"]);
-        let kyoku = as_usize(&data["ju"]);
-        let honba = as_usize(&data["ben"]);
-        let kyoutaku = as_usize(&data["liqibang"]);
         let mut scores = [0; SEAT];
         for (s, score) in data["scores"].as_array().unwrap().iter().enumerate() {
             scores[s] = score.as_i64().unwrap() as i32;
         }
+
+        let mut player_hands = [vec![], vec![], vec![], vec![]];
+        for s in 0..SEAT {
+            let hand = &mut player_hands[s];
+            if s == self.seat {
+                for ps in data["tiles"].as_array().unwrap() {
+                    hand.push(tile_from_symbol(as_str(ps)));
+                }
+            } else {
+                if s == kyoku {
+                    for _ in 0..14 {
+                        hand.push(Z8);
+                    }
+                } else {
+                    for _ in 0..13 {
+                        hand.push(Z8);
+                    }
+                }
+            }
+        }
+
+        // let mut hand: Vec<Tile> = Vec::new();
+        // for ps in data["tiles"].as_array().unwrap() {
+        //     hand.push(tile_from_symbol(as_str(ps)));
+        // }
+        // let mut player_hands = [vec![], vec![], vec![], vec![]];
+        // player_hands[self.seat] = hand;
+
         op!(
             self,
             roundnew,
@@ -147,9 +188,9 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            op!(self, dealtile, s, Some(t))
+            op!(self, dealtile, s, Some(t));
         } else {
-            op!(self, dealtile, s, None)
+            op!(self, dealtile, s, None);
         }
 
         self.update_doras(data);
@@ -182,7 +223,7 @@ impl Mahjongsoul {
             froms.push(as_usize(f));
         }
 
-        op!(self, chiiponkan, s, tp, &tiles, &froms)
+        op!(self, chiiponkan, s, tp, &tiles, &froms);
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -193,7 +234,7 @@ impl Mahjongsoul {
             _ => panic!("invalid gang type"),
         };
         let t = tile_from_symbol(as_str(&data["tiles"]));
-        op!(self, ankankakan, s, mt, t)
+        op!(self, ankankakan, s, mt, t);
     }
 
     fn handler_babei(&mut self, data: &Value) {
@@ -205,7 +246,7 @@ impl Mahjongsoul {
     fn handler_hule(&mut self, data: &Value) {
         // TODO
         let mut score_deltas = [0; 4];
-        for (s, score) in data["score_deltas"].as_array().unwrap().iter().enumerate() {
+        for (s, score) in data["delta_scores"].as_array().unwrap().iter().enumerate() {
             score_deltas[s] = score.as_i64().unwrap() as i32;
         }
         op!(self, roundend_win, &vec![], &vec![], &score_deltas);
@@ -232,7 +273,6 @@ pub struct App {
     wws_send_recv: SendRecv,
     cws_send_recv: SendRecv,
     file_in: String,
-    operator: Box<dyn Operator>,
 }
 
 impl App {
@@ -241,7 +281,8 @@ impl App {
 
         // use crate::operator::manual::ManualOperator;
         // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::tiitoitsu::TiitoitsuBot;
+        use crate::operator::mjai::MjaiEndpoint;
+        // use crate::operator::tiitoitsu::TiitoitsuBot;
 
         let mut file_in = "".to_string();
         let mut need_write = false;
@@ -266,12 +307,12 @@ impl App {
             }
         }
 
+        let mjai = MjaiEndpoint::new("127.0.0.1:12345");
         Self {
-            game: Mahjongsoul::new(need_write),
+            game: Mahjongsoul::new(need_write, Box::new(mjai)),
             wws_send_recv: create_ws_server(52001), // for Web-interface
             cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
             file_in,
-            operator: Box::new(TiitoitsuBot::new()),
         }
     }
 
@@ -369,7 +410,7 @@ impl App {
 
                     let ops = json_parse_operation(dd);
                     println!("ops: {:?}", ops);
-                    let op = self.operator.handle_operation(stg, seat, &ops);
+                    let op = self.game.operator.handle_operation(stg, seat, &ops);
                     let (_, arg_idx) = calc_operation_index(&ops, &op).unwrap();
                     match &op {
                         Nop => {

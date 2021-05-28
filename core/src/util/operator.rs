@@ -26,6 +26,7 @@ pub enum PlayerOperation {
 
 // Operator trait
 pub trait Operator: StageListener + OperatorClone + Send {
+    fn set_seat(&mut self, _: Seat) {}
     fn handle_operation(
         &mut self,
         stage: &Stage,

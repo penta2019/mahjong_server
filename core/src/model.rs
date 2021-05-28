@@ -432,7 +432,7 @@ impl Stage {
             let ph = &player_hands[s];
             let pl = &mut self.players[s];
             pl.seat = s;
-            pl.is_shown = !ph.is_empty();
+            pl.is_shown = !ph.is_empty() && !ph.contains(&Z8);
             pl.is_menzen = true;
 
             self.turn = s; // player_inc_tile() 用

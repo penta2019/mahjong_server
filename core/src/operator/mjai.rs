@@ -27,12 +27,7 @@ pub struct MjaiEndpoint {
 
 impl MjaiEndpoint {
     pub fn new(addr: &str) -> Self {
-        let shared_data = SharedData {
-            record: vec![],
-            action: json!(null),
-            possible_actions: json!(null),
-        };
-        let data = Arc::new(Mutex::new(shared_data));
+        let data = Arc::new(Mutex::new(SharedData::new()));
         let obj = Self {
             seat: NO_SEAT,
             data: data.clone(),
@@ -75,10 +70,6 @@ impl MjaiEndpoint {
         obj
     }
 
-    pub fn set_seat(&mut self, seat: usize) {
-        self.seat = seat;
-    }
-
     fn add_record(&mut self, record: Value) {
         let mut d = self.data.lock().unwrap();
         d.action = json!(null);
@@ -88,6 +79,10 @@ impl MjaiEndpoint {
 }
 
 impl Operator for MjaiEndpoint {
+    fn set_seat(&mut self, seat: Seat) {
+        self.seat = seat;
+    }
+
     fn handle_operation(
         &mut self,
         stage: &Stage,
@@ -220,9 +215,15 @@ impl Operator for MjaiEndpoint {
         }
 
         // possible_actionに対する応答を待機
+        let mut c = 0;
         loop {
-            thread::sleep(time::Duration::from_millis(10));
+            thread::sleep(time::Duration::from_millis(100));
             if self.data.lock().unwrap().action != json!(null) {
+                break;
+            }
+            c += 1;
+            if c == 50 {
+                println!("possible_action timeout");
                 break;
             }
         }
@@ -325,9 +326,10 @@ impl Operator for MjaiEndpoint {
 impl StageListener for MjaiEndpoint {
     fn notify_op_game_start(&mut self, _stage: &Stage) {
         assert!(self.seat != NO_SEAT);
+        *self.data.lock().unwrap() = SharedData::new();
         self.add_record(json!({
             "type":"start_game",
-            "id":self.seat,
+            "id": self.seat,
             "names":["Player0","Player1","Player2","Player3"],
         }));
     }
@@ -562,6 +564,16 @@ struct SharedData {
     possible_actions: Value,
 }
 
+impl SharedData {
+    fn new() -> Self {
+        Self {
+            record: vec![],
+            action: json!(null),
+            possible_actions: json!(null),
+        }
+    }
+}
+
 fn stream_handler(
     stream: &mut TcpStream,
     data: Arc<Mutex<SharedData>>,
@@ -570,6 +582,7 @@ fn stream_handler(
     let stream2 = &mut stream.try_clone().unwrap();
     let mut send = |m: &Value| send_json(stream, m, debug);
     let mut recv = || recv_json(stream2, debug);
+    let sleep_ms = |ms| thread::sleep(time::Duration::from_millis(ms));
     let err = || io::Error::new(io::ErrorKind::InvalidData, "json field not found");
 
     // hello
@@ -590,9 +603,15 @@ fn stream_handler(
     let mut cursor = 0;
     let mut reach_skip = false;
     loop {
+        if cursor > data.lock().unwrap().record.len() {
+            // 新しく試合開始した場合はリセット
+            println!("mjai reset");
+            cursor = 0;
+        }
+
         while reach_skip {
             if cursor == data.lock().unwrap().record.len() {
-                thread::sleep(time::Duration::from_millis(10));
+                sleep_ms(10);
                 continue;
             }
 
@@ -605,15 +624,15 @@ fn stream_handler(
         }
 
         let len = data.lock().unwrap().record.len();
-        let is_last_record = cursor == len - 1;
-        if cursor < len - 1 {
-            let d = data.lock().unwrap();
-            send(&d.record[cursor])?;
+        let is_last_record = cursor + 1 == len;
+        // println!("cursor: {}", cursor);
+        if cursor + 1 < len {
+            send(&data.lock().unwrap().record[cursor])?;
         } else if is_last_record {
             if data.lock().unwrap().possible_actions == json!(null) {
                 // handle_operationがpossible_actionsを追加する可能性があるので待機
                 // data.lock()が開放されている必要があることに注意
-                thread::sleep(time::Duration::from_millis(10));
+                sleep_ms(1000);
             }
 
             let d = data.lock().unwrap();
@@ -626,7 +645,7 @@ fn stream_handler(
                 send(&record)?;
             }
         } else {
-            thread::sleep(time::Duration::from_millis(10));
+            sleep_ms(10);
             continue;
         }
         cursor += 1;
@@ -917,22 +936,6 @@ impl ClientMessage {
         }
         Ok(res)
     }
-}
-
-#[test]
-fn test_mjai() {
-    let mjai = MjaiEndpoint::new("127.0.0.1:12345");
-    let mut buf = String::new();
-    io::stdin().read_line(&mut buf).ok();
-}
-
-#[test]
-fn test_mjai2() {
-    let mut v = vec![];
-    v.push(json!("hello"));
-    v.push(json!(1));
-    v.push(json!({"world": 2}));
-    println!("{}", json!(v));
 }
 
 #[test]

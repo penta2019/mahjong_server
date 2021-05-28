@@ -107,6 +107,17 @@ impl Operator for MjaiEndpoint {
         }
 
         let v = std::mem::replace(&mut self.data.lock().unwrap().action, json!(null));
+
+        // reachだけはmjaiと仕様が異なるため個別処理する
+        if v["type"] == json!("reach") {
+            if let Some(t) = v["pai"].as_str() {
+                return Riichi(vec![from_mjai_tile_symbol(t)]);
+            } else {
+                println!("[Error] pai not found in reach message");
+                return Nop;
+            }
+        }
+
         let cmsg = ClientMessage::from_value(v);
         if let Err(_) = cmsg {
             println!("[Error] Failed to parse mjai action");
@@ -129,7 +140,7 @@ impl Operator for MjaiEndpoint {
             MsgType::Kakan => {}
             MsgType::Daiminkan => {}
             MsgType::Ankan => {}
-            MsgType::Reach => {}
+            MsgType::Reach => panic!(),
             MsgType::Hora => {}
             MsgType::None => {}
         };
@@ -414,7 +425,22 @@ fn stream_handler(
     }
 
     let mut cursor = 0;
+    let mut reach_skip = false;
     loop {
+        while reach_skip {
+            if cursor == data.lock().unwrap().record.len() {
+                thread::sleep(time::Duration::from_millis(10));
+                continue;
+            }
+
+            let rec = &data.lock().unwrap().record[cursor];
+            cursor += 1;
+            if rec["type"].as_str().ok_or_else(err)? == "reach_accepted" {
+                reach_skip = false;
+                break;
+            }
+        }
+
         let len = data.lock().unwrap().record.len();
         let is_last_record = cursor == len - 1;
         if cursor < len - 1 {
@@ -446,7 +472,30 @@ fn stream_handler(
         let mut d = data.lock().unwrap();
         let v = recv()?;
         if is_last_record && d.possible_actions != json!(null) {
-            d.action = v;
+            if v["type"].as_str().ok_or_else(err)? == "reach" {
+                send(&v)?; // send reach
+                let mut v2 = recv()?; // recv dahai
+                send(&v2)?; // send dahai
+                recv()?; // recv none
+
+                // send reach_accepted
+                let actor = v["actor"].as_u64().ok_or_else(err)? as usize;
+                let mut deltas = [0; SEAT];
+                deltas[actor] = -1000;
+                send(&json!({
+                    "type":"reach_accepted",
+                    "actor": actor,
+                    "deltas": deltas,
+                    "scores":[25000, 25000, 25000, 25000],
+                }))?;
+                recv()?; // recv none
+                reach_skip = true;
+
+                v2["type"] = json!("reach");
+                d.action = v2;
+            } else {
+                d.action = v;
+            }
         }
     }
 }

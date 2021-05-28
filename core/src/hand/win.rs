@@ -282,6 +282,7 @@ pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
 // 聴牌捨て牌判定 ===============================================================
 // ツモ番において聴牌となる打牌と待ちの組み合わせの一覧を返却
 // 主にリーチ宣言が可能かどうかを確認する用途
+// この関数群は手牌の赤5を考慮する
 
 // 通常形
 pub fn calc_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
@@ -299,7 +300,8 @@ pub fn calc_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)>
             }
         }
     }
-    res
+
+    discards_with_red5(&hand, res)
 }
 
 // 七対子
@@ -334,29 +336,29 @@ pub fn calc_discards_to_chiitoitsu_ready(hand: &TileTable) -> Vec<(Tile, Vec<Til
         }
     }
 
+    let mut res = vec![];
     match v2.len() {
-        0..=4 => return vec![], // 聴牌未満
+        0..=4 => {} // 聴牌未満
         5 => {
             if v1.len() == 1 && v3.len() == 1 {
-                vec![(v3[0], vec![v1[0]])]
-            } else {
-                vec![]
+                res = vec![(v3[0], vec![v1[0]])]
             }
         }
         6 => {
             assert!(v1.len() == 2);
             let (t0, t1) = (v1[0], v1[1]);
-            vec![(t0, vec![t1]), (t1, vec![t0])]
+            res = vec![(t0, vec![t1]), (t1, vec![t0])]
         }
         7 => {
-            let mut res = vec![];
+            // 和了形からあえて和了しない場合
             for t in v2 {
                 res.push((t, vec![t]));
             }
-            res
         }
         _ => panic!(),
     }
+
+    discards_with_red5(&hand, res)
 }
 
 // 国士無双
@@ -395,5 +397,43 @@ pub fn calc_discards_to_kokushimusou_ready(hand: &TileTable) -> Vec<(Tile, Vec<T
         }
     }
 
+    discards_with_red5(&hand, res)
+}
+
+fn discards_with_red5(
+    hand: &TileTable,
+    discards: Vec<(Tile, Vec<Tile>)>,
+) -> Vec<(Tile, Vec<Tile>)> {
+    let mut res = vec![];
+    for (t, wins) in discards {
+        if t.1 == 5 {
+            if hand[t.0][0] > 0 {
+                if hand[t.0][5] == hand[t.0][0] {
+                    // 赤5しか手牌にない場合
+                    res.push((Tile(t.0, 0), wins));
+                } else {
+                    // 赤5と通常5の両方ある場合
+                    res.push((t, wins.clone()));
+                    res.push((Tile(t.0, 0), wins));
+                }
+            } else {
+                res.push((t, wins));
+            }
+        } else {
+            // 5ではない場合
+            res.push((t, wins));
+        }
+    }
     res
+}
+
+#[test]
+fn test_win() {
+    let h = [
+        [1, 1, 1, 1, 0, 3, 0, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+        [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ];
+    println!("{:?}", calc_discards_to_normal_ready(&h));
 }

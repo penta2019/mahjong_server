@@ -125,7 +125,8 @@ pub fn calc_operation_index(
         Minkan(v) => op_with_arg!(Minkan, ops, v),
         Ron => op_without_arg!(Ron, ops),
     }
-    panic!();
+
+    panic!("Invalid op: ops = {:?}, op = {:?}", ops, op);
 }
 
 pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {

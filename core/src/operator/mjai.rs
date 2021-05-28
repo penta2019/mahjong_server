@@ -55,7 +55,7 @@ impl MjaiEndpoint {
                         let data = data.clone();
                         thread::spawn(move || {
                             println!("MjaiEndpoint: New connection {:?}", stream);
-                            match stream_handler(&mut stream, data, true) {
+                            match stream_handler(&mut stream, data, false) {
                                 Ok(_) => {}
                                 Err(e) => {
                                     println!("[Error]: {:?}", e);
@@ -94,11 +94,37 @@ impl Operator for MjaiEndpoint {
         seat: Seat,
         ops: &Vec<PlayerOperation>,
     ) -> PlayerOperation {
+        // possible_actionを追加
         {
             let mut d = self.data.lock().unwrap();
-            d.possible_actions = json!([]);
+            let mut acts = vec![];
+            for op in ops {
+                match op {
+                    Discard(_) => {}
+                    Tsumo => {
+                        acts.push(MsgHora {
+                            type_: "hora".to_string(),
+                            actor: seat,
+                            target: seat,
+                            pai: mjai_tile_symbol(stage.players[seat].drawn.unwrap()),
+                        });
+                    }
+                    Ron => {
+                        let lt = stage.last_tile.unwrap();
+                        acts.push(MsgHora {
+                            type_: "hora".to_string(),
+                            actor: seat,
+                            target: lt.0,
+                            pai: mjai_tile_symbol(lt.1),
+                        });
+                    }
+                    _ => {}
+                }
+            }
+            d.possible_actions = json!(acts);
         }
 
+        // possible_actionに対する応答を待機
         loop {
             thread::sleep(time::Duration::from_millis(10));
             if self.data.lock().unwrap().action != json!(null) {
@@ -141,7 +167,16 @@ impl Operator for MjaiEndpoint {
             MsgType::Daiminkan => {}
             MsgType::Ankan => {}
             MsgType::Reach => panic!(),
-            MsgType::Hora => {}
+            MsgType::Hora => {
+                if ops.contains(&Tsumo) {
+                    return Tsumo;
+                } else if ops.contains(&Ron) {
+                    return Ron;
+                } else {
+                    println!("[Error] invalid hora action.");
+                    return Nop;
+                }
+            }
             MsgType::None => {}
         };
 
@@ -450,7 +485,6 @@ fn stream_handler(
             if data.lock().unwrap().possible_actions == json!(null) {
                 // handle_operationがpossible_actionsを追加する可能性があるので待機
                 // data.lock()が開放されている必要があることに注意
-                println!("wait for possible action");
                 thread::sleep(time::Duration::from_millis(10));
             }
 
@@ -762,6 +796,15 @@ fn test_mjai() {
     let mjai = MjaiEndpoint::new("127.0.0.1:12345");
     let mut buf = String::new();
     io::stdin().read_line(&mut buf).ok();
+}
+
+#[test]
+fn test_mjai2() {
+    let mut v = vec![];
+    v.push(json!("hello"));
+    v.push(json!(1));
+    v.push(json!({"world": 2}));
+    println!("{}", json!(v));
 }
 
 #[test]

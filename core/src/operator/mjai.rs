@@ -2,7 +2,6 @@ use std::net::{TcpListener, TcpStream};
 // use std::sync::mpsc;
 use std::io;
 use std::io::prelude::*;
-use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 
@@ -14,7 +13,7 @@ use crate::model::*;
 use crate::util::operator::*;
 use crate::util::stage_listener::StageListener;
 
-use PlayerOperation::*;
+use PlayerOperationType::*;
 
 const NO_SEAT: usize = 4;
 
@@ -94,110 +93,79 @@ impl Operator for MjaiEndpoint {
             let mut d = self.data.lock().unwrap();
             let mut acts = vec![];
             for op in ops {
-                match op {
+                let PlayerOperation(tp, cs) = op;
+                match tp {
                     Nop => {}
-                    Discard(_) => {}
-                    Ankan(v) => {
-                        for &t in v {
-                            let comsumed = if t.0 != TZ && t.1 == 5 {
-                                // 5の暗槓
-                                vec![Tile(t.0, 0), t, t, t]
-                            } else {
-                                vec![t, t, t, t]
-                            }
-                            .iter()
-                            .map(|&t| mjai_tile_symbol(t))
-                            .collect();
-
-                            acts.push(json!(MsgAnkan {
-                                type_: "ankan".to_string(),
-                                actor: seat,
-                                consumed: comsumed,
-                            }));
-                        }
-                    }
-                    Kakan(v) => {
-                        for &t in v {
-                            let comsumed = if t.1 == 0 {
-                                // 赤5
-                                let t2 = Tile(t.0, 5);
-                                vec![t2, t2, t2]
-                            } else if t.0 != TZ && t.1 == 5 {
-                                // 通常5
-                                vec![Tile(t.0, 0), t, t]
-                            } else {
-                                vec![t, t, t]
-                            }
-                            .iter()
-                            .map(|&t| mjai_tile_symbol(t))
-                            .collect();
-
-                            acts.push(json!(MsgKakan {
-                                type_: "kakan".to_string(),
-                                actor: seat,
-                                pai: mjai_tile_symbol(t),
-                                consumed: comsumed,
-                            }));
-                        }
-                    }
-                    Riichi(_) => {}
-                    Tsumo => {
-                        acts.push(json!(MsgHora {
-                            type_: "hora".to_string(),
+                    Discard => {}
+                    Ankan => {
+                        acts.push(json!(MsgAnkan {
+                            type_: "ankan".to_string(),
                             actor: seat,
-                            target: seat,
-                            pai: mjai_tile_symbol(stage.players[seat].drawn.unwrap()),
+                            consumed: vec_to_mjai_tile(cs),
                         }));
                     }
-                    Kyushukyuhai => {}
-                    Kita => {}
-                    Chii(v) => {
-                        let (target_seat, target_tile) = stage.last_tile.unwrap();
-                        for &(t0, t1) in v {
-                            acts.push(json!(MsgChi {
-                                type_: "chi".to_string(),
-                                actor: seat,
-                                target: target_seat,
-                                pai: mjai_tile_symbol(target_tile),
-                                consumed: vec![mjai_tile_symbol(t0), mjai_tile_symbol(t1)],
-                            }));
-                        }
-                    }
-                    Pon(v) => {
-                        let (target_seat, target_tile) = stage.last_tile.unwrap();
-                        for &(t0, t1) in v {
-                            acts.push(json!(MsgPon {
-                                type_: "pon".to_string(),
-                                actor: seat,
-                                target: target_seat,
-                                pai: mjai_tile_symbol(target_tile),
-                                consumed: vec![mjai_tile_symbol(t0), mjai_tile_symbol(t1)],
-                            }));
-                        }
-                    }
-                    Minkan(_) => {
-                        let (target_seat, target_tile) = stage.last_tile.unwrap();
-                        let t = target_tile;
+                    Kakan => {
+                        let t = op.1[0];
                         let comsumed = if t.1 == 0 {
                             // 赤5
                             let t2 = Tile(t.0, 5);
                             vec![t2, t2, t2]
-                        } else if t.0 != TZ && t.1 == 5 {
+                        } else if t.is_suit() && t.1 == 5 {
                             // 通常5
                             vec![Tile(t.0, 0), t, t]
                         } else {
                             vec![t, t, t]
                         }
                         .iter()
-                        .map(|&t| mjai_tile_symbol(t))
+                        .map(|&t| to_mjai_tile(t))
                         .collect();
 
+                        acts.push(json!(MsgKakan {
+                            type_: "kakan".to_string(),
+                            actor: seat,
+                            pai: to_mjai_tile(t),
+                            consumed: comsumed,
+                        }));
+                    }
+                    Riichi => {}
+                    Tsumo => {
+                        acts.push(json!(MsgHora {
+                            type_: "hora".to_string(),
+                            actor: seat,
+                            target: seat,
+                            pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
+                        }));
+                    }
+                    Kyushukyuhai => {}
+                    Kita => {}
+                    Chii => {
+                        let (target_seat, target_tile) = stage.last_tile.unwrap();
+                        acts.push(json!(MsgChi {
+                            type_: "chi".to_string(),
+                            actor: seat,
+                            target: target_seat,
+                            pai: to_mjai_tile(target_tile),
+                            consumed: vec_to_mjai_tile(cs),
+                        }));
+                    }
+                    Pon => {
+                        let (target_seat, target_tile) = stage.last_tile.unwrap();
+                        acts.push(json!(MsgPon {
+                            type_: "pon".to_string(),
+                            actor: seat,
+                            target: target_seat,
+                            pai: to_mjai_tile(target_tile),
+                            consumed: vec_to_mjai_tile(cs),
+                        }));
+                    }
+                    Minkan => {
+                        let (target_seat, target_tile) = stage.last_tile.unwrap();
                         acts.push(json!(MsgDaiminkan {
                             type_: "daiminkan".to_string(),
                             actor: seat,
                             target: target_seat,
-                            pai: mjai_tile_symbol(target_tile),
-                            consumed: comsumed,
+                            pai: to_mjai_tile(target_tile),
+                            consumed: vec_to_mjai_tile(cs),
                         }));
                     }
                     Ron => {
@@ -206,7 +174,7 @@ impl Operator for MjaiEndpoint {
                             type_: "hora".to_string(),
                             actor: seat,
                             target: lt.0,
-                            pai: mjai_tile_symbol(lt.1),
+                            pai: to_mjai_tile(lt.1),
                         }));
                     }
                 }
@@ -223,8 +191,8 @@ impl Operator for MjaiEndpoint {
             }
             c += 1;
             if c == 50 {
-                println!("possible_action timeout");
-                break;
+                println!("[Error] possible_action timeout");
+                return Op::nop();
             }
         }
 
@@ -233,17 +201,17 @@ impl Operator for MjaiEndpoint {
         // reachだけはmjaiと仕様が異なるため個別処理する
         if v["type"] == json!("reach") {
             if let Some(t) = v["pai"].as_str() {
-                return Riichi(vec![from_mjai_tile_symbol(t)]);
+                return Op::riichi(from_mjai_tile(t));
             } else {
                 println!("[Error] pai not found in reach message");
-                return Nop;
+                return Op::nop();
             }
         }
 
         let cmsg = ClientMessage::from_value(v);
         if let Err(_) = cmsg {
             println!("[Error] Failed to parse mjai action");
-            return Nop;
+            return Op::nop();
         }
 
         let cmsg = cmsg.unwrap();
@@ -251,69 +219,46 @@ impl Operator for MjaiEndpoint {
             MsgType::Dahai => {
                 let m = cmsg.dahai.unwrap();
                 if m.tsumogiri {
-                    Nop
+                    Op::nop()
                 } else {
-                    Discard(vec![from_mjai_tile_symbol(&m.pai)])
+                    Op::discard(from_mjai_tile(&m.pai))
                 }
             }
             MsgType::Chi => {
                 let m = cmsg.chi.unwrap();
-                if m.consumed.len() != 2 {
-                    println!("[Error] Invalid number of consumed tiles");
-                    return Nop;
-                }
-                let t0 = from_mjai_tile_symbol(&m.consumed[0]);
-                let t1 = from_mjai_tile_symbol(&m.consumed[1]);
-                Chii(vec![(t0, t1)])
+                Op::chii(vec_from_mjai_tile(&m.consumed))
             }
             MsgType::Pon => {
                 let m = cmsg.pon.unwrap();
-                if m.consumed.len() != 2 {
-                    println!("[Error] Invalid number of consumed tiles");
-                    return Nop;
-                }
-                let t0 = from_mjai_tile_symbol(&m.consumed[0]);
-                let t1 = from_mjai_tile_symbol(&m.consumed[1]);
-                Pon(vec![(t0, t1)])
+                Op::pon(vec_from_mjai_tile(&m.consumed))
             }
             MsgType::Kakan => {
                 let m = cmsg.kakan.unwrap();
-                let t = from_mjai_tile_symbol(&m.pai);
-                Kakan(vec![t])
+                Op::kakan(from_mjai_tile(&m.pai))
             }
             MsgType::Daiminkan => {
-                let (_, target_tile) = stage.last_tile.unwrap();
-                Minkan(vec![Tile(target_tile.0, target_tile.n())])
+                let m = cmsg.daiminkan.unwrap();
+                Op::minkan(vec_from_mjai_tile(&m.consumed))
             }
             MsgType::Ankan => {
                 let m = cmsg.ankan.unwrap();
-                if m.consumed.len() != 4 {
-                    println!("[Error] Invalid number of consumed tiles");
-                    return Nop;
-                }
-                let t = from_mjai_tile_symbol(&m.consumed[0]);
-                Ankan(vec![Tile(t.0, t.n())])
+                Op::ankan(vec_from_mjai_tile(&m.consumed))
             }
             MsgType::Reach => panic!(),
             MsgType::Hora => {
-                if ops.contains(&Tsumo) {
-                    Tsumo
-                } else if ops.contains(&Ron) {
-                    Ron
+                if ops.contains(&Op::tsumo()) {
+                    Op::tsumo()
+                } else if ops.contains(&Op::ron()) {
+                    Op::ron()
                 } else {
                     println!("[Error] Invalid hora action.");
-                    return Nop;
+                    return Op::nop();
                 }
             }
-            MsgType::None => Nop,
+            MsgType::None => Op::nop(),
         };
 
-        if let None = calc_operation_index(ops, &op) {
-            return Nop;
-        }
-
-        println!("mjai operation: {:?}", op);
-        stdout().flush().unwrap();
+        // println!("mjai operation: {:?}", op);
 
         op
     }
@@ -349,7 +294,7 @@ impl StageListener for MjaiEndpoint {
         let hands = create_tehais(player_hands, self.seat);
 
         assert!(doras.len() == 1);
-        let dora_marker = mjai_tile_symbol(doras[0]);
+        let dora_marker = to_mjai_tile(doras[0]);
 
         self.add_record(json!({
             "type":"start_kyoku",
@@ -366,7 +311,7 @@ impl StageListener for MjaiEndpoint {
 
     fn notify_op_dealtile(&mut self, _stage: &Stage, seat: Seat, tile: Option<Tile>) {
         let t = if self.seat == seat {
-            mjai_tile_symbol(tile.unwrap())
+            to_mjai_tile(tile.unwrap())
         } else {
             "?".to_string()
         };
@@ -395,7 +340,7 @@ impl StageListener for MjaiEndpoint {
         self.add_record(json!({
             "type": "dahai",
             "actor": seat,
-            "pai": mjai_tile_symbol(tile),
+            "pai": to_mjai_tile(tile),
             "tsumogiri": is_drawn,
         }));
 
@@ -424,10 +369,10 @@ impl StageListener for MjaiEndpoint {
         let mut target = NO_SEAT;
         for (&t, &f) in tiles.iter().zip(froms.iter()) {
             if seat == f {
-                consumed.push(mjai_tile_symbol(t));
+                consumed.push(to_mjai_tile(t));
             } else {
                 target = f;
-                pai = mjai_tile_symbol(t);
+                pai = to_mjai_tile(t);
             }
         }
         assert!(pai != "" && target != NO_SEAT);
@@ -454,7 +399,7 @@ impl StageListener for MjaiEndpoint {
             MeldType::Ankan => {
                 let mut consumed = vec![];
                 for &t in meld.tiles.iter() {
-                    consumed.push(mjai_tile_symbol(t))
+                    consumed.push(to_mjai_tile(t))
                 }
                 self.add_record(json!({
                     "type": "ankan",
@@ -467,9 +412,9 @@ impl StageListener for MjaiEndpoint {
                 let mut consumed = vec![];
                 for &t in meld.tiles.iter() {
                     if pai == "" && t == tile {
-                        pai = mjai_tile_symbol(t);
+                        pai = to_mjai_tile(t);
                     } else {
-                        consumed.push(mjai_tile_symbol(t))
+                        consumed.push(to_mjai_tile(t))
                     }
                 }
                 assert!(pai != "");
@@ -488,7 +433,7 @@ impl StageListener for MjaiEndpoint {
     fn notify_op_dora(&mut self, _stage: &Stage, tile: Tile) {
         self.add_record(json!({
             "type": "dora",
-            "dora_marker": mjai_tile_symbol(tile),
+            "dora_marker": to_mjai_tile(tile),
         }));
     }
 
@@ -503,13 +448,13 @@ impl StageListener for MjaiEndpoint {
         contexts: &Vec<(Seat, WinContext)>,
         score_deltas: &[i32; SEAT],
     ) {
-        let ura: Vec<String> = ura_doras.iter().map(|&t| mjai_tile_symbol(t)).collect();
+        let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
         for (seat, ctx) in contexts {
             self.add_record(json!({
                 "type": "hora",
                 "actor": seat,
                 "target": stage.turn,
-                "pai": mjai_tile_symbol(stage.last_tile.unwrap().1),
+                "pai": to_mjai_tile(stage.last_tile.unwrap().1),
                 "uradora_markers": ura,
                 "hora_tehais": [], // TODO
                 "yakus": [], // TODO
@@ -687,30 +632,34 @@ fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<(
     stream.write((value.to_string() + "\n").as_bytes())?;
     if debug {
         println!("-> {:?}", value.to_string());
-        stdout().flush().unwrap();
+        io::stdout().flush().unwrap();
     }
     Ok(())
 }
 
 fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
+    let err = || -> io::Result<Value> {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "recv invalid json data",
+        ))
+    };
     let mut buf_read = io::BufReader::new(stream);
     let mut buf = String::new();
     buf_read.read_line(&mut buf)?;
     if debug {
         println!("<- {}", buf);
-        stdout().flush().unwrap();
+        io::stdout().flush().unwrap();
     }
 
-    serde_json::from_str(&buf[..buf.len() - 1]).or_else(|_| {
-        Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "recv invalid json data",
-        ))
-    })
+    if buf.len() == 0 {
+        err()?;
+    }
+    serde_json::from_str(&buf[..buf.len() - 1]).or_else(|_| err())
 }
 
-fn mjai_tile_symbol(t: Tile) -> String {
-    if t.0 == TZ {
+fn to_mjai_tile(t: Tile) -> String {
+    if t.is_hornor() {
         assert!(WE <= t.1 && t.1 <= DR);
         let hornor = ["", "E", "S", "W", "N", "P", "F", "C"];
         return hornor[t.1].to_string();
@@ -725,7 +674,7 @@ fn mjai_tile_symbol(t: Tile) -> String {
     }
 }
 
-fn from_mjai_tile_symbol(sym: &str) -> Tile {
+fn from_mjai_tile(sym: &str) -> Tile {
     match sym {
         "?" => Z8,
         "E" => Tile(TZ, WE),
@@ -753,13 +702,21 @@ fn from_mjai_tile_symbol(sym: &str) -> Tile {
     }
 }
 
+fn vec_to_mjai_tile(v: &Vec<Tile>) -> Vec<String> {
+    v.iter().map(|&t| to_mjai_tile(t)).collect()
+}
+
+fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
+    v.iter().map(|t| from_mjai_tile(t)).collect()
+}
+
 fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
     let mut hands = vec![];
     for (seat2, hands2) in player_hands.iter().enumerate() {
         let mut hand = vec![];
         for &t in hands2 {
             if seat == seat2 {
-                hand.push(mjai_tile_symbol(t));
+                hand.push(to_mjai_tile(t));
             } else {
                 hand.push("?".to_string());
             }

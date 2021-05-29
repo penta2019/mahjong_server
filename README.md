@@ -224,4 +224,4 @@ pub enum PlayerOperation {
 
 ## TODO
 ### akochan(https://github.com/critter-mj/akochan)に対応
-mjaiプロトコルを実装してmjai clientとしてakochanを実行
+* 雀魂 wincontext 実装

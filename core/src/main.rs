@@ -33,10 +33,12 @@ fn main() {
 
 #[allow(dead_code)]
 fn silence_unused_warning() {
+    let _ = model::Tile::is_simple;
     let _ = hand::win::is_normal_win;
     let _ = hand::win::is_chiitoitsu_win;
-    let _ = model::Tile::is_simple;
     let _ = hand::win::calc_tiles_to_chiitoitsu_win;
+    let _ = operator::bot2::Bot2::new;
+    let _ = operator::manual::ManualOperator::new;
 }
 
 #[test]
@@ -100,4 +102,11 @@ fn test_hand1() {
 
     println!("{:?}", res);
     println!("{}ms", elapsed.as_nanos() as f32 / 1000000.0);
+}
+
+#[test]
+fn test_main() {
+    let a = 128;
+    let b = 128;
+    println!("{}", &a == &b);
 }

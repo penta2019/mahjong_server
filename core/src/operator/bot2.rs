@@ -3,8 +3,6 @@ use crate::util::operator::*;
 use crate::util::parse_block::*;
 use crate::util::stage_listener::StageListener;
 
-use PlayerOperation::*;
-
 #[derive(Clone)]
 pub struct Bot2 {}
 
@@ -24,13 +22,13 @@ impl Operator for Bot2 {
         let h = &stage.players[seat].hand;
 
         if stage.turn == seat {
-            if ops.contains(&Tsumo) {
-                return Tsumo;
+            if ops.contains(&Op::tsumo()) {
+                return Op::tsumo();
             }
 
             for ni in 1..=DR {
                 if h[TZ][ni] != 0 && h[TZ][ni] != 3 {
-                    return Discard(vec![Tile(TZ, ni)]);
+                    return Op::discard(Tile(TZ, ni));
                 }
             }
 
@@ -49,7 +47,7 @@ impl Operator for Bot2 {
                 }
             }
             if t != Z8 {
-                return Discard(vec![t]);
+                return Op::discard(t);
             }
 
             // 有効牌が一番多くなるような不要牌を探して切る
@@ -69,14 +67,15 @@ impl Operator for Bot2 {
                 }
             }
             if t != Z8 {
-                return Discard(vec![t]);
+                return Op::discard(t);
             }
         } else {
-            if ops.contains(&Ron) {
-                return Ron;
+            if ops.contains(&Op::ron()) {
+                return Op::ron();
             }
         }
-        Nop
+
+        Op::nop()
     }
 
     fn debug_string(&self) -> String {

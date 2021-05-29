@@ -4,8 +4,6 @@ use crate::model::*;
 use crate::util::operator::*;
 use crate::util::stage_listener::StageListener;
 
-use PlayerOperation::*;
-
 #[derive(Clone)]
 pub struct RandomDiscardOperator {
     rng: rand::rngs::StdRng,
@@ -27,7 +25,7 @@ impl Operator for RandomDiscardOperator {
         _ops: &Vec<PlayerOperation>,
     ) -> PlayerOperation {
         if stage.turn != seat {
-            return Nop;
+            return Op::nop();
         }
 
         let h = &stage.players[seat].hand;
@@ -37,7 +35,7 @@ impl Operator for RandomDiscardOperator {
                 for ni in 1..TNUM {
                     if h[ti][ni] > 0 {
                         if n == 0 {
-                            return Discard(vec![Tile(ti, ni)]);
+                            return Op::discard(Tile(ti, ni));
                         }
                         n -= 1;
                     }

@@ -2,8 +2,6 @@ use crate::model::*;
 use crate::util::operator::*;
 use crate::util::stage_listener::*;
 
-use PlayerOperation::*;
-
 #[derive(Clone)]
 pub struct TiitoitsuBot {}
 
@@ -25,8 +23,8 @@ impl Operator for TiitoitsuBot {
 
         if stage.turn == seat {
             // turn
-            if ops.contains(&Tsumo) {
-                return Tsumo;
+            if ops.contains(&Op::tsumo()) {
+                return Op::tsumo();
             }
 
             let mut ones = vec![]; // 手牌に1枚のみある牌(left_count, Tile)
@@ -36,7 +34,7 @@ impl Operator for TiitoitsuBot {
                     match h[ti][ni] {
                         0 | 2 => {}
                         3 | 4 => {
-                            return Discard(vec![t]);
+                            return Op::discard(t);
                         }
                         1 => {
                             ones.push((count_left_tile(stage, seat, t), t));
@@ -49,15 +47,16 @@ impl Operator for TiitoitsuBot {
             // 1枚の牌で最も残り枚数が少ない牌から切る
             ones.sort();
             if !ones.is_empty() {
-                return Discard(vec![ones[0].1]);
+                return Op::discard(ones[0].1);
             }
         } else {
             // call
-            if ops.contains(&Ron) {
-                return Ron;
+            if ops.contains(&Op::ron()) {
+                return Op::ron();
             }
         }
-        Nop
+
+        Op::nop()
     }
 
     fn debug_string(&self) -> String {

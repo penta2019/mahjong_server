@@ -191,6 +191,11 @@ E_Dadian_Title:
     10: "E_Dadian_Title_yiman6"
     11: "E_Dadian_Title_leijiyiman"
 
+E_Hu_Type:
+    0: "rong" // ロン
+    1: "zimo" // ツモ
+    2: "qianggang" // 槍槓
+
 E_MJPai:
     0: "p"                // 筒子
     1: "m"                // 萬子
@@ -218,11 +223,13 @@ E_PlayerOperation
     9: "rong"             // ロン
     10: "jiuzhongjiupai"  // 九種九牌(流局)
     11: "babei"           // 北抜き
+    12: "huansanzhang"    // ?
+    13: "dingque"         // ?
 
 E_Ming                    // 副露
-    0: "shunzi"           // 順子
-    1: "kezi"             // 刻子
-    2: "gang_ming"        // 明槓(ActionChiPengGang) 加槓(ActionAnGangAddGang)
+    0: "shunzi"           // 順子(チー)
+    1: "kezi"             // 刻子(ポン)
+    2: "gang_ming"        // 明槓, 加槓
     3: "gang_an"          // 暗槓
     4: "babei"            // 北抜き
 

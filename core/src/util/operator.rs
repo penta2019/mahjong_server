@@ -3,26 +3,87 @@ use std::fmt;
 use crate::model::*;
 use crate::util::stage_listener::StageListener;
 
-use PlayerOperation::*;
+use PlayerOperationType::*;
 use TileStateType::*;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum PlayerOperation {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerOperationType {
     Nop, // Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
     // Turn Operations
-    Discard(Vec<Tile>), // 打牌 (配列はチー後に捨てることができない牌)
-    Ankan(Vec<Tile>),   // 暗槓
-    Kakan(Vec<Tile>),   // 加槓
-    Riichi(Vec<Tile>),  // リーチ
-    Tsumo,              // ツモ
-    Kyushukyuhai,       // 九種九牌
-    Kita,               // 北抜き
+    Discard,      // 打牌 (配列はチー後に捨てることができない牌)
+    Ankan,        // 暗槓
+    Kakan,        // 加槓
+    Riichi,       // リーチ
+    Tsumo,        // ツモ
+    Kyushukyuhai, // 九種九牌
+    Kita,         // 北抜き
     // Call Operations
-    Chii(Vec<(Tile, Tile)>), // チー (配列は鳴きが可能な組み合わせ 以下同様)
-    Pon(Vec<(Tile, Tile)>),  // ポン
-    Minkan(Vec<Tile>),       // 明槓
-    Ron,                     // ロン
+    Chii,   // チー (配列は鳴きが可能な組み合わせ 以下同様)
+    Pon,    // ポン
+    Minkan, // 明槓
+    Ron,    // ロン
 }
+
+// Vec<Tile>は操作により手牌からなくなる牌
+// Chii, Ponなどの標的の牌はstage.last_tileを参照する
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlayerOperation(pub PlayerOperationType, pub Vec<Tile>);
+impl PlayerOperation {
+    #[inline]
+    pub fn nop() -> Self {
+        Self(Nop, vec![])
+    }
+    #[inline]
+    pub fn discard(t: Tile) -> Self {
+        Self(Discard, vec![t])
+    }
+    #[inline]
+    pub fn ankan(v: Vec<Tile>) -> Self {
+        assert!(v.len() == 4);
+        Self(Ankan, v)
+    }
+    #[inline]
+    pub fn kakan(t: Tile) -> Self {
+        Self(Kakan, vec![t])
+    }
+    #[inline]
+    pub fn riichi(t: Tile) -> Self {
+        Self(Riichi, vec![t])
+    }
+    #[inline]
+    pub fn tsumo() -> Self {
+        Self(Tsumo, vec![])
+    }
+    #[inline]
+    pub fn kyushukyuhai() -> Self {
+        Self(Kyushukyuhai, vec![])
+    }
+    #[inline]
+    pub fn kita() -> Self {
+        Self(Kita, vec![Tile(TZ, WN)])
+    }
+    #[inline]
+    pub fn chii(v: Vec<Tile>) -> Self {
+        assert!(v.len() == 2);
+        Self(Chii, v)
+    }
+    #[inline]
+    pub fn pon(v: Vec<Tile>) -> Self {
+        assert!(v.len() == 2);
+        Self(Pon, v)
+    }
+    #[inline]
+    pub fn minkan(v: Vec<Tile>) -> Self {
+        assert!(v.len() == 3);
+        Self(Minkan, v)
+    }
+    #[inline]
+    pub fn ron() -> Self {
+        Self(Ron, vec![])
+    }
+}
+
+pub type Op = PlayerOperation;
 
 // Operator trait
 pub trait Operator: StageListener + OperatorClone + Send {
@@ -85,50 +146,6 @@ impl Operator for NullOperator {
 }
 
 impl StageListener for NullOperator {}
-
-pub fn calc_operation_index(
-    ops: &Vec<PlayerOperation>,
-    op: &PlayerOperation,
-) -> Option<(usize, usize)> {
-    macro_rules! op_without_arg {
-        ($x:pat, $ops:expr) => {
-            for (op_idx, op2) in $ops.iter().enumerate() {
-                if let $x = op2 {
-                    return Some((op_idx, 0));
-                }
-            }
-        };
-    }
-    macro_rules! op_with_arg {
-        ($x:ident, $ops:expr, $v:expr) => {{
-            for (op_idx, op2) in $ops.iter().enumerate() {
-                if let $x(v2) = op2 {
-                    for (arg_idx, &e) in v2.iter().enumerate() {
-                        if e == $v[0] {
-                            return Some((op_idx, arg_idx));
-                        }
-                    }
-                }
-            }
-        }};
-    }
-    match op {
-        Nop => op_without_arg!(Nop, ops),
-        Discard(_) => return Some((0, 0)),
-        Ankan(v) => op_with_arg!(Ankan, ops, v),
-        Kakan(v) => op_with_arg!(Kakan, ops, v),
-        Riichi(v) => op_with_arg!(Riichi, ops, v),
-        Tsumo => op_without_arg!(Tsumo, ops),
-        Kyushukyuhai => op_without_arg!(Kyushukyuhai, ops),
-        Kita => op_without_arg!(Kita, ops),
-        Chii(v) => op_with_arg!(Chii, ops, v),
-        Pon(v) => op_with_arg!(Pon, ops, v),
-        Minkan(v) => op_with_arg!(Minkan, ops, v),
-        Ron => op_without_arg!(Ron, ops),
-    }
-
-    panic!("Invalid op: ops = {:?}, op = {:?}", ops, op);
-}
 
 pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
     let mut n = 0;

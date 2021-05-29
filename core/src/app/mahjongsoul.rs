@@ -5,18 +5,9 @@ use crate::util::common::{as_str, as_usize, unixtime_now};
 use crate::util::operator::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
-use PlayerOperation::*;
+use PlayerOperationType::*;
 
 const NO_SEAT: usize = 4;
-
-// macro_rules! op {
-//     ($self:expr, $name:ident $(, $args:expr)*) => {
-//         paste::item! {
-//             $self.stage.[< op_ $name>]($($args),*);
-//             $self.operator.[<notify_op_ $name>](&$self.stage, $($args),*);
-//         }
-//     };
-// }
 
 macro_rules! op {
     ($self:expr, $name:ident $(, $args:expr)*) => {
@@ -108,7 +99,10 @@ impl Mahjongsoul {
         }
 
         let file_name = format!("data/{}.json", unixtime_now().to_string());
-        let mut f = std::fs::File::create(file_name).unwrap();
+        let path = std::path::Path::new(&file_name);
+        let prefix = path.parent().unwrap();
+        std::fs::create_dir_all(prefix).unwrap();
+        let mut f = std::fs::File::create(path).unwrap();
         let arr = Value::Array(self.actions.clone());
         write!(f, "{}", serde_json::to_string_pretty(&arr).unwrap()).unwrap();
     }
@@ -163,13 +157,6 @@ impl Mahjongsoul {
             }
         }
 
-        // let mut hand: Vec<Tile> = Vec::new();
-        // for ps in data["tiles"].as_array().unwrap() {
-        //     hand.push(tile_from_symbol(as_str(ps)));
-        // }
-        // let mut player_hands = [vec![], vec![], vec![], vec![]];
-        // player_hands[self.seat] = hand;
-
         op!(
             self,
             roundnew,
@@ -184,6 +171,7 @@ impl Mahjongsoul {
     }
 
     fn handler_dealtile(&mut self, data: &Value) {
+        self.update_doras(data);
         let s = as_usize(&data["seat"]);
 
         if let Value::String(ps) = &data["tile"] {
@@ -192,8 +180,6 @@ impl Mahjongsoul {
         } else {
             op!(self, dealtile, s, None);
         }
-
-        self.update_doras(data);
     }
 
     fn handler_discardtile(&mut self, data: &Value) {
@@ -394,7 +380,7 @@ impl App {
             "id_operation" => {
                 let dd = &data["data"];
                 if data["type"] == json!("message") {
-                    println!("operation: {}", dd);
+                    // println!("operation: {}", dd);
 
                     if dd["operation_list"] == json!(null) {
                         return;
@@ -408,11 +394,16 @@ impl App {
                         std::thread::sleep(std::time::Duration::from_millis(2000));
                     }
 
-                    let ops = json_parse_operation(dd);
-                    println!("ops: {:?}", ops);
+                    let (ops, idxs) = json_parse_operation(dd);
+                    // println!("ops: {:?}", ops);
                     let op = self.game.operator.handle_operation(stg, seat, &ops);
-                    let (_, arg_idx) = calc_operation_index(&ops, &op).unwrap();
-                    match &op {
+                    let arg_idx = if op.0 == Discard {
+                        0
+                    } else {
+                        idxs[ops.iter().position(|op2| op2 == &op).unwrap()]
+                    };
+                    let PlayerOperation(tp, cs) = op;
+                    match tp {
                         Nop => {
                             if stg.turn == seat {
                                 let idx = 13 - stg.players[seat].melds.len() * 3;
@@ -421,18 +412,18 @@ impl App {
                                 self.action_cancel();
                             }
                         }
-                        Discard(v) => {
-                            let idx = calc_dapai_index(stg, seat, v[0], false);
+                        Discard => {
+                            let idx = calc_dapai_index(stg, seat, cs[0], false);
                             self.action_dapai(idx);
                         }
-                        Ankan(_) => {
-                            self.action_gang(arg_idx); // TODO
+                        Ankan => {
+                            self.action_gang(arg_idx);
                         }
-                        Kakan(_) => {
-                            self.action_gang(arg_idx); // TODO
+                        Kakan => {
+                            self.action_gang(arg_idx);
                         }
-                        Riichi(v) => {
-                            let idx = calc_dapai_index(stg, seat, v[0], false);
+                        Riichi => {
+                            let idx = calc_dapai_index(stg, seat, cs[0], false);
                             self.action_lizhi(idx);
                         }
                         Tsumo => {
@@ -444,14 +435,14 @@ impl App {
                         Kita => {
                             self.action_babei();
                         }
-                        Chii(_) => {
+                        Chii => {
                             self.action_chi(arg_idx);
                         }
-                        Pon(_) => {
+                        Pon => {
                             self.action_peng(arg_idx);
                         }
-                        Minkan(_) => {
-                            self.action_gang(arg_idx); // TODO
+                        Minkan => {
+                            self.action_gang(arg_idx);
                         }
                         Ron => {
                             self.action_hu();
@@ -610,89 +601,103 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
     idx
 }
 
-fn json_parse_operation(v: &Value) -> Vec<PlayerOperation> {
-    let mut ops = vec![Nop]; // Nop: ツモ切り or スキップ
+// PlayerOperationと元々のデータの各Operation内のIndexを返す
+fn json_parse_operation(v: &Value) -> (Vec<PlayerOperation>, Vec<Index>) {
+    let mut ops = vec![Op::nop()]; // Nop: ツモ切り or スキップ
+    let mut idxs = vec![0];
+    let mut push = |op: PlayerOperation, idx: usize| {
+        ops.push(op);
+        idxs.push(idx);
+    };
+
     for op in v["operation_list"].as_array().unwrap() {
+        let combs = &op["combination"];
         match op["type"].as_i64().unwrap() {
             0 => panic!(),
             1 => {
                 // 打牌
                 let combs = if op["combination"] != json!(null) {
-                    json_parse_combination_single(&op["combination"])
+                    json_parse_combination(combs)
                 } else {
-                    vec![]
+                    vec![vec![]]
                 };
-                ops.push(Discard(combs));
+                push(PlayerOperation(Discard, combs[0].clone()), 0);
             }
             2 => {
                 // チー
-                let combs = json_parse_combination_double(&op["combination"]);
-                ops.push(Chii(combs));
+                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                    push(Op::chii(comb.clone()), idx);
+                }
             }
             3 => {
                 // ポン
-                let combs = json_parse_combination_double(&op["combination"]);
-                ops.push(Pon(combs));
+                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                    push(Op::pon(comb.clone()), idx);
+                }
             }
             4 => {
                 // 暗槓
-                let combs = json_parse_combination_single(&op["combination"]);
-                ops.push(Ankan(combs));
+                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                    push(Op::ankan(comb.clone()), idx);
+                }
             }
             5 => {
                 // 明槓
-                let combs = json_parse_combination_single(&op["combination"]);
-                ops.push(Minkan(combs));
+                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                    push(Op::minkan(comb.clone()), idx);
+                }
             }
             6 => {
                 // 加槓
-                let combs = json_parse_combination_single(&op["combination"]);
-                ops.push(Kakan(combs));
+                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                    push(Op::kakan(comb[0]), idx);
+                }
             }
             7 => {
                 // リーチ
-                let combs = json_parse_combination_single(&op["combination"]);
-                ops.push(Riichi(combs));
+                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                    push(Op::riichi(comb[0]), idx);
+                }
             }
             8 => {
                 // ツモ
-                ops.push(Tsumo);
+                push(Op::tsumo(), 0);
             }
             9 => {
                 // ロン
-                ops.push(Ron);
+                push(Op::ron(), 0);
             }
             10 => {
                 // 九種九牌
-                ops.push(Kyushukyuhai);
+                push(Op::kyushukyuhai(), 0);
             }
             11 => {
                 // 北抜き
-                ops.push(Kita);
+                push(Op::kita(), 0);
             }
             _ => panic!(),
         }
     }
 
-    ops
+    (ops, idxs)
 }
 
-fn json_parse_combination_single(v: &Value) -> Vec<Tile> {
-    let mut combs = vec![];
-    for c in v.as_array().unwrap() {
-        combs.push(tile_from_symbol(c.as_str().unwrap()));
-    }
+fn json_parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
+    // combsは以下のようなjson list
+    // [
+    //     "4s|6s",
+    //     "6s|7s"
+    // ]
     combs
-}
-
-fn json_parse_combination_double(v: &Value) -> Vec<(Tile, Tile)> {
-    let mut combs = vec![];
-    for c_arr in v.as_array().unwrap() {
-        let mut comb = vec![];
-        for c in c_arr.as_str().unwrap().split('|') {
-            comb.push(tile_from_symbol(c));
-        }
-        combs.push((comb[0], comb[1]));
-    }
-    combs
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|comb| {
+            comb.as_str()
+                .unwrap()
+                .split('|')
+                .map(|sym| tile_from_symbol(sym))
+                .collect()
+        })
+        .collect()
 }

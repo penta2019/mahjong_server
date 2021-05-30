@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
 use crate::model::*;
-use crate::util::common::{as_str, as_usize, unixtime_now};
+use crate::util::common::*;
 use crate::util::operator::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
@@ -118,6 +118,7 @@ impl Mahjongsoul {
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
+        sleep_ms(3000);
         op!(self, game_start);
     }
 
@@ -390,14 +391,14 @@ impl App {
                     let seat = dd["seat"].as_i64().unwrap() as Seat;
 
                     // ゲーム側の演出待ちのため最初の打牌は少し待機
-                    if stg.turn == seat && stg.players[seat].discards.len() == 0 {
-                        std::thread::sleep(std::time::Duration::from_millis(2000));
-                    }
+                    // if stg.turn == seat && stg.players[seat].discards.len() == 0 {
+                    //     sleep_ms(2000);
+                    // }
 
                     let (ops, idxs) = json_parse_operation(dd);
                     // println!("ops: {:?}", ops);
                     let op = self.game.operator.handle_operation(stg, seat, &ops);
-                    let arg_idx = if op.0 == Discard {
+                    let arg_idx = if op.0 == Discard || op.0 == Riichi {
                         0
                     } else {
                         idxs[ops.iter().position(|op2| op2 == &op).unwrap()]
@@ -448,6 +449,7 @@ impl App {
                             self.action_hu();
                         }
                     }
+                    sleep_ms(500);
                 }
             }
             _ => {

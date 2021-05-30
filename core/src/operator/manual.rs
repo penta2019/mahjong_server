@@ -101,7 +101,7 @@ impl Operator for ManualOperator {
         }
     }
 
-    fn debug_string(&self) -> String {
+    fn name(&self) -> String {
         "ManualOperator".to_string()
     }
 }

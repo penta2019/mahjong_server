@@ -4,7 +4,6 @@ use crate::model::*;
 use crate::util::stage_listener::StageListener;
 
 use PlayerOperationType::*;
-use TileStateType::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlayerOperationType {
@@ -94,14 +93,12 @@ pub trait Operator: StageListener + OperatorClone + Send {
         seat: Seat,
         operatons: &Vec<PlayerOperation>,
     ) -> PlayerOperation;
-    fn debug_string(&self) -> String {
-        "Operator".to_string()
-    }
+    fn name(&self) -> String;
 }
 
 impl fmt::Debug for dyn Operator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.debug_string())
+        write!(f, "{}", self.name())
     }
 }
 
@@ -117,50 +114,4 @@ where
     fn clone_box(&self) -> Box<dyn Operator> {
         Box::new(self.clone())
     }
-}
-
-// Utility ====================================================================
-
-#[derive(Clone)]
-pub struct NullOperator {}
-
-impl NullOperator {
-    pub fn new() -> Self {
-        NullOperator {}
-    }
-}
-
-impl Operator for NullOperator {
-    fn handle_operation(
-        &mut self,
-        _stage: &Stage,
-        _seat: Seat,
-        _operatons: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
-        panic!();
-    }
-
-    fn debug_string(&self) -> String {
-        "NullOperator".to_string()
-    }
-}
-
-impl StageListener for NullOperator {}
-
-pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
-    let mut n = 0;
-    for &st in &stage.tile_states[tile.0][tile.1] {
-        match st {
-            U => {
-                n += 1;
-            }
-            H(s) => {
-                if s != seat {
-                    n += 1;
-                }
-            }
-            _ => {}
-        }
-    }
-    n
 }

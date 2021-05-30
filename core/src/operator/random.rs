@@ -44,7 +44,7 @@ impl Operator for RandomDiscardOperator {
         }
     }
 
-    fn debug_string(&self) -> String {
+    fn name(&self) -> String {
         "RandomDiscardOperator".to_string()
     }
 }

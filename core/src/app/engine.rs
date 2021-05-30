@@ -1197,6 +1197,7 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
+        use crate::operator::null::NullOperator;
         use crate::operator::random::RandomDiscardOperator;
         use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
 
@@ -1278,7 +1279,7 @@ impl App {
                 if n_thread < self.n_thread {
                     break;
                 }
-                thread::sleep(time::Duration::from_millis(10));
+                sleep_ms(10);
             }
 
             if n_thread == 0 && n_game == self.n_game {

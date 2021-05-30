@@ -1,6 +1,7 @@
 use crate::model::*;
 use crate::util::operator::*;
 use crate::util::stage_listener::*;
+use crate::util::stage_util::*;
 
 #[derive(Clone)]
 pub struct TiitoitsuBot {}
@@ -59,7 +60,7 @@ impl Operator for TiitoitsuBot {
         Op::nop()
     }
 
-    fn debug_string(&self) -> String {
+    fn name(&self) -> String {
         "TiitoitsuBot".to_string()
     }
 }

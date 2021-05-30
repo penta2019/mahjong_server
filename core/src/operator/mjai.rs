@@ -3,13 +3,14 @@ use std::net::{TcpListener, TcpStream};
 use std::io;
 use std::io::prelude::*;
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
+use std::thread;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Result, Value};
 
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
+use crate::util::common::sleep_ms;
 use crate::util::operator::*;
 use crate::util::stage_listener::StageListener;
 
@@ -185,7 +186,7 @@ impl Operator for MjaiEndpoint {
         // possible_actionに対する応答を待機
         let mut c = 0;
         loop {
-            thread::sleep(time::Duration::from_millis(100));
+            sleep_ms(100);
             if self.data.lock().unwrap().action != json!(null) {
                 break;
             }
@@ -263,7 +264,7 @@ impl Operator for MjaiEndpoint {
         op
     }
 
-    fn debug_string(&self) -> String {
+    fn name(&self) -> String {
         "MjaiEndpoint".to_string()
     }
 }
@@ -527,7 +528,6 @@ fn stream_handler(
     let stream2 = &mut stream.try_clone().unwrap();
     let mut send = |m: &Value| send_json(stream, m, debug);
     let mut recv = || recv_json(stream2, debug);
-    let sleep_ms = |ms| thread::sleep(time::Duration::from_millis(ms));
     let err = || io::Error::new(io::ErrorKind::InvalidData, "json field not found");
 
     // hello
@@ -855,10 +855,12 @@ impl ClientMessage {
             "chi" => {
                 res.type_ = MsgType::Chi;
                 res.chi = from_value(v)?;
+                res.chi.as_mut().unwrap().consumed.sort();
             }
             "pon" => {
                 res.type_ = MsgType::Pon;
                 res.pon = from_value(v)?;
+                res.pon.as_mut().unwrap().consumed.sort();
             }
             "kakan" => {
                 res.type_ = MsgType::Kakan;
@@ -867,10 +869,12 @@ impl ClientMessage {
             "daiminkan" => {
                 res.type_ = MsgType::Daiminkan;
                 res.daiminkan = from_value(v)?;
+                res.daiminkan.as_mut().unwrap().consumed.sort();
             }
             "ankan" => {
                 res.type_ = MsgType::Ankan;
                 res.ankan = from_value(v)?;
+                res.ankan.as_mut().unwrap().consumed.sort();
             }
             "reach" => {
                 res.type_ = MsgType::Reach;

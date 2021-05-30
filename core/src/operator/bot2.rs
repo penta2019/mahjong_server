@@ -78,7 +78,7 @@ impl Operator for Bot2 {
         Op::nop()
     }
 
-    fn debug_string(&self) -> String {
+    fn name(&self) -> String {
         "Bot2".to_string()
     }
 }

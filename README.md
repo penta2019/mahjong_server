@@ -197,39 +197,35 @@ Operatorとはゲームの操作を行う主体(Bot)のことです。
 Discardに渡されるリストは鳴きの後に捨てることが出来ない牌(面子の組み換え禁止)です。  
 以下に具体例を示します。
 
-* 打牌: z1(東)を捨てる
+* 打牌: p1(1筒)を捨てる
 ```
-seat: 0, score: 25000, riichi: None, kita: 0, drawn: z1
+seat: 0, score: 25000, riichi: None, kita: 0, drawn: s3
 furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
-hands:  m2 m3 m5 m8 p4 p5 p6 s1 s2 s7 s7 s8 z1 z5
+hand:  m1 m3 m4 m6 m8 p1 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
-discards:  z5
-[Discard([])]
-> z1
+discards:  s7
+
+[Turn Operation] select tile or operation
+0 => PlayerOperation(Nop, [])
+1 => PlayerOperation(Discard, [])
+> p1
 
 ```
 
-seat3のプレイヤーの打s2に対して(s3, s4)または(s1, s3)のチーが可能であるが(s1, s3)でチーを行う
+* 鳴き: 上家が捨てたp3をp4,p5でチー
 ```
 seat: 0, score: 25000, riichi: None, kita: 0, drawn: None
 furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
-hand:  m6 m7 p5 p7 p8 p9 s1 s2 s3 s4 s6 s8 s9
+hand:  m1 m3 m4 m6 m8 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
-discards:  z7 z5 p1 z1 s2 m7 s8 m6 m4 m3 p3 z1 z5 m9
-seat3: s2 => [Nop, Chii([(Tile(2, 3), Tile(2, 4)), (Tile(2, 1), Tile(2, 3))])]
-> 1 1
+discards:  s7 p1
+
+[Call Operation] select operation
+0 => PlayerOperation(Nop, [])
+1 => PlayerOperation(Chii, [Tile(1, 4), Tile(1, 5)])
+> 1
 ```
 
-* 鳴きスキップ: seat3のプレイヤーの打m2に対して(m3, m4)のチーが可能であるがなにもしない(スキップする)
-```
-seat: 0, score: 25000, riichi: None, kita: 0, drawn: None
-furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
-hands:  m2 m3 m4 m5 m8 p4 p5 p6 s1 s2 s7 s7 s8
-melds: 
-discards:  z5 z1 z5 z6
-seat3: m2 => [Nop, Chii([(Tile(0, 3), Tile(0, 4))])]
-> 0 0 
-```
 
 * 卓情報の全表示
 ```

@@ -10,8 +10,8 @@ use serde_json::{json, Result, Value};
 
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
+use crate::operator::operator::*;
 use crate::util::common::sleep_ms;
-use crate::util::operator::*;
 use crate::util::stage_listener::StageListener;
 
 use PlayerOperationType::*;

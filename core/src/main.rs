@@ -37,8 +37,6 @@ fn silence_unused_warning() {
     let _ = hand::win::is_normal_win;
     let _ = hand::win::is_chiitoitsu_win;
     let _ = hand::win::calc_tiles_to_chiitoitsu_win;
-    let _ = operator::bot2::Bot2::new;
-    let _ = operator::manual::ManualOperator::new;
 }
 
 #[test]

@@ -1,8 +1,9 @@
 use serde_json::{json, Value};
 
 use crate::model::*;
+use crate::operator::operator::*;
+use crate::operator::util::create_operator;
 use crate::util::common::*;
-use crate::util::operator::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
 use PlayerOperationType::*;
@@ -266,27 +267,17 @@ impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        // use crate::operator::manual::ManualOperator;
-        // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::mjai::MjaiEndpoint;
-        // use crate::operator::tiitoitsu::TiitoitsuBot;
-
         let mut file_in = "".to_string();
+        let mut operator_name = "".to_string();
         let mut need_write = false;
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-r" => {
-                    if let Some(n) = it.next() {
-                        file_in = n.clone();
-                    } else {
-                        println!("-f: file name missing");
-                        exit(0);
-                    }
-                }
+                "-r" => file_in = next_value(&mut it, "-f: file name missing"),
                 "-w" => {
                     need_write = true;
                 }
+                "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -294,9 +285,9 @@ impl App {
             }
         }
 
-        let mjai = MjaiEndpoint::new("127.0.0.1:12345");
+        let operator = create_operator(&operator_name, &vec![]);
         Self {
-            game: Mahjongsoul::new(need_write, Box::new(mjai)),
+            game: Mahjongsoul::new(need_write, operator),
             wws_send_recv: create_ws_server(52001), // for Web-interface
             cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
             file_in,

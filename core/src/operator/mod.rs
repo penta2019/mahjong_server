@@ -1,6 +1,4 @@
-pub mod bot2;
-pub mod manual;
-pub mod mjai;
-pub mod null;
-pub mod random;
-pub mod tiitoitsu;
+pub mod instance;
+pub mod operator;
+pub mod parse_block;
+pub mod util;

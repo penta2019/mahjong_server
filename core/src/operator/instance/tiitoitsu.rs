@@ -1,7 +1,7 @@
 use crate::model::*;
-use crate::util::operator::*;
+use crate::operator::operator::*;
+use crate::operator::util::*;
 use crate::util::stage_listener::*;
-use crate::util::stage_util::*;
 
 #[derive(Clone)]
 pub struct TiitoitsuBot {}

@@ -4,8 +4,9 @@ use serde_json::json;
 use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
+use crate::operator::operator::*;
+use crate::operator::util::*;
 use crate::util::common::*;
-use crate::util::operator::*;
 use crate::util::stage_listener::*;
 use crate::util::ws_server::*;
 
@@ -1046,6 +1047,7 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
 
 pub struct App {
     seed: u64,
+    names: [String; 4], // operator names
     n_game: i32,
     n_thread: i32,
     debug: bool,
@@ -1060,37 +1062,23 @@ impl App {
         let mut n_thread = 16;
         let mut debug = false;
         let mut it = args.iter();
+        let mut names = [
+            "".to_string(),
+            "".to_string(),
+            "".to_string(),
+            "".to_string(),
+        ];
+
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-s" => {
-                    // seed
-                    if let Some(n) = it.next() {
-                        seed = n.parse().unwrap();
-                    } else {
-                        println!("-s: Seed missing");
-                        exit(0);
-                    }
-                }
-                "-g" => {
-                    // game
-                    if let Some(n) = it.next() {
-                        n_game = n.parse().unwrap();
-                    } else {
-                        println!("-g: n_game missing");
-                    }
-                }
-                "-t" => {
-                    // thread
-                    if let Some(n) = it.next() {
-                        n_thread = n.parse().unwrap();
-                    } else {
-                        println!("-t: n_thread missing");
-                    }
-                }
-                "-d" => {
-                    // debug
-                    debug = true;
-                }
+                "-s" => seed = next_value(&mut it, "-s: Seed missing"),
+                "-0" => names[0] = next_value(&mut it, "-0: operator name missing"),
+                "-1" => names[1] = next_value(&mut it, "-1: operator name missing"),
+                "-2" => names[2] = next_value(&mut it, "-2: operator name missing"),
+                "-3" => names[3] = next_value(&mut it, "-3: operator name missing"),
+                "-g" => n_game = next_value(&mut it, "-g: n_game missing"),
+                "-t" => n_thread = next_value(&mut it, "-t: n_thread missing"),
+                "-d" => debug = true,
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -1098,23 +1086,24 @@ impl App {
             }
         }
 
+        if seed == 0 {
+            seed = unixtime_now() as u64;
+            println!(
+                "Random seed is not specified. Unix timestamp '{}' is used as seed.",
+                seed
+            );
+        }
+
         Self {
             seed,
             n_game,
             n_thread,
             debug,
+            names,
         }
     }
 
     pub fn run(&mut self) {
-        if self.seed == 0 {
-            self.seed = unixtime_now() as u64;
-            println!(
-                "Random seed is not specified. Unix timestamp '{}' is used as seed.",
-                self.seed
-            );
-        }
-
         let start = std::time::Instant::now();
         if self.n_game == 0 {
             self.run_single_game();
@@ -1128,24 +1117,15 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        // use crate::operator::bot2::Bot2;
-        // use crate::operator::manual::ManualOperator;
-        // use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::mjai::MjaiEndpoint;
-        use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
-
         let config = Config {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
             operators: [
-                // Box::new(ManualOperator::new()),
-                // Box::new(RandomDiscardOperator::new(self.seed + 0)),
-                // Box::new(Bot2::new()),
-                Box::new(TiitoitsuBot::new()),
-                Box::new(TiitoitsuBot::new()),
-                Box::new(TiitoitsuBot::new()),
-                Box::new(MjaiEndpoint::new("127.0.0.1:12345")),
+                create_operator(&self.names[0], &vec![]),
+                create_operator(&self.names[1], &vec![]),
+                create_operator(&self.names[2], &vec![]),
+                create_operator(&self.names[3], &vec![]),
             ],
             listeners: vec![Box::new(StageConsolePrinter {})],
         };
@@ -1197,9 +1177,7 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
-        use crate::operator::null::NullOperator;
-        use crate::operator::random::RandomDiscardOperator;
-        use crate::operator::tiitoitsu::TiitoitsuBot; // 七対子bot
+        use crate::operator::instance::null::Null;
 
         use std::sync::mpsc;
         use std::{thread, time};
@@ -1210,10 +1188,10 @@ impl App {
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
         let operators: [Box<dyn Operator>; 4] = [
-            Box::new(TiitoitsuBot::new()),
-            Box::new(TiitoitsuBot::new()),
-            Box::new(TiitoitsuBot::new()),
-            Box::new(RandomDiscardOperator::new(0)),
+            create_operator(&self.names[0], &vec![]),
+            create_operator(&self.names[1], &vec![]),
+            create_operator(&self.names[2], &vec![]),
+            create_operator(&self.names[3], &vec![]),
         ];
 
         let mut total_score_delta = [0; SEAT];
@@ -1228,10 +1206,10 @@ impl App {
                 shuffle_table.shuffle(&mut rng);
 
                 let mut shuffled_operators: [Box<dyn Operator>; 4] = [
-                    Box::new(NullOperator::new()),
-                    Box::new(NullOperator::new()),
-                    Box::new(NullOperator::new()),
-                    Box::new(NullOperator::new()),
+                    Box::new(Null::new()),
+                    Box::new(Null::new()),
+                    Box::new(Null::new()),
+                    Box::new(Null::new()),
                 ];
                 for s in 0..SEAT {
                     shuffled_operators[s] = operators[shuffle_table[s]].clone_box();

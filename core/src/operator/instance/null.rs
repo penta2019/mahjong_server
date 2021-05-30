@@ -1,17 +1,17 @@
 use crate::model::*;
-use crate::util::operator::*;
+use crate::operator::operator::*;
 use crate::util::stage_listener::StageListener;
 
 #[derive(Clone)]
-pub struct NullOperator {}
+pub struct Null {}
 
-impl NullOperator {
+impl Null {
     pub fn new() -> Self {
-        NullOperator {}
+        Null {}
     }
 }
 
-impl Operator for NullOperator {
+impl Operator for Null {
     fn handle_operation(
         &mut self,
         _stage: &Stage,
@@ -22,8 +22,8 @@ impl Operator for NullOperator {
     }
 
     fn name(&self) -> String {
-        "NullOperator".to_string()
+        "Null".to_string()
     }
 }
 
-impl StageListener for NullOperator {}
+impl StageListener for Null {}

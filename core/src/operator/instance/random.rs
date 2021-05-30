@@ -1,15 +1,15 @@
 use rand::Rng;
 
 use crate::model::*;
-use crate::util::operator::*;
+use crate::operator::operator::*;
 use crate::util::stage_listener::StageListener;
 
 #[derive(Clone)]
-pub struct RandomDiscardOperator {
+pub struct RandomDiscard {
     rng: rand::rngs::StdRng,
 }
 
-impl RandomDiscardOperator {
+impl RandomDiscard {
     pub fn new(seed: u64) -> Self {
         Self {
             rng: rand::SeedableRng::seed_from_u64(seed),
@@ -17,7 +17,7 @@ impl RandomDiscardOperator {
     }
 }
 
-impl Operator for RandomDiscardOperator {
+impl Operator for RandomDiscard {
     fn handle_operation(
         &mut self,
         stage: &Stage,
@@ -45,8 +45,8 @@ impl Operator for RandomDiscardOperator {
     }
 
     fn name(&self) -> String {
-        "RandomDiscardOperator".to_string()
+        "RandomDiscard".to_string()
     }
 }
 
-impl StageListener for RandomDiscardOperator {}
+impl StageListener for RandomDiscard {}

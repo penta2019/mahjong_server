@@ -1,19 +1,19 @@
 use std::io::{stdout, Write};
 
 use crate::model::*;
-use crate::util::operator::*;
+use crate::operator::operator::*;
 use crate::util::stage_listener::StageListener;
 
 #[derive(Clone)]
-pub struct ManualOperator {}
+pub struct Manual {}
 
-impl ManualOperator {
+impl Manual {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Operator for ManualOperator {
+impl Operator for Manual {
     fn handle_operation(
         &mut self,
         stage: &Stage,
@@ -102,8 +102,8 @@ impl Operator for ManualOperator {
     }
 
     fn name(&self) -> String {
-        "ManualOperator".to_string()
+        "Manual".to_string()
     }
 }
 
-impl StageListener for ManualOperator {}
+impl StageListener for Manual {}

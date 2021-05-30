@@ -1,6 +1,6 @@
 use crate::model::*;
-use crate::util::operator::*;
-use crate::util::parse_block::*;
+use crate::operator::operator::*;
+use crate::operator::parse_block::*;
 use crate::util::stage_listener::StageListener;
 
 #[derive(Clone)]

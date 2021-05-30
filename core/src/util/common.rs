@@ -1,6 +1,21 @@
 use std::fmt;
+use std::str::FromStr;
 
 use serde_json::Value;
+
+pub fn next_value<T: FromStr>(it: &mut std::slice::Iter<std::string::String>, emsg: &str) -> T
+where
+    T: std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    use std::process::exit;
+    if let Some(n) = it.next() {
+        return n.parse().unwrap();
+    } else {
+        println!("{}", emsg);
+        exit(0);
+    }
+}
 
 pub fn sleep_ms(ms: u64) {
     std::thread::sleep(std::time::Duration::from_millis(ms));

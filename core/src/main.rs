@@ -21,10 +21,6 @@ fn main() {
             // Engine (bot対戦シミュレーションモード)
             app::engine::App::new(args2).run();
         }
-        "H" => {
-            // Hand Yaku (手役評価モード)
-            app::hand_yaku::App::new(args2).run()
-        }
         m => {
             println!("Unknown mode: {}", m)
         }

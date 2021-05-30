@@ -140,7 +140,7 @@ akochan mjai_client 11601      # akochan側
 * akochanに判断を聞くが、打牌は自分でやる
 ```
 cargo run J -r -0 MjaiEndpoint    # 本体側
-akochan mjai_client 11601      # akochan側
+akochan mjai_client 11601         # akochan側
 ```
 
 * データのリプレイ
@@ -161,9 +161,6 @@ tampermonkeyの場合,行頭のコメントを自動で読み取って設定を�
 ```
 > msc.server.run_forever(52000);
 ```
-
-### 手役評価モード (H)  
-未実装
 
 ### GUI
 卓情報可視化ツール。  

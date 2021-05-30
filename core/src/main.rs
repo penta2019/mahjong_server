@@ -103,10 +103,3 @@ fn test_hand1() {
     println!("{:?}", res);
     println!("{}ms", elapsed.as_nanos() as f32 / 1000000.0);
 }
-
-#[test]
-fn test_main() {
-    let a = 128;
-    let b = 128;
-    println!("{}", &a == &b);
-}

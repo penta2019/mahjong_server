@@ -426,14 +426,3 @@ fn discards_with_red5(
     }
     res
 }
-
-#[test]
-fn test_win() {
-    let h = [
-        [1, 1, 1, 1, 0, 3, 0, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-        [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ];
-    println!("{:?}", calc_discards_to_normal_ready(&h));
-}

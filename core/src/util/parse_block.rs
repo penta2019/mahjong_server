@@ -182,16 +182,3 @@ pub fn calc_unnesesary_tiles(row: &TileRow, block: &BlockInfo, remain: &TileRow)
     }
     eff_count
 }
-
-#[test]
-fn test_block() {
-    let remain = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3];
-    let row___ = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2];
-    let block = BlockInfo {
-        tile: Tile(0, 9),
-        len: 1,
-        num: 2,
-    };
-    println!("{:?}", calc_unnesesary_tiles(&row___, &block, &remain));
-    // println!("{:?}", parse_block_into_sets(&row, &block));
-}

@@ -233,18 +233,18 @@ discards:  s7 p1
 可能な操作一覧 (/core/src/util/operator.rs から抜粋)
 ```
 pub enum PlayerOperation {
-    Nop,                     // キャンセル (鳴き,ロンのスキップ)
-    Discard(Vec<Tile>),      // 打牌 (配列はチー後に捨てることができない牌)
-    Chii(Vec<(Tile, Tile)>), // チー (配列は鳴きが可能な組み合わせ 以下同様)
-    Pon(Vec<(Tile, Tile)>),  // ポン
-    Ankan(Vec<Tile>),        // 暗槓
-    Minkan(Vec<Tile>),       // 明槓
-    Kakan(Vec<Tile>),        // 加槓
-    Riichi(Vec<Tile>),       // リーチ
-    Tsumo,                   // ツモ
-    Ron,                     // ロン
-    Kyushukyuhai,            // 九種九牌
-    Kita,                    // 北抜き
+    Nop,           // キャンセル (鳴き,ロンのスキップ)
+    Discard,       // 打牌 (配列はチー後に捨てることができない牌)
+    Chii,          // チー (配列は鳴きが可能な組み合わせ 以下同様)
+    Pon,           // ポン
+    Ankan,         // 暗槓
+    Minkan,        // 明槓
+    Kakan,         // 加槓
+    Riichi,        // リーチ
+    Tsumo,         // ツモ
+    Ron,           // ロン
+    Kyushukyuhai,  // 九種九牌
+    Kita,          // 北抜き
 }
 ```
 
@@ -256,5 +256,4 @@ pub enum PlayerOperation {
 基本的に麻雀英語wikiの表記に従いますが、役の名称はすべて日本語で統一します。
 
 ## TODO
-### akochan(https://github.com/critter-mj/akochan)に対応
-* 雀魂 wincontext 実装
+* mjai WinContext 実装

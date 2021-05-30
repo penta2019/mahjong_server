@@ -261,6 +261,7 @@ pub struct App {
     wws_send_recv: SendRecv,
     cws_send_recv: SendRecv,
     file_in: String,
+    read_only: bool,
 }
 
 impl App {
@@ -270,12 +271,16 @@ impl App {
         let mut file_in = "".to_string();
         let mut operator_name = "".to_string();
         let mut need_write = false;
+        let mut read_only = false;
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-r" => file_in = next_value(&mut it, "-f: file name missing"),
+                "-f" => file_in = next_value(&mut it, "-f: file name missing"),
                 "-w" => {
                     need_write = true;
+                }
+                "-r" => {
+                    read_only = true;
                 }
                 "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
                 opt => {
@@ -291,6 +296,7 @@ impl App {
             wws_send_recv: create_ws_server(52001), // for Web-interface
             cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
             file_in,
+            read_only,
         }
     }
 
@@ -381,66 +387,68 @@ impl App {
                     let stg = &self.game.stage;
                     let seat = dd["seat"].as_i64().unwrap() as Seat;
 
-                    // ゲーム側の演出待ちのため最初の打牌は少し待機
-                    // if stg.turn == seat && stg.players[seat].discards.len() == 0 {
-                    //     sleep_ms(2000);
-                    // }
-
                     let (ops, idxs) = json_parse_operation(dd);
-                    // println!("ops: {:?}", ops);
+
                     let op = self.game.operator.handle_operation(stg, seat, &ops);
                     let arg_idx = if op.0 == Discard || op.0 == Riichi {
                         0
                     } else {
                         idxs[ops.iter().position(|op2| op2 == &op).unwrap()]
                     };
-                    let PlayerOperation(tp, cs) = op;
-                    match tp {
-                        Nop => {
-                            if stg.turn == seat {
-                                let idx = 13 - stg.players[seat].melds.len() * 3;
+
+                    println!("possible: {:?}", ops);
+                    println!("selected: {:?}", op);
+                    println!("");
+
+                    if !self.read_only {
+                        let PlayerOperation(tp, cs) = op;
+                        match tp {
+                            Nop => {
+                                if stg.turn == seat {
+                                    let idx = 13 - stg.players[seat].melds.len() * 3;
+                                    self.action_dapai(idx);
+                                } else {
+                                    self.action_cancel();
+                                }
+                            }
+                            Discard => {
+                                let idx = calc_dapai_index(stg, seat, cs[0], false);
                                 self.action_dapai(idx);
-                            } else {
-                                self.action_cancel();
+                            }
+                            Ankan => {
+                                self.action_gang(arg_idx);
+                            }
+                            Kakan => {
+                                self.action_gang(arg_idx);
+                            }
+                            Riichi => {
+                                let idx = calc_dapai_index(stg, seat, cs[0], false);
+                                self.action_lizhi(idx);
+                            }
+                            Tsumo => {
+                                self.action_zimo();
+                            }
+                            Kyushukyuhai => {
+                                self.action_jiuzhongjiupai();
+                            }
+                            Kita => {
+                                self.action_babei();
+                            }
+                            Chii => {
+                                self.action_chi(arg_idx);
+                            }
+                            Pon => {
+                                self.action_peng(arg_idx);
+                            }
+                            Minkan => {
+                                self.action_gang(arg_idx);
+                            }
+                            Ron => {
+                                self.action_hu();
                             }
                         }
-                        Discard => {
-                            let idx = calc_dapai_index(stg, seat, cs[0], false);
-                            self.action_dapai(idx);
-                        }
-                        Ankan => {
-                            self.action_gang(arg_idx);
-                        }
-                        Kakan => {
-                            self.action_gang(arg_idx);
-                        }
-                        Riichi => {
-                            let idx = calc_dapai_index(stg, seat, cs[0], false);
-                            self.action_lizhi(idx);
-                        }
-                        Tsumo => {
-                            self.action_zimo();
-                        }
-                        Kyushukyuhai => {
-                            self.action_jiuzhongjiupai();
-                        }
-                        Kita => {
-                            self.action_babei();
-                        }
-                        Chii => {
-                            self.action_chi(arg_idx);
-                        }
-                        Pon => {
-                            self.action_peng(arg_idx);
-                        }
-                        Minkan => {
-                            self.action_gang(arg_idx);
-                        }
-                        Ron => {
-                            self.action_hu();
-                        }
+                        sleep_ms(1000); // チーをキャンセルした後すぐに打牌できないので少し待機
                     }
-                    sleep_ms(500);
                 }
             }
             _ => {

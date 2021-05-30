@@ -375,6 +375,7 @@ impl Stage {
         for ti in 0..TYPE {
             println!("{}: {:?}", ['m', 'p', 's', 'z'][ti], self.tile_remains[ti]);
         }
+        println!();
     }
 
     pub fn get_scores(&self) -> [i32; SEAT] {

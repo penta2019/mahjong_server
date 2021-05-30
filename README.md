@@ -58,34 +58,33 @@ GUIを使用しない場合不要
 #### シングル実行
 単一の試合を実行します。  
 試合状況はwebsocketを通してブラウザから確認出来ます。  
-プレイヤーはデバッグのため暫定で以下のように固定しています  
-seat0: 手動  
-seat1: 七対子Bot  
-seat2: 七対子Bot  
-seat3: 七対子Bot  
 
 オプション一覧
 ```
 -s seed
     牌山生成のシード値。指定しなかった場合は現在のunixtime(秒)を使用。  
+-0 operator_name
+    座席0のOperator。 デフォルト値はNop。
+-1 operator_name
+    座席1のOperator。 デフォルト値はNop。
+-2 operator_name
+    座席2のOperator。 デフォルト値はNop。
+-3 operator_name
+    座席3のOperator。 デフォルト値はNop。
 -d
     ステップ実行。各プレイヤーが牌をツモった後に一時停止します。  
 ```
 
 実行例  
+* 座席0を手動で操作。その他は七対子Bot
 ```
-cargo run E -s 401651034
+cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 ```
 
 #### マルチプル実行
 複数の試合を実行して結果を集計します。   
-このモードでは手動による操作を想定していません。  
+このモードでは入出力を行うOperator(=Manual, MjaiEndpoint)は使用できません。  
 各operatorの座席は試合開始時にランダムで決定されます。  
-プレイヤーはデバッグのため暫定で以下のように固定しています。  
-operator0: 七対子Bot  
-operator1: 七対子Bot  
-operator2: 七対子Bot  
-operator3: ランダム打牌  
 
 オプション一覧
 ```
@@ -95,27 +94,58 @@ operator3: ランダム打牌
     必須オプション。実行数する試合の数。このオプションを指定しない場合シングル実行になります。  
 -t n_thread
     同時に実行するスレッド(試合)の数。デフォルト値は16。  
+-0 operator_name
+    座席0のOperator。 デフォルト値はNop。
+-1 operator_name
+    座席1のOperator。 デフォルト値はNop。
+-2 operator_name
+    座席2のOperator。 デフォルト値はNop。
+-3 operator_name
+    座席3のOperator。 デフォルト値はNop。
 ```
 
-実行例 (1000半荘を32スレッドで実行した結果を集計)  
+実行例  
+* 座席0はランダム打牌。その他は七対子Bot。1000半荘を32スレッドで実行した結果を集計。
 ```
-cargo run E -g 1000 -t 32
+cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 ```
 
 ### 雀魂自動操作モード (J)  
 本体を起動した後,ゲーム画面の開発コンソールを開いて本体のwebsocketサーバに接続します。  
-現在, Bot未実装のため手動での動作確認のみが可能です。  
--w: 局終了時にイベントデータ(MJAction)を/core/data/[unixtime].jsonに保存します。  
--f filename: 保存したイベントデータをリプレイします。  
 
-本体の起動
+オプション一覧
 ```
-cargo run J -w
+-w
+    局終了時にイベントデータ(MJAction)を/core/data/[unixtime].jsonに保存します。  
+-f filename
+    保存したイベントデータをリプレイします。  
+-r
+    読み込み専用モード。このモードではOperatorが指定した操作(雀魂の自動操作)を行いません。
+-0 operator_name
+    使用するOperator(AI)。
 ```
 
-データのリプレイ
+実行例
+* 局情報を読み込んでファイルに保存  
 ```
-cargo run J -r data/1620224228.json
+cargo run J -w -r
+```
+
+* akochanに自動で打ってもらう
+```
+cargo run J -0 MjaiEndpoint    # 本体側
+akochan mjai_client 11601      # akochan側
+```
+
+* akochanに判断を聞くが、打牌は自分でやる
+```
+cargo run J -r -0 MjaiEndpoint    # 本体側
+akochan mjai_client 11601      # akochan側
+```
+
+* データのリプレイ
+```
+cargo run J -f data/1620224228.json
 ```
 
 ゲーム側から本体への接続  
@@ -145,16 +175,26 @@ npm run serve
 
 ### Operator
 Operatorとはゲームの操作を行う主体(Bot)のことです。  
-現在まともに動くBotは未実装で、動作確認用の以下の2つのみを提供しています。
-* /core/src/operator/random.rs (RandomDiscardOperator)  
+現在実用的なAIは実装できていませんが、Mjaiプロトコルに対応した外部AIを使用することが出来ます。
+ソースコードは /core/src/operator/instanceの下に配置されています。
+* Manual (ManualOperator)  
+手動により操作します。デバッグ用。
+* RandomDiscard (random.rs)  
 手牌からランダムに牌を捨てます。
 鳴き等の操作は一切行ないません。
-* /core/src/operator/manual.rs (ManualOperator)  
-手動により操作します。
+* TiitoitsuBot (tiitoitsu.rs)  
+リーチなしの七対子しかしないBot。テスト用。
+* MjaiEndpoint (mjai.rs)  
+[mjai](https://github.com/gimite/mjai)プロトコルに対応した外部AIから接続して操作するためのエンドポイント。  
+[akochan](https://github.com/critter-mj/akochan)で動作確認済み。
+現在, portは11601で固定。
+* Nop (nop.rs)  
+つねにNopを返すOperator。 (= 自分のツモ番ではツモ切り, 鳴き操作等一切なし)
 
-### ManualOperatorの操作方法
-可能な操作をエンジン側が提示するのでoperation_indexとargument_indexを指定します。  
-例外として打牌の場合は直接、牌のシンボルを指定します。  
+### Manual Operatorの操作方法
+可能な操作をエンジン側が提示するのでoperation indexを指定します。  
+例外として打牌(Discard)の場合は直接、牌のシンボルを指定します。  
+Discardに渡されるリストは鳴きの後に捨てることが出来ない牌(面子の組み換え禁止)です。  
 以下に具体例を示します。
 
 * 打牌: z1(東)を捨てる

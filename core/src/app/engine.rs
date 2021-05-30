@@ -1087,7 +1087,7 @@ impl App {
         }
 
         if seed == 0 {
-            seed = unixtime_now() as u64;
+            seed = unixtime_now();
             println!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
                 seed

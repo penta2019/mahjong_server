@@ -1,3 +1,5 @@
+use std::time;
+
 use serde_json::{json, Value};
 
 use crate::model::*;
@@ -27,6 +29,7 @@ struct Mahjongsoul {
     actions: Vec<Value>,
     need_write: bool,
     operator: Box<dyn Operator>,
+    last_op_ts: time::Instant,
 }
 
 impl Mahjongsoul {
@@ -38,6 +41,7 @@ impl Mahjongsoul {
             actions: vec![],
             need_write: need_write,
             operator: operator,
+            last_op_ts: time::Instant::now(),
         }
     }
 
@@ -138,6 +142,12 @@ impl Mahjongsoul {
         println!("");
 
         let PlayerOperation(tp, cs) = op;
+
+        if self.last_op_ts.elapsed().as_millis() < 1000 {
+            sleep_ms(1000);
+        }
+        self.last_op_ts = time::Instant::now();
+
         let action = match tp {
             Nop => {
                 if stg.turn == seat {
@@ -212,11 +222,11 @@ impl Mahjongsoul {
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
-        sleep_ms(3000);
         op!(self, game_start);
     }
 
     fn handler_newround(&mut self, data: &Value) {
+        sleep_ms(3000);
         let round = as_usize(&data["chang"]);
         let kyoku = as_usize(&data["ju"]);
         let honba = as_usize(&data["ben"]);

@@ -6,7 +6,6 @@ use crate::hand::evaluate::WinContext;
 use crate::hand::win::*;
 use crate::util::common::{rank_by_rank_vec, vec_to_string};
 
-use MeldType::*;
 use TileStateType::*;
 
 // 型エイリアス
@@ -259,6 +258,96 @@ impl fmt::Display for Player {
         )
     }
 }
+
+// PlayerOperation ============================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerOperationType {
+    Nop, // Operator用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
+
+    // Turn Operations
+    Discard,      // 打牌 (配列はチー後に捨てることができない牌)
+    Ankan,        // 暗槓
+    Kakan,        // 加槓
+    Riichi,       // リーチ
+    Tsumo,        // ツモ
+    Kyushukyuhai, // 九種九牌
+    Kita,         // 北抜き
+
+    // Call Operations
+    Chii,   // チー (配列は鳴きが可能な組み合わせ 以下同様)
+    Pon,    // ポン
+    Minkan, // 明槓
+    Ron,    // ロン
+}
+
+pub type OpType = PlayerOperationType;
+
+// Vec<Tile>は操作により手牌からなくなる牌
+// Chii, Ponなどの標的の牌はstage.last_tileを参照する
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlayerOperation(pub PlayerOperationType, pub Vec<Tile>);
+
+impl PlayerOperation {
+    #[inline]
+    pub fn nop() -> Self {
+        Self(OpType::Nop, vec![])
+    }
+    #[inline]
+    pub fn discard(t: Tile) -> Self {
+        Self(OpType::Discard, vec![t])
+    }
+    #[inline]
+    pub fn ankan(mut v: Vec<Tile>) -> Self {
+        assert!(v.len() == 4);
+        v.sort();
+        Self(OpType::Ankan, v)
+    }
+    #[inline]
+    pub fn kakan(t: Tile) -> Self {
+        Self(OpType::Kakan, vec![t])
+    }
+    #[inline]
+    pub fn riichi(t: Tile) -> Self {
+        Self(OpType::Riichi, vec![t])
+    }
+    #[inline]
+    pub fn tsumo() -> Self {
+        Self(OpType::Tsumo, vec![])
+    }
+    #[inline]
+    pub fn kyushukyuhai() -> Self {
+        Self(OpType::Kyushukyuhai, vec![])
+    }
+    #[inline]
+    pub fn kita() -> Self {
+        Self(OpType::Kita, vec![Tile(TZ, WN)])
+    }
+    #[inline]
+    pub fn chii(mut v: Vec<Tile>) -> Self {
+        assert!(v.len() == 2);
+        v.sort();
+        Self(OpType::Chii, v)
+    }
+    #[inline]
+    pub fn pon(mut v: Vec<Tile>) -> Self {
+        assert!(v.len() == 2);
+        v.sort();
+        Self(OpType::Pon, v)
+    }
+    #[inline]
+    pub fn minkan(mut v: Vec<Tile>) -> Self {
+        assert!(v.len() == 3);
+        v.sort();
+        Self(OpType::Minkan, v)
+    }
+    #[inline]
+    pub fn ron() -> Self {
+        Self(OpType::Ron, vec![])
+    }
+}
+
+pub type Op = PlayerOperation;
 
 // misc =======================================================================
 
@@ -621,9 +710,7 @@ impl Stage {
         let &(prev_s, prev_i) = self.discards.last().unwrap();
         self.players[prev_s].discards[prev_i].meld = Some((s, idx));
 
-        let mut tf: Vec<(&Tile, &Seat)> = m.tiles.iter().zip(m.froms.iter()).collect();
-        tf.sort();
-        for (&t, &f) in tf {
+        for (&t, &f) in m.tiles.iter().zip(m.froms.iter()) {
             if f == s {
                 let pl = &mut self.players[s];
                 if pl.is_shown {
@@ -659,7 +746,7 @@ impl Stage {
         }
 
         match meld_type {
-            Kakan => {
+            MeldType::Kakan => {
                 let mut idx = 0;
                 for m in pl.melds.iter_mut() {
                     if m.tiles[0] == t || m.tiles[1] == t {
@@ -679,7 +766,7 @@ impl Stage {
                 self.table_edit(t, old, M(s, idx));
                 self.last_tile = Some((s, t0)); // 槍槓フリテン用
             }
-            Ankan => {
+            MeldType::Ankan => {
                 let idx = pl.melds.len();
                 let mut m = Meld {
                     step: self.step,

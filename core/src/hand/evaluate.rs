@@ -85,7 +85,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     }
     // 加槓(槍槓), 暗槓(国士無双)に対する和了判定の場合
     if t == Z8 {
-        while let Some(m) = pl_turn.melds.last() {
+        for m in &pl_turn.melds {
             if m.step == stg.step {
                 t = *m.tiles.last().unwrap();
                 m_type = Some(m.type_);
@@ -100,9 +100,12 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     assert!(t != Z8); // ロンの和了判定は必ず打牌,加槓,暗槓のいずれか
 
     let mut hand = pl.hand.clone();
-    hand[t.0][t.n()] += 1;
     if t.1 == 0 {
+        // 赤5
         hand[t.0][0] += 1;
+        hand[t.0][5] += 1;
+    } else {
+        hand[t.0][t.1] += 1;
     }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {

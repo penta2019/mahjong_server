@@ -41,7 +41,30 @@ impl Mahjongsoul {
         }
     }
 
-    fn apply(&mut self, act: &Value) {
+    fn apply(&mut self, msg: &Value) -> Option<Value> {
+        match msg["id"].as_str().unwrap() {
+            "id_mjaction" => {
+                let data = &msg["data"];
+                if msg["type"] == json!("message") {
+                    self.apply_action(&data);
+                }
+                None
+            }
+            "id_operation" => {
+                let data = &msg["data"];
+                if msg["type"] == json!("message") {
+                    self.apply_operation(&data)
+                } else {
+                    None
+                }
+            }
+            _ => {
+                None // type: "success"
+            }
+        }
+    }
+
+    fn apply_action(&mut self, act: &Value) {
         let step = as_usize(&act["step"]);
         let name = as_str(&act["name"]);
         let data = &act["data"];
@@ -91,6 +114,76 @@ impl Mahjongsoul {
             };
             self.step += 1;
         }
+    }
+
+    fn apply_operation(&mut self, data: &Value) -> Option<Value> {
+        if data["operation_list"] == json!(null) {
+            return None;
+        }
+
+        let stg = &self.stage;
+        let seat = data["seat"].as_i64().unwrap() as Seat;
+
+        let (ops, idxs) = json_parse_operation(data);
+
+        let op = self.operator.handle_operation(&self.stage, seat, &ops);
+        let arg_idx = if op.0 == Discard || op.0 == Riichi {
+            0
+        } else {
+            idxs[ops.iter().position(|op2| op2 == &op).unwrap()]
+        };
+
+        println!("possible: {:?}", ops);
+        println!("selected: {:?}", op);
+        println!("");
+
+        let PlayerOperation(tp, cs) = op;
+        let action = match tp {
+            Nop => {
+                if stg.turn == seat {
+                    let idx = 13 - stg.players[seat].melds.len() * 3;
+                    format!("action_dapai({})", idx)
+                } else {
+                    format!("action_cancel()")
+                }
+            }
+            Discard => {
+                let idx = calc_dapai_index(stg, seat, cs[0], false);
+                format!("action_dapai({})", idx)
+            }
+            Ankan => {
+                format!("action_gang({})", arg_idx)
+            }
+            Kakan => {
+                format!("action_gang({})", arg_idx)
+            }
+            Riichi => {
+                let idx = calc_dapai_index(stg, seat, cs[0], false);
+                format!("action_lizhi({})", idx)
+            }
+            Tsumo => {
+                format!("action_zimo()")
+            }
+            Kyushukyuhai => {
+                format!("action_jiuzhongjiupai()")
+            }
+            Kita => {
+                format!("action_babei()")
+            }
+            Chii => {
+                format!("action_chi({})", arg_idx)
+            }
+            Pon => {
+                format!("action_peng({})", arg_idx)
+            }
+            Minkan => {
+                format!("action_gang({})", arg_idx)
+            }
+            Ron => {
+                format!("action_hu()")
+            }
+        };
+        Some(json!(format!("msc.ui.{}", action)))
     }
 
     fn write_to_file(&self) {
@@ -358,161 +451,17 @@ impl App {
                 continue;
             };
 
-            self.handle_cws_msg(&msg);
+            if let Some(act) = self.game.apply(&serde_json::from_str(&msg).unwrap()) {
+                if !self.read_only {
+                    self.send_to_cws("0", "eval", &act);
+                }
+            }
             self.send_stage_data();
-        }
-    }
-
-    fn handle_cws_msg(&mut self, msg: &str) {
-        let data: Value = serde_json::from_str(&msg).unwrap();
-        // println!("data: {}", data);
-
-        match data["id"].as_str().unwrap() {
-            "id_mjaction" => {
-                let dd = &data["data"];
-                if data["type"] == json!("message") {
-                    self.game.apply(&dd);
-                    // self.game.get_stage().print();
-                }
-            }
-            "id_operation" => {
-                let dd = &data["data"];
-                if data["type"] == json!("message") {
-                    // println!("operation: {}", dd);
-
-                    if dd["operation_list"] == json!(null) {
-                        return;
-                    }
-
-                    let stg = &self.game.stage;
-                    let seat = dd["seat"].as_i64().unwrap() as Seat;
-
-                    let (ops, idxs) = json_parse_operation(dd);
-
-                    let op = self.game.operator.handle_operation(stg, seat, &ops);
-                    let arg_idx = if op.0 == Discard || op.0 == Riichi {
-                        0
-                    } else {
-                        idxs[ops.iter().position(|op2| op2 == &op).unwrap()]
-                    };
-
-                    println!("possible: {:?}", ops);
-                    println!("selected: {:?}", op);
-                    println!("");
-
-                    if !self.read_only {
-                        let PlayerOperation(tp, cs) = op;
-                        match tp {
-                            Nop => {
-                                if stg.turn == seat {
-                                    let idx = 13 - stg.players[seat].melds.len() * 3;
-                                    self.action_dapai(idx);
-                                } else {
-                                    self.action_cancel();
-                                }
-                            }
-                            Discard => {
-                                let idx = calc_dapai_index(stg, seat, cs[0], false);
-                                self.action_dapai(idx);
-                            }
-                            Ankan => {
-                                self.action_gang(arg_idx);
-                            }
-                            Kakan => {
-                                self.action_gang(arg_idx);
-                            }
-                            Riichi => {
-                                let idx = calc_dapai_index(stg, seat, cs[0], false);
-                                self.action_lizhi(idx);
-                            }
-                            Tsumo => {
-                                self.action_zimo();
-                            }
-                            Kyushukyuhai => {
-                                self.action_jiuzhongjiupai();
-                            }
-                            Kita => {
-                                self.action_babei();
-                            }
-                            Chii => {
-                                self.action_chi(arg_idx);
-                            }
-                            Pon => {
-                                self.action_peng(arg_idx);
-                            }
-                            Minkan => {
-                                self.action_gang(arg_idx);
-                            }
-                            Ron => {
-                                self.action_hu();
-                            }
-                        }
-                        sleep_ms(1000); // チーをキャンセルした後すぐに打牌できないので少し待機
-                    }
-                }
-            }
-            _ => {
-                // type: "success"
-            }
         }
     }
 
     fn send_stage_data(&mut self) {
         self.send_to_wws("stage", &json!(&self.game.stage));
-    }
-
-    // スキップ
-    fn action_cancel(&mut self) {
-        self.send_action(&format!("action_cancel()"));
-    }
-
-    // 打牌
-    fn action_dapai(&mut self, idx: Index) {
-        self.send_action(&format!("action_dapai({})", idx));
-    }
-
-    // チー
-    fn action_chi(&mut self, idx: Index) {
-        self.send_action(&format!("action_chi({})", idx));
-    }
-
-    // ポン
-    fn action_peng(&mut self, idx: Index) {
-        self.send_action(&format!("action_peng({})", idx));
-    }
-
-    // 槓 (暗槓, 明槓, 加槓)
-    fn action_gang(&mut self, idx: Index) {
-        self.send_action(&format!("action_gang({})", idx));
-    }
-
-    // リーチ
-    fn action_lizhi(&mut self, idx: Index) {
-        self.send_action(&format!("action_lizhi({})", idx));
-    }
-
-    // ツモ
-    fn action_zimo(&mut self) {
-        self.send_action(&format!("action_zimo()"));
-    }
-
-    // ロン
-    fn action_hu(&mut self) {
-        self.send_action(&format!("action_hu()"));
-    }
-
-    // 九種九牌
-    fn action_jiuzhongjiupai(&mut self) {
-        self.send_action(&format!("action_jiuzhongjiupai()"));
-    }
-
-    // 北抜き
-    fn action_babei(&mut self) {
-        self.send_action(&format!("action_babei()"));
-    }
-
-    fn send_action(&mut self, func: &str) {
-        self.send_to_cws("0", "eval", &json!(format!("msc.ui.{}", func)));
     }
 
     fn send_to_cws(&mut self, id: &str, op: &str, data: &Value) {

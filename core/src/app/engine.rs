@@ -444,13 +444,11 @@ impl MahjongEngine {
                     need_leader_change = true;
                 }
 
-                let contexts = vec![(turn, ctx)];
+                let contexts = vec![(turn, d_scores, ctx)];
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                op!(self, roundend_win, &ura_doras, &contexts, &d_scores);
+                op!(self, roundend_win, &ura_doras, &contexts);
             }
             RoundResult::Ron(seats) => {
-                let mut d_scores = [0; SEAT]; // 得点変動
-
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
                 let mut s0 = SEAT;
                 for s1 in turn + 1..turn + SEAT {
@@ -465,8 +463,8 @@ impl MahjongEngine {
                 let mut contexts = vec![];
                 for &s in seats {
                     let ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
-
                     let (total, _, _) = ctx.pay_scores;
+                    let mut d_scores = [0; SEAT]; // 得点変動
                     d_scores[turn] -= total; // 直撃を受けたプレイヤー
                     d_scores[s] += total; // 和了ったプレイヤー
 
@@ -477,7 +475,7 @@ impl MahjongEngine {
                         d_scores[s] += kyoutaku as i32 * 1000;
                     }
 
-                    contexts.push((s, ctx));
+                    contexts.push((s, d_scores, ctx));
                 }
 
                 // stage情報
@@ -490,7 +488,7 @@ impl MahjongEngine {
                 need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                op!(self, roundend_win, &ura_doras, &contexts, &d_scores);
+                op!(self, roundend_win, &ura_doras, &contexts);
             }
             RoundResult::Draw(draw_type) => {
                 match draw_type {

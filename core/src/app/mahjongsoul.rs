@@ -233,11 +233,11 @@ impl Mahjongsoul {
 
     fn handler_hule(&mut self, data: &Value) {
         // TODO
-        let mut score_deltas = [0; 4];
+        let mut delta_scores = [0; 4];
         for (s, score) in data["delta_scores"].as_array().unwrap().iter().enumerate() {
-            score_deltas[s] = score.as_i64().unwrap() as i32;
+            delta_scores[s] = score.as_i64().unwrap() as i32;
         }
-        op!(self, roundend_win, &vec![], &vec![], &score_deltas);
+        op!(self, roundend_win, &vec![], &vec![]);
         self.write_to_file();
     }
 

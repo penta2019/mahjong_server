@@ -446,11 +446,10 @@ impl StageListener for MjaiEndpoint {
         &mut self,
         stage: &Stage,
         ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, WinContext)>,
-        score_deltas: &[i32; SEAT],
+        contexts: &Vec<(Seat, [i32; SEAT], WinContext)>,
     ) {
         let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
-        for (seat, ctx) in contexts {
+        for (seat, deltas, ctx) in contexts {
             self.add_record(json!({
                 "type": "hora",
                 "actor": seat,
@@ -462,7 +461,7 @@ impl StageListener for MjaiEndpoint {
                 "fu": ctx.fu,
                 "fan": ctx.fan_mag,
                 "hora_points": ctx.pay_scores.0,
-                "deltas": score_deltas,
+                "deltas": deltas,
                 "scores": stage.get_scores(),
             }));
         }
@@ -483,14 +482,14 @@ impl StageListener for MjaiEndpoint {
         &mut self,
         stage: &Stage,
         is_ready: &[bool; SEAT],
-        score_deltas: &[i32; SEAT],
+        delta_scores: &[i32; SEAT],
     ) {
         self.add_record(json!({
             "type": "ryukyoku",
             "reason": "fanpai",
             "tehais": [], // TODO
             "tenpais": is_ready,
-            "deltas": score_deltas,
+            "deltas": delta_scores,
             "scores": stage.get_scores(),
         }));
     }

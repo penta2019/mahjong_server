@@ -37,8 +37,9 @@ impl PlayerOperation {
         Self(Discard, vec![t])
     }
     #[inline]
-    pub fn ankan(v: Vec<Tile>) -> Self {
+    pub fn ankan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 4);
+        v.sort();
         Self(Ankan, v)
     }
     #[inline]
@@ -62,18 +63,21 @@ impl PlayerOperation {
         Self(Kita, vec![Tile(TZ, WN)])
     }
     #[inline]
-    pub fn chii(v: Vec<Tile>) -> Self {
+    pub fn chii(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
+        v.sort();
         Self(Chii, v)
     }
     #[inline]
-    pub fn pon(v: Vec<Tile>) -> Self {
+    pub fn pon(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
+        v.sort();
         Self(Pon, v)
     }
     #[inline]
-    pub fn minkan(v: Vec<Tile>) -> Self {
+    pub fn minkan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 3);
+        v.sort();
         Self(Minkan, v)
     }
     #[inline]

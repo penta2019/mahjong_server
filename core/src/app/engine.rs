@@ -412,8 +412,8 @@ impl MahjongEngine {
             RoundResult::Tsumo => {
                 let mut d_scores = [0; SEAT]; // 得点変動
 
-                let score = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
-                let (_, mut non_leader, mut leader) = score.pay_scores;
+                let ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
+                let (_, mut non_leader, mut leader) = ctx.pay_scores;
 
                 // 積み棒
                 non_leader += honba as i32 * 100;
@@ -444,7 +444,7 @@ impl MahjongEngine {
                     need_leader_change = true;
                 }
 
-                let contexts = vec![(turn, score)];
+                let contexts = vec![(turn, ctx)];
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 op!(self, roundend_win, &ura_doras, &contexts, &d_scores);
             }
@@ -726,6 +726,7 @@ fn check_ankan(stg: &Stage) -> Vec<PlayerOperation> {
             let t = Tile(t.0, t.n());
             if pl.hand[t.0][t.1] == 4 {
                 let mut h = pl.hand.clone();
+
                 h[t.0][t.1] -= 1;
                 let mut v1 = calc_tiles_to_normal_win(&h);
                 v1.sort();
@@ -979,7 +980,7 @@ fn create_wall(seed: u64) -> Vec<Tile> {
     let mut wall = Vec::new();
     for ti in 0..TYPE {
         for ni in 1..TNUM {
-            if ti == 3 && ni == 8 {
+            if ti == TZ && ni > DR {
                 break;
             }
             for n in 0..TILE {

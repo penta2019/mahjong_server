@@ -1,13 +1,14 @@
 use rand::prelude::*;
 use serde_json::json;
 
+use crate::controller::operator::Operator;
+use crate::controller::stage_listener::StageListener;
+use crate::controller::stage_printer::StagePrinter;
 use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
-use crate::operator::operator::*;
-use crate::operator::util::*;
+use crate::operator::create_operator;
 use crate::util::common::*;
-use crate::util::stage_listener::*;
 use crate::util::ws_server::*;
 
 use PlayerOperationType::*;
@@ -1126,7 +1127,7 @@ impl App {
                 create_operator(&self.names[2], &vec![]),
                 create_operator(&self.names[3], &vec![]),
             ],
-            listeners: vec![Box::new(StageConsolePrinter {})],
+            listeners: vec![Box::new(StagePrinter {})],
         };
 
         let mut game = MahjongEngine::new(config);
@@ -1176,7 +1177,7 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
-        use crate::operator::instance::null::Null;
+        use crate::operator::null::Null;
 
         use std::sync::mpsc;
         use std::{thread, time};

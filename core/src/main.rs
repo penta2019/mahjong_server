@@ -1,4 +1,5 @@
 mod app;
+mod controller;
 mod hand;
 mod model;
 mod operator;

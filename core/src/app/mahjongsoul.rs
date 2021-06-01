@@ -2,9 +2,9 @@ use std::time;
 
 use serde_json::{json, Value};
 
+use crate::controller::operator::*;
 use crate::model::*;
-use crate::operator::operator::*;
-use crate::operator::util::create_operator;
+use crate::operator::create_operator;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 

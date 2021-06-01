@@ -1,7 +1,7 @@
 use std::fmt;
 
+use super::stage_listener::StageListener;
 use crate::model::*;
-use crate::util::stage_listener::StageListener;
 
 // Operator trait
 pub trait Operator: StageListener + OperatorClone + Send {

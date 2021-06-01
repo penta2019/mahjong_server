@@ -71,7 +71,7 @@ impl Operator for Manual {
                 '!' => {
                     match &buf[1..] {
                         "print\n" => {
-                            stage.print();
+                            println!("{}", stage);
                         }
                         _ => {
                             println!("Unknown command: {}", &buf[1..]);

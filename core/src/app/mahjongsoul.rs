@@ -3,8 +3,10 @@ use std::time;
 use serde_json::{json, Value};
 
 use crate::controller::operator::*;
+use crate::controller::stage_controller::StageController;
 use crate::model::*;
 use crate::operator::create_operator;
+use crate::operator::nop::Nop;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
@@ -12,18 +14,9 @@ use PlayerOperationType::*;
 
 const NO_SEAT: usize = 4;
 
-macro_rules! op {
-    ($self:expr, $name:ident $(, $args:expr)*) => {
-        paste::item! {
-            $self.stage.[< op_ $name>]($($args),*);
-            $self.operator.[<notify_op_ $name>](&$self.stage, $($args),*);
-        }
-    };
-}
-
 #[derive(Debug)]
 struct Mahjongsoul {
-    stage: Stage,
+    ctrl: StageController,
     step: usize,
     seat: usize, // my seat
     actions: Vec<Value>,
@@ -34,15 +27,24 @@ struct Mahjongsoul {
 
 impl Mahjongsoul {
     fn new(need_write: bool, operator: Box<dyn Operator>) -> Self {
+        // operatorは座席0に暫定でセットする
+        // 新しい局が開始されて座席が判明した際にスワップする
+        let nop = Box::new(Nop::new());
+        let operators: [Box<dyn Operator>; SEAT] =
+            [operator, nop.clone(), nop.clone(), nop.clone()];
         Self {
-            stage: Stage::default(),
+            ctrl: StageController::new(operators, vec![]),
             step: 0,
             seat: 0,
             actions: vec![],
             need_write: need_write,
-            operator: operator,
+            operator: nop,
             last_op_ts: time::Instant::now(),
         }
+    }
+
+    fn get_stage(&self) -> &Stage {
+        return self.ctrl.get_stage();
     }
 
     fn apply(&mut self, msg: &Value) -> Option<Value> {
@@ -74,6 +76,7 @@ impl Mahjongsoul {
         let data = &act["data"];
 
         if step == 0 {
+            self.ctrl.swap_operator(self.seat, &mut self.operator);
             self.step = 0;
             self.seat = NO_SEAT;
             self.actions.clear();
@@ -94,8 +97,10 @@ impl Mahjongsoul {
             if self.seat == NO_SEAT {
                 return;
             }
+
+            self.operator.set_seat(self.seat);
+            self.ctrl.swap_operator(self.seat, &mut self.operator);
         }
-        self.operator.set_seat(self.seat);
 
         while self.step < self.actions.len() {
             let action = self.actions[self.step].clone();
@@ -125,12 +130,11 @@ impl Mahjongsoul {
             return None;
         }
 
-        let stg = &self.stage;
         let seat = data["seat"].as_i64().unwrap() as Seat;
 
         let (ops, idxs) = json_parse_operation(data);
 
-        let op = self.operator.handle_operation(&self.stage, seat, &ops);
+        let op = self.ctrl.handle_operation(seat, &ops);
         let arg_idx = if op.0 == Discard || op.0 == Riichi {
             0
         } else {
@@ -148,6 +152,7 @@ impl Mahjongsoul {
         }
         self.last_op_ts = time::Instant::now();
 
+        let stg = self.get_stage();
         let action = match tp {
             Nop => {
                 if stg.turn == seat {
@@ -212,17 +217,17 @@ impl Mahjongsoul {
     }
 
     fn update_doras(&mut self, data: &Value) {
-        let stg = &mut self.stage;
+        let stg = self.get_stage();
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
                 let t = tile_from_symbol(as_str(doras.last().unwrap()));
-                op!(self, dora, t);
+                self.ctrl.op_dora(t);
             }
         }
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
-        op!(self, game_start);
+        self.ctrl.op_game_start();
     }
 
     fn handler_newround(&mut self, data: &Value) {
@@ -262,16 +267,14 @@ impl Mahjongsoul {
             }
         }
 
-        op!(
-            self,
-            roundnew,
+        self.ctrl.op_roundnew(
             round,
             kyoku,
             honba,
             kyoutaku,
             &doras,
             &scores,
-            &player_hands
+            &player_hands,
         );
     }
 
@@ -281,9 +284,9 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            op!(self, dealtile, s, Some(t));
+            self.ctrl.op_dealtile(s, Some(t));
         } else {
-            op!(self, dealtile, s, None);
+            self.ctrl.op_dealtile(s, None);
         }
     }
 
@@ -292,7 +295,7 @@ impl Mahjongsoul {
         let t = tile_from_symbol(as_str(&data["tile"]));
         let m = data["moqie"].as_bool().unwrap();
         let r = data["is_liqi"].as_bool().unwrap();
-        op!(self, discardtile, s, t, m, r);
+        self.ctrl.op_discardtile(s, t, m, r);
         self.update_doras(data);
     }
 
@@ -314,7 +317,7 @@ impl Mahjongsoul {
             froms.push(as_usize(f));
         }
 
-        op!(self, chiiponkan, s, tp, &tiles, &froms);
+        self.ctrl.op_chiiponkan(s, tp, &tiles, &froms);
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -325,13 +328,13 @@ impl Mahjongsoul {
             _ => panic!("invalid gang type"),
         };
         let t = tile_from_symbol(as_str(&data["tiles"]));
-        op!(self, ankankakan, s, mt, t);
+        self.ctrl.op_ankankakan(s, mt, t);
     }
 
     fn handler_babei(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let m = data["moqie"].as_bool().unwrap();
-        op!(self, kita, s, m);
+        self.ctrl.op_kita(s, m);
     }
 
     fn handler_hule(&mut self, data: &Value) {
@@ -340,19 +343,19 @@ impl Mahjongsoul {
         for (s, score) in data["delta_scores"].as_array().unwrap().iter().enumerate() {
             delta_scores[s] = score.as_i64().unwrap() as i32;
         }
-        op!(self, roundend_win, &vec![], &vec![]);
+        self.ctrl.op_roundend_win(&vec![], &vec![]);
         self.write_to_file();
     }
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
-        op!(self, roundend_draw, DrawType::Kyushukyuhai);
+        self.ctrl.op_roundend_draw(DrawType::Kyushukyuhai);
         self.write_to_file();
     }
 
     fn handler_notile(&mut self, _data: &Value) {
         // TODO
-        op!(self, roundend_notile, &[false; SEAT], &[0; SEAT]);
+        self.ctrl.op_roundend_notile(&[false; SEAT], &[0; SEAT]);
         self.write_to_file();
     }
 }
@@ -425,7 +428,7 @@ impl App {
                         stdin().read_line(&mut buf).ok();
 
                         self.game.apply(v);
-                        self.game.stage.print();
+                        println!("{}", self.game.get_stage());
                         self.send_stage_data();
                     }
                 }
@@ -471,7 +474,7 @@ impl App {
     }
 
     fn send_stage_data(&mut self) {
-        self.send_to_wws("stage", &json!(&self.game.stage));
+        self.send_to_wws("stage", &json!(&self.game.get_stage()));
     }
 
     fn send_to_cws(&mut self, id: &str, op: &str, data: &Value) {

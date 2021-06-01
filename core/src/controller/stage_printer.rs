@@ -31,7 +31,7 @@ impl StageListener for StagePrinter {
         _player_hands: &[Vec<Tile>; SEAT],
     ) {
         println!("[ROUNDNEW]");
-        stage.print();
+        println!("{}", stage);
     }
 
     fn notify_op_roundend_win(
@@ -51,14 +51,13 @@ impl StageListener for StagePrinter {
         }
 
         self.print_score_change(&stage, &deltas);
-        stage.print();
+        println!("{}", stage);
     }
 
     fn notify_op_roundend_draw(&mut self, stage: &Stage, draw_type: DrawType) {
         println!("[ROUNDEND DRAW]");
         println!("{:?}", draw_type);
-        println!();
-        stage.print();
+        println!("{}", stage);
     }
 
     fn notify_op_roundend_notile(
@@ -70,6 +69,6 @@ impl StageListener for StagePrinter {
         println!("[ROUNDEND NOTILE]");
         println!("is_ready: {:?}", is_ready);
         self.print_score_change(&stage, &delta_scores);
-        stage.print();
+        println!("{}", stage);
     }
 }

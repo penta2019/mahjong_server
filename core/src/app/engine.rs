@@ -2,6 +2,7 @@ use rand::prelude::*;
 use serde_json::json;
 
 use crate::controller::operator::Operator;
+use crate::controller::stage_controller::StageController;
 use crate::controller::stage_listener::StageListener;
 use crate::controller::stage_printer::StagePrinter;
 use crate::hand::evaluate::*;
@@ -34,25 +35,18 @@ enum RoundResult {
 
 #[derive(Debug)]
 struct Config {
-    seed: u64,                            // 牌山生成用の乱数のシード値
-    n_round: usize,                       // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
-    initial_score: i32,                   // 初期得点
-    operators: [Box<dyn Operator>; SEAT], // プレイヤーまたはBot
-    listeners: Vec<Box<dyn StageListener>>,
+    seed: u64,          // 牌山生成用の乱数のシード値
+    n_round: usize,     // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
+    initial_score: i32, // 初期得点
 }
 
-macro_rules! op {
-    ($self:expr, $name:ident $(, $args:expr)*) => {
-        paste::item! {
-            $self.stage.[< op_ $name>]($($args),*);
-            for l in &mut $self.config.listeners {
-                l.[<notify_op_ $name>](&$self.stage, $($args),*);
-            }
-            for op in &mut $self.config.operators {
-                op.[<notify_op_ $name>](&$self.stage, $($args),*);
-            }
-        }
-    };
+#[derive(Debug)]
+struct NextRoundInfo {
+    round: usize,
+    kyoku: usize,
+    honba: usize,
+    kyoutaku: usize,
+    scores: [i32; SEAT],
 }
 
 #[derive(Debug)]
@@ -60,7 +54,7 @@ struct MahjongEngine {
     config: Config,
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
     // ゲーム制御
-    stage: Stage,
+    ctrl: StageController,
     next_op: StageOperation,
     melding: Option<PlayerOperation>, // 鳴き処理用
     kan_dora: Option<Tile>,           // 加槓・明槓の打牌後の槓ドラ更新用
@@ -69,6 +63,7 @@ struct MahjongEngine {
     kita_count: usize,                // 北抜きの回数
     is_suukansanra: bool,             // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
+    round_next: NextRoundInfo,
     is_game_over: bool,
     // 牌山
     wall: Vec<Tile>,             // 牌山全体
@@ -78,20 +73,28 @@ struct MahjongEngine {
 }
 
 impl MahjongEngine {
-    fn new(config: Config) -> Self {
-        let mut stg = Stage::new();
-        for s in 0..SEAT {
-            stg.players[s].score = config.initial_score;
-        }
-
+    fn new(
+        config: Config,
+        operators: [Box<dyn Operator>; SEAT],
+        listeners: Vec<Box<dyn StageListener>>,
+    ) -> Self {
+        let ctrl = StageController::new(operators, listeners);
         let rng = rand::SeedableRng::seed_from_u64(config.seed);
+        let round_next = NextRoundInfo {
+            round: 0,
+            kyoku: 0,
+            honba: 0,
+            kyoutaku: 0,
+            scores: [config.initial_score; SEAT],
+        };
         Self {
             config: config,
             rng: rng,
-            stage: stg,
+            ctrl: ctrl,
             next_op: GameStart,
             melding: None,
             round_result: None,
+            round_next: round_next,
             is_game_over: false,
             kan_dora: None,
             wall_count: 0,
@@ -103,6 +106,11 @@ impl MahjongEngine {
             ura_dora_wall: vec![],
             replacement_wall: vec![],
         }
+    }
+
+    #[inline]
+    fn get_stage(&self) -> &Stage {
+        return self.ctrl.get_stage();
     }
 
     fn next_step(&mut self) -> bool {
@@ -147,10 +155,7 @@ impl MahjongEngine {
     }
 
     fn do_game_start(&mut self) {
-        for s in 0..SEAT {
-            self.config.operators[s].set_seat(s);
-        }
-        op!(self, game_start);
+        self.ctrl.op_game_start();
     }
 
     fn do_round_new(&mut self) {
@@ -171,17 +176,7 @@ impl MahjongEngine {
         self.ura_dora_wall = vec![];
         self.replacement_wall = vec![];
 
-        // 古い卓から必要な情報を抽出
-        let stg = &self.stage;
-        let round = stg.round;
-        let kyoku = stg.kyoku;
-        let honba = stg.honba;
-        let kyoutaku = stg.kyoutaku;
-        let is_3p = stg.is_3p;
-        let mut scores = [0; 4];
-        for s in 0..SEAT {
-            scores[s] = stg.players[s].score;
-        }
+        let is_3p = false;
 
         // 山の初期化
         self.wall = create_wall(self.rng.next_u64());
@@ -198,18 +193,28 @@ impl MahjongEngine {
         }
         // 親の14枚目
         let t = self.draw_tile();
-        ph[kyoku].push(t);
+
+        ph[self.round_next.kyoku].push(t);
 
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
-        op!(self, roundnew, round, kyoku, honba, kyoutaku, &doras, &scores, &ph);
+        let rn = &self.round_next;
+        self.ctrl.op_roundnew(
+            rn.round,
+            rn.kyoku,
+            rn.honba,
+            rn.kyoutaku,
+            &doras,
+            &rn.scores,
+            &ph,
+        );
     }
 
     fn do_turn_operation(&mut self) {
         // ツモ番のPlayerOperationの要求
         // op: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
-        let stg = &self.stage;
+        let stg = &self.get_stage();
         let turn = stg.turn;
         let mut ops = vec![Op::nop()];
 
@@ -236,31 +241,31 @@ impl MahjongEngine {
         }
 
         self.melding = None;
-        let op = self.config.operators[turn].handle_operation(&stg, turn, &ops);
+        let op = self.ctrl.handle_operation(turn, &ops);
         assert!(op.0 == Discard || ops.contains(&op));
         let PlayerOperation(tp, cs) = op.clone();
         match tp {
             Nop => {
                 // ツモ切り
-                let t = self.stage.players[turn].drawn.unwrap();
-                op!(self, discardtile, turn, t, true, false);
+                let t = self.get_stage().players[turn].drawn.unwrap();
+                self.ctrl.op_discardtile(turn, t, true, false);
             }
             Discard => {
-                op!(self, discardtile, turn, cs[0], false, false);
+                self.ctrl.op_discardtile(turn, cs[0], false, false);
             }
             Ankan => {
-                op!(self, ankankakan, turn, MeldType::Ankan, cs[3]);
+                self.ctrl.op_ankankakan(turn, MeldType::Ankan, cs[3]);
                 self.melding = Some(op);
             }
             Kakan => {
-                op!(self, ankankakan, turn, MeldType::Kakan, cs[0]);
+                self.ctrl.op_ankankakan(turn, MeldType::Kakan, cs[0]);
                 self.melding = Some(op);
             }
             Riichi => {
                 let t = cs[0];
-                let pl = &self.stage.players[turn];
+                let pl = &self.get_stage().players[turn];
                 let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
-                op!(self, discardtile, turn, t, m, true);
+                self.ctrl.op_discardtile(turn, t, m, true);
             }
             Tsumo => {
                 self.round_result = Some(RoundResult::Tsumo);
@@ -269,14 +274,14 @@ impl MahjongEngine {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kyushukyuhai));
             }
             Kita => {
-                op!(self, kita, turn, false);
+                self.ctrl.op_kita(turn, false);
                 self.melding = Some(op);
             }
             op2 => panic!("Operation '{:?}' not found in {:?}", op2, ops),
         }
 
         if let Some(kd) = self.kan_dora {
-            op!(self, dora, kd);
+            self.ctrl.op_dora(kd);
             self.kan_dora = None;
         }
     }
@@ -284,7 +289,7 @@ impl MahjongEngine {
     fn do_call_operation(&mut self) {
         // 順番以外のプレイヤーにPlayerOperationを要求
         // op: Nop, Chii, Pon, Minkan, Ron
-        let stg = &self.stage;
+        let stg = self.get_stage();
         let turn = stg.turn;
         let mut ops_list: [Vec<PlayerOperation>; SEAT] = Default::default();
         for s in 0..SEAT {
@@ -317,7 +322,7 @@ impl MahjongEngine {
             if s == turn || ops.len() == 1 {
                 continue;
             }
-            let op = self.config.operators[s].handle_operation(&stg, s, ops);
+            let op = self.ctrl.handle_operation(s, ops);
             // calc_operation_index(&ops, &op); // opがops内に存在することを確認
             match op.0 {
                 Nop => {}
@@ -329,7 +334,7 @@ impl MahjongEngine {
             }
         }
 
-        let d = stg.last_tile.unwrap().2;
+        let d = self.get_stage().last_tile.unwrap().2;
         // dispatch operation
         if !rons.is_empty() {
             self.round_result = Some(RoundResult::Ron(rons));
@@ -337,20 +342,20 @@ impl MahjongEngine {
             let cs = &op.1;
             let tiles = vec![d, cs[0], cs[1], cs[2]];
             let froms = vec![turn, s, s, s];
-            op!(self, chiiponkan, s, MeldType::Minkan, &tiles, &froms);
+            self.ctrl.op_chiiponkan(s, MeldType::Minkan, &tiles, &froms);
             self.melding = Some(op);
         } else if let Some((s, op)) = pon {
             // PonをChiiより優先して処理
             let cs = &op.1;
             let tiles = vec![d, cs[0], cs[1]];
             let froms = vec![turn, s, s];
-            op!(self, chiiponkan, s, MeldType::Pon, &tiles, &froms);
+            self.ctrl.op_chiiponkan(s, MeldType::Pon, &tiles, &froms);
             self.melding = Some(op);
         } else if let Some((s, op)) = chii {
             let cs = &op.1;
             let tiles = vec![d, cs[0], cs[1]];
             let froms = vec![turn, s, s];
-            op!(self, chiiponkan, s, MeldType::Chii, &tiles, &froms);
+            self.ctrl.op_chiiponkan(s, MeldType::Chii, &tiles, &froms);
             self.melding = Some(op);
         }
 
@@ -361,48 +366,50 @@ impl MahjongEngine {
     }
 
     fn do_deal_tile(&mut self) {
-        let turn = self.stage.turn;
+        let turn = self.get_stage().turn;
         if let Some(m) = &self.melding {
             match m.0 {
                 Pon | Chii => {}
                 Ankan => {
                     let (r, kd) = self.draw_kan_tile();
-                    op!(self, dealtile, turn, Some(r));
-                    op!(self, dora, kd); // 槓ドラは打牌前
+                    self.ctrl.op_dealtile(turn, Some(r));
+                    self.ctrl.op_dora(kd); // 槓ドラは打牌前
                     self.check_suukansanra_needed();
                 }
                 Minkan => {
                     let (r, kd) = self.draw_kan_tile();
-                    op!(self, dealtile, turn, Some(r));
+                    self.ctrl.op_dealtile(turn, Some(r));
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    op!(self, dealtile, turn, Some(r));
+                    self.ctrl.op_dealtile(turn, Some(r));
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kita => {
                     let k = self.draw_kita_tile();
-                    op!(self, dealtile, turn, Some(k));
+                    self.ctrl.op_dealtile(turn, Some(k));
                 }
                 _ => panic!(),
             }
         } else {
-            if self.stage.left_tile_count > 0 {
+            if self.get_stage().left_tile_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
-                op!(self, dealtile, s, Some(t));
+                self.ctrl.op_dealtile(s, Some(t));
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }
         }
-        assert!(self.stage.left_tile_count + self.wall_count + self.kan_count == self.wall.len());
+        assert!(
+            self.get_stage().left_tile_count + self.wall_count + self.kan_count == self.wall.len()
+        );
     }
 
     fn do_round_end(&mut self) {
-        let stg = &self.stage;
+        let stg = self.get_stage();
         let mut round = stg.round;
         let mut kyoku = stg.kyoku;
         let mut honba = stg.honba;
@@ -447,7 +454,7 @@ impl MahjongEngine {
 
                 let contexts = vec![(turn, d_scores, ctx)];
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                op!(self, roundend_win, &ura_doras, &contexts);
+                self.ctrl.op_roundend_win(&ura_doras, &contexts);
             }
             RoundResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
@@ -489,7 +496,7 @@ impl MahjongEngine {
                 need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                op!(self, roundend_win, &ura_doras, &contexts);
+                self.ctrl.op_roundend_win(&ura_doras, &contexts);
             }
             RoundResult::Draw(draw_type) => {
                 match draw_type {
@@ -523,11 +530,11 @@ impl MahjongEngine {
                             d_scores[s] = if is_ready[s] { recv } else { -pay };
                         }
 
-                        op!(self, roundend_notile, &is_ready, &d_scores);
+                        self.ctrl.op_roundend_notile(&is_ready, &d_scores);
                         need_leader_change = !is_ready[kyoku];
                     }
                     _ => {
-                        op!(self, roundend_draw, *draw_type);
+                        self.ctrl.op_roundend_draw(*draw_type);
                     }
                 }
                 honba += 1;
@@ -544,20 +551,22 @@ impl MahjongEngine {
         }
 
         // stage情報更新
-        let stg = &mut self.stage;
-        stg.round = round;
-        stg.kyoku = kyoku;
-        stg.honba = honba;
-        stg.kyoutaku = kyoutaku;
+        self.round_next = NextRoundInfo {
+            round,
+            kyoku,
+            honba,
+            kyoutaku,
+            scores: self.get_stage().get_scores(),
+        };
 
         // 対戦終了判定
-        if stg.round == self.config.n_round {
+        if self.get_stage().round == self.config.n_round {
             self.is_game_over = true;
         }
 
         // 飛びによる対戦終了
         for s in 0..SEAT {
-            if stg.players[s].score < 0 {
+            if self.get_stage().players[s].score < 0 {
                 self.is_game_over = true;
             }
         }
@@ -566,7 +575,7 @@ impl MahjongEngine {
     }
 
     fn do_game_result(&mut self) {
-        op!(self, game_over);
+        self.ctrl.op_game_over();
     }
 
     fn draw_tile(&mut self) -> Tile {
@@ -594,13 +603,13 @@ impl MahjongEngine {
     }
 
     fn check_suufuurenda(&mut self) {
-        if self.stage.left_tile_count != 66 {
+        if self.get_stage().left_tile_count != 66 {
             return;
         }
 
         let mut discards = vec![];
         for s in 0..SEAT {
-            let pl = &self.stage.players[s];
+            let pl = &self.get_stage().players[s];
             if !pl.melds.is_empty() {
                 return;
             }
@@ -632,7 +641,7 @@ impl MahjongEngine {
     }
 
     fn check_suuchariichi(&mut self) {
-        if self.stage.players.iter().all(|pl| pl.is_riichi) {
+        if self.get_stage().players.iter().all(|pl| pl.is_riichi) {
             if let None = self.round_result {
                 self.round_result = Some(RoundResult::Draw(DrawType::Suuchariichi));
             }
@@ -646,7 +655,7 @@ impl MahjongEngine {
 
         // 四槓子の聴牌判定 (四槓子の際は四槓散了にならない)
         for s in 0..SEAT {
-            for m in &self.stage.players[s].melds {
+            for m in &self.get_stage().players[s].melds {
                 let mut k = 0;
                 match m.type_ {
                     MeldType::Ankan | MeldType::Kakan | MeldType::Minkan => k += 1,
@@ -657,6 +666,7 @@ impl MahjongEngine {
                         return;
                     } else {
                         self.is_suukansanra = true;
+                        break;
                     };
                 }
             }
@@ -1121,16 +1131,15 @@ impl App {
             seed: self.seed,
             n_round: 2,
             initial_score: 25000,
-            operators: [
-                create_operator(&self.names[0], &vec![]),
-                create_operator(&self.names[1], &vec![]),
-                create_operator(&self.names[2], &vec![]),
-                create_operator(&self.names[3], &vec![]),
-            ],
-            listeners: vec![Box::new(StagePrinter {})],
         };
-
-        let mut game = MahjongEngine::new(config);
+        let operators = [
+            create_operator(&self.names[0], &vec![]),
+            create_operator(&self.names[1], &vec![]),
+            create_operator(&self.names[2], &vec![]),
+            create_operator(&self.names[3], &vec![]),
+        ];
+        let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
+        let mut game = MahjongEngine::new(config, operators, listeners);
         let send_recv = create_ws_server(52001);
 
         loop {
@@ -1157,14 +1166,14 @@ impl App {
                 // stageの状態をjsonにエンコードして送信
                 let value = json!({
                     "type": "stage",
-                    "data": &game.stage,
+                    "data": &game.get_stage(),
                 });
                 s.send(value.to_string()).ok();
             }
 
             if self.debug && stop {
                 use std::io::{stdin, stdout, Write};
-                print!("step={} Enter>", game.stage.step);
+                print!("step={} Enter>", game.get_stage().step);
                 stdout().flush().unwrap();
                 let mut buf = String::new();
                 stdin().read_line(&mut buf).ok();
@@ -1221,12 +1230,10 @@ impl App {
                         seed: seed,
                         n_round: 2,
                         initial_score: 25000,
-                        operators: shuffled_operators,
-                        listeners: vec![],
                     };
                     let start = time::Instant::now();
 
-                    let mut game = MahjongEngine::new(config);
+                    let mut game = MahjongEngine::new(config, shuffled_operators, vec![]);
                     loop {
                         if game.next_step() {
                             break;
@@ -1242,7 +1249,7 @@ impl App {
                     let ms = elapsed.as_nanos() / 1000000;
                     print!("{:5},{:4}ms,{:20}", n_game_end, ms, game.config.seed);
                     for s in 0..SEAT {
-                        let pl = &game.stage.players[s];
+                        let pl = &game.get_stage().players[s];
                         let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
                         total_score_delta[i] += score - game.config.initial_score;

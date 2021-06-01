@@ -63,7 +63,6 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     }
 
     let pl = &stg.players[seat];
-    let pl_turn = &stg.players[stg.turn];
     if !pl.is_shown || pl.is_furiten || pl.is_furiten_other {
         return None;
     }
@@ -73,31 +72,17 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
 
-    // 和了牌を取得
-    let mut t = Z8;
-    let mut m_type = None;
-    // 捨て牌に対する和了判定の場合
-    if let Some(d) = pl_turn.discards.last() {
-        if d.step == stg.step {
-            t = d.tile;
-            yf.houteiraoyui = stg.left_tile_count == 0;
+    let (tp, t) = if let Some((_, tp, t)) = stg.last_tile {
+        match tp {
+            OpType::Discard => yf.houteiraoyui = stg.left_tile_count == 0,
+            OpType::Kakan => yf.chankan = true,
+            OpType::Ankan => {}
+            _ => panic!(),
         }
-    }
-    // 加槓(槍槓), 暗槓(国士無双)に対する和了判定の場合
-    if t == Z8 {
-        for m in &pl_turn.melds {
-            if m.step == stg.step {
-                t = *m.tiles.last().unwrap();
-                m_type = Some(m.type_);
-                match m.type_ {
-                    MeldType::Kakan => yf.chankan = true,
-                    MeldType::Ankan => {}
-                    _ => return None, // Chii, Pon, Minkan
-                }
-            }
-        }
-    }
-    assert!(t != Z8); // ロンの和了判定は必ず打牌,加槓,暗槓のいずれか
+        (tp, t)
+    } else {
+        return None;
+    };
 
     let mut hand = pl.hand.clone();
     if t.1 == 0 {
@@ -126,7 +111,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
         stg.get_seat_wind(pl.seat),
         yf,
     ) {
-        if m_type == Some(MeldType::Ankan) {
+        if tp == OpType::Ankan {
             for y in &res.yaku {
                 if y.name == "国士無双" || y.name == "国士無双十三面待ち" {
                     return Some(res);

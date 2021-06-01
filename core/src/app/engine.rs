@@ -328,7 +328,7 @@ impl MahjongEngine {
             }
         }
 
-        let d = stg.last_tile.unwrap().1;
+        let d = stg.last_tile.unwrap().2;
         // dispatch operation
         if !rons.is_empty() {
             self.round_result = Some(RoundResult::Ron(rons));
@@ -908,7 +908,7 @@ fn check_pon(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
         return vec![];
     }
 
-    let d = stg.last_tile.unwrap().1;
+    let d = stg.last_tile.unwrap().2;
     let t = Tile(d.0, d.n());
     let mut ops = vec![];
     for s in 0..SEAT {
@@ -941,7 +941,7 @@ fn check_minkan(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
         return vec![];
     }
 
-    let d = stg.last_tile.unwrap().1;
+    let d = stg.last_tile.unwrap().2;
     let t = Tile(d.0, d.n());
     let mut ops = vec![];
     for s in 0..SEAT {

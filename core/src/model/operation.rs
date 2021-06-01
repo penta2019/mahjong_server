@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum PlayerOperationType {
     Nop, // Operator用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
 
@@ -24,7 +24,7 @@ pub type OpType = PlayerOperationType;
 
 // Vec<Tile>は操作により手牌からなくなる牌
 // Chii, Ponなどの標的の牌はstage.last_tileを参照する
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PlayerOperation(pub PlayerOperationType, pub Vec<Tile>);
 
 impl PlayerOperation {

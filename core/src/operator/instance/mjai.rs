@@ -140,7 +140,7 @@ impl Operator for MjaiEndpoint {
                     Kyushukyuhai => {}
                     Kita => {}
                     Chii => {
-                        let (target_seat, target_tile) = stage.last_tile.unwrap();
+                        let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                         acts.push(json!(MsgChi {
                             type_: "chi".to_string(),
                             actor: seat,
@@ -150,7 +150,7 @@ impl Operator for MjaiEndpoint {
                         }));
                     }
                     Pon => {
-                        let (target_seat, target_tile) = stage.last_tile.unwrap();
+                        let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                         acts.push(json!(MsgPon {
                             type_: "pon".to_string(),
                             actor: seat,
@@ -160,7 +160,7 @@ impl Operator for MjaiEndpoint {
                         }));
                     }
                     Minkan => {
-                        let (target_seat, target_tile) = stage.last_tile.unwrap();
+                        let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                         acts.push(json!(MsgDaiminkan {
                             type_: "daiminkan".to_string(),
                             actor: seat,
@@ -175,7 +175,7 @@ impl Operator for MjaiEndpoint {
                             type_: "hora".to_string(),
                             actor: seat,
                             target: lt.0,
-                            pai: to_mjai_tile(lt.1),
+                            pai: to_mjai_tile(lt.2),
                         }));
                     }
                 }
@@ -454,7 +454,7 @@ impl StageListener for MjaiEndpoint {
                 "type": "hora",
                 "actor": seat,
                 "target": stage.turn,
-                "pai": to_mjai_tile(stage.last_tile.unwrap().1),
+                "pai": to_mjai_tile(stage.last_tile.unwrap().2),
                 "uradora_markers": ura,
                 "hora_tehais": [], // TODO
                 "yakus": [], // TODO

@@ -50,19 +50,19 @@ pub enum DrawType {
 
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
-    pub round: usize,                    // 場 (東:0, 南:1, 西:2, 北:3)
-    pub kyoku: usize,                    // 局 (0~3 = 親のseat)
-    pub honba: usize,                    // 本場
-    pub kyoutaku: usize,                 // リーチ棒の供託
-    pub turn: Seat,                      // 順番
-    pub step: usize,                     // ステップ op関数を呼び出す毎に+1する
-    pub left_tile_count: usize,          // 牌山の残り枚数
-    pub doras: Vec<Tile>,                // ドラ表示牌
-    pub discards: Vec<(Seat, Index)>,    // プレイヤー全員の捨て牌
-    pub last_tile: Option<(Seat, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
-    pub last_riichi: Option<Seat>,       // リーチがロンされずに成立した場合の供託更新用
-    pub players: [Player; SEAT],         // 各プレイヤー情報
-    pub is_3p: bool,                     // 三麻フラグ(未実装, 常にfalse)
+    pub round: usize,                            // 場 (東:0, 南:1, 西:2, 北:3)
+    pub kyoku: usize,                            // 局 (0~3 = 親のseat)
+    pub honba: usize,                            // 本場
+    pub kyoutaku: usize,                         // リーチ棒の供託
+    pub turn: Seat,                              // 順番
+    pub step: usize,                             // ステップ op関数を呼び出す毎に+1する
+    pub left_tile_count: usize,                  // 牌山の残り枚数
+    pub doras: Vec<Tile>,                        // ドラ表示牌
+    pub discards: Vec<(Seat, Index)>,            // プレイヤー全員の捨て牌
+    pub last_tile: Option<(Seat, OpType, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
+    pub last_riichi: Option<Seat>,               // リーチがロンされずに成立した場合の供託更新用
+    pub players: [Player; SEAT],                 // 各プレイヤー情報
+    pub is_3p: bool,                             // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileStateType; TILE]; TNUM]; TYPE],
     pub tile_remains: [[usize; TNUM]; TYPE], // 牌の残り枚数 = 山+手牌(捨て牌,副露牌,ドラ表示牌以外)
 }
@@ -331,7 +331,7 @@ impl Stage {
         }
         pl.drawn = None;
 
-        self.last_tile = Some((s, t));
+        self.last_tile = Some((s, OpType::Discard, t));
     }
 
     pub fn op_chiiponkan(
@@ -420,7 +420,7 @@ impl Stage {
                 let old = if is_shown { H(s) } else { U };
                 self.player_dec_tile(t1);
                 self.table_edit(t, old, M(s, idx));
-                self.last_tile = Some((s, t0)); // 槍槓フリテン用
+                self.last_tile = Some((s, OpType::Kakan, t0)); // 槍槓フリテン用
             }
             MeldType::Ankan => {
                 let idx = pl.melds.len();
@@ -442,8 +442,11 @@ impl Stage {
                 for _ in 0..TILE {
                     self.table_edit(t, old, M(s, idx));
                 }
-
                 self.players[s].melds.push(m);
+                if t.is_end() {
+                    // 国士の暗槓ロン
+                    self.last_tile = Some((s, OpType::Ankan, t));
+                }
             }
             _ => panic!("Invalid meld type"),
         }
@@ -549,11 +552,13 @@ impl Stage {
 
     fn update_after_discard_completed(&mut self) {
         // 他のプレイヤーの捨て牌、または加槓した牌の見逃しフリテン
-        if let Some((s, t)) = self.last_tile {
-            for s2 in 0..SEAT {
-                if s2 != s {
-                    if self.players[s2].winning_tiles.contains(&t) {
-                        self.players[s2].is_furiten_other = true;
+        if let Some((s, tp, t)) = self.last_tile {
+            if tp == OpType::Discard || tp == OpType::Kakan {
+                for s2 in 0..SEAT {
+                    if s2 != s {
+                        if self.players[s2].winning_tiles.contains(&t) {
+                            self.players[s2].is_furiten_other = true;
+                        }
                     }
                 }
             }

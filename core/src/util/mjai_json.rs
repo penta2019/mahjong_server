@@ -6,7 +6,7 @@ use crate::model::*;
 use PlayerOperationType::*;
 
 #[derive(Debug)]
-pub enum MsgType {
+pub enum MjaiActionType {
     Dahai,
     Pon,
     Chi,
@@ -19,14 +19,14 @@ pub enum MsgType {
     None,
 }
 
-impl Default for MsgType {
+impl Default for MjaiActionType {
     fn default() -> Self {
-        MsgType::None
+        MjaiActionType::None
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgDahai {
+struct Dahai {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -35,7 +35,7 @@ struct MsgDahai {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgPon {
+struct Pon {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -45,7 +45,7 @@ struct MsgPon {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgChi {
+struct Chi {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -55,7 +55,7 @@ struct MsgChi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgKakan {
+struct Kakan {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -64,7 +64,7 @@ struct MsgKakan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgDaiminkan {
+struct Daiminkan {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -74,7 +74,7 @@ struct MsgDaiminkan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgAnkan {
+struct Ankan {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -82,14 +82,14 @@ struct MsgAnkan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgReach {
+struct Reach {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgHora {
+struct Hora {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -98,7 +98,7 @@ struct MsgHora {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgRyukyoku {
+struct Ryukyoku {
     #[serde(rename = "type")]
     type_: String,
     actor: usize,
@@ -106,77 +106,77 @@ struct MsgRyukyoku {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MsgNone {
+struct None {
     #[serde(rename = "type")]
     type_: String,
 }
 
 #[derive(Debug, Default)]
-pub struct ClientMessage {
-    type_: MsgType,
-    dahai: Option<MsgDahai>,
-    chi: Option<MsgChi>,
-    pon: Option<MsgPon>,
-    kakan: Option<MsgKakan>,
-    daiminkan: Option<MsgDaiminkan>,
-    ankan: Option<MsgAnkan>,
-    reach: Option<MsgReach>,
-    hora: Option<MsgHora>,
-    ryukyoku: Option<MsgRyukyoku>,
-    none: Option<MsgNone>,
+pub struct MjaiAction {
+    type_: MjaiActionType,
+    dahai: Option<Dahai>,
+    chi: Option<Chi>,
+    pon: Option<Pon>,
+    kakan: Option<Kakan>,
+    daiminkan: Option<Daiminkan>,
+    ankan: Option<Ankan>,
+    reach: Option<Reach>,
+    hora: Option<Hora>,
+    ryukyoku: Option<Ryukyoku>,
+    none: Option<None>,
 }
 
-impl ClientMessage {
-    pub fn from_value(v: Value) -> Result<ClientMessage> {
+impl MjaiAction {
+    pub fn from_value(v: Value) -> Result<MjaiAction> {
         use serde_json::from_value;
         let type_ = v["type"]
             .as_str()
             .ok_or(serde::de::Error::missing_field("type"))?;
 
-        let mut res = ClientMessage::default();
+        let mut res = MjaiAction::default();
         match type_ {
             "dahai" => {
-                res.type_ = MsgType::Dahai;
+                res.type_ = MjaiActionType::Dahai;
                 res.dahai = from_value(v)?;
             }
             "chi" => {
-                res.type_ = MsgType::Chi;
+                res.type_ = MjaiActionType::Chi;
                 res.chi = from_value(v)?;
                 res.chi.as_mut().unwrap().consumed.sort();
             }
             "pon" => {
-                res.type_ = MsgType::Pon;
+                res.type_ = MjaiActionType::Pon;
                 res.pon = from_value(v)?;
                 res.pon.as_mut().unwrap().consumed.sort();
             }
             "kakan" => {
-                res.type_ = MsgType::Kakan;
+                res.type_ = MjaiActionType::Kakan;
                 res.kakan = from_value(v)?;
             }
             "daiminkan" => {
-                res.type_ = MsgType::Daiminkan;
+                res.type_ = MjaiActionType::Daiminkan;
                 res.daiminkan = from_value(v)?;
                 res.daiminkan.as_mut().unwrap().consumed.sort();
             }
             "ankan" => {
-                res.type_ = MsgType::Ankan;
+                res.type_ = MjaiActionType::Ankan;
                 res.ankan = from_value(v)?;
                 res.ankan.as_mut().unwrap().consumed.sort();
             }
             "reach" => {
-                res.type_ = MsgType::Reach;
+                res.type_ = MjaiActionType::Reach;
                 res.reach = from_value(v)?;
             }
             "hora" => {
-                res.type_ = MsgType::Hora;
+                res.type_ = MjaiActionType::Hora;
                 res.hora = from_value(v)?;
             }
             "ryukyoku" => {
-                res.type_ = MsgType::Ryukyoku;
+                res.type_ = MjaiActionType::Ryukyoku;
                 res.ryukyoku = from_value(v)?;
             }
             "none" => {
-                res.type_ = MsgType::None;
+                res.type_ = MjaiActionType::None;
                 res.none = from_value(v)?;
             }
             t => {
@@ -191,28 +191,28 @@ impl ClientMessage {
 
     pub fn to_value(&self) -> Value {
         match self.type_ {
-            MsgType::Dahai => json!(self.dahai),
-            MsgType::Chi => json!(self.chi),
-            MsgType::Pon => json!(self.pon),
-            MsgType::Kakan => json!(self.kakan),
-            MsgType::Daiminkan => json!(self.daiminkan),
-            MsgType::Ankan => json!(self.ankan),
-            MsgType::Reach => json!(self.reach),
-            MsgType::Hora => json!(self.hora),
-            MsgType::Ryukyoku => json!(self.ryukyoku),
-            MsgType::None => json!(self.none),
+            MjaiActionType::Dahai => json!(self.dahai),
+            MjaiActionType::Chi => json!(self.chi),
+            MjaiActionType::Pon => json!(self.pon),
+            MjaiActionType::Kakan => json!(self.kakan),
+            MjaiActionType::Daiminkan => json!(self.daiminkan),
+            MjaiActionType::Ankan => json!(self.ankan),
+            MjaiActionType::Reach => json!(self.reach),
+            MjaiActionType::Hora => json!(self.hora),
+            MjaiActionType::Ryukyoku => json!(self.ryukyoku),
+            MjaiActionType::None => json!(self.none),
         }
     }
 
-    pub fn from_operation(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<ClientMessage> {
-        let mut res = ClientMessage::default();
+    pub fn from_operation(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<MjaiAction> {
+        let mut res = MjaiAction::default();
         let PlayerOperation(tp, cs) = op;
         match tp {
             Nop => return None,
             Discard => return None,
             Ankan => {
-                res.type_ = MsgType::Ankan;
-                res.ankan = Some(MsgAnkan {
+                res.type_ = MjaiActionType::Ankan;
+                res.ankan = Some(Ankan {
                     type_: "ankan".to_string(),
                     actor: seat,
                     consumed: vec_to_mjai_tile(cs),
@@ -233,8 +233,8 @@ impl ClientMessage {
                 .iter()
                 .map(|&t| to_mjai_tile(t))
                 .collect();
-                res.type_ = MsgType::Kakan;
-                res.kakan = Some(MsgKakan {
+                res.type_ = MjaiActionType::Kakan;
+                res.kakan = Some(Kakan {
                     type_: "kakan".to_string(),
                     actor: seat,
                     pai: to_mjai_tile(t),
@@ -243,8 +243,8 @@ impl ClientMessage {
             }
             Riichi => return None,
             Tsumo => {
-                res.type_ = MsgType::Hora;
-                res.hora = Some(MsgHora {
+                res.type_ = MjaiActionType::Hora;
+                res.hora = Some(Hora {
                     type_: "hora".to_string(),
                     actor: seat,
                     target: seat,
@@ -252,8 +252,8 @@ impl ClientMessage {
                 });
             }
             Kyushukyuhai => {
-                res.type_ = MsgType::Ryukyoku;
-                res.ryukyoku = Some(MsgRyukyoku {
+                res.type_ = MjaiActionType::Ryukyoku;
+                res.ryukyoku = Some(Ryukyoku {
                     type_: "ryukyoku".to_string(),
                     actor: seat,
                     reason: "kyushukyuhai".to_string(),
@@ -264,8 +264,8 @@ impl ClientMessage {
             }
             Chii => {
                 let (target_seat, _, target_tile) = stg.last_tile.unwrap();
-                res.type_ = MsgType::Chi;
-                res.chi = Some(MsgChi {
+                res.type_ = MjaiActionType::Chi;
+                res.chi = Some(Chi {
                     type_: "chi".to_string(),
                     actor: seat,
                     target: target_seat,
@@ -275,8 +275,8 @@ impl ClientMessage {
             }
             Pon => {
                 let (target_seat, _, target_tile) = stg.last_tile.unwrap();
-                res.type_ = MsgType::Pon;
-                res.pon = Some(MsgPon {
+                res.type_ = MjaiActionType::Pon;
+                res.pon = Some(Pon {
                     type_: "pon".to_string(),
                     actor: seat,
                     target: target_seat,
@@ -286,8 +286,8 @@ impl ClientMessage {
             }
             Minkan => {
                 let (target_seat, _, target_tile) = stg.last_tile.unwrap();
-                res.type_ = MsgType::Daiminkan;
-                res.daiminkan = Some(MsgDaiminkan {
+                res.type_ = MjaiActionType::Daiminkan;
+                res.daiminkan = Some(Daiminkan {
                     type_: "daiminkan".to_string(),
                     actor: seat,
                     target: target_seat,
@@ -297,8 +297,8 @@ impl ClientMessage {
             }
             Ron => {
                 let lt = stg.last_tile.unwrap();
-                res.type_ = MsgType::Hora;
-                res.hora = Some(MsgHora {
+                res.type_ = MjaiActionType::Hora;
+                res.hora = Some(Hora {
                     type_: "hora".to_string(),
                     actor: seat,
                     target: lt.0,
@@ -311,7 +311,7 @@ impl ClientMessage {
 
     pub fn to_operation(&self, is_turn: bool) -> PlayerOperation {
         match self.type_ {
-            MsgType::Dahai => {
+            MjaiActionType::Dahai => {
                 let m = self.dahai.as_ref().unwrap();
                 if m.tsumogiri {
                     Op::nop()
@@ -319,36 +319,36 @@ impl ClientMessage {
                     Op::discard(from_mjai_tile(&m.pai))
                 }
             }
-            MsgType::Chi => {
+            MjaiActionType::Chi => {
                 let m = self.chi.as_ref().unwrap();
                 Op::chii(vec_from_mjai_tile(&m.consumed))
             }
-            MsgType::Pon => {
+            MjaiActionType::Pon => {
                 let m = self.pon.as_ref().unwrap();
                 Op::pon(vec_from_mjai_tile(&m.consumed))
             }
-            MsgType::Kakan => {
+            MjaiActionType::Kakan => {
                 let m = self.kakan.as_ref().unwrap();
                 Op::kakan(from_mjai_tile(&m.pai))
             }
-            MsgType::Daiminkan => {
+            MjaiActionType::Daiminkan => {
                 let m = self.daiminkan.as_ref().unwrap();
                 Op::minkan(vec_from_mjai_tile(&m.consumed))
             }
-            MsgType::Ankan => {
+            MjaiActionType::Ankan => {
                 let m = self.ankan.as_ref().unwrap();
                 Op::ankan(vec_from_mjai_tile(&m.consumed))
             }
-            MsgType::Reach => panic!(),
-            MsgType::Hora => {
+            MjaiActionType::Reach => panic!(),
+            MjaiActionType::Hora => {
                 if is_turn {
                     Op::tsumo()
                 } else {
                     Op::ron()
                 }
             }
-            MsgType::Ryukyoku => Op::kyushukyuhai(),
-            MsgType::None => Op::nop(),
+            MjaiActionType::Ryukyoku => Op::kyushukyuhai(),
+            MjaiActionType::None => Op::nop(),
         }
     }
 
@@ -444,7 +444,7 @@ fn test_mjai_message() {
     let msgs = [dahai, chi, pon, kakan, daiminkan, ankan, reach, hora, none];
 
     for &msg in &msgs {
-        let d = ClientMessage::from_value(serde_json::from_str(msg).unwrap()).unwrap();
+        let d = MjaiAction::from_value(serde_json::from_str(msg).unwrap()).unwrap();
         println!("{}, {:?}", msg, d);
     }
 }

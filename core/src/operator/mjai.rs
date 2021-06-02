@@ -89,7 +89,7 @@ impl Operator for MjaiEndpoint {
             let mut d = self.data.lock().unwrap();
             let mut acts = vec![];
             for op in ops {
-                if let Some(v) = ClientMessage::from_operation_to_value(stage, seat, op) {
+                if let Some(v) = MjaiAction::from_operation_to_value(stage, seat, op) {
                     acts.push(v);
                 }
             }
@@ -122,7 +122,7 @@ impl Operator for MjaiEndpoint {
             }
         }
 
-        if let Ok(cmsg) = ClientMessage::from_value_to_operation(v, seat == stage.turn) {
+        if let Ok(cmsg) = MjaiAction::from_value_to_operation(v, seat == stage.turn) {
             cmsg
         } else {
             println!("[Error] Failed to parse mjai action");

@@ -134,7 +134,13 @@ impl Operator for MjaiEndpoint {
                             pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
                         }));
                     }
-                    Kyushukyuhai => {}
+                    Kyushukyuhai => {
+                        acts.push(json!(MsgRyukyoku {
+                            type_: "ryukyoku".to_string(),
+                            actor: seat,
+                            reason: "kyushukyuhai".to_string(),
+                        }));
+                    }
                     Kita => {}
                     Chii => {
                         let (target_seat, _, target_tile) = stage.last_tile.unwrap();
@@ -253,6 +259,7 @@ impl Operator for MjaiEndpoint {
                     return Op::nop();
                 }
             }
+            MsgType::Ryukyoku => Op::kyushukyuhai(),
             MsgType::None => Op::nop(),
         };
 
@@ -734,6 +741,7 @@ enum MsgType {
     Ankan,
     Reach,
     Hora,
+    Ryukyoku,
     None,
 }
 
@@ -816,6 +824,14 @@ struct MsgHora {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+struct MsgRyukyoku {
+    #[serde(rename = "type")]
+    type_: String,
+    actor: usize,
+    reason: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 struct MsgNone {
     #[serde(rename = "type")]
     type_: String,
@@ -832,6 +848,7 @@ struct ClientMessage {
     ankan: Option<MsgAnkan>,
     reach: Option<MsgReach>,
     hora: Option<MsgHora>,
+    ryukyoku: Option<MsgRyukyoku>,
     none: Option<MsgNone>,
 }
 
@@ -879,6 +896,10 @@ impl ClientMessage {
             "hora" => {
                 res.type_ = MsgType::Hora;
                 res.hora = from_value(v)?;
+            }
+            "ryukyoku" => {
+                res.type_ = MsgType::Ryukyoku;
+                res.ryukyoku = from_value(v)?;
             }
             "none" => {
                 res.type_ = MsgType::None;

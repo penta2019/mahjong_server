@@ -14,7 +14,6 @@ let msc = { // MSC(MahjongSoulDriver)のオブジェクトはすべてここに�
     log_configs: [],
     debug: false,
 };
-window.msc = msc;
 
 // ロガー定義
 msc.log = function (...args) {
@@ -696,6 +695,7 @@ msc.search_by_property_value = function (root_obj, prop, value, ...args) {
 // 初期化
 window.addEventListener('load', function () {
     msc.log('MSC is enabled');
+    window.msc = msc;
     if (window.GameMgr) {
         window.GameMgr.error_url = '';
         window.GameMgr.prototype.logUp = function (...args) {

@@ -244,10 +244,12 @@ impl MahjongEngine {
         let op = self.ctrl.handle_operation(turn, &ops);
         assert!(op.0 == Discard || ops.contains(&op));
         let PlayerOperation(tp, cs) = op.clone();
+
+        let stg = &self.get_stage();
         match tp {
             Nop => {
                 // ツモ切り
-                let t = self.get_stage().players[turn].drawn.unwrap();
+                let t = stg.players[turn].drawn.unwrap();
                 self.ctrl.op_discardtile(turn, t, true, false);
             }
             Discard => {
@@ -263,7 +265,7 @@ impl MahjongEngine {
             }
             Riichi => {
                 let t = cs[0];
-                let pl = &self.get_stage().players[turn];
+                let pl = &stg.players[turn];
                 let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
                 self.ctrl.op_discardtile(turn, t, m, true);
             }
@@ -366,7 +368,8 @@ impl MahjongEngine {
     }
 
     fn do_deal_tile(&mut self) {
-        let turn = self.get_stage().turn;
+        let stg = self.get_stage();
+        let turn = stg.turn;
         if let Some(m) = &self.melding {
             match m.0 {
                 Pon | Chii => {}
@@ -395,7 +398,7 @@ impl MahjongEngine {
                 _ => panic!(),
             }
         } else {
-            if self.get_stage().left_tile_count > 0 {
+            if stg.left_tile_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
                 self.ctrl.op_dealtile(s, Some(t));
@@ -550,23 +553,25 @@ impl MahjongEngine {
             }
         }
 
+        let stg = self.ctrl.get_stage();
+
         // stage情報更新
         self.round_next = NextRoundInfo {
             round,
             kyoku,
             honba,
             kyoutaku,
-            scores: self.get_stage().get_scores(),
+            scores: stg.get_scores(),
         };
 
         // 対戦終了判定
-        if self.get_stage().round == self.config.n_round {
+        if stg.round == self.config.n_round {
             self.is_game_over = true;
         }
 
         // 飛びによる対戦終了
         for s in 0..SEAT {
-            if self.get_stage().players[s].score < 0 {
+            if stg.players[s].score < 0 {
                 self.is_game_over = true;
             }
         }
@@ -603,13 +608,14 @@ impl MahjongEngine {
     }
 
     fn check_suufuurenda(&mut self) {
-        if self.get_stage().left_tile_count != 66 {
+        let stg = self.get_stage();
+        if stg.left_tile_count != 66 {
             return;
         }
 
         let mut discards = vec![];
         for s in 0..SEAT {
-            let pl = &self.get_stage().players[s];
+            let pl = &stg.players[s];
             if !pl.melds.is_empty() {
                 return;
             }
@@ -1166,7 +1172,7 @@ impl App {
                 // stageの状態をjsonにエンコードして送信
                 let value = json!({
                     "type": "stage",
-                    "data": &game.get_stage(),
+                    "data": game.get_stage(),
                 });
                 s.send(value.to_string()).ok();
             }

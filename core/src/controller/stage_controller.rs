@@ -329,26 +329,6 @@ impl StageController {
         }
 
         match meld_type {
-            MeldType::Kakan => {
-                let mut idx = 0;
-                for m in pl.melds.iter_mut() {
-                    if m.tiles[0] == t || m.tiles[1] == t {
-                        m.step = stg.step;
-                        m.type_ = MeldType::Kakan;
-                        m.tiles.push(tile);
-                        m.froms.push(s);
-                        break;
-                    }
-                    idx += 1;
-                }
-
-                let is_shown = pl.is_shown;
-                let t1 = if is_shown { tile } else { Z8 };
-                let old = if is_shown { H(s) } else { U };
-                player_dec_tile(stg, t1);
-                table_edit(stg, t, old, M(s, idx));
-                stg.last_tile = Some((s, OpType::Kakan, tile)); // 槍槓フリテン用
-            }
             MeldType::Ankan => {
                 let idx = pl.melds.len();
                 let mut t0 = t;
@@ -375,6 +355,26 @@ impl StageController {
                     // 国士の暗槓ロン
                     stg.last_tile = Some((s, OpType::Ankan, t));
                 }
+            }
+            MeldType::Kakan => {
+                let mut idx = 0;
+                for m in pl.melds.iter_mut() {
+                    if m.tiles[0] == t || m.tiles[1] == t {
+                        m.step = stg.step;
+                        m.type_ = MeldType::Kakan;
+                        m.tiles.push(tile);
+                        m.froms.push(s);
+                        break;
+                    }
+                    idx += 1;
+                }
+
+                let is_shown = pl.is_shown;
+                let t1 = if is_shown { tile } else { Z8 };
+                let old = if is_shown { H(s) } else { U };
+                player_dec_tile(stg, t1);
+                table_edit(stg, t, old, M(s, idx));
+                stg.last_tile = Some((s, OpType::Kakan, tile)); // 槍槓フリテン用
             }
             _ => panic!("Invalid meld type"),
         }

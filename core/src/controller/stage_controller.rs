@@ -328,11 +328,6 @@ impl StageController {
             t.1 = 5; // 赤５を通常の5に変換
         }
 
-        let mut t0 = t;
-        if t.1 == 5 && pl.hand[t.0][0] != 0 {
-            t0.1 = 0; // 槓した牌で手牌に赤5がある場合
-        }
-
         match meld_type {
             MeldType::Kakan => {
                 let mut idx = 0;
@@ -340,7 +335,7 @@ impl StageController {
                     if m.tiles[0] == t || m.tiles[1] == t {
                         m.step = stg.step;
                         m.type_ = MeldType::Kakan;
-                        m.tiles.push(t0);
+                        m.tiles.push(tile);
                         m.froms.push(s);
                         break;
                     }
@@ -348,24 +343,25 @@ impl StageController {
                 }
 
                 let is_shown = pl.is_shown;
-                let t1 = if is_shown { t0 } else { Z8 };
+                let t1 = if is_shown { tile } else { Z8 };
                 let old = if is_shown { H(s) } else { U };
                 player_dec_tile(stg, t1);
                 table_edit(stg, t, old, M(s, idx));
-                stg.last_tile = Some((s, OpType::Kakan, t0)); // 槍槓フリテン用
+                stg.last_tile = Some((s, OpType::Kakan, tile)); // 槍槓フリテン用
             }
             MeldType::Ankan => {
                 let idx = pl.melds.len();
-                let mut m = Meld {
+                let mut t0 = t;
+                if t.is_suit() && t.1 == 5 {
+                    t0.1 = 0; // 赤5
+                }
+                let m = Meld {
                     step: stg.step,
                     seat: s,
                     type_: MeldType::Ankan,
-                    tiles: vec![],
-                    froms: vec![],
+                    tiles: vec![t0, t, t, t],
+                    froms: vec![s, s, s, s],
                 };
-                m.tiles = vec![t0, t, t, t];
-                m.froms = vec![s, s, s, s];
-
                 let is_shown = pl.is_shown;
                 let old = if is_shown { H(s) } else { U };
                 for &t1 in &m.tiles {

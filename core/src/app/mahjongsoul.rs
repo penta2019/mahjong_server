@@ -284,9 +284,9 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            self.ctrl.op_dealtile(s, Some(t));
+            self.ctrl.op_dealtile(s, t);
         } else {
-            self.ctrl.op_dealtile(s, None);
+            self.ctrl.op_dealtile(s, Z8);
         }
     }
 

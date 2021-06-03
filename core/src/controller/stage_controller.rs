@@ -130,7 +130,8 @@ impl StageController {
         );
     }
 
-    pub fn op_dealtile(&mut self, seat: Seat, tile: Option<Tile>) {
+    pub fn op_dealtile(&mut self, seat: Seat, tile: Tile) {
+        // tileはplayer.is_shown = falseの場合,Z8になることに注意
         let stg = &mut self.stage;
         update_after_discard_completed(stg);
 
@@ -145,16 +146,11 @@ impl StageController {
             disable_ippatsu(stg);
         }
 
-        match tile {
-            Some(t) => {
-                player_inc_tile(stg, t);
-                table_edit(stg, t, U, H(s));
-                stg.players[s].drawn = Some(t);
-            }
-            None => {
-                player_inc_tile(stg, Z8);
-            }
+        if tile != Z8 {
+            table_edit(stg, tile, U, H(s));
         }
+        player_inc_tile(stg, tile);
+        stg.players[s].drawn = Some(tile);
 
         op!(self, notify_op_dealtile, seat, tile);
     }

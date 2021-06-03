@@ -20,7 +20,7 @@ pub trait StageListener: Send {
     ) {
     }
 
-    fn notify_op_dealtile(&mut self, _stage: &Stage, _seat: Seat, _tile: Option<Tile>) {}
+    fn notify_op_dealtile(&mut self, _stage: &Stage, _seat: Seat, _tile: Tile) {}
 
     fn notify_op_discardtile(
         &mut self,

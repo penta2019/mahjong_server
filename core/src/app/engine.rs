@@ -375,25 +375,25 @@ impl MahjongEngine {
                 Pon | Chii => {}
                 Ankan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.op_dealtile(turn, Some(r));
+                    self.ctrl.op_dealtile(turn, r);
                     self.ctrl.op_dora(kd); // 槓ドラは打牌前
                     self.check_suukansanra_needed();
                 }
                 Minkan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.op_dealtile(turn, Some(r));
+                    self.ctrl.op_dealtile(turn, r);
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.op_dealtile(turn, Some(r));
+                    self.ctrl.op_dealtile(turn, r);
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kita => {
                     let k = self.draw_kita_tile();
-                    self.ctrl.op_dealtile(turn, Some(k));
+                    self.ctrl.op_dealtile(turn, k);
                 }
                 _ => panic!(),
             }
@@ -401,7 +401,7 @@ impl MahjongEngine {
             if stg.left_tile_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
-                self.ctrl.op_dealtile(s, Some(t));
+                self.ctrl.op_dealtile(s, t);
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }

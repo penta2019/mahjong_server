@@ -12,8 +12,6 @@ use crate::util::ws_server::{create_ws_server, SendRecv};
 
 use PlayerOperationType::*;
 
-const NO_SEAT: usize = 4;
-
 #[derive(Debug)]
 struct Mahjongsoul {
     ctrl: StageController,

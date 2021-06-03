@@ -416,7 +416,7 @@ impl MjaiAction {
         }
     }
 
-    pub fn from_operation(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<MjaiAction> {
+    pub fn from_operation(stage: &Stage, seat: Seat, op: &PlayerOperation) -> Option<MjaiAction> {
         let mut res = MjaiAction::default();
         let PlayerOperation(tp, cs) = op;
         match tp {
@@ -460,7 +460,7 @@ impl MjaiAction {
                     type_: "hora".to_string(),
                     actor: seat,
                     target: seat,
-                    pai: to_mjai_tile(stg.players[seat].drawn.unwrap()),
+                    pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
                 });
             }
             Kyushukyuhai => {
@@ -475,7 +475,7 @@ impl MjaiAction {
                 panic!()
             }
             Chii => {
-                let (target_seat, _, target_tile) = stg.last_tile.unwrap();
+                let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 res.type_ = MjaiActionType::Chi;
                 res.chi = Some(Chi {
                     type_: "chi".to_string(),
@@ -486,7 +486,7 @@ impl MjaiAction {
                 });
             }
             Pon => {
-                let (target_seat, _, target_tile) = stg.last_tile.unwrap();
+                let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 res.type_ = MjaiActionType::Pon;
                 res.pon = Some(Pon {
                     type_: "pon".to_string(),
@@ -497,7 +497,7 @@ impl MjaiAction {
                 });
             }
             Minkan => {
-                let (target_seat, _, target_tile) = stg.last_tile.unwrap();
+                let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 res.type_ = MjaiActionType::Daiminkan;
                 res.daiminkan = Some(Daiminkan {
                     type_: "daiminkan".to_string(),
@@ -508,7 +508,7 @@ impl MjaiAction {
                 });
             }
             Ron => {
-                let lt = stg.last_tile.unwrap();
+                let lt = stage.last_tile.unwrap();
                 res.type_ = MjaiActionType::Hora;
                 res.hora = Some(Hora {
                     type_: "hora".to_string(),
@@ -568,8 +568,12 @@ impl MjaiAction {
         Self::from_value(v).and_then(|cmsg| Ok(cmsg.to_operation(is_turn)))
     }
 
-    pub fn from_operation_to_value(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<Value> {
-        Self::from_operation(stg, seat, op).and_then(|cmsg| Some(cmsg.to_value()))
+    pub fn from_operation_to_value(
+        stage: &Stage,
+        seat: Seat,
+        op: &PlayerOperation,
+    ) -> Option<Value> {
+        Self::from_operation(stage, seat, op).and_then(|cmsg| Some(cmsg.to_value()))
     }
 }
 

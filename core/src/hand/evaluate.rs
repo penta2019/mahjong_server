@@ -15,8 +15,8 @@ pub struct WinContext {
     pub pay_scores: PayScores,    // 支払い得点
 }
 
-pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
-    let pl = &stg.players[stg.turn];
+pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
+    let pl = &stage.players[stage.turn];
     if !pl.is_shown {
         return None;
     }
@@ -26,13 +26,13 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
     yf.riichi = pl.is_riichi && !pl.is_daburii;
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
-    yf.haiteiraoyue = stg.left_tile_count == 0;
+    yf.haiteiraoyue = stage.left_tile_count == 0;
     yf.rinshankaihou = pl.is_rinshan;
     yf.tenhou = false;
     yf.tiihou = false;
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
-        ura_dora_wall[0..stg.doras.len()].to_vec()
+        ura_dora_wall[0..stage.doras.len()].to_vec()
     } else {
         vec![]
     };
@@ -40,13 +40,13 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
     if let Some(res) = evaluate_hand(
         &pl.hand,
         &pl.melds,
-        &stg.doras,
+        &stage.doras,
         &ura_doras,
         pl.drawn.unwrap(),
         true,
-        stg.is_leader(pl.seat),
-        stg.get_prevalent_wind(),
-        stg.get_seat_wind(pl.seat),
+        stage.is_leader(pl.seat),
+        stage.get_prevalent_wind(),
+        stage.get_seat_wind(pl.seat),
         yf,
     ) {
         if !res.yaku.is_empty() {
@@ -57,12 +57,16 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
     None
 }
 
-pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> Option<WinContext> {
-    if seat == stg.turn {
+pub fn evaluate_hand_ron(
+    stage: &Stage,
+    ura_dora_wall: &Vec<Tile>,
+    seat: Seat,
+) -> Option<WinContext> {
+    if seat == stage.turn {
         return None;
     }
 
-    let pl = &stg.players[seat];
+    let pl = &stage.players[seat];
     if !pl.is_shown || pl.is_furiten || pl.is_furiten_other {
         return None;
     }
@@ -72,9 +76,9 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
 
-    let (tp, t) = if let Some((_, tp, t)) = stg.last_tile {
+    let (tp, t) = if let Some((_, tp, t)) = stage.last_tile {
         match tp {
-            OpType::Discard => yf.houteiraoyui = stg.left_tile_count == 0,
+            OpType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,
             OpType::Kakan => yf.chankan = true,
             OpType::Ankan => {}
             _ => panic!(),
@@ -94,7 +98,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
-        ura_dora_wall[0..stg.doras.len()].to_vec()
+        ura_dora_wall[0..stage.doras.len()].to_vec()
     } else {
         vec![]
     };
@@ -102,13 +106,13 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
     if let Some(res) = evaluate_hand(
         &hand,
         &pl.melds,
-        &stg.doras,
+        &stage.doras,
         &ura_doras,
         t,
         false,
-        stg.is_leader(pl.seat),
-        stg.get_prevalent_wind(),
-        stg.get_seat_wind(pl.seat),
+        stage.is_leader(pl.seat),
+        stage.get_prevalent_wind(),
+        stage.get_seat_wind(pl.seat),
         yf,
     ) {
         if tp == OpType::Ankan {

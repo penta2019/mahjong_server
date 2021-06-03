@@ -142,11 +142,7 @@ impl StageListener for MjaiEndpoint {
     fn notify_op_game_start(&mut self, _stage: &Stage) {
         assert!(self.seat != NO_SEAT);
         *self.data.lock().unwrap() = SharedData::new();
-        self.add_record(json!({
-            "type":"start_game",
-            "id": self.seat,
-            "names":["Player0","Player1","Player2","Player3"],
-        }));
+        self.add_record(mjai_start_game(self.seat));
     }
 
     fn notify_op_roundnew(
@@ -160,36 +156,21 @@ impl StageListener for MjaiEndpoint {
         _scores: &[i32; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
-        let wind = ["E", "S", "W", "N"];
-        let hands = create_tehais(player_hands, self.seat);
+        self.add_record(mjai_start_kyoku(
+            self.seat,
+            round,
+            kyoku,
+            honba,
+            kyoutaku,
+            doras,
+            player_hands,
+        ));
 
-        assert!(doras.len() == 1);
-        let dora_marker = to_mjai_tile(doras[0]);
-
-        self.add_record(json!({
-            "type":"start_kyoku",
-            "bakaze": wind[round],
-            "kyoku": kyoku,
-            "honba": honba,
-            "kyotaku": kyoutaku,
-            "dora_marker": dora_marker,
-            "tehais": hands,
-        }));
-
-        self.notify_op_dealtile(stage, kyoku, stage.players[kyoku].drawn);
+        self.notify_op_dealtile(stage, kyoku, stage.players[kyoku].drawn.unwrap());
     }
 
-    fn notify_op_dealtile(&mut self, _stage: &Stage, seat: Seat, tile: Option<Tile>) {
-        let t = if self.seat == seat {
-            to_mjai_tile(tile.unwrap())
-        } else {
-            "?".to_string()
-        };
-        self.add_record(json!({
-            "type": "tsumo",
-            "actor": seat,
-            "pai": t,
-        }));
+    fn notify_op_dealtile(&mut self, _stage: &Stage, seat: Seat, tile: Tile) {
+        self.add_record(mjai_tsumo(self.seat, seat, tile));
     }
 
     fn notify_op_discardtile(
@@ -201,28 +182,13 @@ impl StageListener for MjaiEndpoint {
         is_riichi: bool,
     ) {
         if is_riichi {
-            self.add_record(json!({
-                "type": "reach",
-                "actor": seat,
-            }));
+            self.add_record(mjai_reach(seat));
         }
 
-        self.add_record(json!({
-            "type": "dahai",
-            "actor": seat,
-            "pai": to_mjai_tile(tile),
-            "tsumogiri": is_drawn,
-        }));
+        self.add_record(mjai_dahai(seat, tile, is_drawn));
 
         if is_riichi {
-            let mut deltas = [0, 0, 0, 0];
-            deltas[seat] = -1000;
-            self.add_record(json!({
-                "type": "reach_accepted",
-                "actor": seat,
-                "deltas": deltas,
-                "scores": stage.get_scores(),
-            }));
+            self.add_record(mjai_reach_accepted(seat, stage.get_scores()));
         }
     }
 
@@ -234,77 +200,21 @@ impl StageListener for MjaiEndpoint {
         tiles: &Vec<Tile>,
         froms: &Vec<Seat>,
     ) {
-        let mut consumed = vec![];
-        let mut pai = "".to_string();
-        let mut target = NO_SEAT;
-        for (&t, &f) in tiles.iter().zip(froms.iter()) {
-            if seat == f {
-                consumed.push(to_mjai_tile(t));
-            } else {
-                target = f;
-                pai = to_mjai_tile(t);
-            }
-        }
-        assert!(pai != "" && target != NO_SEAT);
-
-        let type_ = match meld_type {
-            MeldType::Chii => "chi",
-            MeldType::Pon => "pon",
-            MeldType::Minkan => "daiminkan",
-            _ => panic!(),
-        };
-        self.add_record(json!({
-            "type": type_,
-            "actor": seat,
-            "pai": pai,
-            "target": target,
-            "consumed": consumed,
-        }));
+        self.add_record(mjai_chiponkan(seat, meld_type, tiles, froms));
     }
 
     fn notify_op_ankankakan(&mut self, stage: &Stage, seat: Seat, meld_type: MeldType, tile: Tile) {
-        let pl = &stage.players[seat];
-        let meld = pl.melds.iter().find(|m| m.tiles.contains(&tile)).unwrap();
-        match meld_type {
-            MeldType::Ankan => {
-                let mut consumed = vec![];
-                for &t in meld.tiles.iter() {
-                    consumed.push(to_mjai_tile(t))
-                }
-                self.add_record(json!({
-                    "type": "ankan",
-                    "actor": seat,
-                    "consumed": consumed,
-                }));
-            }
-            MeldType::Kakan => {
-                let mut pai = "".to_string();
-                let mut consumed = vec![];
-                for &t in meld.tiles.iter() {
-                    if pai == "" && t == tile {
-                        pai = to_mjai_tile(t);
-                    } else {
-                        consumed.push(to_mjai_tile(t))
-                    }
-                }
-                assert!(pai != "");
-
-                self.add_record(json!({
-                    "type": "kakan",
-                    "actor": seat,
-                    "pai": pai,
-                    "consumed": consumed,
-                }));
-            }
-            _ => panic!(),
-        }
+        let tiles = &stage.players[seat]
+            .melds
+            .iter()
+            .find(|m| m.tiles.contains(&tile))
+            .unwrap()
+            .tiles;
+        self.add_record(mjai_ankankakan(seat, meld_type, tile, tiles));
     }
 
     fn notify_op_dora(&mut self, _stage: &Stage, tile: Tile) {
-        self.add_record(json!({
-            "type": "dora",
-            "dora_marker": to_mjai_tile(tile),
-        }));
+        self.add_record(mjai_dora(tile));
     }
 
     fn notify_op_kita(&mut self, _stage: &Stage, _seat: Seat, _is_drawn: bool) {
@@ -317,34 +227,26 @@ impl StageListener for MjaiEndpoint {
         ura_doras: &Vec<Tile>,
         contexts: &Vec<(Seat, [i32; SEAT], WinContext)>,
     ) {
-        let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
         for (seat, deltas, ctx) in contexts {
-            self.add_record(json!({
-                "type": "hora",
-                "actor": seat,
-                "target": stage.turn,
-                "pai": to_mjai_tile(stage.last_tile.unwrap().2),
-                "uradora_markers": ura,
-                "hora_tehais": [], // TODO
-                "yakus": [], // TODO
-                "fu": ctx.fu,
-                "fan": ctx.fan_mag,
-                "hora_points": ctx.pay_scores.0,
-                "deltas": deltas,
-                "scores": stage.get_scores(),
-            }));
+            self.add_record(mjai_hora(
+                *seat,
+                stage.turn,
+                stage.last_tile.unwrap().2,
+                ura_doras,
+                ctx,
+                deltas,
+                &stage.get_scores(),
+            ));
         }
     }
 
-    fn notify_op_roundend_draw(&mut self, stage: &Stage, _draw_type: DrawType) {
-        self.add_record(json!({
-            "type": "ryukyoku",
-            "reason": "", // TODO
-            "tehais": [], // TODO
-            "tenpais": [false, false, false, false],
-            "deltas": [0, 0, 0, 0],
-            "scores": stage.get_scores(),
-        }));
+    fn notify_op_roundend_draw(&mut self, stage: &Stage, draw_type: DrawType) {
+        self.add_record(mjai_ryukyoku(
+            draw_type,
+            &[false; 4],
+            &[0; 4],
+            &stage.get_scores(),
+        ));
     }
 
     fn notify_op_roundend_notile(
@@ -353,21 +255,16 @@ impl StageListener for MjaiEndpoint {
         is_ready: &[bool; SEAT],
         delta_scores: &[i32; SEAT],
     ) {
-        self.add_record(json!({
-            "type": "ryukyoku",
-            "reason": "fanpai",
-            "tehais": [], // TODO
-            "tenpais": is_ready,
-            "deltas": delta_scores,
-            "scores": stage.get_scores(),
-        }));
+        self.add_record(mjai_ryukyoku(
+            DrawType::Kouhaiheikyoku,
+            is_ready,
+            delta_scores,
+            &stage.get_scores(),
+        ))
     }
 
     fn notify_op_game_over(&mut self, stage: &Stage) {
-        self.add_record(json!({
-            "type": "end_game",
-            "scores": stage.get_scores(),
-        }));
+        self.add_record(mjai_end_game(&stage.get_scores()));
     }
 }
 
@@ -524,10 +421,214 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
     serde_json::from_str(&buf[..buf.len() - 1]).or_else(|_| err())
 }
 
+// Mjai Message ===============================================================
+// id: 自分の座席
+// seat: 行動を行ったプレイヤーの座席
+// target: 行動の対象となるプレイヤー(ロン, チー, ポン, 槓など)
+
+fn mjai_start_game(id: Seat) -> Value {
+    json!({
+        "type":"start_game",
+        "id": id,
+        "names":["Player0","Player1","Player2","Player3"],
+    })
+}
+
+fn mjai_start_kyoku(
+    id: Seat,
+    round: usize,
+    kyoku: usize,
+    honba: usize,
+    kyotaku: usize,
+    doras: &Vec<Tile>,
+    player_hands: &[Vec<Tile>; SEAT],
+) -> Value {
+    let wind = ["E", "S", "W", "N"];
+    let hands = create_tehais(player_hands, id);
+
+    assert!(doras.len() == 1);
+    let dora_marker = to_mjai_tile(doras[0]);
+
+    json!({
+        "type":"start_kyoku",
+        "bakaze": wind[round],
+        "kyoku": kyoku,
+        "honba": honba,
+        "kyotaku": kyotaku,
+        "dora_marker": dora_marker,
+        "tehais": hands,
+    })
+}
+
+fn mjai_tsumo(id: Seat, seat: Seat, tile: Tile) -> Value {
+    let t = if id == seat {
+        to_mjai_tile(tile)
+    } else {
+        "?".to_string()
+    };
+    json!({
+        "type": "tsumo",
+        "actor": seat,
+        "pai": t,
+    })
+}
+
+fn mjai_dahai(seat: Seat, tile: Tile, is_drawn: bool) -> Value {
+    json!({
+        "type": "dahai",
+        "actor": seat,
+        "pai": to_mjai_tile(tile),
+        "tsumogiri": is_drawn,
+    })
+}
+
+fn mjai_reach(seat: Seat) -> Value {
+    json!({
+        "type": "reach",
+        "actor": seat,
+    })
+}
+
+fn mjai_reach_accepted(seat: Seat, scores: [i32; SEAT]) -> Value {
+    let mut deltas = [0, 0, 0, 0];
+    deltas[seat] = -1000;
+    json!({
+        "type": "reach_accepted",
+        "actor": seat,
+        "deltas": deltas,
+        "scores": scores,
+    })
+}
+
+fn mjai_chiponkan(seat: Seat, meld_type: MeldType, tiles: &Vec<Tile>, froms: &Vec<Seat>) -> Value {
+    let mut consumed = vec![];
+    let mut pai = "".to_string();
+    let mut target = NO_SEAT;
+    for (&t, &f) in tiles.iter().zip(froms.iter()) {
+        if seat == f {
+            consumed.push(to_mjai_tile(t));
+        } else {
+            target = f;
+            pai = to_mjai_tile(t);
+        }
+    }
+    assert!(pai != "" && target != NO_SEAT);
+
+    let type_ = match meld_type {
+        MeldType::Chii => "chi",
+        MeldType::Pon => "pon",
+        MeldType::Minkan => "daiminkan",
+        _ => panic!(),
+    };
+    json!({
+        "type": type_,
+        "actor": seat,
+        "pai": pai,
+        "target": target,
+        "consumed": consumed,
+    })
+}
+
+fn mjai_ankankakan(seat: Seat, meld_type: MeldType, tile: Tile, tiles: &Vec<Tile>) -> Value {
+    match meld_type {
+        MeldType::Ankan => {
+            let mut consumed = vec![];
+            for &t in tiles.iter() {
+                consumed.push(to_mjai_tile(t))
+            }
+            json!({
+                "type": "ankan",
+                "actor": seat,
+                "consumed": consumed,
+            })
+        }
+        MeldType::Kakan => {
+            let mut pai = "".to_string();
+            let mut consumed = vec![];
+            for &t in tiles.iter() {
+                if pai == "" && t == tile {
+                    pai = to_mjai_tile(t);
+                } else {
+                    consumed.push(to_mjai_tile(t))
+                }
+            }
+            assert!(pai != "");
+
+            json!({
+                "type": "kakan",
+                "actor": seat,
+                "pai": pai,
+                "consumed": consumed,
+            })
+        }
+        _ => panic!(),
+    }
+}
+
+fn mjai_dora(tile: Tile) -> Value {
+    json!({
+        "type": "dora",
+        "dora_marker": to_mjai_tile(tile),
+    })
+}
+
+fn mjai_hora(
+    seat: Seat,
+    target: Seat,
+    tile: Tile,
+    ura_doras: &Vec<Tile>,
+    context: &WinContext,
+    deltas: &[i32; SEAT],
+    scores: &[i32; SEAT],
+) -> Value {
+    let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
+    json!({
+        "type": "hora",
+        "actor": seat,
+        "target": target,
+        "pai": to_mjai_tile(tile),
+        "uradora_markers": ura,
+        "hora_tehais": [], // TODO
+        "yakus": [], // TODO
+        "fu": context.fu,
+        "fan": context.fan_mag,
+        "hora_points": context.pay_scores.0,
+        "deltas": deltas,
+        "scores": scores,
+    })
+}
+
+fn mjai_ryukyoku(
+    draw_type: DrawType,
+    is_ready: &[bool; SEAT],
+    deltas: &[i32; SEAT],
+    scores: &[i32; SEAT],
+) -> Value {
+    let type_ = match draw_type {
+        DrawType::Kouhaiheikyoku => "fanpai",
+        _ => "",
+    };
+    json!({
+        "type": "ryukyoku",
+        "reason": type_, // TODO
+        "tehais": [], // TODO
+        "tenpais": is_ready,
+        "deltas": deltas,
+        "scores": scores,
+    })
+}
+
+fn mjai_end_game(scores: &[i32; SEAT]) -> Value {
+    json!({
+        "type": "end_game",
+        "scores": scores,
+    })
+}
+
 // Mjai Action ================================================================
 
 #[derive(Debug)]
-pub enum MjaiActionType {
+enum MjaiActionType {
     Dahai,
     Pon,
     Chi,
@@ -633,7 +734,7 @@ struct None {
 }
 
 #[derive(Debug, Default)]
-pub struct MjaiAction {
+struct MjaiAction {
     type_: MjaiActionType,
     dahai: Option<Dahai>,
     chi: Option<Chi>,
@@ -648,7 +749,7 @@ pub struct MjaiAction {
 }
 
 impl MjaiAction {
-    pub fn from_value(v: Value) -> Result<MjaiAction> {
+    fn from_value(v: Value) -> Result<MjaiAction> {
         use serde_json::from_value;
         let type_ = v["type"]
             .as_str()
@@ -710,7 +811,7 @@ impl MjaiAction {
         Ok(res)
     }
 
-    pub fn to_value(&self) -> Value {
+    fn to_value(&self) -> Value {
         match self.type_ {
             MjaiActionType::Dahai => json!(self.dahai),
             MjaiActionType::Chi => json!(self.chi),
@@ -725,7 +826,7 @@ impl MjaiAction {
         }
     }
 
-    pub fn from_operation(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<MjaiAction> {
+    fn from_operation(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<MjaiAction> {
         let mut res = MjaiAction::default();
         let PlayerOperation(tp, cs) = op;
         match tp {
@@ -830,7 +931,7 @@ impl MjaiAction {
         Some(res)
     }
 
-    pub fn to_operation(&self, is_turn: bool) -> PlayerOperation {
+    fn to_operation(&self, is_turn: bool) -> PlayerOperation {
         match self.type_ {
             MjaiActionType::Dahai => {
                 let m = self.dahai.as_ref().unwrap();
@@ -873,16 +974,16 @@ impl MjaiAction {
         }
     }
 
-    pub fn from_value_to_operation(v: Value, is_turn: bool) -> Result<PlayerOperation> {
+    fn from_value_to_operation(v: Value, is_turn: bool) -> Result<PlayerOperation> {
         Self::from_value(v).and_then(|cmsg| Ok(cmsg.to_operation(is_turn)))
     }
 
-    pub fn from_operation_to_value(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<Value> {
+    fn from_operation_to_value(stg: &Stage, seat: Seat, op: &PlayerOperation) -> Option<Value> {
         Self::from_operation(stg, seat, op).and_then(|cmsg| Some(cmsg.to_value()))
     }
 }
 
-pub fn to_mjai_tile(t: Tile) -> String {
+fn to_mjai_tile(t: Tile) -> String {
     if t.is_hornor() {
         assert!(WE <= t.1 && t.1 <= DR);
         let hornor = ["", "E", "S", "W", "N", "P", "F", "C"];
@@ -898,7 +999,7 @@ pub fn to_mjai_tile(t: Tile) -> String {
     }
 }
 
-pub fn from_mjai_tile(sym: &str) -> Tile {
+fn from_mjai_tile(sym: &str) -> Tile {
     match sym {
         "?" => Z8,
         "E" => Tile(TZ, WE),
@@ -926,15 +1027,15 @@ pub fn from_mjai_tile(sym: &str) -> Tile {
     }
 }
 
-pub fn vec_to_mjai_tile(v: &Vec<Tile>) -> Vec<String> {
+fn vec_to_mjai_tile(v: &Vec<Tile>) -> Vec<String> {
     v.iter().map(|&t| to_mjai_tile(t)).collect()
 }
 
-pub fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
+fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
     v.iter().map(|t| from_mjai_tile(t)).collect()
 }
 
-pub fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
+fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
     let mut hands = vec![];
     for (seat2, hands2) in player_hands.iter().enumerate() {
         let mut hand = vec![];

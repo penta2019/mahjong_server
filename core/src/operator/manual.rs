@@ -49,7 +49,7 @@ impl Operator for Manual {
                         'z' => TZ,
                         _ => panic!(),
                     };
-                    let ni: usize = match chars.next().unwrap().to_digit(10) {
+                    let ni: Tnum = match chars.next().unwrap().to_digit(10) {
                         Some(n) => n as usize,
                         _ => {
                             println!("invalid tile symbol");

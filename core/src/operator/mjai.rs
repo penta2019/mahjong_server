@@ -550,7 +550,7 @@ impl Default for MjaiActionType {
 struct Dahai {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
+    actor: Seat,
     pai: String,
     tsumogiri: bool,
 }
@@ -559,8 +559,8 @@ struct Dahai {
 struct Pon {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
-    target: usize,
+    actor: Seat,
+    target: Seat,
     pai: String,
     consumed: Vec<String>,
 }
@@ -569,8 +569,8 @@ struct Pon {
 struct Chi {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
-    target: usize,
+    actor: Seat,
+    target: Seat,
     pai: String,
     consumed: Vec<String>,
 }
@@ -579,7 +579,7 @@ struct Chi {
 struct Kakan {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
+    actor: Seat,
     pai: String,
     consumed: Vec<String>,
 }
@@ -588,8 +588,8 @@ struct Kakan {
 struct Daiminkan {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
-    target: usize,
+    actor: Seat,
+    target: Seat,
     pai: String,
     consumed: Vec<String>,
 }
@@ -598,7 +598,7 @@ struct Daiminkan {
 struct Ankan {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
+    actor: Seat,
     consumed: Vec<String>,
 }
 
@@ -606,15 +606,15 @@ struct Ankan {
 struct Reach {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
+    actor: Seat,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Hora {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
-    target: usize,
+    actor: Seat,
+    target: Seat,
     pai: String,
 }
 
@@ -622,7 +622,7 @@ struct Hora {
 struct Ryukyoku {
     #[serde(rename = "type")]
     type_: String,
-    actor: usize,
+    actor: Seat,
     reason: String,
 }
 
@@ -915,8 +915,8 @@ pub fn from_mjai_tile(sym: &str) -> Tile {
                 b'p' => 1,
                 b's' => 2,
                 _ => panic!(),
-            } as usize;
-            let mut ni = (sym[0] - b'0') as usize;
+            } as Type;
+            let mut ni = (sym[0] - b'0') as Tnum;
             if ni == 5 && sym.len() == 3 {
                 ni = 0;
             }

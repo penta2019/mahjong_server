@@ -21,12 +21,12 @@ pub fn calc_mods_cnts(hand: &TileTable) -> ([usize; 4], [usize; 3]) {
 }
 
 // 雀頭+面子形で構成されているかの判定
-pub fn is_sets_pair(tr: &TileRow, ti: usize) -> bool {
+pub fn is_sets_pair(tr: &TileRow, ti: Type) -> bool {
     !calc_pair_candidate(tr, ti).is_empty()
 }
 
 // 面子のみで構成されているかの判定
-pub fn is_sets(tr: &TileRow, ti: usize) -> bool {
+pub fn is_sets(tr: &TileRow, ti: Type) -> bool {
     let (mut n0, mut n1, mut n2);
     n0 = tr[1];
     n1 = tr[2];
@@ -46,7 +46,7 @@ pub fn is_sets(tr: &TileRow, ti: usize) -> bool {
 
 // 牌種が完成面子+雀頭の場合において雀頭候補となる牌を返す
 // [1,4,7], [2,5,8], [3,6,9] のいずれか
-pub fn calc_pair_candidate_index(tr: &TileRow) -> Vec<usize> {
+pub fn calc_pair_candidate_index(tr: &TileRow) -> Vec<Tnum> {
     // 面子の和は3で割り切れるので余りの値によって雀頭候補を絞り込める
     let mut sum = 0;
     for i in 1..TNUM {
@@ -227,7 +227,7 @@ pub fn calc_tiles_to_chiitoitsu_win(hand: &TileTable) -> Vec<Tile> {
 pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
     let mut wt = None; // 所有していない么九牌
     let mut n_end = 0; // 么九牌の数
-    let mut check = |ti: usize, ni: usize| {
+    let mut check = |ti: Type, ni: Tnum| {
         let n: usize = hand[ti][ni];
         n_end += n;
         match n {

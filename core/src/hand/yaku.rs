@@ -15,8 +15,8 @@ pub struct Context {
     winning_tile: Tile,      // 上がり牌
     is_self_drawn: bool,     // ツモ和了
     is_open: bool,           // 鳴きの有無
-    prevalent_wind: usize,   // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
-    seat_wind: usize,        // 自風 (同上)
+    prevalent_wind: Tnum,    // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
+    seat_wind: Tnum,         // 自風 (同上)
     yaku_flags: YakuFlags,   // 組み合わせ以外による役 外部から設定を行う
     counts: Counts,          // 面子や牌種別のカウント
     iipeikou_count: usize,   // 一盃口, 二盃口用
@@ -28,8 +28,8 @@ impl Context {
         hand: TileTable,
         parsed_hand: ParsedHand,
         winning_tile: Tile,
-        prevalent_wind: usize,
-        seat_wind: usize,
+        prevalent_wind: Tnum,
+        seat_wind: Tnum,
         is_self_drawn: bool,
         yaku_flags: YakuFlags,
     ) -> Self {

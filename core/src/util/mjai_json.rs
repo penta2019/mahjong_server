@@ -217,28 +217,8 @@ pub fn mjai_end_game(scores: &[Score; SEAT]) -> Value {
 
 // Mjai Action ================================================================
 
-#[derive(Debug)]
-enum MjaiActionType {
-    Dahai,
-    Pon,
-    Chi,
-    Kakan,
-    Daiminkan,
-    Ankan,
-    Reach,
-    Hora,
-    Ryukyoku,
-    None,
-}
-
-impl Default for MjaiActionType {
-    fn default() -> Self {
-        MjaiActionType::None
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
-struct Dahai {
+pub struct ActionDahai {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -247,7 +227,7 @@ struct Dahai {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Pon {
+pub struct ActionPon {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -257,7 +237,7 @@ struct Pon {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Chi {
+pub struct ActionChi {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -267,7 +247,7 @@ struct Chi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Kakan {
+pub struct ActionKakan {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -276,7 +256,7 @@ struct Kakan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Daiminkan {
+pub struct ActionDaiminkan {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -286,7 +266,7 @@ struct Daiminkan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Ankan {
+pub struct ActionAnkan {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -294,14 +274,14 @@ struct Ankan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Reach {
+pub struct ActionReach {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Hora {
+pub struct ActionHora {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -310,7 +290,7 @@ struct Hora {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Ryukyoku {
+pub struct ActionRyukyoku {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -318,24 +298,23 @@ struct Ryukyoku {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct None {
+pub struct ActionNone {
     #[serde(rename = "type")]
     type_: String,
 }
 
-#[derive(Debug, Default)]
-pub struct MjaiAction {
-    type_: MjaiActionType,
-    dahai: Option<Dahai>,
-    chi: Option<Chi>,
-    pon: Option<Pon>,
-    kakan: Option<Kakan>,
-    daiminkan: Option<Daiminkan>,
-    ankan: Option<Ankan>,
-    reach: Option<Reach>,
-    hora: Option<Hora>,
-    ryukyoku: Option<Ryukyoku>,
-    none: Option<None>,
+#[derive(Debug, Serialize, Deserialize)]
+pub enum MjaiAction {
+    Dahai(ActionDahai),
+    Pon(ActionPon),
+    Chi(ActionChi),
+    Kakan(ActionKakan),
+    Daiminkan(ActionDaiminkan),
+    Ankan(ActionAnkan),
+    Reach(ActionReach),
+    Hora(ActionHora),
+    Ryukyoku(ActionRyukyoku),
+    None(ActionNone),
 }
 
 impl MjaiAction {
@@ -345,91 +324,71 @@ impl MjaiAction {
             .as_str()
             .ok_or(serde::de::Error::missing_field("type"))?;
 
-        let mut res = MjaiAction::default();
-        match type_ {
-            "dahai" => {
-                res.type_ = MjaiActionType::Dahai;
-                res.dahai = from_value(v)?;
-            }
+        Ok(match type_ {
+            "dahai" => MjaiAction::Dahai(from_value(v)?),
             "chi" => {
-                res.type_ = MjaiActionType::Chi;
-                res.chi = from_value(v)?;
-                res.chi.as_mut().unwrap().consumed.sort();
+                let mut act: ActionChi = from_value(v)?;
+                act.consumed.sort();
+                MjaiAction::Chi(act)
             }
             "pon" => {
-                res.type_ = MjaiActionType::Pon;
-                res.pon = from_value(v)?;
-                res.pon.as_mut().unwrap().consumed.sort();
+                let mut act: ActionPon = from_value(v)?;
+                act.consumed.sort();
+                MjaiAction::Pon(act)
             }
             "kakan" => {
-                res.type_ = MjaiActionType::Kakan;
-                res.kakan = from_value(v)?;
+                let mut act: ActionKakan = from_value(v)?;
+                act.consumed.sort();
+                MjaiAction::Kakan(act)
             }
             "daiminkan" => {
-                res.type_ = MjaiActionType::Daiminkan;
-                res.daiminkan = from_value(v)?;
-                res.daiminkan.as_mut().unwrap().consumed.sort();
+                let mut act: ActionDaiminkan = from_value(v)?;
+                act.consumed.sort();
+                MjaiAction::Daiminkan(act)
             }
             "ankan" => {
-                res.type_ = MjaiActionType::Ankan;
-                res.ankan = from_value(v)?;
-                res.ankan.as_mut().unwrap().consumed.sort();
+                let mut act: ActionAnkan = from_value(v)?;
+                act.consumed.sort();
+                MjaiAction::Ankan(act)
             }
-            "reach" => {
-                res.type_ = MjaiActionType::Reach;
-                res.reach = from_value(v)?;
-            }
-            "hora" => {
-                res.type_ = MjaiActionType::Hora;
-                res.hora = from_value(v)?;
-            }
-            "ryukyoku" => {
-                res.type_ = MjaiActionType::Ryukyoku;
-                res.ryukyoku = from_value(v)?;
-            }
-            "none" => {
-                res.type_ = MjaiActionType::None;
-                res.none = from_value(v)?;
-            }
+            "reach" => MjaiAction::Reach(from_value(v)?),
+            "hora" => MjaiAction::Hora(from_value(v)?),
+            "ryukyoku" => MjaiAction::Ryukyoku(from_value(v)?),
+            "none" => MjaiAction::None(from_value(v)?),
             t => {
                 return Err(serde::de::Error::invalid_value(
                     serde::de::Unexpected::Str(t),
                     &"type value",
                 ))
             }
-        }
-        Ok(res)
+        })
     }
 
     pub fn to_value(&self) -> Value {
-        match self.type_ {
-            MjaiActionType::Dahai => json!(self.dahai),
-            MjaiActionType::Chi => json!(self.chi),
-            MjaiActionType::Pon => json!(self.pon),
-            MjaiActionType::Kakan => json!(self.kakan),
-            MjaiActionType::Daiminkan => json!(self.daiminkan),
-            MjaiActionType::Ankan => json!(self.ankan),
-            MjaiActionType::Reach => json!(self.reach),
-            MjaiActionType::Hora => json!(self.hora),
-            MjaiActionType::Ryukyoku => json!(self.ryukyoku),
-            MjaiActionType::None => json!(self.none),
+        match self {
+            MjaiAction::Dahai(act) => json!(act),
+            MjaiAction::Chi(act) => json!(act),
+            MjaiAction::Pon(act) => json!(act),
+            MjaiAction::Kakan(act) => json!(act),
+            MjaiAction::Daiminkan(act) => json!(act),
+            MjaiAction::Ankan(act) => json!(act),
+            MjaiAction::Reach(act) => json!(act),
+            MjaiAction::Hora(act) => json!(act),
+            MjaiAction::Ryukyoku(act) => json!(act),
+            MjaiAction::None(act) => json!(act),
         }
     }
 
     pub fn from_operation(stage: &Stage, seat: Seat, op: &PlayerOperation) -> Option<MjaiAction> {
-        let mut res = MjaiAction::default();
         let PlayerOperation(tp, cs) = op;
-        match tp {
+        Some(match tp {
             Nop => return None,
             Discard => return None,
-            Ankan => {
-                res.type_ = MjaiActionType::Ankan;
-                res.ankan = Some(Ankan {
-                    type_: "ankan".to_string(),
-                    actor: seat,
-                    consumed: vec_to_mjai_tile(cs),
-                })
-            }
+            Ankan => MjaiAction::Ankan(ActionAnkan {
+                type_: "ankan".to_string(),
+                actor: seat,
+                consumed: vec_to_mjai_tile(cs),
+            }),
             Kakan => {
                 let t = op.1[0];
                 let comsumed = if t.1 == 0 {
@@ -445,122 +404,93 @@ impl MjaiAction {
                 .iter()
                 .map(|&t| to_mjai_tile(t))
                 .collect();
-                res.type_ = MjaiActionType::Kakan;
-                res.kakan = Some(Kakan {
+
+                MjaiAction::Kakan(ActionKakan {
                     type_: "kakan".to_string(),
                     actor: seat,
                     pai: to_mjai_tile(t),
                     consumed: comsumed,
-                });
+                })
             }
             Riichi => return None,
-            Tsumo => {
-                res.type_ = MjaiActionType::Hora;
-                res.hora = Some(Hora {
-                    type_: "hora".to_string(),
-                    actor: seat,
-                    target: seat,
-                    pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
-                });
-            }
-            Kyushukyuhai => {
-                res.type_ = MjaiActionType::Ryukyoku;
-                res.ryukyoku = Some(Ryukyoku {
-                    type_: "ryukyoku".to_string(),
-                    actor: seat,
-                    reason: "kyushukyuhai".to_string(),
-                });
-            }
-            Kita => {
-                panic!()
-            }
+            Tsumo => MjaiAction::Hora(ActionHora {
+                type_: "hora".to_string(),
+                actor: seat,
+                target: seat,
+                pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
+            }),
+            Kyushukyuhai => MjaiAction::Ryukyoku(ActionRyukyoku {
+                type_: "ryukyoku".to_string(),
+                actor: seat,
+                reason: "kyushukyuhai".to_string(),
+            }),
+            Kita => panic!(),
             Chii => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                res.type_ = MjaiActionType::Chi;
-                res.chi = Some(Chi {
+                MjaiAction::Chi(ActionChi {
                     type_: "chi".to_string(),
                     actor: seat,
                     target: target_seat,
                     pai: to_mjai_tile(target_tile),
                     consumed: vec_to_mjai_tile(cs),
-                });
+                })
             }
             Pon => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                res.type_ = MjaiActionType::Pon;
-                res.pon = Some(Pon {
+                MjaiAction::Pon(ActionPon {
                     type_: "pon".to_string(),
                     actor: seat,
                     target: target_seat,
                     pai: to_mjai_tile(target_tile),
                     consumed: vec_to_mjai_tile(cs),
-                });
+                })
             }
             Minkan => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                res.type_ = MjaiActionType::Daiminkan;
-                res.daiminkan = Some(Daiminkan {
+                MjaiAction::Daiminkan(ActionDaiminkan {
                     type_: "daiminkan".to_string(),
                     actor: seat,
                     target: target_seat,
                     pai: to_mjai_tile(target_tile),
                     consumed: vec_to_mjai_tile(cs),
-                });
+                })
             }
             Ron => {
                 let lt = stage.last_tile.unwrap();
-                res.type_ = MjaiActionType::Hora;
-                res.hora = Some(Hora {
+                MjaiAction::Hora(ActionHora {
                     type_: "hora".to_string(),
                     actor: seat,
                     target: lt.0,
                     pai: to_mjai_tile(lt.2),
-                });
+                })
             }
-        }
-        Some(res)
+        })
     }
 
     pub fn to_operation(&self, is_turn: bool) -> PlayerOperation {
-        match self.type_ {
-            MjaiActionType::Dahai => {
-                let m = self.dahai.as_ref().unwrap();
-                if m.tsumogiri {
+        match self {
+            MjaiAction::Dahai(act) => {
+                if act.tsumogiri {
                     Op::nop()
                 } else {
-                    Op::discard(from_mjai_tile(&m.pai))
+                    Op::discard(from_mjai_tile(&act.pai))
                 }
             }
-            MjaiActionType::Chi => {
-                let m = self.chi.as_ref().unwrap();
-                Op::chii(vec_from_mjai_tile(&m.consumed))
-            }
-            MjaiActionType::Pon => {
-                let m = self.pon.as_ref().unwrap();
-                Op::pon(vec_from_mjai_tile(&m.consumed))
-            }
-            MjaiActionType::Kakan => {
-                let m = self.kakan.as_ref().unwrap();
-                Op::kakan(from_mjai_tile(&m.pai))
-            }
-            MjaiActionType::Daiminkan => {
-                let m = self.daiminkan.as_ref().unwrap();
-                Op::minkan(vec_from_mjai_tile(&m.consumed))
-            }
-            MjaiActionType::Ankan => {
-                let m = self.ankan.as_ref().unwrap();
-                Op::ankan(vec_from_mjai_tile(&m.consumed))
-            }
-            MjaiActionType::Reach => panic!(),
-            MjaiActionType::Hora => {
+            MjaiAction::Chi(act) => Op::chii(vec_from_mjai_tile(&act.consumed)),
+            MjaiAction::Pon(act) => Op::pon(vec_from_mjai_tile(&act.consumed)),
+            MjaiAction::Kakan(act) => Op::kakan(from_mjai_tile(&act.pai)),
+            MjaiAction::Daiminkan(act) => Op::minkan(vec_from_mjai_tile(&act.consumed)),
+            MjaiAction::Ankan(act) => Op::ankan(vec_from_mjai_tile(&act.consumed)),
+            MjaiAction::Reach(_) => panic!(),
+            MjaiAction::Hora(_) => {
                 if is_turn {
                     Op::tsumo()
                 } else {
                     Op::ron()
                 }
             }
-            MjaiActionType::Ryukyoku => Op::kyushukyuhai(),
-            MjaiActionType::None => Op::nop(),
+            MjaiAction::Ryukyoku(_) => Op::kyushukyuhai(),
+            MjaiAction::None(_) => Op::nop(),
         }
     }
 
@@ -661,6 +591,6 @@ fn test_mjai_message() {
 
     for &msg in &msgs {
         let d = MjaiAction::from_value(serde_json::from_str(msg).unwrap()).unwrap();
-        println!("{}, {:?}", msg, d);
+        println!("{}", d.to_value());
     }
 }

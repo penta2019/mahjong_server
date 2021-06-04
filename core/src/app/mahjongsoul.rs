@@ -46,7 +46,7 @@ impl Mahjongsoul {
     }
 
     fn apply(&mut self, msg: &Value) -> Option<Value> {
-        match msg["id"].as_str().unwrap() {
+        match as_str(&msg["id"]) {
             "id_mjaction" => {
                 let data = &msg["data"];
                 if msg["type"] == json!("message") {
@@ -128,7 +128,7 @@ impl Mahjongsoul {
             return None;
         }
 
-        let seat = data["seat"].as_i64().unwrap() as Seat;
+        let seat = as_usize(&data["seat"]);
 
         let (ops, idxs) = json_parse_operation(data);
 
@@ -236,20 +236,20 @@ impl Mahjongsoul {
         let kyoutaku = as_usize(&data["liqibang"]);
 
         let mut doras: Vec<Tile> = Vec::new();
-        for ps in data["doras"].as_array().unwrap() {
+        for ps in as_array(&data["doras"]) {
             doras.push(tile_from_symbol(as_str(ps)));
         }
 
         let mut scores = [0; SEAT];
-        for (s, score) in data["scores"].as_array().unwrap().iter().enumerate() {
-            scores[s] = score.as_i64().unwrap() as i32;
+        for (s, score) in as_array(&data["scores"]).iter().enumerate() {
+            scores[s] = as_i32(&score);
         }
 
         let mut player_hands = [vec![], vec![], vec![], vec![]];
         for s in 0..SEAT {
             let hand = &mut player_hands[s];
             if s == self.seat {
-                for ps in data["tiles"].as_array().unwrap() {
+                for ps in as_array(&data["tiles"]) {
                     hand.push(tile_from_symbol(as_str(ps)));
                 }
             } else {
@@ -291,8 +291,8 @@ impl Mahjongsoul {
     fn handler_discardtile(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let t = tile_from_symbol(as_str(&data["tile"]));
-        let m = data["moqie"].as_bool().unwrap();
-        let r = data["is_liqi"].as_bool().unwrap();
+        let m = as_bool(&data["moqie"]);
+        let r = as_bool(&data["is_liqi"]);
         self.ctrl.op_discardtile(s, t, m, r);
         self.update_doras(data);
     }
@@ -308,10 +308,10 @@ impl Mahjongsoul {
 
         let mut tiles = vec![];
         let mut froms = vec![];
-        for ps in data["tiles"].as_array().unwrap() {
+        for ps in as_array(&data["tiles"]) {
             tiles.push(tile_from_symbol(as_str(ps)));
         }
-        for f in data["froms"].as_array().unwrap() {
+        for f in as_array(&data["froms"]) {
             froms.push(as_usize(f));
         }
 
@@ -331,15 +331,15 @@ impl Mahjongsoul {
 
     fn handler_babei(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
-        let m = data["moqie"].as_bool().unwrap();
+        let m = as_bool(&data["moqie"]);
         self.ctrl.op_kita(s, m);
     }
 
     fn handler_hule(&mut self, data: &Value) {
         // TODO
         let mut delta_scores = [0; 4];
-        for (s, score) in data["delta_scores"].as_array().unwrap().iter().enumerate() {
-            delta_scores[s] = score.as_i64().unwrap() as i32;
+        for (s, score) in as_array(&data["delta_scores"]).iter().enumerate() {
+            delta_scores[s] = as_i32(score);
         }
         self.ctrl.op_roundend_win(&vec![], &vec![]);
         self.write_to_file();
@@ -571,9 +571,9 @@ fn json_parse_operation(v: &Value) -> (Vec<PlayerOperation>, Vec<Index>) {
         idxs.push(idx);
     };
 
-    for op in v["operation_list"].as_array().unwrap() {
+    for op in as_array(&v["operation_list"]) {
         let combs = &op["combination"];
-        match op["type"].as_i64().unwrap() {
+        match as_i32(&op["type"]) {
             0 => panic!(),
             1 => {
                 // 打牌

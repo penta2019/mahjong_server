@@ -21,24 +21,16 @@ pub fn sleep_ms(ms: u64) {
     std::thread::sleep(std::time::Duration::from_millis(ms));
 }
 
-pub fn as_usize(v: &Value) -> usize {
-    v.as_i64().unwrap() as usize
-}
-
-pub fn as_str(v: &Value) -> &str {
-    v.as_str().unwrap()
-}
-
-pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
-    let vs: Vec<String> = v.iter().map(|x| format!("{}", x)).collect();
-    vs.join(" ")
-}
-
 pub fn unixtime_now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs()
+}
+
+pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
+    let vs: Vec<String> = v.iter().map(|x| format!("{}", x)).collect();
+    vs.join(" ")
 }
 
 pub fn cartesian_product<'a, T>(vv: &'a Vec<Vec<T>>) -> Vec<Vec<&'a T>> {
@@ -95,4 +87,24 @@ pub fn rank_by_rank_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
         res[*e.1] = e.0;
     }
     res
+}
+
+pub fn as_usize(v: &Value) -> usize {
+    v.as_i64().unwrap() as usize
+}
+
+pub fn as_i32(v: &Value) -> i32 {
+    v.as_i64().unwrap() as i32
+}
+
+pub fn as_str(v: &Value) -> &str {
+    v.as_str().unwrap()
+}
+
+pub fn as_array(v: &Value) -> &Vec<serde_json::Value> {
+    v.as_array().unwrap()
+}
+
+pub fn as_bool(v: &Value) -> bool {
+    v.as_bool().unwrap()
 }

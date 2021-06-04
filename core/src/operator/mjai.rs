@@ -397,12 +397,6 @@ fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<(
 }
 
 fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
-    let err = || -> io::Result<Value> {
-        Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "recv invalid json data",
-        ))
-    };
     let mut buf_read = io::BufReader::new(stream);
     let mut buf = String::new();
     buf_read.read_line(&mut buf)?;
@@ -412,7 +406,7 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
     }
 
     if buf.len() == 0 {
-        err()?;
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, ""));
     }
-    serde_json::from_str(&buf[..buf.len() - 1]).or_else(|_| err())
+    serde_json::from_str(&buf[..buf.len() - 1]).or_else(|e| Err(e.into()))
 }

@@ -66,7 +66,7 @@ impl StageController {
         honba: usize,
         kyoutaku: usize,
         doras: &Vec<Tile>,
-        scores: &[i32; SEAT],
+        scores: &[Score; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
         self.stage = Stage::default();
@@ -417,7 +417,7 @@ impl StageController {
     pub fn op_roundend_win(
         &mut self,
         ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [i32; SEAT], WinContext)>,
+        contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
     ) {
         let stg = &mut self.stage;
         stg.step += 1;
@@ -435,7 +435,7 @@ impl StageController {
         op!(self, notify_op_roundend_draw, draw_type);
     }
 
-    pub fn op_roundend_notile(&mut self, is_ready: &[bool; SEAT], delta_scores: &[i32; SEAT]) {
+    pub fn op_roundend_notile(&mut self, is_ready: &[bool; SEAT], delta_scores: &[Score; SEAT]) {
         let stg = &mut self.stage;
         stg.step += 1;
         update_scores(stg, &delta_scores);
@@ -522,7 +522,7 @@ fn update_after_discard_completed(stg: &mut Stage) {
     }
 }
 
-fn update_scores(stg: &mut Stage, delta_scores: &[i32; SEAT]) {
+fn update_scores(stg: &mut Stage, delta_scores: &[Score; SEAT]) {
     for s in 0..SEAT {
         let mut pl = &mut stg.players[s];
         pl.score = pl.score + delta_scores[s];

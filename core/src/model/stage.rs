@@ -81,7 +81,7 @@ impl Stage {
         (seat + SEAT - self.kyoku) % SEAT + 1 // WE | WS | WW | WN
     }
 
-    pub fn get_scores(&self) -> [i32; SEAT] {
+    pub fn get_scores(&self) -> [Score; SEAT] {
         let mut scores = [0; SEAT];
         for s in 0..SEAT {
             scores[s] = self.players[s].score;

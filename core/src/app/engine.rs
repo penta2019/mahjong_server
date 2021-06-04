@@ -35,9 +35,9 @@ enum RoundResult {
 
 #[derive(Debug)]
 struct Config {
-    seed: u64,          // 牌山生成用の乱数のシード値
-    n_round: usize,     // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
-    initial_score: i32, // 初期得点
+    seed: u64,            // 牌山生成用の乱数のシード値
+    n_round: usize,       // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
+    initial_score: Score, // 初期得点
 }
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ struct NextRoundInfo {
     kyoku: usize,
     honba: usize,
     kyoutaku: usize,
-    scores: [i32; SEAT],
+    scores: [Score; SEAT],
 }
 
 #[derive(Debug)]
@@ -1064,8 +1064,8 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
 pub struct App {
     seed: u64,
     names: [String; 4], // operator names
-    n_game: i32,
-    n_thread: i32,
+    n_game: u32,
+    n_thread: u32,
     debug: bool,
 }
 
@@ -1279,7 +1279,7 @@ impl App {
                         "op{} avg_rank: {:.2}, avg_score_delta: {:6}",
                         i,
                         total_rank_sum[i] as f32 / n_game as f32,
-                        total_score_delta[i] / n_game,
+                        total_score_delta[i] / n_game as i32,
                     );
                 }
                 break;

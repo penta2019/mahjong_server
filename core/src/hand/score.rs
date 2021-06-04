@@ -1,7 +1,9 @@
-pub type PayScores = (i32, i32, i32); // (トータルの点数・ロン, ツモ・子の支払い, ツモ・親の支払い)
+use crate::model::Score;
+
+pub type PayScores = (Score, Score, Score); // (トータルの点数・ロン, ツモ・子の支払い, ツモ・親の支払い)
 
 // 親が他家を直撃した場合の点数表 (役満未満)
-const SCORE_LEADER: [[i32; 11]; 13] = [
+const SCORE_LEADER: [[Score; 11]; 13] = [
     [0; 11],                                                      // 0翻
     [0, 0, 1500, 2000, 2400, 2900, 3400, 3900, 4400, 4800, 5300], // 1翻
     [
@@ -24,7 +26,7 @@ const SCORE_LEADER: [[i32; 11]; 13] = [
 ];
 
 // 子が他家を直撃した場合の点数表 (役満未満)
-const SCORE_NON_LEADER: [[i32; 11]; 13] = [
+const SCORE_NON_LEADER: [[Score; 11]; 13] = [
     [0; 11],                                                      // 0翻
     [0, 0, 1000, 1300, 1600, 2000, 2300, 2600, 2900, 3200, 3600], // 1翻
     [
@@ -46,8 +48,8 @@ const SCORE_NON_LEADER: [[i32; 11]; 13] = [
     [24000; 11],                                                  // 12翻
 ];
 
-const SCORE_YAKUMAN_LEADER: i32 = 48000;
-const SCORE_YAKUMAN_NON_LEADER: i32 = 32000;
+const SCORE_YAKUMAN_LEADER: Score = 48000;
+const SCORE_YAKUMAN_NON_LEADER: Score = 32000;
 
 fn calc_fu_index(fu: i32) -> usize {
     match fu {
@@ -66,7 +68,7 @@ fn calc_fu_index(fu: i32) -> usize {
     }
 }
 
-fn ceil100(n: i32) -> i32 {
+fn ceil100(n: Score) -> Score {
     (n + 99) / 100 * 100
 }
 

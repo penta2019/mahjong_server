@@ -7,7 +7,7 @@ use crate::util::common::vec_to_string;
 pub struct StagePrinter {}
 
 impl StagePrinter {
-    fn print_score_change(&self, stage: &Stage, delta_scores: &[i32; SEAT]) {
+    fn print_score_change(&self, stage: &Stage, delta_scores: &[Score; SEAT]) {
         for s in 0..SEAT {
             let delta = delta_scores[s];
             let new = stage.players[s].score;
@@ -27,7 +27,7 @@ impl StageListener for StagePrinter {
         _honba: usize,
         _kyoutaku: usize,
         _doras: &Vec<Tile>,
-        _scores: &[i32; SEAT],
+        _scores: &[Score; SEAT],
         _player_hands: &[Vec<Tile>; SEAT],
     ) {
         println!("[ROUNDNEW]");
@@ -38,7 +38,7 @@ impl StageListener for StagePrinter {
         &mut self,
         stage: &Stage,
         ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [i32; SEAT], WinContext)>,
+        contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
     ) {
         println!("[ROUNDEND]");
         println!("ura_dora: {}", vec_to_string(ura_doras));
@@ -64,7 +64,7 @@ impl StageListener for StagePrinter {
         &mut self,
         stage: &Stage,
         is_ready: &[bool; SEAT],
-        delta_scores: &[i32; SEAT],
+        delta_scores: &[Score; SEAT],
     ) {
         println!("[ROUNDEND NOTILE]");
         println!("is_ready: {:?}", is_ready);

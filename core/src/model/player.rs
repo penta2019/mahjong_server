@@ -4,7 +4,7 @@ use crate::util::common::vec_to_string;
 #[derive(Debug, Default, Serialize)]
 pub struct Player {
     pub seat: Seat,             // 座席番号(場・局が変わってもゲーム終了まで不変)
-    pub score: i32,             // 得点
+    pub score: Score,           // 得点
     pub hand: TileTable,        // 手牌(4x10の配列)
     pub drawn: Option<Tile>,    // ツモ牌
     pub melds: Vec<Meld>,       // 鳴き一覧

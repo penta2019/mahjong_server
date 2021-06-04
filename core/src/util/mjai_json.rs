@@ -74,7 +74,7 @@ pub fn mjai_reach(seat: Seat) -> Value {
     })
 }
 
-pub fn mjai_reach_accepted(seat: Seat, scores: [i32; SEAT]) -> Value {
+pub fn mjai_reach_accepted(seat: Seat, scores: [Score; SEAT]) -> Value {
     let mut deltas = [0, 0, 0, 0];
     deltas[seat] = -1000;
     json!({
@@ -168,8 +168,8 @@ pub fn mjai_hora(
     tile: Tile,
     ura_doras: &Vec<Tile>,
     context: &WinContext,
-    deltas: &[i32; SEAT],
-    scores: &[i32; SEAT],
+    deltas: &[Score; SEAT],
+    scores: &[Score; SEAT],
 ) -> Value {
     let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
     json!({
@@ -191,8 +191,8 @@ pub fn mjai_hora(
 pub fn mjai_ryukyoku(
     draw_type: DrawType,
     is_ready: &[bool; SEAT],
-    deltas: &[i32; SEAT],
-    scores: &[i32; SEAT],
+    deltas: &[Score; SEAT],
+    scores: &[Score; SEAT],
 ) -> Value {
     let type_ = match draw_type {
         DrawType::Kouhaiheikyoku => "fanpai",
@@ -208,7 +208,7 @@ pub fn mjai_ryukyoku(
     })
 }
 
-pub fn mjai_end_game(scores: &[i32; SEAT]) -> Value {
+pub fn mjai_end_game(scores: &[Score; SEAT]) -> Value {
     json!({
         "type": "end_game",
         "scores": scores,

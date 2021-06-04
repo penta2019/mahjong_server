@@ -15,7 +15,7 @@ pub trait StageListener: Send {
         _honba: usize,
         _kyoutaku: usize,
         _doras: &Vec<Tile>,
-        _scores: &[i32; SEAT],
+        _scores: &[Score; SEAT],
         _player_hands: &[Vec<Tile>; SEAT],
     ) {
     }
@@ -59,7 +59,7 @@ pub trait StageListener: Send {
         &mut self,
         _stage: &Stage,
         _ura_doras: &Vec<Tile>,
-        _contexts: &Vec<(Seat, [i32; SEAT], WinContext)>,
+        _contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
     ) {
     }
 
@@ -69,7 +69,7 @@ pub trait StageListener: Send {
         &mut self,
         _stage: &Stage,
         _is_ready: &[bool; SEAT],
-        _delta_scores: &[i32; SEAT],
+        _delta_scores: &[Score; SEAT],
     ) {
     }
 

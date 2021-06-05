@@ -152,14 +152,14 @@ impl StageListener for MjaiEndpoint {
         _scores: &[Score; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
+        // 親番の14枚目の牌は最初のツモとして扱うので取り除く
+        let mut ph = player_hands.clone();
+        let d = stage.players[stage.turn].drawn.unwrap();
+        let pos = ph[stage.turn].iter().position(|&t| t == d).unwrap();
+        ph[stage.turn].remove(pos);
+
         self.add_record(mjai_start_kyoku(
-            self.seat,
-            round,
-            kyoku,
-            honba,
-            kyoutaku,
-            doras,
-            player_hands,
+            self.seat, round, kyoku, honba, kyoutaku, doras, &ph,
         ));
 
         self.notify_op_dealtile(stage, kyoku, stage.players[kyoku].drawn.unwrap());

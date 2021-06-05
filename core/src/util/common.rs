@@ -101,10 +101,14 @@ pub fn as_str(v: &Value) -> &str {
     v.as_str().unwrap()
 }
 
+pub fn as_bool(v: &Value) -> bool {
+    v.as_bool().unwrap()
+}
+
 pub fn as_array(v: &Value) -> &Vec<serde_json::Value> {
     v.as_array().unwrap()
 }
 
-pub fn as_bool(v: &Value) -> bool {
-    v.as_bool().unwrap()
+pub fn as_enumerate(v: &Value) -> std::iter::Enumerate<std::slice::Iter<'_, serde_json::Value>> {
+    v.as_array().unwrap().iter().enumerate()
 }

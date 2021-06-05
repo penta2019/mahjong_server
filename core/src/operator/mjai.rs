@@ -239,8 +239,8 @@ impl StageListener for MjaiEndpoint {
     fn notify_op_roundend_draw(&mut self, stage: &Stage, draw_type: DrawType) {
         self.add_record(mjai_ryukyoku(
             draw_type,
-            &[false; 4],
-            &[0; 4],
+            &[false; SEAT],
+            &[0; SEAT],
             &stage.get_scores(),
         ));
     }

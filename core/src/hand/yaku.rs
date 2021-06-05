@@ -179,8 +179,8 @@ struct Counts {
     koutsu_total: usize,  // koutsu + pon + minkan + ankan
     ankou_total: usize,   // koutsu + ankan
     kantsu_total: usize,  // minkan + ankan
-    tis: [usize; 4],      // tile Type Indices counts
-    nis: [usize; 10],     // tile Number Indices counts(字牌は除外)
+    tis: [usize; TYPE],   // tile Type Indices counts
+    nis: [usize; TNUM],   // tile Number Indices counts(字牌は除外)
 }
 
 // 特殊形&特殊条件の役

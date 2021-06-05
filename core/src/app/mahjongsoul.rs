@@ -242,7 +242,7 @@ impl Mahjongsoul {
         }
 
         let mut scores = [0; SEAT];
-        for (s, score) in as_array(&data["scores"]).iter().enumerate() {
+        for (s, score) in as_enumerate(&data["scores"]) {
             scores[s] = as_i32(&score);
         }
 
@@ -337,8 +337,8 @@ impl Mahjongsoul {
     }
 
     fn handler_hule(&mut self, data: &Value) {
-        let mut delta_scores = [0; 4];
-        for (s, score) in as_array(&data["delta_scores"]).iter().enumerate() {
+        let mut delta_scores = [0; SEAT];
+        for (s, score) in as_enumerate(&data["delta_scores"]) {
             delta_scores[s] = as_i32(score);
         }
 
@@ -355,11 +355,11 @@ impl Mahjongsoul {
                 pay_scores: (
                     as_i32(&win["point_rong"]),
                     as_i32(&win["point_zimo_xian"]),
-                    as_i32(&win["point_zimo_qin"]),
+                    win["point_zimo_qin"].as_i64().unwrap_or(0) as Score,
                 ),
             };
             wins.push((seat, delta_scores.clone(), ctx));
-            delta_scores = [0; 4]; // ダブロン、トリロンの場合の内訳は不明なので最初の和了に集約
+            delta_scores = [0; SEAT]; // ダブロン、トリロンの場合の内訳は不明なので最初の和了に集約
         }
         self.ctrl.op_roundend_win(&vec![], &wins);
         self.write_to_file();
@@ -371,9 +371,18 @@ impl Mahjongsoul {
         self.write_to_file();
     }
 
-    fn handler_notile(&mut self, _data: &Value) {
-        // TODO
-        self.ctrl.op_roundend_notile(&[false; SEAT], &[0; SEAT]);
+    fn handler_notile(&mut self, data: &Value) {
+        let mut delta_scores = [0; SEAT];
+        for (s, score) in as_enumerate(&data["scores"][0]["delta_scores"]) {
+            delta_scores[s] = as_i32(score);
+        }
+
+        let mut is_ready = [false; SEAT];
+        for (s, player) in as_enumerate(&data["players"]) {
+            is_ready[s] = as_bool(&player["tingpai"]);
+        }
+
+        self.ctrl.op_roundend_notile(&is_ready, &delta_scores);
         self.write_to_file();
     }
 }

@@ -6,12 +6,12 @@ use super::yaku::*;
 
 #[derive(Debug)]
 pub struct WinContext {
-    pub fu: i32,                  // 符数
     pub yaku: Vec<&'static Yaku>, // 役一覧(ドラは含まない)
     pub n_dora: usize,            // ドラの数(裏ドラは含まない)
     pub n_ura_dora: usize,        // 裏ドラの数
-    pub is_yakuman: bool,         // 役満かどうか
+    pub fu: usize,                // 符数
     pub fan_mag: usize,           // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
+    pub is_yakuman: bool,         // 役満かどうか
     pub pay_scores: PayScores,    // 支払い得点
 }
 
@@ -223,12 +223,12 @@ pub fn evaluate_hand(
         };
 
         results.push(WinContext {
-            fu,
             yaku,
             n_dora,
             n_ura_dora,
-            is_yakuman,
+            fu,
             fan_mag,
+            is_yakuman,
             pay_scores,
         });
     }

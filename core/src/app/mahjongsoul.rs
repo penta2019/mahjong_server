@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 
 use crate::controller::operator::*;
 use crate::controller::stage_controller::StageController;
+use crate::hand::evaluate::WinContext;
 use crate::model::*;
 use crate::operator::create_operator;
 use crate::operator::nop::Nop;
@@ -336,12 +337,31 @@ impl Mahjongsoul {
     }
 
     fn handler_hule(&mut self, data: &Value) {
-        // TODO
         let mut delta_scores = [0; 4];
         for (s, score) in as_array(&data["delta_scores"]).iter().enumerate() {
             delta_scores[s] = as_i32(score);
         }
-        self.ctrl.op_roundend_win(&vec![], &vec![]);
+
+        let mut wins = vec![];
+        for win in as_array(&data["hules"]) {
+            let seat = as_usize(&win["seat"]);
+            let ctx = WinContext {
+                yaku: vec![],  // TODO
+                n_dora: 0,     // TODO
+                n_ura_dora: 0, // TODO
+                fu: as_usize(&win["fu"]),
+                fan_mag: as_usize(&win["count"]),
+                is_yakuman: as_bool(&win["yiman"]),
+                pay_scores: (
+                    as_i32(&win["point_rong"]),
+                    as_i32(&win["point_zimo_xian"]),
+                    as_i32(&win["point_zimo_qin"]),
+                ),
+            };
+            wins.push((seat, delta_scores.clone(), ctx));
+            delta_scores = [0; 4]; // ダブロン、トリロンの場合の内訳は不明なので最初の和了に集約
+        }
+        self.ctrl.op_roundend_win(&vec![], &wins);
         self.write_to_file();
     }
 

@@ -90,7 +90,7 @@ impl YakuContext {
         }
     }
 
-    pub fn calc_fu(&self) -> i32 {
+    pub fn calc_fu(&self) -> usize {
         if is_pinfu(&self) {
             return 20;
         }

@@ -150,7 +150,7 @@ pub fn evaluate_hand(
     let pm = parse_melds(melds);
     for mut ph in parse_into_normal_win(hand).into_iter() {
         ph.append(&mut pm.clone());
-        let ctx = Context::new(
+        let ctx = YakuContext::new(
             hand.clone(),
             ph,
             winning_tile,
@@ -164,7 +164,7 @@ pub fn evaluate_hand(
 
     // 和了(七対子)
     for ph in parse_into_chiitoitsu_win(hand).into_iter() {
-        let ctx = Context::new(
+        let ctx = YakuContext::new(
             hand.clone(),
             ph,
             winning_tile,
@@ -178,7 +178,7 @@ pub fn evaluate_hand(
 
     // 和了(国士無双)
     for ph in parse_into_kokusimusou_win(hand).into_iter() {
-        let ctx = Context::new(
+        let ctx = YakuContext::new(
             hand.clone(),
             ph,
             winning_tile,

@@ -8,7 +8,7 @@ use super::win::is_kokushimusou_win;
 use SetPairType::*;
 
 #[derive(Debug)]
-pub struct Context {
+pub struct YakuContext {
     hand: TileTable,         // 元々の手牌(鳴きは含まない) 国士, 九蓮宝燈の判定などに使用
     parsed_hand: ParsedHand, // 鳴きを含むすべての面子
     pair_tile: Tile,         // 雀頭の牌
@@ -23,7 +23,7 @@ pub struct Context {
     yakuhai_check: TileRow,  // 役牌面子のカウント(雀頭は含まない)
 }
 
-impl Context {
+impl YakuContext {
     pub fn new(
         hand: TileTable,
         parsed_hand: ParsedHand,
@@ -269,7 +269,7 @@ fn check_yakuhai(ph: &ParsedHand) -> TileRow {
 
 pub struct Yaku {
     pub name: &'static str,
-    pub func: fn(&Context) -> bool,
+    pub func: fn(&YakuContext) -> bool,
     pub fan_close: usize, // 鳴きなしの翻
     pub fan_open: usize,  // 鳴きありの翻(食い下がり)
 }
@@ -355,32 +355,32 @@ static YAKU_LIST: &'static [Yaku] = &[
 //     国士無双, 国士無双十三面待ち
 
 // 場風
-fn is_bakaze(ctx: &Context) -> bool {
+fn is_bakaze(ctx: &YakuContext) -> bool {
     ctx.yakuhai_check[ctx.prevalent_wind] == 1
 }
 
 // 自風
-fn is_jikaze(ctx: &Context) -> bool {
+fn is_jikaze(ctx: &YakuContext) -> bool {
     ctx.yakuhai_check[ctx.seat_wind] == 1
 }
 
 // 白
-fn is_haku(ctx: &Context) -> bool {
+fn is_haku(ctx: &YakuContext) -> bool {
     ctx.yakuhai_check[DW] == 1
 }
 
 // 發
-fn is_hatsu(ctx: &Context) -> bool {
+fn is_hatsu(ctx: &YakuContext) -> bool {
     ctx.yakuhai_check[DG] == 1
 }
 
 // 中
-fn is_chun(ctx: &Context) -> bool {
+fn is_chun(ctx: &YakuContext) -> bool {
     ctx.yakuhai_check[DR] == 1
 }
 
 // 断么九
-fn is_tanyaochuu(ctx: &Context) -> bool {
+fn is_tanyaochuu(ctx: &YakuContext) -> bool {
     if ctx.parsed_hand.is_empty() {
         return false; // 国士対策
     }
@@ -404,7 +404,7 @@ fn is_tanyaochuu(ctx: &Context) -> bool {
 }
 
 // 平和
-fn is_pinfu(ctx: &Context) -> bool {
+fn is_pinfu(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu != 4 {
         return false;
     }
@@ -438,17 +438,17 @@ fn is_pinfu(ctx: &Context) -> bool {
 }
 
 // 一盃口
-fn is_iipeikou(ctx: &Context) -> bool {
+fn is_iipeikou(ctx: &YakuContext) -> bool {
     !ctx.is_open && ctx.iipeikou_count == 1
 }
 
 // 二盃口
-fn is_ryanpeikou(ctx: &Context) -> bool {
+fn is_ryanpeikou(ctx: &YakuContext) -> bool {
     !ctx.is_open && ctx.iipeikou_count == 2
 }
 
 // 一気通貫
-fn is_ikkitsuukan(ctx: &Context) -> bool {
+fn is_ikkitsuukan(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu_total < 3 {
         return false;
     }
@@ -472,7 +472,7 @@ fn is_ikkitsuukan(ctx: &Context) -> bool {
 }
 
 // 三色同順
-fn is_sanshokudoujun(ctx: &Context) -> bool {
+fn is_sanshokudoujun(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu_total < 3 {
         return false;
     }
@@ -493,7 +493,7 @@ fn is_sanshokudoujun(ctx: &Context) -> bool {
 }
 
 // 三色同刻
-fn is_sanshokudoukou(ctx: &Context) -> bool {
+fn is_sanshokudoukou(ctx: &YakuContext) -> bool {
     if ctx.counts.koutsu_total < 3 {
         return false;
     }
@@ -514,7 +514,7 @@ fn is_sanshokudoukou(ctx: &Context) -> bool {
 }
 
 // チャンタ
-fn is_chanta(ctx: &Context) -> bool {
+fn is_chanta(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu_total == 0 {
         return false;
     }
@@ -541,7 +541,7 @@ fn is_chanta(ctx: &Context) -> bool {
 }
 
 // 純チャン
-fn is_junchan(ctx: &Context) -> bool {
+fn is_junchan(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu_total == 0 {
         return false;
     }
@@ -565,7 +565,7 @@ fn is_junchan(ctx: &Context) -> bool {
 }
 
 // 混老頭
-fn is_honroutou(ctx: &Context) -> bool {
+fn is_honroutou(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu_total != 0 {
         return false;
     }
@@ -586,7 +586,7 @@ fn is_honroutou(ctx: &Context) -> bool {
 }
 
 // 清老頭
-fn is_chinroutou(ctx: &Context) -> bool {
+fn is_chinroutou(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu_total != 0 {
         return false;
     }
@@ -604,37 +604,37 @@ fn is_chinroutou(ctx: &Context) -> bool {
 }
 
 // 対々和
-fn is_toitoihou(ctx: &Context) -> bool {
+fn is_toitoihou(ctx: &YakuContext) -> bool {
     ctx.counts.koutsu_total == 4
 }
 
 // 三暗刻
-fn is_sanankou(ctx: &Context) -> bool {
+fn is_sanankou(ctx: &YakuContext) -> bool {
     ctx.counts.ankou_total == 3
 }
 
 // 四暗刻
-fn is_suuankou(ctx: &Context) -> bool {
+fn is_suuankou(ctx: &YakuContext) -> bool {
     ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile
 }
 
 // 四暗刻単騎
-fn is_suuankoutanki(ctx: &Context) -> bool {
+fn is_suuankoutanki(ctx: &YakuContext) -> bool {
     ctx.counts.ankou_total == 4 && ctx.winning_tile == ctx.pair_tile
 }
 
 // 三槓子
-fn is_sankantsu(ctx: &Context) -> bool {
+fn is_sankantsu(ctx: &YakuContext) -> bool {
     ctx.counts.kantsu_total == 3
 }
 
 // 四槓子
-fn is_suukantsu(ctx: &Context) -> bool {
+fn is_suukantsu(ctx: &YakuContext) -> bool {
     ctx.counts.kantsu_total == 4
 }
 
 // 混一色
-fn is_honiisou(ctx: &Context) -> bool {
+fn is_honiisou(ctx: &YakuContext) -> bool {
     use std::cmp::min;
     let tis = &ctx.counts.tis;
     let suit = min(tis[TM], 1) + min(tis[TP], 1) + min(tis[TS], 1);
@@ -642,7 +642,7 @@ fn is_honiisou(ctx: &Context) -> bool {
 }
 
 // 清一色
-fn is_chiniisou(ctx: &Context) -> bool {
+fn is_chiniisou(ctx: &YakuContext) -> bool {
     use std::cmp::min;
     let tis = &ctx.counts.tis;
     let suit = min(tis[TM], 1) + min(tis[TP], 1) + min(tis[TS], 1);
@@ -650,31 +650,31 @@ fn is_chiniisou(ctx: &Context) -> bool {
 }
 
 // 小三元
-fn is_shousangen(ctx: &Context) -> bool {
+fn is_shousangen(ctx: &YakuContext) -> bool {
     let yc = &ctx.yakuhai_check;
     yc[DW] + yc[DG] + yc[DR] == 2 && ctx.pair_tile.is_doragon()
 }
 
 // 大三元
-fn is_daisangen(ctx: &Context) -> bool {
+fn is_daisangen(ctx: &YakuContext) -> bool {
     let yc = &ctx.yakuhai_check;
     yc[DW] + yc[DG] + yc[DR] == 3
 }
 
 // 小四喜
-fn is_shousuushii(ctx: &Context) -> bool {
+fn is_shousuushii(ctx: &YakuContext) -> bool {
     let yc = &ctx.yakuhai_check;
     yc[WE] + yc[WS] + yc[WW] + yc[WN] == 3 && ctx.pair_tile.is_wind()
 }
 
 // 大四喜
-fn is_daisuushii(ctx: &Context) -> bool {
+fn is_daisuushii(ctx: &YakuContext) -> bool {
     let yc = &ctx.yakuhai_check;
     yc[WE] + yc[WS] + yc[WW] + yc[WN] == 4
 }
 
 // 緑一色
-fn is_ryuuiisou(ctx: &Context) -> bool {
+fn is_ryuuiisou(ctx: &YakuContext) -> bool {
     let tis = &ctx.counts.tis;
     if tis[TS] + tis[TZ] != 5 {
         return false;
@@ -707,26 +707,26 @@ fn is_ryuuiisou(ctx: &Context) -> bool {
 }
 
 // 字一色
-fn is_tuuiisou(ctx: &Context) -> bool {
+fn is_tuuiisou(ctx: &YakuContext) -> bool {
     (ctx.parsed_hand.len() == 5 && ctx.counts.tis[TZ] == 5) || ctx.counts.tis[TZ] == 7
 }
 
 // 九蓮宝燈
-fn is_chuurenpoutou(ctx: &Context) -> bool {
+fn is_chuurenpoutou(ctx: &YakuContext) -> bool {
     let wt = &ctx.winning_tile;
     let cnt = ctx.hand[wt.0][wt.1];
     is_chuurenpoutou2(ctx) && (cnt == 1 || cnt == 3)
 }
 
 // 純正九蓮宝燈
-fn is_junseichuurenpoutou(ctx: &Context) -> bool {
+fn is_junseichuurenpoutou(ctx: &YakuContext) -> bool {
     let wt = &ctx.winning_tile;
     let cnt = ctx.hand[wt.0][wt.1];
     is_chuurenpoutou2(ctx) && (cnt == 2 || cnt == 4)
 }
 
 // 国士無双
-fn is_kokushimusou(ctx: &Context) -> bool {
+fn is_kokushimusou(ctx: &YakuContext) -> bool {
     if ctx.parsed_hand.len() != 0 {
         return false;
     }
@@ -735,7 +735,7 @@ fn is_kokushimusou(ctx: &Context) -> bool {
 }
 
 // 国士無双十三面待ち
-fn is_kokushimusoujuusanmenmachi(ctx: &Context) -> bool {
+fn is_kokushimusoujuusanmenmachi(ctx: &YakuContext) -> bool {
     if ctx.parsed_hand.len() != 0 {
         return false;
     }
@@ -744,64 +744,64 @@ fn is_kokushimusoujuusanmenmachi(ctx: &Context) -> bool {
 }
 
 // 七対子
-fn is_chiitoitsu(ctx: &Context) -> bool {
+fn is_chiitoitsu(ctx: &YakuContext) -> bool {
     ctx.parsed_hand.len() == 7
 }
 
 // 門前自摸
-fn is_menzentsumo(ctx: &Context) -> bool {
+fn is_menzentsumo(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.menzentsumo
 }
 
 // リーチ
-fn is_riichi(ctx: &Context) -> bool {
+fn is_riichi(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.riichi && !ctx.yaku_flags.dabururiichi
 }
 
 // ダブルリーチ
-fn is_dabururiichi(ctx: &Context) -> bool {
+fn is_dabururiichi(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.dabururiichi
 }
 
 // 一発
-fn is_ippatsu(ctx: &Context) -> bool {
+fn is_ippatsu(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.ippatsu
 }
 
 // 海底撈月
-fn is_haiteiraoyue(ctx: &Context) -> bool {
+fn is_haiteiraoyue(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.haiteiraoyue
 }
 
 // 河底撈魚
-fn is_houteiraoyui(ctx: &Context) -> bool {
+fn is_houteiraoyui(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.houteiraoyui
 }
 
 // 嶺上開花
-fn is_rinshankaihou(ctx: &Context) -> bool {
+fn is_rinshankaihou(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.rinshankaihou
 }
 
 // 槍槓
-fn is_chankan(ctx: &Context) -> bool {
+fn is_chankan(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.chankan
 }
 
 // 天和
-fn is_tenhou(ctx: &Context) -> bool {
+fn is_tenhou(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.tenhou
 }
 
 // 地和
-fn is_tiihou(ctx: &Context) -> bool {
+fn is_tiihou(ctx: &YakuContext) -> bool {
     ctx.yaku_flags.tiihou
 }
 
 // 共通処理 ====================================================================
 
 // 九蓮宝燈(純正を含む)
-fn is_chuurenpoutou2(ctx: &Context) -> bool {
+fn is_chuurenpoutou2(ctx: &YakuContext) -> bool {
     if ctx.is_open {
         return false;
     }

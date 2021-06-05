@@ -373,8 +373,10 @@ impl Mahjongsoul {
 
     fn handler_notile(&mut self, data: &Value) {
         let mut delta_scores = [0; SEAT];
-        for (s, score) in as_enumerate(&data["scores"][0]["delta_scores"]) {
-            delta_scores[s] = as_i32(score);
+        if let Some(ds) = &data["scores"][0]["delta_scores"].as_array() {
+            for (s, score) in ds.iter().enumerate() {
+                delta_scores[s] = as_i32(score);
+            }
         }
 
         let mut is_ready = [false; SEAT];

@@ -261,6 +261,3 @@ pub enum PlayerOperation {
 ## コーディング規約
 ### 命名規則
 基本的に麻雀英語wikiの表記に従いますが、役の名称はすべて日本語で統一します。
-
-## TODO
-* mjai WinContext 実装

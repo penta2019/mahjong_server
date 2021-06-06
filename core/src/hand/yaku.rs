@@ -34,6 +34,7 @@ impl YakuContext {
         yaku_flags: YakuFlags,
     ) -> Self {
         let pair_tile = get_pair(&parsed_hand);
+        let winning_tile = Tile(winning_tile.0, winning_tile.n()); // 赤5は通常5に変換
         let counts = count_type(&parsed_hand);
         let iipeikou_count = count_iipeikou(&parsed_hand);
         let yakuhai_check = check_yakuhai(&parsed_hand);
@@ -610,7 +611,21 @@ fn is_toitoihou(ctx: &YakuContext) -> bool {
 
 // 三暗刻
 fn is_sanankou(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 3
+    if ctx.counts.ankou_total < 3 {
+        return false;
+    }
+
+    let mut cnt = 0;
+    for SetPair(tp, t) in &ctx.parsed_hand {
+        if let Koutsu = tp {
+            if !ctx.is_self_drawn && ctx.winning_tile == *t {
+                continue;
+            }
+            cnt += 1;
+        }
+    }
+
+    cnt == 3
 }
 
 // 四暗刻

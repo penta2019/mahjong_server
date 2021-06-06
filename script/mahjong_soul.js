@@ -405,7 +405,7 @@ msc.UiController = class {
         this.timer = setInterval(() => {
             this.check_and_start_rank_match(rank, round);
             this.check_and_click_ok_button();
-        }, 1000);
+        }, 3000);
     }
 
     disable_auto_match() {

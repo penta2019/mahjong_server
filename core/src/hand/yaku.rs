@@ -615,7 +615,7 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
 
 // 四暗刻
 fn is_suuankou(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile
+    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile && ctx.is_self_drawn
 }
 
 // 四暗刻単騎

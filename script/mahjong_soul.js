@@ -68,89 +68,6 @@ msc.inject_log = function (path) {
     return conf;
 };
 
-msc.mousedown_event_log = function () {
-    let count = 0;
-    return function (caller, e) {
-        if (e.type == 'mousedown') {
-            msc.log(
-                `${count++} ${e.type} x: ${e.clientX}, y: ${e.clientY}`);
-        }
-    }
-}(); // closure
-
-msc.count_log = function () {
-    let count = 0;
-    return function (caller, ...args) {
-        msc.log(count++, caller, ...args);
-    }
-}(); // closure
-
-
-// 情報の抽出とパース
-msc.parse_qipai = function (p) {
-    return {
-        is_moqie: p.ismoqie, // false: 手牌切り, true: ツモ切り
-        val: p.val,
-    }
-};
-
-msc.get_player_info = function () {
-    return window.view.DesktopMgr.Inst.player_datas;
-};
-
-msc.get_player_data = function () {
-    let players = window.view.DesktopMgr.Inst.players;
-    let data = []; // カメラ手前が[0]で反時計回り 対戦中は自分が必ず[0]
-    for (let pl of players) {
-        let pl2 = {
-            seat: pl.seat,    // 座席番号 開始時の親が0で反時計回り 対戦終了まで不変
-            score: pl.score,  // スコア
-            hand: [],         // 手牌 対戦中の相手の手牌はすべて'白'
-            ming: [],         // 鳴き
-            qipai: [],        // 捨て牌 鳴きの入った牌は含まない
-            is_liqi: pl.liqibang._activeInHierarchy,  // リーチしているかどうか
-        }
-        data.push(pl2);
-        // 手牌
-        for (let p of pl.hand) {
-            pl2.hand.push(p.val);
-        }
-        // 鳴き
-        pl2.ming = pl.container_ming.mings;
-        // 捨て牌
-        let qipai = pl.container_qipai;
-        for (let p of qipai.pais) {
-            pl2.qipai.push(msc.parse_qipai(p));
-        }
-        if (qipai.last_pai) {
-            pl2.qipai.push(msc.parse_qipai(qipai.last_pai));
-        }
-    }
-    return data;
-};
-
-msc.get_status = function () {
-    let inst = window.view.DesktopMgr.Inst;
-    let data = {
-        dora: inst.dora,                        // ドラ一覧
-        seat: inst.seat,                        // 自分の座席(カメラ手前側)
-        oplist: inst.oplist,                    // 可能な操作 (打牌,鳴き,和了など)
-        lastpai_seat: inst.lastpai_seat,        // 最後に牌を捨てた人の座席
-        lastqipai: null,                        // 最後に捨てられた牌
-        left_tile_count: inst.left_tile_count,  // 山に残っている牌の数
-        current_step: inst.current_step,        // 現在のMJActionのstep
-        // option flag
-        auto_hule: inst.auto_hule,              // 自動和了
-        auto_liqi: inst.auto_liqi,              // 自動整理
-        auto_moqie: inst.auto_moqie,            // ツモ切り
-        auto_nofulu: inst.auto_nofulu,          // 鳴きなし
-    };
-    if (inst.lastqipai) {
-        data.lastqipai = msc.parse_qipai(inst.lastqipai);
-    }
-    return data;
-};
-
 // Utility
 msc.sleep = function (msec) {
     return new Promise(function (resolve) {
@@ -158,70 +75,10 @@ msc.sleep = function (msec) {
     });
 }
 
-// UI操作
-msc.MouseController = class {
-    constructor() {
-        this.canvas = document.getElementById('layaCanvas');
-    }
-
-    from_fhd_pos(pos) {
-        // 1920x1080(Full HD)から実際のcanvasの座標に変換
-        let w = 1920, h = 1080, r = this.canvas.getBoundingClientRect();
-        return {
-            x: Math.round(pos.x * r.width / w + r.x),
-            y: Math.round(pos.y * r.height / h + r.y),
-        };
-    };
-
-    dispatch(type, pos, button = null) {
-        let e = new Event(type);
-        let wpos = this.from_fhd_pos(pos);
-        if (button != null) {
-            e.button = button;
-        }
-        e.clientX = wpos.x;
-        e.clientY = wpos.y;
-        this.canvas.dispatchEvent(e);
-    }
-
-    move(pos) {
-        this.dispatch('mousemove', pos);
-    }
-
-    down(pos) {
-        this.dispatch('mousedown', pos, 0);
-    }
-
-    up(pos) {
-        this.dispatch('mouseup', pos, 0);
-    }
-
-    click(pos) {
-        this.move(pos);
-        this.down(pos);
-        this.up(pos);
-    }
-};
-
 msc.UiController = class {
     constructor() {
-        this.mouse = new msc.MouseController();
         this.canvas = document.getElementById('layaCanvas');
-        this.positions = {
-            leftmost_pai: { x: 265, y: 980 },
-            pai_interval: (1405 - 265) / 12,
-            ok_button: { x: 1755, y: 1005 },
-            auto_liqi_button: { x: 35, y: 500 },
-            auto_hule_button: { x: 35, y: 565 },
-            auto_nofulu_button: { x: 35, y: 635 },
-            auto_moqie_button: { x: 35, y: 695 },
-        }
         this.timer = null;
-    }
-
-    // 内部関数
-    get_element_pos(el) {
-        return el.localToGlobal(new Laya.Point(el.width / 2, el.height / 2));
     }
 
     get_op_ui() {
@@ -233,139 +90,78 @@ msc.UiController = class {
         }
     }
 
+    click0(el) {
+        el.clickHandler.run();
+    }
+
+    click(el) {
+        // 選択画面などが表示されていれば閉じてからアクションを実行する
+        let f = () => el.clickHandler.run();
+        let ui = this.get_op_ui();
+        let ui_detail = ui.container_Detail;
+        if (ui_detail.visible) { // 鳴きの選択画面
+            this.click0(ui.btn_detail_back);
+            setTimeout(() => { f(); }, 500);
+        } else if (ui.btn_cancel._parent.visible && ui.btn_cancel.visible) {
+            this.click0(ui.btn_cancel);
+            setTimeout(() => { f(); }, 500);
+        } else {
+            f();
+        }
+    }
+
     choose_detail_if_visible(idx) {
         setTimeout(() => {
             let ui = this.get_op_ui().container_Detail;
             if (ui.visible) {
-                let cc = ui.getChildByName('container_chooses');
-                this.click_element(cc._childs[idx]);
+                ui.getChildByName('container_chooses').getChildByName(`c${idx}`).clickHandler.run();
             }
         }, 500);
     }
 
-    // クリック処理
-    click(pos) {
-        this.mouse.move(pos);
-        setTimeout(() => {
-            this.mouse.click(pos);
-            setTimeout(() => {
-                this.mouse.move({ x: 10, y: 10 });
-            }, 300);
-        }, 200);
-    }
-
-    click_element(el) {
-        this.click(this.get_element_pos(el));
-    }
-
-    click_ok() { // 局終了時に出てくる'確認'ボタンをクリック
-        this.click(this.positions.ok_button);
-    };
-
-    click_auto_liqi() { // '自動整理'の切り替え
-        this.click(this.positions.auto_liqi_button);
-    };
-
-    click_auto_hule() { // '自動和了'の切り替え
-        this.click(this.positions.auto_hule_button);
-    };
-
-    click_auto_nofulu() { // '鳴きなし'の切り替え
-        this.click(this.positions.auto_nofulu_button);
-    };
-
-    click_auto_moqie() { // 'ツモ切り'の切り替え
-        this.click(this.positions.auto_moqie_button);
-    };
-
-    safe_action(func) {
-        // 選択画面などが表示されていれば閉じてからアクションを実行する
-        let ui = this.get_op_ui();
-        let ui_detail = ui.container_Detail;
-        if (ui_detail.visible) { // 鳴きの選択画面
-            this.click_element(ui.btn_detail_back);
-            setTimeout(() => { func(); }, 500);
-        } else if (ui.btn_cancel._parent.visible && ui.btn_cancel.visible) {
-            this.click_element(ui.btn_cancel);
-            setTimeout(() => { func(); }, 500);
-        } else {
-            func();
-        }
-    }
-
     action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
-        let p = this.positions
-        let pos = {
-            x: p.leftmost_pai.x + p.pai_interval * n,
-            y: p.leftmost_pai.y,
-        }
-        this.click(pos);
+        let vp = window.view.ViewPlayer_Me.Inst;
+        vp.setChoosePai(vp.hand[n]);
+        vp.DoDiscardTile();
     }
 
     action_cancel() { // スキップ
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_cancel);
-        });
+        this.click(this.get_op_ui().op_btns.btn_cancel);
     }
 
     action_chi(choose_idx = 0) { // チー
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_chi);
-            this.choose_detail_if_visible(choose_idx);
-        });
+        this.click(this.get_op_ui().op_btns.btn_chi);
+        this.choose_detail_if_visible(choose_idx);
     }
 
     action_peng() { // ポン
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_peng);
-        });
+        this.click(this.get_op_ui().op_btns.btn_peng);
     }
 
     action_gang(choose_idx = 0) { // カン(暗槓・明槓・加槓)
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_gang);
-            this.choose_detail_if_visible(choose_idx);
-        });
+        this.click(this.get_op_ui().op_btns.btn_gang);
+        this.choose_detail_if_visible(choose_idx);
     }
 
     action_lizhi(discard_idx = 0) { // リーチ
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_lizhi);
-            setTimeout(() => { this.action_dapai(discard_idx, false); }, 500);
-        });
+        this.click(this.get_op_ui().op_btns.btn_lizhi);
+        setTimeout(() => { this.action_dapai(discard_idx, false); }, 500);
     }
 
     action_zimo() { // ツモ
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_zimo);
-        });
+        this.click(this.get_op_ui().op_btns.btn_zimo);
     }
 
     action_hu() { // ロン
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_hu);
-        });
+        this.click(this.get_op_ui().op_btns.btn_hu);
     }
 
     action_jiuzhongjiupai() { // 九種九牌
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_jiuzhongjiupai);
-        });
+        this.click(this.get_op_ui().op_btns.btn_jiuzhongjiupai);
     }
 
     action_babei() { // 北抜き
-        this.safe_action(() => {
-            let ui = this.get_op_ui();
-            this.click_element(ui.op_btns.btn_babei);
-        });
+        this.click(this.get_op_ui().op_btns.btn_babei);
     }
 
     // ゲームを開始
@@ -375,6 +171,7 @@ msc.UiController = class {
         if (!window.uiscript.UI_Lobby.Inst.page0.me.visible) {
             return;
         }
+        await msc.sleep(1000);
         window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run();
         await msc.sleep(1000);
         window.uiscript.UI_Lobby.Inst.page_rank.content0.getChildByName(`btn${rank}`)
@@ -386,15 +183,22 @@ msc.UiController = class {
 
     // 局が終了していれば確認ボタンをクリック
     check_and_click_ok_button() {
-        let insts = [
-            window.uiscript.UI_ScoreChange.Inst,
+        let uis = [
             window.uiscript.UI_Win.Inst,
-            window.uiscript.UI_GameEnd.Inst,
+            window.uiscript.UI_ScoreChange.Inst,
+            window.uiscript.UI_Huleshow.Inst,
+            window.uiscript.UI_LiuJu.Inst,
         ];
-        for (let inst of insts) {
-            if (inst && inst.enable) {
-                this.click(this.positions.ok_button);
+
+        for (let ui of uis) {
+            if (ui && ui.enable && ui.btn_confirm.visible) {
+                this.click(ui.btn_confirm);
             }
+        }
+
+        let ui = window.uiscript.UI_GameEnd.Inst;
+        if (ui && ui.enable && ui.btn_next.visible) {
+            this.click(ui.btn_next);
         }
     }
 
@@ -405,7 +209,7 @@ msc.UiController = class {
         this.timer = setInterval(() => {
             this.check_and_start_rank_match(rank, round);
             this.check_and_click_ok_button();
-        }, 3000);
+        }, 2000);
     }
 
     disable_auto_match() {
@@ -621,98 +425,17 @@ msc.Server = class {
     }
 };
 
-
-// オブジェクトツリーの幅優先探索 (コンソールから使う用)
-msc.search_object = function (
-    obj, matcher, max_depth = 8,
-    search_type = ['object', 'function'],
-    exclude_prop = ['_parent'],
-    exclude_obj = [window.webkitStorageInfo, window.applicationCache],
-) {
-    let visited = new Set([obj]);
-    let anchor = { depth: 1 };
-    let queue = [anchor, [obj, ''/* path */]];
-
-    while (true) {
-        let node = queue.shift();
-        if (node == anchor) {
-            if (queue.length == 0) break;
-            if (node.depth > max_depth) break;
-            msc.log('the beginning of depth:', node.depth);
-            node.depth++;
-            queue.push(node);
-            continue;
-        }
-
-        let obj = node[0], path = node[1];
-        for (let key in obj) {
-            if (exclude_prop.includes(key)) continue;
-
-            let c_obj = null;
-            try {
-                c_obj = obj[key];
-            } catch (e) {
-                msc.log_error(`${path}.${key}`, e);
-            }
-
-            if (!search_type.includes(typeof obj)) continue;
-            if (exclude_obj.includes(c_obj)) continue;
-            if (c_obj instanceof XMLHttpRequest) continue;
-            if (visited.has(c_obj)) continue;
-
-            visited.add(c_obj);
-            let c_path = path + (isNaN(key) ? `.${key}` : `[${key}]`);
-            // msc.log(c_path);
-            if (matcher(obj, key)) {
-                msc.log(c_path);
-            }
-            queue.push([c_obj, c_path]);
-        }
-    }
-};
-
-msc.search_by_object = function (root_obj, target_obj, ...args) {
-    function matcher(obj, key) {
-        return obj[key] == target_obj;
-    }
-    msc.search_object(root_obj, matcher, ...args);
-};
-
-msc.search_by_property_name = function (root_obj, prop, ...args) {
-    function matcher(obj, key) {
-        return key == prop;
-    }
-    msc.search_object(root_obj, matcher, ...args);
-};
-
-msc.search_by_property_value = function (root_obj, prop, value, ...args) {
-    function matcher(obj, key) {
-        return key == prop && obj[key] == value;
-    }
-    msc.search_object(root_obj, matcher, ...args);
-};
-
 // 初期化
 window.addEventListener('load', function () {
-    msc.log('MSC is enabled');
-    window.msc = msc;
-    if (window.GameMgr) {
+    setTimeout(() => {
+        msc.log('MSC is enabled');
+        msc.ui = new msc.UiController();
+        msc.server = new msc.Server();
+        window.msc = msc;
+
         window.GameMgr.error_url = '';
         window.GameMgr.prototype.logUp = function (...args) {
             msc.log('logUp is disabled by MSC', args);
         }
-        msc.ui = new msc.UiController();
-        msc.server = new msc.Server();
-
-        // debug logs
-        msc.log_configs.push(msc.inject_log('app.Log.log'));
-        msc.log_configs.push(msc.inject_log('Laya.MouseManager.instance.initEvent'));
-        // msc.log_configs.push(msc.inject_log('Laya.Handler.prototype.run'));
-        // msc.log_configs.push(msc.inject_log('Laya.Handler.prototype.runWith'));
-        // msc.log_configs[0].level = 1;
-        msc.log_configs[0].callback = function (caller, ...args) {
-            msc.log('(app.Log)', ...args);
-        };
-        msc.log_configs[1].callback = msc.mousedown_event_log;
-    }
+    }, 5000);　// GameMgrが初期化されていない場合があるので待機
 }, false);

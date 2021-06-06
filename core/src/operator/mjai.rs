@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use super::*;
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
-use crate::util::common::sleep_ms;
+use crate::util::common::{sleep_ms, vec_remove};
 use crate::util::mjai_json::*;
 
 // MjaiEndpoint ===============================================================
@@ -155,8 +155,7 @@ impl StageListener for MjaiEndpoint {
         // 親番の14枚目の牌は最初のツモとして扱うので取り除く
         let mut ph = player_hands.clone();
         let d = stage.players[stage.turn].drawn.unwrap();
-        let pos = ph[stage.turn].iter().position(|&t| t == d).unwrap();
-        ph[stage.turn].remove(pos);
+        vec_remove(&mut ph[stage.turn], &d);
 
         self.add_record(mjai_start_kyoku(
             self.seat, round, kyoku, honba, kyoutaku, doras, &ph,

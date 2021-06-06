@@ -37,7 +37,7 @@ pub fn mjai_start_kyoku(
     json!({
         "type":"start_kyoku",
         "bakaze": wind[round],
-        "kyoku": kyoku,
+        "kyoku": kyoku + 1,
         "honba": honba,
         "kyotaku": kyotaku,
         "dora_marker": dora_marker,

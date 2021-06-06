@@ -685,11 +685,14 @@ fn json_parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
         .unwrap()
         .iter()
         .map(|comb| {
-            comb.as_str()
+            let mut c: Vec<Tile> = comb
+                .as_str()
                 .unwrap()
                 .split('|')
                 .map(|sym| tile_from_symbol(sym))
-                .collect()
+                .collect();
+            c.sort();
+            c
         })
         .collect()
 }

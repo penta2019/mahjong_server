@@ -1,3 +1,4 @@
+use std::io::{stdin, stdout, Write};
 use std::time;
 
 use serde_json::{json, Value};
@@ -146,6 +147,7 @@ impl Mahjongsoul {
         println!("possible: {:?}", ops);
         println!("selected: {:?}", op);
         println!("");
+        stdout().flush().unwrap();
 
         let PlayerOperation(tp, cs) = op;
 
@@ -222,7 +224,6 @@ impl Mahjongsoul {
     }
 
     fn write_to_file(&self) {
-        use std::io::Write;
         if !self.need_write {
             return;
         }
@@ -462,8 +463,6 @@ impl App {
     }
 
     fn read_from_file(&mut self) {
-        use std::io::{stdin, stdout, Write};
-
         match std::fs::read_to_string(&self.file_in) {
             Ok(contents) => {
                 if let Value::Array(record) = serde_json::from_str(&contents).unwrap() {

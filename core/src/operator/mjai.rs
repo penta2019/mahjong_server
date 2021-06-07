@@ -17,6 +17,7 @@ use crate::util::mjai_json::*;
 pub struct MjaiEndpoint {
     seat: usize,
     data: Arc<Mutex<SharedData>>,
+    try_riichi: Option<Seat>,
 }
 
 impl MjaiEndpoint {
@@ -25,6 +26,7 @@ impl MjaiEndpoint {
         let obj = Self {
             seat: NO_SEAT,
             data: data.clone(),
+            try_riichi: None,
         };
         let listener = TcpListener::bind(addr).unwrap();
         println!("MjaiEndpoint: Listening on {}", addr);
@@ -69,6 +71,13 @@ impl MjaiEndpoint {
         d.action = json!(null);
         d.possible_actions = json!(null);
         d.record.push(record);
+    }
+
+    fn check_riichi_accepted(&mut self, stage: &Stage) {
+        if let Some(s) = self.try_riichi {
+            self.try_riichi = None;
+            self.add_record(mjai_reach_accepted(s, stage.get_scores()));
+        }
     }
 }
 
@@ -152,6 +161,8 @@ impl StageListener for MjaiEndpoint {
         _scores: &[Score; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
+        self.try_riichi = None;
+
         // 親番の14枚目の牌は最初のツモとして扱うので取り除く
         let mut ph = player_hands.clone();
         let d = stage.players[stage.turn].drawn.unwrap();
@@ -164,13 +175,14 @@ impl StageListener for MjaiEndpoint {
         self.notify_op_dealtile(stage, kyoku, stage.players[kyoku].drawn.unwrap());
     }
 
-    fn notify_op_dealtile(&mut self, _stage: &Stage, seat: Seat, tile: Tile) {
+    fn notify_op_dealtile(&mut self, stage: &Stage, seat: Seat, tile: Tile) {
+        self.check_riichi_accepted(stage);
         self.add_record(mjai_tsumo(self.seat, seat, tile));
     }
 
     fn notify_op_discardtile(
         &mut self,
-        stage: &Stage,
+        _stage: &Stage,
         seat: Seat,
         tile: Tile,
         is_drawn: bool,
@@ -183,18 +195,19 @@ impl StageListener for MjaiEndpoint {
         self.add_record(mjai_dahai(seat, tile, is_drawn));
 
         if is_riichi {
-            self.add_record(mjai_reach_accepted(seat, stage.get_scores()));
+            self.try_riichi = Some(seat);
         }
     }
 
     fn notify_op_chiiponkan(
         &mut self,
-        _stage: &Stage,
+        stage: &Stage,
         seat: Seat,
         meld_type: MeldType,
         tiles: &Vec<Tile>,
         froms: &Vec<Seat>,
     ) {
+        self.check_riichi_accepted(stage);
         self.add_record(mjai_chiponkan(seat, meld_type, tiles, froms));
     }
 

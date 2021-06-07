@@ -19,13 +19,14 @@ struct Mahjongsoul {
     step: usize,
     seat: usize, // my seat
     actions: Vec<Value>,
-    need_write: bool,
-    operator: Box<dyn Operator>,
     last_op_ts: time::Instant,
+    operator: Box<dyn Operator>,
+    need_write: bool,
+    random_sleep: bool,
 }
 
 impl Mahjongsoul {
-    fn new(need_write: bool, operator: Box<dyn Operator>) -> Self {
+    fn new(operator: Box<dyn Operator>, need_write: bool, random_sleep: bool) -> Self {
         // operatorは座席0に暫定でセットする
         // 新しい局が開始されて座席が判明した際にスワップする
         let nop = Box::new(Nop::new());
@@ -36,9 +37,10 @@ impl Mahjongsoul {
             step: 0,
             seat: 0,
             actions: vec![],
-            need_write: need_write,
-            operator: nop,
             last_op_ts: time::Instant::now(),
+            operator: nop,
+            need_write: need_write,
+            random_sleep: random_sleep,
         }
     }
 
@@ -67,6 +69,7 @@ impl Mahjongsoul {
         let data = &act["data"];
 
         if step == 0 {
+            sleep_ms(3000);
             self.ctrl.swap_operator(self.seat, &mut self.operator);
             self.step = 0;
             self.seat = NO_SEAT;
@@ -116,11 +119,6 @@ impl Mahjongsoul {
             self.step += 1;
 
             let operation = &data["operation"];
-
-            // use std::io::prelude::*;
-            // println!("operation: {}", operation);
-            // std::io::stdout().flush().unwrap();
-
             if handle_op && data["operation"] != json!(null) {
                 op = self.handle_operation(operation);
             }
@@ -151,12 +149,30 @@ impl Mahjongsoul {
 
         let PlayerOperation(tp, cs) = op;
 
+        // sleep
+        sleep_ms(100);
+
         if self.last_op_ts.elapsed().as_millis() < 1000 {
             sleep_ms(1000);
         }
         self.last_op_ts = time::Instant::now();
 
         let stg = self.get_stage();
+        if self.random_sleep && tp != Ron && tp != Tsumo && (seat == stg.turn || tp != Nop) {
+            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(0.5 ~ 4.0秒)を取る
+            sleep_ms(500);
+            use rand::distributions::{Bernoulli, Distribution};
+            let d = Bernoulli::new(0.1).unwrap();
+            let mut c = 0;
+            loop {
+                if c == 40 || d.sample(&mut rand::thread_rng()) {
+                    break;
+                }
+                sleep_ms(100);
+                c += 1;
+            }
+        }
+
         let action = match tp {
             Nop => {
                 if stg.turn == seat {
@@ -235,7 +251,6 @@ impl Mahjongsoul {
     }
 
     fn handler_newround(&mut self, data: &Value) {
-        sleep_ms(3000);
         let round = as_usize(&data["chang"]);
         let kyoku = as_usize(&data["ju"]);
         let honba = as_usize(&data["ben"]);
@@ -412,16 +427,14 @@ impl App {
         let mut operator_name = "".to_string();
         let mut need_write = false;
         let mut read_only = false;
+        let mut sleep = false;
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
                 "-f" => file_in = next_value(&mut it, "-f: file name missing"),
-                "-w" => {
-                    need_write = true;
-                }
-                "-r" => {
-                    read_only = true;
-                }
+                "-w" => need_write = true,
+                "-r" => read_only = true,
+                "-s" => sleep = true,
                 "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
                 opt => {
                     println!("Unknown option: {}", opt);
@@ -432,7 +445,7 @@ impl App {
 
         let operator = create_operator(&operator_name, &vec![]);
         Self {
-            game: Mahjongsoul::new(need_write, operator),
+            game: Mahjongsoul::new(operator, need_write, sleep),
             wws_send_recv: create_ws_server(52001), // for Web-interface
             cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
             file_in,
@@ -481,10 +494,8 @@ impl App {
             let msg = if let Some((s, r)) = self.cws_send_recv.lock().unwrap().as_ref() {
                 if !connected {
                     connected = true;
-                    let msg1 = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
-                    let msg2 = r#"{"id": "id_operation", "op": "subscribe", "data": "operation"}"#;
-                    s.send(msg1.into()).ok();
-                    s.send(msg2.into()).ok();
+                    let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
+                    s.send(msg.into()).ok();
                 }
                 match r.recv() {
                     Ok(m) => m,

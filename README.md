@@ -121,6 +121,8 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
     保存したイベントデータをリプレイします。  
 -r
     読み込み専用モード。このモードではOperatorが指定した操作(雀魂の自動操作)を行いません。
+-s
+    操作(ロン,ツモ,キャンセルを除く)を行う前にランダム時間スリープします。最大4秒
 -0 operator_name
     使用するOperator(AI)。
 ```
@@ -133,7 +135,7 @@ cargo run J -w -r
 
 * akochanに自動で打ってもらう
 ```
-cargo run J -0 MjaiEndpoint    # 本体側
+cargo run J -s -0 MjaiEndpoint    # 本体側
 akochan mjai_client 11601      # akochan側
 ```
 

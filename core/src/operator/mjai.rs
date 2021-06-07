@@ -330,7 +330,6 @@ fn stream_handler(
 
         let len = data.lock().unwrap().record.len();
         let mut wait_op = false;
-        // println!("cursor: {}", cursor);
         if cursor + 1 < len {
             send(&data.lock().unwrap().record[cursor])?;
         } else if cursor + 1 == len {

@@ -215,7 +215,6 @@ msc.UiController = class {
         if (!window.uiscript.UI_Lobby.Inst.page0.me.visible) {
             return;
         }
-        this.mouse.click({ x: 10, y: 10 }); // AFK切断対策
         await msc.sleep(1000);
         window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run();
         await msc.sleep(1000);
@@ -234,16 +233,19 @@ msc.UiController = class {
             window.uiscript.UI_Huleshow.Inst,
             window.uiscript.UI_LiuJu.Inst,
         ];
+        let ok_button = { x: 1755, y: 1005 };
 
         for (let ui of uis) {
             if (ui && ui.enable && ui.btn_confirm.visible) {
-                this.click(ui.btn_confirm);
+                this.mouse.click(ok_button);
+                return;
             }
         }
 
         let ui = window.uiscript.UI_GameEnd.Inst;
-        if (ui && ui.enable && ui.btn_next.visible) {
-            this.click(ui.btn_next);
+        if (ui && ui.enable) {
+            this.mouse.click(ok_button);
+            return;
         }
     }
 

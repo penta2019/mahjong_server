@@ -329,25 +329,27 @@ fn stream_handler(
         }
 
         let len = data.lock().unwrap().record.len();
-        let is_last_record = cursor + 1 == len;
+        let mut wait_op = false;
         // println!("cursor: {}", cursor);
         if cursor + 1 < len {
             send(&data.lock().unwrap().record[cursor])?;
-        } else if is_last_record {
+        } else if cursor + 1 == len {
             if data.lock().unwrap().possible_actions == json!(null) {
                 // handle_operationがpossible_actionsを追加する可能性があるので待機
                 // data.lock()が開放されている必要があることに注意
-                sleep_ms(1000);
+                sleep_ms(100);
             }
 
-            let d = data.lock().unwrap();
-            if d.possible_actions == json!(null) {
-                send(&d.record[cursor])?;
-            } else {
+            let mut d = data.lock().unwrap();
+            if d.possible_actions != json!(null) && cursor + 1 == d.record.len() {
                 // possible_actionsが存在する場合、送信用のjsonオブジェクトを生成して追加
                 let mut record = d.record[cursor].clone();
                 record["possible_actions"] = d.possible_actions.clone();
+                d.possible_actions = json!(null);
+                wait_op = true;
                 send(&record)?;
+            } else {
+                send(&d.record[cursor])?;
             }
         } else {
             sleep_ms(10);
@@ -357,7 +359,7 @@ fn stream_handler(
 
         let mut d = data.lock().unwrap();
         let v = recv()?;
-        if is_last_record && d.possible_actions != json!(null) {
+        if wait_op {
             if v["type"].as_str().ok_or_else(err)? == "reach" {
                 send(&v)?; // send reach
                 let mut v2 = recv()?; // recv dahai

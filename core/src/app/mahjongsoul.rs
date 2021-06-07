@@ -49,27 +49,19 @@ impl Mahjongsoul {
     fn apply(&mut self, msg: &Value) -> Option<Value> {
         match as_str(&msg["id"]) {
             "id_mjaction" => {
-                let data = &msg["data"];
                 if msg["type"] == json!("message") {
-                    self.apply_action(&data);
-                }
-                None
-            }
-            "id_operation" => {
-                let data = &msg["data"];
-                if msg["type"] == json!("message") {
-                    self.apply_operation(&data)
+                    self.apply_action(&msg["data"], true)
+                } else if msg["type"] == json!("message_cache") {
+                    self.apply_action(&msg["data"], false)
                 } else {
                     None
                 }
             }
-            _ => {
-                None // type: "success"
-            }
+            _ => None, // type: "success"
         }
     }
 
-    fn apply_action(&mut self, act: &Value) {
+    fn apply_action(&mut self, act: &Value, handle_op: bool) -> Option<Value> {
         let step = as_usize(&act["step"]);
         let name = as_str(&act["name"]);
         let data = &act["data"];
@@ -94,13 +86,14 @@ impl Mahjongsoul {
             }
 
             if self.seat == NO_SEAT {
-                return;
+                return None;
             }
 
             self.operator.set_seat(self.seat);
             self.ctrl.swap_operator(self.seat, &mut self.operator);
         }
 
+        let mut op = None;
         while self.step < self.actions.len() {
             let action = self.actions[self.step].clone();
             assert!(self.step == as_usize(&action["step"]));
@@ -121,10 +114,22 @@ impl Mahjongsoul {
                 s => panic!("Unknown action {}", s),
             };
             self.step += 1;
+
+            let operation = &data["operation"];
+
+            // use std::io::prelude::*;
+            // println!("operation: {}", operation);
+            // std::io::stdout().flush().unwrap();
+
+            if handle_op && data["operation"] != json!(null) {
+                op = self.handle_operation(operation);
+            }
         }
+
+        op
     }
 
-    fn apply_operation(&mut self, data: &Value) -> Option<Value> {
+    fn handle_operation(&mut self, data: &Value) -> Option<Value> {
         if data["operation_list"] == json!(null) {
             return None;
         }

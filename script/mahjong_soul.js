@@ -240,10 +240,6 @@ msc.Server = class {
                 config: msc.inject_log('window.view.DesktopMgr.prototype.DoMJAction'),
                 callback: this.callback_mjaction,
             },
-            operation: {
-                config: msc.inject_log('window.view.ActionOperation.play'),
-                callback: this.callback_operation,
-            }
         };
         for (let k in this.channel_settings) {
             let s = this.channel_settings[k];
@@ -356,7 +352,7 @@ msc.Server = class {
 
         if (ch == 'mjaction') { // それまでの局の進行内容をすべて送信
             for (let a of this.action_store) {
-                this.send({ id: s.id, type: 'message', data: a });
+                this.send({ id: s.id, type: 'message_cache', data: a });
             }
         }
     }
@@ -390,17 +386,6 @@ msc.Server = class {
                 id: s.id,
                 type: 'message',
                 data: data,
-            });
-        }
-    }
-
-    callback_operation(caller, oplist) {
-        let s = this.channel_settings.operation;
-        if (s.enable) {
-            this.send({
-                id: s.id,
-                type: 'message',
-                data: oplist,
             });
         }
     }

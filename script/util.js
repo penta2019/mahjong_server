@@ -1,4 +1,4 @@
-msc.inject_log = function (path) {
+let inject_log = function (path) {
     let conf = { level: 0, count: 0, callback: null };
     let func0 = eval(path);
     if (func0 == undefined) {
@@ -36,9 +36,8 @@ msc.inject_log = function (path) {
     return conf;
 };
 
-
 // オブジェクトツリーの幅優先探索 (コンソールから使う用)
-msc.search_object = function (
+let search_object = function (
     obj, matcher, max_depth = 8,
     search_type = ['object', 'function'],
     exclude_prop = ['_parent'],
@@ -86,21 +85,21 @@ msc.search_object = function (
     }
 };
 
-msc.search_by_object = function (root_obj, target_obj, ...args) {
+let search_by_object = function (root_obj, target_obj, ...args) {
     function matcher(obj, key) {
         return obj[key] == target_obj;
     }
     msc.search_object(root_obj, matcher, ...args);
 };
 
-msc.search_by_property_name = function (root_obj, prop, ...args) {
+let search_by_property_name = function (root_obj, prop, ...args) {
     function matcher(obj, key) {
         return key == prop;
     }
     msc.search_object(root_obj, matcher, ...args);
 };
 
-msc.search_by_property_value = function (root_obj, prop, value, ...args) {
+let search_by_property_value = function (root_obj, prop, value, ...args) {
     function matcher(obj, key) {
         return key == prop && obj[key] == value;
     }

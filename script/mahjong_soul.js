@@ -68,16 +68,60 @@ msc.inject_log = function (path) {
     return conf;
 };
 
-// Utility
+// UI操作
 msc.sleep = function (msec) {
     return new Promise(function (resolve) {
         setTimeout(function () { resolve() }, msec);
     });
 }
 
-msc.UiController = class {
+msc.MouseController = class {
     constructor() {
         this.canvas = document.getElementById('layaCanvas');
+    }
+
+    from_fhd_pos(pos) {
+        // 1920x1080(Full HD)から実際のcanvasの座標に変換
+        let w = 1920, h = 1080, r = this.canvas.getBoundingClientRect();
+        return {
+            x: Math.round(pos.x * r.width / w + r.x),
+            y: Math.round(pos.y * r.height / h + r.y),
+        };
+    };
+
+    dispatch(type, pos, button = null) {
+        let e = new Event(type);
+        let wpos = this.from_fhd_pos(pos);
+        if (button != null) {
+            e.button = button;
+        }
+        e.clientX = wpos.x;
+        e.clientY = wpos.y;
+        this.canvas.dispatchEvent(e);
+    }
+
+    move(pos) {
+        this.dispatch('mousemove', pos);
+    }
+
+    down(pos) {
+        this.dispatch('mousedown', pos, 0);
+    }
+
+    up(pos) {
+        this.dispatch('mouseup', pos, 0);
+    }
+
+    click(pos) {
+        this.move(pos);
+        this.down(pos);
+        this.up(pos);
+    }
+};
+
+msc.UiController = class {
+    constructor() {
+        this.mouse = new msc.MouseController();
         this.timer = null;
     }
 
@@ -171,6 +215,7 @@ msc.UiController = class {
         if (!window.uiscript.UI_Lobby.Inst.page0.me.visible) {
             return;
         }
+        this.mouse.click({ x: 10, y: 10 }); // AFK切断対策
         await msc.sleep(1000);
         window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run();
         await msc.sleep(1000);

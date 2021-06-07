@@ -18,6 +18,7 @@ pub struct MjaiEndpoint {
     seat: usize,
     data: Arc<Mutex<SharedData>>,
     try_riichi: Option<Seat>,
+    is_new_game: bool,
 }
 
 impl MjaiEndpoint {
@@ -27,6 +28,7 @@ impl MjaiEndpoint {
             seat: NO_SEAT,
             data: data.clone(),
             try_riichi: None,
+            is_new_game: false,
         };
         let listener = TcpListener::bind(addr).unwrap();
         println!("MjaiEndpoint: Listening on {}", addr);
@@ -146,8 +148,7 @@ impl Operator for MjaiEndpoint {
 impl StageListener for MjaiEndpoint {
     fn notify_op_game_start(&mut self, _stage: &Stage) {
         assert!(self.seat != NO_SEAT);
-        *self.data.lock().unwrap() = SharedData::new();
-        self.add_record(mjai_start_game(self.seat));
+        self.is_new_game = true;
     }
 
     fn notify_op_roundnew(
@@ -161,6 +162,14 @@ impl StageListener for MjaiEndpoint {
         _scores: &[Score; SEAT],
         player_hands: &[Vec<Tile>; SEAT],
     ) {
+        assert!(self.seat != NO_SEAT);
+        let mut data = SharedData::new();
+        if self.is_new_game {
+            data.send_start_game = true;
+            self.is_new_game = false;
+        }
+        data.seat = self.seat;
+        *self.data.lock().unwrap() = data;
         self.try_riichi = None;
 
         // 親番の14枚目の牌は最初のツモとして扱うので取り除く
@@ -278,6 +287,8 @@ impl StageListener for MjaiEndpoint {
 
 #[derive(Debug)]
 struct SharedData {
+    send_start_game: bool,
+    seat: Seat,
     record: Vec<Value>,
     action: Value,
     possible_actions: Value,
@@ -286,6 +297,8 @@ struct SharedData {
 impl SharedData {
     fn new() -> Self {
         Self {
+            send_start_game: false,
+            seat: NO_SEAT,
             record: vec![],
             action: json!(null),
             possible_actions: json!(null),
@@ -304,8 +317,7 @@ fn stream_handler(
     let err = || io::Error::new(io::ErrorKind::InvalidData, "json field not found");
 
     // hello
-    let m = json!({"type":"hello","protocol":"mjsonp","protocol_version":3});
-    send(&m)?;
+    send(&mjai_hello())?;
     let v = recv()?;
 
     if v["type"].as_str().ok_or_else(err)? == "join" {
@@ -318,13 +330,30 @@ fn stream_handler(
         return Ok(());
     }
 
+    while data.lock().unwrap().seat == NO_SEAT {
+        sleep_ms(100);
+    }
+
     let mut cursor = 0;
     let mut reach_skip = false;
+    let mut need_start_game = true;
     loop {
         if cursor > data.lock().unwrap().record.len() {
             // 新しく試合開始した場合はリセット
             println!("mjai reset");
             cursor = 0;
+        }
+
+        {
+            let mut d = data.lock().unwrap();
+            let send_start_game = d.send_start_game;
+            if cursor == 0 && (send_start_game || need_start_game) {
+                // start_game 新しい試合が始まった場合、またはクライアントの再接続時に送信
+                need_start_game = false;
+                d.send_start_game = false;
+                send(&mjai_start_game(d.seat))?;
+                recv()?; // recv none
+            }
         }
 
         while reach_skip {

@@ -11,6 +11,10 @@ use PlayerOperationType::*;
 // seat: 行動を行ったプレイヤーの座席
 // target: 行動の対象となるプレイヤー(ロン, チー, ポン, 槓など)
 
+pub fn mjai_hello() -> Value {
+    json!({"type":"hello","protocol":"mjsonp","protocol_version":3})
+}
+
 pub fn mjai_start_game(id: Seat) -> Value {
     json!({
         "type":"start_game",

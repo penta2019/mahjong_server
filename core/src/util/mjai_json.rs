@@ -40,6 +40,7 @@ pub fn mjai_start_kyoku(
         "kyoku": kyoku + 1,
         "honba": honba,
         "kyotaku": kyotaku,
+        "oya": kyoku,
         "dora_marker": dora_marker,
         "tehais": hands,
     })

@@ -11,25 +11,6 @@ websocket経由ですべての操作を行えますが、まずは友人戦(NPC�
 何ができるかはcore/main.jsに目を通していただければだいたい解ると思います。  
 以下に具体例を示します。
 
-* 各プレイヤーの状態の取得  
-プレイヤーの手牌、捨て牌などの情報。  
-対戦中の相手の手牌はローカルのデータ上はすべて"白"になります。
-```
-> msc.get_player_data()
-```
-
-* 卓状況の取得  
-ドラ、自分の座席番号、山に残っている牌等の情報。(一部未実装)
-```
-> msc.get_status()
-```
-
-* プレイヤー情報の取得  
-プレイヤーの名前やキャラクターなどの情報を取得します。特に必要ありません。
-```
-> msc.get_player_info()
-```
-
 * 左からn番目の牌を捨てる  
 ```
 > let n = 13 // ツモ切り(鳴きなしの時)
@@ -57,8 +38,6 @@ MSCはwebsocketを介して以下の機能を提供します。
     * mjaction  
         最初にその局の開始からの進行内容をすべて送信し、その後局が進行するごとに内容を通知します。  
         このチャンネルが配信する情報は時間軸を除いて、ゲーム進行(リプレイ含む)を再現するのに必要な情報をすべて含んでいます。
-    * operation
-        ユーザー操作(打牌、鳴き、和了など)が発生した際に可能な操作の一覧と詳細な内容を通知します。
 * インジェクションのサブスクライブ (op = 'subscribe_injection')
     指定した関数が呼び出された際にその引数をすべて配信します。
     上のチャネルのサブスクライブで足りない情報がある場合に利用することを想定していますが、特に必要はないと思います。
@@ -68,18 +47,6 @@ MSCはサーバーの様に振る舞いますがブラウザの制約上wsサー
 ```
 > msc.server.connect(52000)
 ```
-
-<!-- 以下は動作確認用の外部プログラム(python)です。  
-ipythonから "from server import *" のように実行してください。(普通に実行してもすぐに終了します。) 
-
-このプログラムはMSC側から接続を受けると'mjaction', 'operation'のサブスクライブを行います。 
-また、以下のようにコンソールから実行するのと同様のコードの実行をリクエストできます。  
-``` python
-send('aaa', 'eval', 'msc.get_player_data()')      # 手牌・捨て牌・鳴き
-send('bbb', 'eval', 'msc.ui.action_discard(13)')  # ツモ切り
-```
-idは外部プログラムがリクエストと対応するレスポンスを判別するためのものなので任意の文字列(または数字)を指定できます。必要なければ省略しても構いません。 -->
-
 
 ## Websocket Message Format
 ### Eval
@@ -115,7 +82,7 @@ idは外部プログラムがリクエストと対応するレスポンスを判
 ```
 {
     id: {requestで指定されたID},
-    type: {'success', 'error', 'message'},
+    type: {'success', 'error', 'message', 'message_cache'},
     data: {チャンネルデータ('message'の場合)},
 }
 ```
@@ -242,29 +209,6 @@ E_Round_Result:           // 対局結果
     5: "beizimo"          // ?
 ```
 
-## 開発手引き
-### ソースコード
-雀魂のソースコードが見たい場合、開発者ツールの"Sources"からcode.jsをダウンロードして https://beautifier.io などのサイトで整形すればそこそこ読めるコードになります。  
-全体の約8万行のうち最初の約4万行がフレームワーク(Laya)のコードで、残り約4万行がゲーム本体のコードになります。
-
-### ログ
-デフォルトではデバッグログが無効になっているので有効にする場合"msc.debug = true"としてください。  
-msc.debugが制御するのはMSCが生成するログのみなのでアプリ内の関数に差し込んだログの設定は個別に行ってください。
-初期化時に'app.Log.log'(アプリが生成するログ)と'Laya.MouseManager.instance.initEvent'(mousedownイベント)にログを差し込んいるので、これらを表示する場合以下のようにしてください。
-``` js
-msc.log_configs[0].level = 1 // アプリログ
-msc.log_configs[1].level = 1 // mousedownイベント
-``` 
-
-### オブジェクトの探索
-コンソールから特定のオブジェクトのプロパティパスを取得するための関数を準備しています。  
-* msc.search_by_object  
-    オブジェクトの参照からプロパティパスを探索
-* msc.search_by_property_name  
-    特定の名前のプロパティを持つオブジェクトを探索
-* msc.search_by_property_value  
-    特定のプロパティの値を持つオブジェクトを探索
-
 ### メモ書き
 #### 用語
 ```
@@ -329,7 +273,7 @@ window.uiscript              - UI操作
     .UI_UI_ChiPengHu.Inst    - 他家のツモ番のアクション チー、ポン、ロンなど
 ```
 
-#### UI操作メモ
+#### UI操作
 ```
 段位戦
 window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run()
@@ -342,25 +286,3 @@ window.uiscript.UI_Lobby.Inst.page0.btn_yibanchang.clickHandler.run()
 クリック音
     window.view.AudioMgr.PlayAudio(103);
 ```
-
-#### 変数名省略
-s: seat
-t: tile
-e: element(entity)
-c: count
-stg: stage
-ti: Tile type index
-ni: Tile number index
-
-
-#### 実行
-yaku2という名前のテスト関数を実行。 "-- --capture"は標準出力を表示する
-```
-$ cargo test yaku2 -- --nocapture 
-```
-
-プログラムをエンジンモードで実行
-```
-$ cargo run E
-```
-

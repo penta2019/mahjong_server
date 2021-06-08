@@ -167,6 +167,7 @@ msc.UiController = class {
         let vp = window.view.ViewPlayer_Me.Inst;
         vp.setChoosePai(vp.hand[n]);
         vp.DoDiscardTile();
+        this.mouse.click({ x: 1755, y: 1005 }); // AFK対策。効果があるかは不明
     }
 
     action_cancel() { // スキップ

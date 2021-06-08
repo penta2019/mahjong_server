@@ -432,7 +432,7 @@ fn stream_handler(
 fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<()> {
     stream.write((value.to_string() + "\n").as_bytes())?;
     if debug {
-        println!("-> {:?}", value.to_string());
+        println!("-> {}", value.to_string());
         io::stdout().flush().unwrap();
     }
     Ok(())

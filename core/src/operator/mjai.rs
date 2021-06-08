@@ -335,17 +335,16 @@ fn stream_handler(
     }
 
     let mut cursor = 0;
-    let mut reach_skip = false;
     let mut need_start_game = true;
     loop {
-        if cursor > data.lock().unwrap().record.len() {
-            // 新しく試合開始した場合はリセット
-            println!("mjai reset");
-            cursor = 0;
-        }
-
+        // 初期化処理
         {
             let mut d = data.lock().unwrap();
+            if cursor > d.record.len() {
+                // 新しく試合開始した場合はリセット
+                println!("mjai reset");
+                cursor = 0;
+            }
             let send_start_game = d.send_start_game;
             if cursor == 0 && (send_start_game || need_start_game) {
                 // start_game 新しい試合が始まった場合、またはクライアントの再接続時に送信
@@ -356,22 +355,8 @@ fn stream_handler(
             }
         }
 
-        while reach_skip {
-            if cursor == data.lock().unwrap().record.len() {
-                sleep_ms(10);
-                continue;
-            }
-
-            let rec = &data.lock().unwrap().record[cursor];
-            cursor += 1;
-            if rec["type"].as_str().ok_or_else(err)? == "reach_accepted" {
-                reach_skip = false;
-                break;
-            }
-        }
-
         let len = data.lock().unwrap().record.len();
-        let mut wait_op = false;
+        let mut wait_act = false;
         if cursor + 1 < len {
             send(&data.lock().unwrap().record[cursor])?;
         } else if cursor + 1 == len {
@@ -387,7 +372,7 @@ fn stream_handler(
                 let mut record = d.record[cursor].clone();
                 record["possible_actions"] = d.possible_actions.clone();
                 d.possible_actions = json!(null);
-                wait_op = true;
+                wait_act = true;
                 send(&record)?;
             } else {
                 send(&d.record[cursor])?;
@@ -396,34 +381,63 @@ fn stream_handler(
             sleep_ms(10);
             continue;
         }
+
         cursor += 1;
-
-        let mut d = data.lock().unwrap();
         let v = recv()?;
-        if wait_op {
-            if v["type"].as_str().ok_or_else(err)? == "reach" {
-                send(&v)?; // send reach
-                let mut v2 = recv()?; // recv dahai
-                send(&v2)?; // send dahai
-                recv()?; // recv none
 
-                // send reach_accepted
-                let actor = v["actor"].as_u64().ok_or_else(err)? as usize;
-                let mut deltas = [0; SEAT];
-                deltas[actor] = -1000;
-                send(&json!({
-                    "type":"reach_accepted",
-                    "actor": actor,
-                    "deltas": deltas,
-                    "scores":[25000, 25000, 25000, 25000],
-                }))?;
-                recv()?; // recv none
-                reach_skip = true;
+        if !wait_act {
+            continue;
+        }
 
-                v2["type"] = json!("reach");
-                d.action = v2;
-            } else {
-                d.action = v;
+        // possible_actionsに対する応答を処理
+        if v["type"].as_str().ok_or_else(err)? != "reach" {
+            data.lock().unwrap().action = v;
+        } else {
+            // reachは仕様が特殊なので個別に処理
+            send(&v)?; // send reach
+            let mut v2 = recv()?; // recv dahai
+            send(&v2)?; // send dahai
+            recv()?; // recv none
+            v2["type"] = json!("reach");
+            data.lock().unwrap().action = v2;
+
+            // recordに reach -> dahai -> (reach_accepted or hora) の順で追加される
+            let mut step = 0;
+            loop {
+                sleep_ms(10);
+                if data.lock().unwrap().record.len() == cursor {
+                    continue;
+                }
+
+                let d = data.lock().unwrap();
+                if d.record.len() < cursor {
+                    // recordが別スレッドから初期化される可能性がある
+                    continue;
+                }
+                let rec = &d.record[cursor];
+                cursor += 1;
+                match rec["type"].as_str().ok_or_else(err)? {
+                    "reach" => {
+                        assert!(step == 0);
+                        step = 1;
+                    }
+                    "dahai" => {
+                        assert!(step == 1);
+                        step = 2;
+                    }
+                    "reach_accepted" => {
+                        assert!(step == 2);
+                        send(rec)?; // send reach_accepted
+                        recv()?; // recv none
+                        break;
+                    }
+                    "hora" => {
+                        assert!(step == 2);
+                        cursor -= 1; // horaはここでは処理しない
+                        break;
+                    }
+                    _ => {}
+                }
             }
         }
     }

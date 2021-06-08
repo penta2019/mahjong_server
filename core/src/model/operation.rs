@@ -5,7 +5,7 @@ pub enum PlayerOperationType {
     Nop, // Operator用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
 
     // Turn Operations
-    Discard,      // 打牌 (配列はチー後に捨てることができない牌)
+    Discard,      // 打牌 (ゲーム側から提供される配列は鳴き後に捨てられない配)
     Ankan,        // 暗槓
     Kakan,        // 加槓
     Riichi,       // リーチ

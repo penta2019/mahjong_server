@@ -154,6 +154,17 @@ msc.UiController = class {
         }
     }
 
+    // クリック処理
+    mouse_click(pos) {
+        this.mouse.move(pos);
+        setTimeout(() => {
+            this.mouse.click(pos);
+            setTimeout(() => {
+                this.mouse.move({ x: 10, y: 10 });
+            }, 300);
+        }, 200);
+    }
+
     choose_detail_if_visible(idx) {
         setTimeout(() => {
             let ui = this.get_op_ui().container_Detail;
@@ -164,11 +175,21 @@ msc.UiController = class {
     }
 
     action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
-        let vp = window.view.ViewPlayer_Me.Inst;
-        vp.setChoosePai(vp.hand[n]);
-        vp.DoDiscardTile();
-        this.mouse.click({ x: 1755, y: 1005 }); // AFK対策。効果があるかは不明
+        let leftmost_pai = { x: 265, y: 980 };
+        let pai_interval = (1405 - 265) / 12;
+        let pos = {
+            x: leftmost_pai.x + pai_interval * n,
+            y: leftmost_pai.y,
+        }
+        this.mouse_click(pos);
     }
+
+    // action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
+    //     let vp = window.view.ViewPlayer_Me.Inst;
+    //     vp.setChoosePai(vp.hand[n]);
+    //     vp.DoDiscardTile();
+    //     this.mouse.click({ x: 1755, y: 1005 }); // AFK対策。効果があるかは不明
+    // }
 
     action_cancel() { // スキップ
         this.click(this.get_op_ui().op_btns.btn_cancel);

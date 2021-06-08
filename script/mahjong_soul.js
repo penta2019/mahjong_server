@@ -17,17 +17,17 @@ let msc = { // MSC(MahjongSoulDriver)のオブジェクトはすべてここに�
 
 // ロガー定義
 msc.log = function (...args) {
-    console.log('[MSC]', ...args);
+    console.log("[MSC]", ...args);
 };
 
 msc.log_debug = function (...args) {
     if (msc.debug) {
-        console.log('[MSC(debug)]', ...args);
+        console.log("[MSC(debug)]", ...args);
     }
 };
 
 msc.log_error = function (...args) {
-    console.log('[MSC(error)]', ...args);
+    console.log("[MSC(error)]", ...args);
 };
 
 msc.inject_log = function (path) {
@@ -36,7 +36,7 @@ msc.inject_log = function (path) {
     if (func0 == undefined) {
         throw `inject_log: ${path} is not defined`;
     }
-    if (typeof func0 != 'function') {
+    if (typeof func0 != "function") {
         throw `inject_log: ${path} is not a function`;
     }
 
@@ -51,8 +51,8 @@ msc.inject_log = function (path) {
             }
             if (conf.level >= 2) {
                 console.groupCollapsed(`[MSC] ${conf.count++} ${path}`);
-                console.log('this', this); 1
-                console.log('args', args);
+                console.log("this", this); 1
+                console.log("args", args);
                 if (conf.level >= 3) {
                     console.trace();
                 }
@@ -77,7 +77,7 @@ msc.sleep = function (msec) {
 
 msc.MouseController = class {
     constructor() {
-        this.canvas = document.getElementById('layaCanvas');
+        this.canvas = document.getElementById("layaCanvas");
     }
 
     from_fhd_pos(pos) {
@@ -101,15 +101,15 @@ msc.MouseController = class {
     }
 
     move(pos) {
-        this.dispatch('mousemove', pos);
+        this.dispatch("mousemove", pos);
     }
 
     down(pos) {
-        this.dispatch('mousedown', pos, 0);
+        this.dispatch("mousedown", pos, 0);
     }
 
     up(pos) {
-        this.dispatch('mouseup', pos, 0);
+        this.dispatch("mouseup", pos, 0);
     }
 
     click(pos) {
@@ -158,7 +158,7 @@ msc.UiController = class {
         setTimeout(() => {
             let ui = this.get_op_ui().container_Detail;
             if (ui.visible) {
-                ui.getChildByName('container_chooses').getChildByName(`c${idx}`).clickHandler.run();
+                ui.getChildByName("container_chooses").getChildByName(`c${idx}`).clickHandler.run();
             }
         }, 500);
     }
@@ -277,14 +277,14 @@ msc.Server = class {
         this.action_store = [];
 
         // syncGame
-        this.sync = msc.inject_log('window.view.DesktopMgr.prototype.syncGameByStep');
+        this.sync = msc.inject_log("window.view.DesktopMgr.prototype.syncGameByStep");
         this.sync.level = 1;
         this.sync.callback = this.on_sync_game.bind(this);
 
         // subscribe
         this.channel_settings = {
             mjaction: {
-                config: msc.inject_log('window.view.DesktopMgr.prototype.DoMJAction'),
+                config: msc.inject_log("window.view.DesktopMgr.prototype.DoMJAction"),
                 callback: this.callback_mjaction,
             },
         };
@@ -317,7 +317,7 @@ msc.Server = class {
 
     connect(port) {
         if (this.ws) {
-            msc.log_error('(Server) conncet: ws connection already exists.');
+            msc.log_error("(Server) conncet: ws connection already exists.");
             return;
         }
         this.endpoint = `ws://localhost:${port}`;
@@ -329,7 +329,7 @@ msc.Server = class {
 
     disconnect() {
         if (!this.ws) {
-            msc.log_error('(Server) disconncet: ws connection does not exist.');
+            msc.log_error("(Server) disconncet: ws connection does not exist.");
             return;
         }
         this.ws.close();
@@ -337,16 +337,16 @@ msc.Server = class {
 
     send(msg) {
         let str = JSON.stringify(msg);
-        msc.log_debug('(Server) send:', str);
+        msc.log_debug("(Server) send:", str);
         this.ws.send(str);
     }
 
     on_open() {
-        msc.log('(Server) open:', this.endpoint);
+        msc.log("(Server) open:", this.endpoint);
     }
 
     on_close() {
-        msc.log('(Server) close');
+        msc.log("(Server) close");
         for (let k in this.channel_settings) {
             this.channel_settings[k].enable = false;
         }
@@ -358,18 +358,18 @@ msc.Server = class {
     }
 
     on_message(evt) {
-        msc.log_debug('(Server) message:', evt.data);
+        msc.log_debug("(Server) message:", evt.data);
         let msg = null, id = null;
         try {
             msg = JSON.parse(evt.data);
             switch (msg.op) {
-                case 'eval':
+                case "eval":
                     this.op_eval(msg);
                     break;
-                case 'subscribe':
+                case "subscribe":
                     this.op_subscribe(msg);
                     break;
-                case 'subscribe_injection':
+                case "subscribe_injection":
                     this.op_subscribe_injection(msg);
                     break;
                 default:
@@ -378,13 +378,13 @@ msc.Server = class {
         } catch (e) {
             let str = e.toString();
             msc.log_error(str);
-            this.send({ id: msg && msg.id, type: 'error', data: str });
+            this.send({ id: msg && msg.id, type: "error", data: str });
         }
     }
 
     op_eval(msg) {
         let res = eval(msg.data);
-        this.send({ id: msg.id, type: 'success', data: res || null });
+        this.send({ id: msg.id, type: "success", data: res || null });
     }
 
     op_subscribe(msg) {
@@ -395,11 +395,11 @@ msc.Server = class {
 
         s.id = msg.id;
         s.enable = true;
-        this.send({ id: msg.id, type: 'success', data: null });
+        this.send({ id: msg.id, type: "success", data: null });
 
-        if (ch == 'mjaction') { // それまでの局の進行内容をすべて送信
+        if (ch == "mjaction") { // それまでの局の進行内容をすべて送信
             for (let a of this.action_store) {
-                this.send({ id: s.id, type: 'message_cache', data: a });
+                this.send({ id: s.id, type: "message_cache", data: a });
             }
         }
     }
@@ -411,9 +411,9 @@ msc.Server = class {
         }
         confs[path].level = 1;
         confs[path].callback = function (caller, ...args) {
-            _this.send({ id: msg.id, type: 'message', data: args });
+            _this.send({ id: msg.id, type: "message", data: args });
         };
-        this.send({ id: msg.id, type: 'success', data: null });
+        this.send({ id: msg.id, type: "success", data: null });
     }
 
     callback_mjaction(caller, action, fast) {
@@ -431,9 +431,16 @@ msc.Server = class {
         if (s.enable) {
             this.send({
                 id: s.id,
-                type: 'message',
+                type: "message",
                 data: data,
             });
+        }
+        switch (action.name) {
+            case "ActionHule":
+            case "ActionLiuJu":
+            case "ActionNoTile":
+                this.action_store = [];
+                break;
         }
     }
 
@@ -451,23 +458,23 @@ msc.Server = class {
         let s = this.channel_settings.mjaction;
         if (s.enable) {
             for (let a of this.action_store) {
-                this.send({ id: s.id, type: 'message', data: a });
+                this.send({ id: s.id, type: "message", data: a });
             }
         }
     }
 };
 
 // 初期化
-window.addEventListener('load', function () {
+window.addEventListener("load", function () {
     setTimeout(() => {
-        msc.log('MSC is enabled');
+        msc.log("MSC is enabled");
         msc.ui = new msc.UiController();
         msc.server = new msc.Server();
         window.msc = msc;
 
-        window.GameMgr.error_url = '';
+        window.GameMgr.error_url = "";
         window.GameMgr.prototype.logUp = function (...args) {
-            msc.log('logUp is disabled by MSC', args);
+            msc.log("logUp is disabled by MSC", args);
         }
     }, 5000);　// GameMgrが初期化されていない場合があるので待機
 }, false);

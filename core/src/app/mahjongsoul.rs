@@ -53,9 +53,9 @@ impl Mahjongsoul {
         match as_str(&msg["id"]) {
             "id_mjaction" => {
                 if msg["type"] == json!("message") {
-                    self.apply_action(&msg["data"], true)
-                } else if msg["type"] == json!("message_cache") {
                     self.apply_action(&msg["data"], false)
+                } else if msg["type"] == json!("message_cache") {
+                    self.apply_action(&msg["data"], true)
                 } else {
                     None
                 }
@@ -64,13 +64,12 @@ impl Mahjongsoul {
         }
     }
 
-    fn apply_action(&mut self, act: &Value, handle_op: bool) -> Option<Value> {
+    fn apply_action(&mut self, act: &Value, is_cache: bool) -> Option<Value> {
         let step = as_usize(&act["step"]);
         let name = as_str(&act["name"]);
         let data = &act["data"];
 
         if step == 0 {
-            sleep_ms(3000);
             self.ctrl.swap_operator(self.seat, &mut self.operator);
             self.step = 0;
             self.seat = NO_SEAT;
@@ -119,9 +118,18 @@ impl Mahjongsoul {
             };
             self.step += 1;
 
-            let operation = &data["operation"];
-            if handle_op && data["operation"] != json!(null) {
-                op = self.handle_operation(operation);
+            if !is_cache {
+                let operation = &data["operation"];
+                if operation != &json!(null) {
+                    // self.ctrl.handle_operationはstageを更新した直後sleepを挟まずに実行する必要がる
+                    op = self.handle_operation(operation);
+                }
+
+                match as_str(name) {
+                    "ActionMJStart" => sleep_ms(3000),
+                    "ActionNewRound" => sleep_ms(2000),
+                    _ => {}
+                }
             }
         }
 
@@ -161,13 +169,13 @@ impl Mahjongsoul {
 
         let stg = self.get_stage();
         if self.random_sleep && tp != Ron && tp != Tsumo && (seat == stg.turn || tp != Nop) {
-            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(0.5 ~ 4.0秒)を取る
+            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(0.5 ~ 3.5秒)を取る
             sleep_ms(500);
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
             let mut c = 0;
             loop {
-                if c == 40 || d.sample(&mut rand::thread_rng()) {
+                if c == 30 || d.sample(&mut rand::thread_rng()) {
                     break;
                 }
                 sleep_ms(100);

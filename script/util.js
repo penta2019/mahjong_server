@@ -4,7 +4,7 @@ let inject_log = function (path) {
     if (func0 == undefined) {
         throw `inject_log: ${path} is not defined`;
     }
-    if (typeof func0 != 'function') {
+    if (typeof func0 != "function") {
         throw `inject_log: ${path} is not a function`;
     }
 
@@ -19,8 +19,8 @@ let inject_log = function (path) {
             }
             if (conf.level >= 2) {
                 console.groupCollapsed(`[MSC] ${conf.count++} ${path}`);
-                console.log('this', this); 1
-                console.log('args', args);
+                console.log("this", this); 1
+                console.log("args", args);
                 if (conf.level >= 3) {
                     console.trace();
                 }
@@ -39,20 +39,20 @@ let inject_log = function (path) {
 // オブジェクトツリーの幅優先探索 (コンソールから使う用)
 let search_object = function (
     obj, matcher, max_depth = 8,
-    search_type = ['object', 'function'],
-    exclude_prop = ['_parent'],
+    search_type = ["object", "function"],
+    exclude_prop = ["_parent"],
     exclude_obj = [window.webkitStorageInfo, window.applicationCache],
 ) {
     let visited = new Set([obj]);
     let anchor = { depth: 1 };
-    let queue = [anchor, [obj, ''/* path */]];
+    let queue = [anchor, [obj, ""/* path */]];
 
     while (true) {
         let node = queue.shift();
         if (node == anchor) {
             if (queue.length == 0) break;
             if (node.depth > max_depth) break;
-            msc.log('the beginning of depth:', node.depth);
+            msc.log("the beginning of depth:", node.depth);
             node.depth++;
             queue.push(node);
             continue;

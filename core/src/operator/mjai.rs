@@ -425,7 +425,10 @@ fn stream_handler(
                         step = 1;
                     }
                     "dahai" => {
-                        assert!(step == 1);
+                        if step == 0 {
+                            // 手動でリーチ判断を無視した場合
+                            break;
+                        }
                         step = 2;
                     }
                     "reach_accepted" => {

@@ -70,7 +70,7 @@ impl MjaiEndpoint {
 
     fn add_record(&mut self, record: Value) {
         let mut d = self.data.lock().unwrap();
-        d.action = json!(null);
+        d.selected_action = json!(null);
         d.possible_actions = json!(null);
         d.record.push(record);
     }
@@ -104,23 +104,26 @@ impl Operator for MjaiEndpoint {
                 }
             }
             d.possible_actions = json!(acts);
+            d.selected_action = json!(null);
         }
 
         // possible_actionに対する応答を待機
         let mut c = 0;
         loop {
             sleep_ms(100);
-            if self.data.lock().unwrap().action != json!(null) {
+            let mut d = self.data.lock().unwrap();
+            if d.selected_action != json!(null) {
                 break;
             }
             c += 1;
             if c == 50 {
                 println!("[Error] possible_action timeout");
+                d.possible_actions = json!(null);
                 return Op::nop();
             }
         }
 
-        let v = std::mem::replace(&mut self.data.lock().unwrap().action, json!(null));
+        let v = std::mem::replace(&mut self.data.lock().unwrap().selected_action, json!(null));
 
         // reachだけはmjaiと仕様が異なるため個別処理する
         if v["type"] == json!("reach") {
@@ -290,7 +293,7 @@ struct SharedData {
     send_start_game: bool,
     seat: Seat,
     record: Vec<Value>,
-    action: Value,
+    selected_action: Value,
     possible_actions: Value,
 }
 
@@ -300,7 +303,7 @@ impl SharedData {
             send_start_game: false,
             seat: NO_SEAT,
             record: vec![],
-            action: json!(null),
+            selected_action: json!(null),
             possible_actions: json!(null),
         }
     }
@@ -391,7 +394,7 @@ fn stream_handler(
 
         // possible_actionsに対する応答を処理
         if v["type"].as_str().ok_or_else(err)? != "reach" {
-            data.lock().unwrap().action = v;
+            data.lock().unwrap().selected_action = v;
         } else {
             // reachは仕様が特殊なので個別に処理
             send(&v)?; // send reach
@@ -399,7 +402,7 @@ fn stream_handler(
             send(&v2)?; // send dahai
             recv()?; // recv none
             v2["type"] = json!("reach");
-            data.lock().unwrap().action = v2;
+            data.lock().unwrap().selected_action = v2;
 
             // recordに reach -> dahai -> (reach_accepted or hora) の順で追加される
             let mut step = 0;

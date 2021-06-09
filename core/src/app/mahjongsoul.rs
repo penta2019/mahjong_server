@@ -126,8 +126,8 @@ impl Mahjongsoul {
                 }
 
                 match as_str(name) {
-                    "ActionMJStart" => sleep_ms(3000),
-                    "ActionNewRound" => sleep_ms(2000),
+                    // "ActionMJStart" => sleep_ms(3000),
+                    "ActionNewRound" => sleep_ms(3000),
                     _ => {}
                 }
             }

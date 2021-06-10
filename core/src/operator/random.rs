@@ -27,7 +27,7 @@ impl Operator for RandomDiscard {
         }
 
         let h = &stage.players[seat].hand;
-        let mut n: u32 = self.rng.gen_range(0, 13);
+        let mut n: u32 = self.rng.gen_range(0..13);
         loop {
             for ti in 0..TYPE {
                 for ni in 1..TNUM {

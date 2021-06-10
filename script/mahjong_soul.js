@@ -123,6 +123,10 @@ msc.UiController = class {
     constructor() {
         this.mouse = new msc.MouseController();
         this.timer = null;
+
+        setInterval(() => {
+            this.check_hangup_warn();
+        }, 1000);
     }
 
     get_op_ui() {
@@ -139,7 +143,6 @@ msc.UiController = class {
     }
 
     click(el) {
-        // 選択画面などが表示されていれば閉じてからアクションを実行する
         let f = () => el.clickHandler.run();
         let ui = this.get_op_ui();
         let ui_detail = ui.container_Detail;
@@ -228,6 +231,13 @@ msc.UiController = class {
 
     action_babei() { // 北抜き
         this.click(this.get_op_ui().op_btns.btn_babei);
+    }
+
+    check_hangup_warn() {
+        let inst = uiscript.UI_Hangup_Warn.Inst;
+        if (inst && inst.enable) {
+            inst.me.getChildByName("root").getChildByName("btn_confirm").clickHandler.run();
+        }
     }
 
     // ゲームを開始

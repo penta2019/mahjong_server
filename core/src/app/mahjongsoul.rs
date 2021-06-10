@@ -20,7 +20,6 @@ struct Mahjongsoul {
     step: usize,
     seat: usize, // my seat
     actions: Vec<Value>,
-    last_op_ts: time::Instant,
     operator: Box<dyn Operator>,
     need_write: bool,
     random_sleep: bool,
@@ -38,7 +37,6 @@ impl Mahjongsoul {
             step: 0,
             seat: 0,
             actions: vec![],
-            last_op_ts: time::Instant::now(),
             operator: nop,
             need_write: need_write,
             random_sleep: random_sleep,
@@ -157,30 +155,27 @@ impl Mahjongsoul {
         println!("");
         stdout().flush().unwrap();
 
+        let start = time::Instant::now();
         let PlayerOperation(tp, cs) = op;
-
-        // sleep
-        sleep_ms(100);
-
-        if self.last_op_ts.elapsed().as_millis() < 1000 {
-            sleep_ms(1000);
-        }
-        self.last_op_ts = time::Instant::now();
+        let ellapsed = start.elapsed().as_millis();
 
         let stg = self.get_stage();
+        let mut sleep = 500;
         if self.random_sleep && tp != Ron && tp != Tsumo && (seat == stg.turn || tp != Nop) {
-            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(0.5 ~ 3.5秒)を取る
-            sleep_ms(500);
+            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(0.5 ~ 4.5秒)を取る
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
             let mut c = 0;
             loop {
-                if c == 30 || d.sample(&mut rand::thread_rng()) {
+                if c == 40 || d.sample(&mut rand::thread_rng()) {
                     break;
                 }
-                sleep_ms(100);
+                sleep += 100;
                 c += 1;
             }
+        }
+        if sleep > ellapsed {
+            sleep_ms((sleep - ellapsed) as u64);
         }
 
         let action = match tp {

@@ -160,14 +160,14 @@ impl Mahjongsoul {
         let ellapsed = start.elapsed().as_millis();
 
         let stg = self.get_stage();
-        let mut sleep = 500;
-        if self.random_sleep && tp != Ron && tp != Tsumo && (seat == stg.turn || tp != Nop) {
-            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(0.5 ~ 4.5秒)を取る
+        let mut sleep = 1000;
+        if self.random_sleep && seat == stg.turn && tp != Tsumo {
+            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(1 ~ 4秒)を取る
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
             let mut c = 0;
             loop {
-                if c == 40 || d.sample(&mut rand::thread_rng()) {
+                if c == 30 || d.sample(&mut rand::thread_rng()) {
                     break;
                 }
                 sleep += 100;

@@ -307,6 +307,7 @@ msc.Server = class {
         this.ws = null;
         this.timer = null;
         this.action_store = [];
+        this.retry_action = null;
 
         // syncGame
         this.sync = msc.inject_log("window.view.DesktopMgr.prototype.syncGameByStep");
@@ -417,6 +418,16 @@ msc.Server = class {
     op_eval(msg) {
         let res = eval(msg.data);
         this.send({ id: msg.id, type: "success", data: res || null });
+
+        // action実行後に5秒以内にmjactionが流れてこない場合、再度actionを実行
+        if (msg.data.startsWith("msc.ui.action_")) {
+            this.retry_action = setTimeout(() => {
+                if (!window.uiscript.UI_Lobby.Inst.enable) {
+                    eval(msg.data);
+                }
+                this.retry_action = null;
+            }, 5000);
+        }
     }
 
     op_subscribe(msg) {
@@ -449,6 +460,11 @@ msc.Server = class {
     }
 
     callback_mjaction(caller, action, fast) {
+        if (this.retry_action) {
+            clearTimeout(this.retry_action);
+            this.retry_action = null;
+        }
+
         let s = this.channel_settings.mjaction;
         let pm = net.ProtobufManager.lookupType("lq." + action.name);
         let data = {

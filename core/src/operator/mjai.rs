@@ -8,7 +8,6 @@ use serde_json::{json, Value};
 
 use super::*;
 use crate::hand::evaluate::WinContext;
-use crate::model::*;
 use crate::util::common::{sleep_ms, vec_remove};
 use crate::util::mjai_json::*;
 

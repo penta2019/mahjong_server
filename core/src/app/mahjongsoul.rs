@@ -3,12 +3,12 @@ use std::time;
 
 use serde_json::{json, Value};
 
-use crate::controller::operator::*;
 use crate::controller::stage_controller::StageController;
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
 use crate::operator::create_operator;
 use crate::operator::nop::Nop;
+use crate::operator::Operator;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
@@ -450,7 +450,7 @@ impl App {
             }
         }
 
-        let operator = create_operator(&operator_name, &vec![]);
+        let operator = create_operator(&operator_name);
         Self {
             game: Mahjongsoul::new(operator, need_write, sleep),
             wws_send_recv: create_ws_server(52001), // for Web-interface

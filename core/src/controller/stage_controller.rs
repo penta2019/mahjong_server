@@ -1,8 +1,8 @@
-use crate::controller::operator::Operator;
 use crate::controller::stage_listener::StageListener;
 use crate::hand::evaluate::WinContext;
 use crate::hand::win::*;
 use crate::model::*;
+use crate::operator::Operator;
 use crate::util::common::rank_by_rank_vec;
 
 use TileStateType::*;

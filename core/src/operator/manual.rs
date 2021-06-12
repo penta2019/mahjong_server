@@ -1,8 +1,6 @@
 use std::io::{stdout, Write};
 
-use crate::controller::operator::*;
-use crate::controller::stage_listener::StageListener;
-use crate::model::*;
+use super::*;
 
 #[derive(Clone)]
 pub struct Manual {}

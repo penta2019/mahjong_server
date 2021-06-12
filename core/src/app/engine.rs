@@ -1,7 +1,6 @@
 use rand::prelude::*;
 use serde_json::json;
 
-use crate::controller::operator::Operator;
 use crate::controller::stage_controller::StageController;
 use crate::controller::stage_listener::StageListener;
 use crate::controller::stage_printer::StagePrinter;
@@ -9,6 +8,7 @@ use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
 use crate::operator::create_operator;
+use crate::operator::Operator;
 use crate::util::common::*;
 use crate::util::ws_server::*;
 
@@ -1139,10 +1139,10 @@ impl App {
             initial_score: 25000,
         };
         let operators = [
-            create_operator(&self.names[0], &vec![]),
-            create_operator(&self.names[1], &vec![]),
-            create_operator(&self.names[2], &vec![]),
-            create_operator(&self.names[3], &vec![]),
+            create_operator(&self.names[0]),
+            create_operator(&self.names[1]),
+            create_operator(&self.names[2]),
+            create_operator(&self.names[3]),
         ];
         let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
         let mut game = MahjongEngine::new(config, operators, listeners);
@@ -1203,10 +1203,10 @@ impl App {
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
         let operators: [Box<dyn Operator>; 4] = [
-            create_operator(&self.names[0], &vec![]),
-            create_operator(&self.names[1], &vec![]),
-            create_operator(&self.names[2], &vec![]),
-            create_operator(&self.names[3], &vec![]),
+            create_operator(&self.names[0]),
+            create_operator(&self.names[1]),
+            create_operator(&self.names[2]),
+            create_operator(&self.names[3]),
         ];
 
         let mut total_score_delta = [0; SEAT];

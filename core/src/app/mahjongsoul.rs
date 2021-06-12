@@ -31,13 +31,13 @@ impl Mahjongsoul {
         // 新しい局が開始されて座席が判明した際にスワップする
         let nop = Box::new(Nop::new());
         let operators: [Box<dyn Operator>; SEAT] =
-            [operator, nop.clone(), nop.clone(), nop.clone()];
+            [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
         Self {
             ctrl: StageController::new(operators, vec![]),
             step: 0,
-            seat: 0,
+            seat: NO_SEAT,
             actions: vec![],
-            operator: nop,
+            operator: operator,
             need_write: need_write,
             random_sleep: random_sleep,
         }
@@ -68,9 +68,11 @@ impl Mahjongsoul {
         let data = &act["data"];
 
         if step == 0 {
-            self.ctrl.swap_operator(self.seat, &mut self.operator);
+            if self.seat != NO_SEAT {
+                self.ctrl.swap_operator(self.seat, &mut self.operator);
+                self.seat = NO_SEAT;
+            }
             self.step = 0;
-            self.seat = NO_SEAT;
             self.actions.clear();
         }
 
@@ -90,6 +92,7 @@ impl Mahjongsoul {
                 return None;
             }
 
+            // seatが確定し時点でoperatorを設定
             self.operator.set_seat(self.seat);
             self.ctrl.swap_operator(self.seat, &mut self.operator);
         }

@@ -2,15 +2,32 @@ use rand::Rng;
 
 use super::*;
 
+pub struct RandomDiscardBuilder;
+
+impl OperatorBuilder for RandomDiscardBuilder {
+    fn get_default_config(&self) -> Config {
+        Config {
+            name: "RandomDiscard".to_string(),
+            args: vec![],
+        }
+    }
+
+    fn create(&self, config: Config) -> Box<dyn Operator> {
+        Box::new(RandomDiscard::from_config(config))
+    }
+}
+
 #[derive(Clone)]
 pub struct RandomDiscard {
+    config: Config,
     rng: rand::rngs::StdRng,
 }
 
 impl RandomDiscard {
-    pub fn new(seed: u64) -> Self {
-        Self {
-            rng: rand::SeedableRng::seed_from_u64(seed),
+    pub fn from_config(config: Config) -> Self {
+        RandomDiscard {
+            config: config,
+            rng: rand::SeedableRng::seed_from_u64(0),
         }
     }
 }
@@ -42,8 +59,8 @@ impl Operator for RandomDiscard {
         }
     }
 
-    fn name(&self) -> String {
-        "RandomDiscard".to_string()
+    fn get_config(&self) -> &Config {
+        &self.config
     }
 }
 

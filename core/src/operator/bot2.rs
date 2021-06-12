@@ -1,12 +1,29 @@
 use super::*;
 use crate::util::parse_block::*;
 
+pub struct Bot2Builder;
+
+impl OperatorBuilder for Bot2Builder {
+    fn get_default_config(&self) -> Config {
+        Config {
+            name: "Bot2".to_string(),
+            args: vec![],
+        }
+    }
+
+    fn create(&self, config: Config) -> Box<dyn Operator> {
+        Box::new(Bot2::from_config(config))
+    }
+}
+
 #[derive(Clone)]
-pub struct Bot2 {}
+pub struct Bot2 {
+    config: Config,
+}
 
 impl Bot2 {
-    pub fn new() -> Self {
-        Self {}
+    pub fn from_config(config: Config) -> Self {
+        Self { config: config }
     }
 }
 
@@ -76,8 +93,8 @@ impl Operator for Bot2 {
         Op::nop()
     }
 
-    fn name(&self) -> String {
-        "Bot2".to_string()
+    fn get_config(&self) -> &Config {
+        &self.config
     }
 }
 

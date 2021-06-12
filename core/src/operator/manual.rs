@@ -2,12 +2,29 @@ use std::io::{stdout, Write};
 
 use super::*;
 
+pub struct ManualBuilder;
+
+impl OperatorBuilder for ManualBuilder {
+    fn get_default_config(&self) -> Config {
+        Config {
+            name: "Manual".to_string(),
+            args: vec![],
+        }
+    }
+
+    fn create(&self, config: Config) -> Box<dyn Operator> {
+        Box::new(Manual::from_config(config))
+    }
+}
+
 #[derive(Clone)]
-pub struct Manual {}
+pub struct Manual {
+    config: Config,
+}
 
 impl Manual {
-    pub fn new() -> Self {
-        Self {}
+    pub fn from_config(config: Config) -> Self {
+        Self { config: config }
     }
 }
 
@@ -99,8 +116,8 @@ impl Operator for Manual {
         }
     }
 
-    fn name(&self) -> String {
-        "Manual".to_string()
+    fn get_config(&self) -> &Config {
+        &self.config
     }
 }
 

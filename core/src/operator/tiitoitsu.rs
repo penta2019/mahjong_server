@@ -1,13 +1,30 @@
 use super::*;
 use crate::util::parse_block::*;
 
+pub struct TiitoitsuBotBuilder;
+
+impl OperatorBuilder for TiitoitsuBotBuilder {
+    fn get_default_config(&self) -> Config {
+        Config {
+            name: "TiitoitsuBot".to_string(),
+            args: vec![],
+        }
+    }
+
+    fn create(&self, config: Config) -> Box<dyn Operator> {
+        Box::new(TiitoitsuBot::from_config(config))
+    }
+}
+
 #[derive(Clone)]
-pub struct TiitoitsuBot {}
+pub struct TiitoitsuBot {
+    config: Config,
+}
 
 // 七対子Bot 試作
 impl TiitoitsuBot {
-    pub fn new() -> Self {
-        Self {}
+    pub fn from_config(config: Config) -> Self {
+        Self { config: config }
     }
 }
 
@@ -58,8 +75,8 @@ impl Operator for TiitoitsuBot {
         Op::nop()
     }
 
-    fn name(&self) -> String {
-        "TiitoitsuBot".to_string()
+    fn get_config(&self) -> &Config {
+        &self.config
     }
 }
 

@@ -10,6 +10,111 @@ use std::fmt;
 
 use crate::controller::stage_listener::StageListener;
 use crate::model::*;
+use crate::util::variant::*;
+
+#[derive(Clone)]
+pub struct Config {
+    name: String,
+    args: Vec<Arg>,
+}
+
+// impl Config {
+//     fn set_arg(&mut self, name: &str, value: Variant) {
+//         for a in &mut self.args {
+//             if &a.name == name {
+//                 a.value = value;
+//                 return;
+//             }
+//         }
+//         panic!("name not found: {}", name);
+//     }
+// }
+
+trait OperatorBuilder {
+    fn get_default_config(&self) -> Config;
+    fn create(&self, config: Config) -> Box<dyn Operator>;
+}
+
+pub fn create_operator(exp: &str) -> Box<dyn Operator> {
+    let builders: Vec<Box<dyn OperatorBuilder>> = vec![
+        Box::new(null::NullBuilder {}),
+        Box::new(nop::NopBuilder {}),
+        Box::new(random::RandomDiscardBuilder {}),
+        Box::new(manual::ManualBuilder {}),
+        Box::new(mjai::MjaiEndpointBuilder {}),
+        Box::new(tiitoitsu::TiitoitsuBotBuilder {}),
+        Box::new(bot2::Bot2Builder {}),
+    ];
+
+    let name: &str;
+    let args: Vec<&str>;
+    let paren_left = exp.find('(');
+    let paren_right = exp.rfind(')');
+    if paren_left.is_some() && paren_right.is_some() {
+        let l = paren_left.unwrap();
+        let r = paren_right.unwrap();
+        if r < l {
+            println!("[Error] Invalid parent: {}", exp);
+            std::process::exit(0);
+        }
+
+        args = exp[l + 1..r].split(',').collect();
+        name = &exp[..l];
+    } else {
+        args = vec![];
+        name = exp;
+    }
+
+    for b in &builders {
+        let mut conf = b.get_default_config();
+        if name == conf.name {
+            if conf.args.len() < args.len() {
+                println!(
+                    "expected {} arguments for {}. but {} arguments are provided.",
+                    conf.args.len(),
+                    name,
+                    args.len(),
+                );
+                std::process::exit(0);
+            }
+
+            let mut is_defalt = vec![true; conf.args.len()];
+            for (i, &a) in args.iter().enumerate() {
+                if a != "" {
+                    is_defalt[i] = false;
+                    conf.args[i].value = match parse_as(&conf.args[i].value, a) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            println!("[Error] {}: \"{}\"", e, a);
+                            std::process::exit(0);
+                        }
+                    };
+                }
+            }
+
+            let arg_str = conf
+                .args
+                .iter()
+                .map(|a| format!("{}={}", a.name, a.value))
+                .collect::<Vec<String>>()
+                .join(",");
+            println!("Operator: {}({})", conf.name, arg_str);
+            return b.create(conf);
+        }
+    }
+
+    println!("Unknown operator name: {}", name);
+    std::process::exit(0);
+}
+
+fn parse_as(target: &Variant, value: &str) -> Result<Variant, String> {
+    Ok(match target {
+        Variant::Int(_) => Variant::Int(value.parse::<i32>().map_err(|e| e.to_string())?),
+        Variant::Float(_) => Variant::Float(value.parse::<f32>().map_err(|e| e.to_string())?),
+        Variant::Bool(_) => Variant::Bool(value.parse::<bool>().map_err(|e| e.to_string())?),
+        Variant::String(_) => Variant::String(value.parse::<String>().map_err(|e| e.to_string())?),
+    })
+}
 
 // Operator trait
 pub trait Operator: StageListener + OperatorClone + Send {
@@ -20,12 +125,12 @@ pub trait Operator: StageListener + OperatorClone + Send {
         seat: Seat,
         operatons: &Vec<PlayerOperation>,
     ) -> PlayerOperation;
-    fn name(&self) -> String;
+    fn get_config(&self) -> &Config;
 }
 
 impl fmt::Debug for dyn Operator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name())
+        write!(f, "{}", self.get_config().name)
     }
 }
 
@@ -40,25 +145,5 @@ where
 {
     fn clone_box(&self) -> Box<dyn Operator> {
         Box::new(self.clone())
-    }
-}
-
-pub fn create_operator(name: &str) -> Box<dyn Operator> {
-    match name {
-        "" => {
-            println!("Operator name is not specified. Uses 'Nop' Operator");
-            Box::new(nop::Nop::new())
-        }
-        "Bot2" => Box::new(bot2::Bot2::new()),
-        "Manual" => Box::new(manual::Manual::new()),
-        "MjaiEndpoint" => Box::new(mjai::MjaiEndpoint::new("127.0.0.1:11601")),
-        // "Null" => Box::new(null::Null::new()),
-        "Nop" => Box::new(nop::Nop::new()),
-        "RandomDiscard" => Box::new(random::RandomDiscard::new(0)),
-        "TiitoitsuBot" => Box::new(tiitoitsu::TiitoitsuBot::new()),
-        _ => {
-            println!("Unknown operator name: {}", name);
-            std::process::exit(0);
-        }
     }
 }

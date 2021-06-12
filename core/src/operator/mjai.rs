@@ -11,9 +11,25 @@ use crate::hand::evaluate::WinContext;
 use crate::util::common::{sleep_ms, vec_remove};
 use crate::util::mjai_json::*;
 
+pub struct MjaiEndpointBuilder;
+
+impl OperatorBuilder for MjaiEndpointBuilder {
+    fn get_default_config(&self) -> Config {
+        Config {
+            name: "MjaiEndpoint".to_string(),
+            args: vec![Arg::string("addr", "127.0.0.1:11601")],
+        }
+    }
+
+    fn create(&self, config: Config) -> Box<dyn Operator> {
+        Box::new(MjaiEndpoint::from_config(config))
+    }
+}
+
 // MjaiEndpoint ===============================================================
 #[derive(Clone)]
 pub struct MjaiEndpoint {
+    config: Config,
     seat: usize,
     data: Arc<Mutex<SharedData>>,
     try_riichi: Option<Seat>,
@@ -21,14 +37,23 @@ pub struct MjaiEndpoint {
 }
 
 impl MjaiEndpoint {
-    pub fn new(addr: &str) -> Self {
+    // pub fn new(addr: &str) -> Self {
+    //     let mut cfg = (MjaiEndpointBuilder {}).get_default_config();
+    //     cfg.set_arg("addr", Variant::String(addr.to_string()));
+    //     Self::from_config(cfg)
+    // }
+
+    pub fn from_config(config: Config) -> Self {
         let data = Arc::new(Mutex::new(SharedData::new()));
         let obj = Self {
+            config: config,
             seat: NO_SEAT,
             data: data.clone(),
             try_riichi: None,
             is_new_game: false,
         };
+
+        let addr = obj.config.args[0].value.as_string();
         let listener = TcpListener::bind(addr).unwrap();
         println!("MjaiEndpoint: Listening on {}", addr);
 
@@ -142,8 +167,8 @@ impl Operator for MjaiEndpoint {
         }
     }
 
-    fn name(&self) -> String {
-        "MjaiEndpoint".to_string()
+    fn get_config(&self) -> &Config {
+        &self.config
     }
 }
 

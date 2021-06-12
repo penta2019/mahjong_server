@@ -1,11 +1,32 @@
 use super::*;
 
+pub struct NopBuilder;
+
+impl OperatorBuilder for NopBuilder {
+    fn get_default_config(&self) -> Config {
+        Config {
+            name: "Nop".to_string(),
+            args: vec![],
+        }
+    }
+
+    fn create(&self, config: Config) -> Box<dyn Operator> {
+        Box::new(Nop::from_config(config))
+    }
+}
+
 #[derive(Clone)]
-pub struct Nop {}
+pub struct Nop {
+    config: Config,
+}
 
 impl Nop {
     pub fn new() -> Self {
-        Nop {}
+        Self::from_config((NopBuilder {}).get_default_config())
+    }
+
+    pub fn from_config(config: Config) -> Self {
+        Nop { config: config }
     }
 }
 
@@ -19,8 +40,8 @@ impl Operator for Nop {
         Op::nop()
     }
 
-    fn name(&self) -> String {
-        "Nop".to_string()
+    fn get_config(&self) -> &Config {
+        &self.config
     }
 }
 

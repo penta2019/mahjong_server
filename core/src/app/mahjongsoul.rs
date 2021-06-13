@@ -74,6 +74,9 @@ impl Mahjongsoul {
             }
             self.step = 0;
             self.actions.clear();
+            if !is_cache {
+                sleep_ms(3000);
+            }
         }
 
         self.actions.push(act.clone());
@@ -124,12 +127,6 @@ impl Mahjongsoul {
                 if operation != &json!(null) {
                     // self.ctrl.handle_operationはstageを更新した直後sleepを挟まずに実行する必要がる
                     op = self.handle_operation(operation);
-                }
-
-                match as_str(name) {
-                    // "ActionMJStart" => sleep_ms(3000),
-                    "ActionNewRound" => sleep_ms(3000),
-                    _ => {}
                 }
             }
         }

@@ -260,7 +260,7 @@ impl StageController {
         op!(self, notify_op_discardtile, seat, tile, is_drawn, is_riichi);
     }
 
-    pub fn op_chiiponkan(
+    pub fn op_chiponkan(
         &mut self,
         seat: Seat,
         meld_type: MeldType,
@@ -306,7 +306,7 @@ impl StageController {
 
         stg.players[s].melds.push(m);
 
-        op!(self, notify_op_chiiponkan, seat, meld_type, tiles, froms);
+        op!(self, notify_op_chiponkan, seat, meld_type, tiles, froms);
     }
 
     pub fn op_ankankakan(&mut self, seat: Seat, meld_type: MeldType, tile: Tile) {

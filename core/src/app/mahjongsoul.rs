@@ -340,7 +340,7 @@ impl Mahjongsoul {
             froms.push(as_usize(f));
         }
 
-        self.ctrl.op_chiiponkan(s, tp, &tiles, &froms);
+        self.ctrl.op_chiponkan(s, tp, &tiles, &froms);
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -636,7 +636,7 @@ fn json_parse_operation(v: &Value) -> (Vec<PlayerOperation>, Vec<Index>) {
             2 => {
                 // チー
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::chii(comb.clone()), idx);
+                    push(Op::chi(comb.clone()), idx);
                 }
             }
             3 => {

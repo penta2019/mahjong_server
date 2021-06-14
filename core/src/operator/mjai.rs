@@ -235,7 +235,7 @@ impl StageListener for MjaiEndpoint {
         }
     }
 
-    fn notify_op_chiiponkan(
+    fn notify_op_chiponkan(
         &mut self,
         stage: &Stage,
         seat: Seat,

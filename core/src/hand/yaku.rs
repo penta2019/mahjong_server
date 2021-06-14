@@ -38,7 +38,7 @@ impl YakuContext {
         let counts = count_type(&parsed_hand);
         let iipeikou_count = count_iipeikou(&parsed_hand);
         let yakuhai_check = check_yakuhai(&parsed_hand);
-        let is_open = counts.chii + counts.pon + counts.minkan != 0;
+        let is_open = counts.chi + counts.pon + counts.minkan != 0;
 
         Self {
             hand,
@@ -172,11 +172,11 @@ struct Counts {
     pair: usize,
     shuntsu: usize,
     koutsu: usize,
-    chii: usize,
+    chi: usize,
     pon: usize,
     minkan: usize,
     ankan: usize,
-    shuntsu_total: usize, // shuntu + chii
+    shuntsu_total: usize, // shuntu + chi
     koutsu_total: usize,  // koutsu + pon + minkan + ankan
     ankou_total: usize,   // koutsu + ankan
     kantsu_total: usize,  // minkan + ankan
@@ -215,7 +215,7 @@ fn count_type(ph: &ParsedHand) -> Counts {
             Pair => cnt.pair += 1,
             Shuntsu => cnt.shuntsu += 1,
             Koutsu => cnt.koutsu += 1,
-            Chii => cnt.chii += 1,
+            Chii => cnt.chi += 1,
             Pon => cnt.pon += 1,
             Minkan => cnt.minkan += 1,
             Ankan => cnt.ankan += 1,
@@ -226,7 +226,7 @@ fn count_type(ph: &ParsedHand) -> Counts {
             cnt.nis[t.1] += 1;
         }
     }
-    cnt.shuntsu_total = cnt.shuntsu + cnt.chii;
+    cnt.shuntsu_total = cnt.shuntsu + cnt.chi;
     cnt.koutsu_total = cnt.koutsu + cnt.pon + cnt.minkan + cnt.ankan;
     cnt.ankou_total = cnt.koutsu + cnt.ankan;
     cnt.kantsu_total = cnt.minkan + cnt.ankan;

@@ -299,7 +299,7 @@ impl MahjongEngine {
         }
         // 暗槓,加槓,四槓散了に対して他家はロン以外の操作は行えない
         if self.melding == None && !self.is_suukansanra {
-            for (s, op) in check_chii(stg) {
+            for (s, op) in check_chi(stg) {
                 ops_list[s].push(op);
             }
             for (s, op) in check_pon(stg) {
@@ -318,7 +318,7 @@ impl MahjongEngine {
         let mut rons = vec![];
         let mut minkan: Meld = None;
         let mut pon: Meld = None;
-        let mut chii: Meld = None;
+        let mut chi: Meld = None;
         for s in 0..SEAT {
             let ops = &ops_list[s];
             if s == turn || ops.len() == 1 {
@@ -328,7 +328,7 @@ impl MahjongEngine {
             // calc_operation_index(&ops, &op); // opがops内に存在することを確認
             match op.0 {
                 Nop => {}
-                Chii => chii = Some((s, op)),
+                Chii => chi = Some((s, op)),
                 Pon => pon = Some((s, op)),
                 Minkan => minkan = Some((s, op)),
                 Ron => rons.push(s),
@@ -344,20 +344,20 @@ impl MahjongEngine {
             let cs = &op.1;
             let tiles = vec![d, cs[0], cs[1], cs[2]];
             let froms = vec![turn, s, s, s];
-            self.ctrl.op_chiiponkan(s, MeldType::Minkan, &tiles, &froms);
+            self.ctrl.op_chiponkan(s, MeldType::Minkan, &tiles, &froms);
             self.melding = Some(op);
         } else if let Some((s, op)) = pon {
             // PonをChiiより優先して処理
             let cs = &op.1;
             let tiles = vec![d, cs[0], cs[1]];
             let froms = vec![turn, s, s];
-            self.ctrl.op_chiiponkan(s, MeldType::Pon, &tiles, &froms);
+            self.ctrl.op_chiponkan(s, MeldType::Pon, &tiles, &froms);
             self.melding = Some(op);
-        } else if let Some((s, op)) = chii {
+        } else if let Some((s, op)) = chi {
             let cs = &op.1;
             let tiles = vec![d, cs[0], cs[1]];
             let froms = vec![turn, s, s];
-            self.ctrl.op_chiiponkan(s, MeldType::Chii, &tiles, &froms);
+            self.ctrl.op_chiponkan(s, MeldType::Chii, &tiles, &froms);
             self.melding = Some(op);
         }
 
@@ -851,7 +851,7 @@ fn check_kita(stg: &Stage) -> Vec<PlayerOperation> {
 // fn(&Stage) -> Vec<(Seat, PlayerOperation)>
 // ロン以外の返り値のリストは要素が2つ以上になることはないが一貫性のためVecを返却する
 
-fn check_chii(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
+fn check_chi(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     if stg.left_tile_count == 0 {
         return vec![];
     }
@@ -913,7 +913,7 @@ fn check_chii(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     let mut ops = vec![];
     for pair in check {
         if h[pair.0] > 0 && h[pair.1] > 0 {
-            ops.push((s, Op::chii(vec![Tile(d.0, pair.0), Tile(d.0, pair.1)])));
+            ops.push((s, Op::chi(vec![Tile(d.0, pair.0), Tile(d.0, pair.1)])));
         }
     }
 

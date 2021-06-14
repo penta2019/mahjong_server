@@ -228,7 +228,7 @@ discards:  s7 p1
 
 [Call Operation] select operation
 0 => PlayerOperation(Nop, [])
-1 => PlayerOperation(Chii, [Tile(1, 4), Tile(1, 5)])
+1 => PlayerOperation(Chi, [Tile(1, 4), Tile(1, 5)])
 > 1
 ```
 
@@ -244,7 +244,7 @@ discards:  s7 p1
 pub enum PlayerOperation {
     Nop,           // キャンセル (鳴き,ロンのスキップ)
     Discard,       // 打牌 (配列はチー後に捨てることができない牌)
-    Chii,          // チー (配列は鳴きが可能な組み合わせ 以下同様)
+    Chi,          // チー (配列は鳴きが可能な組み合わせ 以下同様)
     Pon,           // ポン
     Ankan,         // 暗槓
     Minkan,        // 明槓

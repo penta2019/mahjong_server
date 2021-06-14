@@ -32,7 +32,7 @@ pub trait StageListener: Send {
     ) {
     }
 
-    fn notify_op_chiiponkan(
+    fn notify_op_chiponkan(
         &mut self,
         _stage: &Stage,
         _seat: Seat,

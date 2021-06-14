@@ -481,7 +481,7 @@ impl MjaiAction {
                     Op::discard(from_mjai_tile(&act.pai))
                 }
             }
-            MjaiAction::Chi(act) => Op::chii(vec_from_mjai_tile(&act.consumed)),
+            MjaiAction::Chi(act) => Op::chi(vec_from_mjai_tile(&act.consumed)),
             MjaiAction::Pon(act) => Op::pon(vec_from_mjai_tile(&act.consumed)),
             MjaiAction::Kakan(act) => Op::kakan(from_mjai_tile(&act.pai)),
             MjaiAction::Daiminkan(act) => Op::minkan(vec_from_mjai_tile(&act.consumed)),

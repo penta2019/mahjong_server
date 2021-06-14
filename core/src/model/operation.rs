@@ -63,7 +63,7 @@ impl PlayerOperation {
         Self(OpType::Kita, vec![Tile(TZ, WN)])
     }
     #[inline]
-    pub fn chii(mut v: Vec<Tile>) -> Self {
+    pub fn chi(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
         v.sort();
         Self(OpType::Chii, v)

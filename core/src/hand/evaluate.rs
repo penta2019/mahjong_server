@@ -137,7 +137,7 @@ pub fn evaluate_hand(
     melds: &Vec<Meld>,     // 鳴き
     doras: &Vec<Tile>,     // ドラ表示牌 (注:ドラそのものではない)
     ura_doras: &Vec<Tile>, // 裏ドラ表示牌 リーチしていない場合は空
-    winning_tile: Tile,    // 上がり牌
+    win_tile: Tile,        // 上がり牌
     is_self_drawn: bool,   // ツモ和了
     is_leader: bool,       // 親番
     prevalent_wind: Tnum,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
@@ -153,7 +153,7 @@ pub fn evaluate_hand(
         let ctx = YakuContext::new(
             hand.clone(),
             ph,
-            winning_tile,
+            win_tile,
             prevalent_wind,
             seat_wind,
             is_self_drawn,
@@ -167,7 +167,7 @@ pub fn evaluate_hand(
         let ctx = YakuContext::new(
             hand.clone(),
             ph,
-            winning_tile,
+            win_tile,
             prevalent_wind,
             seat_wind,
             is_self_drawn,
@@ -181,7 +181,7 @@ pub fn evaluate_hand(
         let ctx = YakuContext::new(
             hand.clone(),
             ph,
-            winning_tile,
+            win_tile,
             prevalent_wind,
             seat_wind,
             is_self_drawn,

@@ -206,7 +206,7 @@ Discardに渡されるリストは鳴きの後に捨てることが出来ない�
 * 打牌: p1(1筒)を捨てる
 ```
 seat: 0, score: 25000, riichi: None, kita: 0, drawn: s3
-furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
+furiten: false, furiten_other: false, rinshan: false, win_tiles: []
 hand:  m1 m3 m4 m6 m8 p1 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
 discards:  s7
@@ -221,7 +221,7 @@ discards:  s7
 * 鳴き: 上家が捨てたp3をp4,p5でチー
 ```
 seat: 0, score: 25000, riichi: None, kita: 0, drawn: None
-furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
+furiten: false, furiten_other: false, rinshan: false, win_tiles: []
 hand:  m1 m3 m4 m6 m8 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
 discards:  s7 p1

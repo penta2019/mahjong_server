@@ -247,8 +247,8 @@ impl StageController {
                         }
                     }
                 }
-                pl.winning_tiles = dedup;
-            } else if pl.winning_tiles.contains(&t) {
+                pl.win_tiles = dedup;
+            } else if pl.win_tiles.contains(&t) {
                 // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
                 pl.is_furiten = true;
             }
@@ -506,7 +506,7 @@ fn update_after_discard_completed(stg: &mut Stage) {
         if tp == OpType::Discard || tp == OpType::Kakan {
             for s2 in 0..SEAT {
                 if s2 != s {
-                    if stg.players[s2].winning_tiles.contains(&t) {
+                    if stg.players[s2].win_tiles.contains(&t) {
                         stg.players[s2].is_furiten_other = true;
                     }
                 }

@@ -1,7 +1,7 @@
 use crate::model::*;
 
 use super::parse::*;
-use super::score::*;
+use super::point::*;
 use super::yaku::*;
 
 #[derive(Debug)]

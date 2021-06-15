@@ -285,7 +285,7 @@ pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
 // この関数群は手牌の赤5を考慮する
 
 // 通常形
-pub fn calc_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+pub fn calc_discards_to_normal_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut res = vec![];
     let mut hand = hand.clone();
     for ti in 0..TYPE {
@@ -305,7 +305,7 @@ pub fn calc_discards_to_normal_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)>
 }
 
 // 七対子
-pub fn calc_discards_to_chiitoitsu_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+pub fn calc_discards_to_chiitoitsu_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut v1 = vec![]; // 一枚の牌
     let mut v2 = vec![]; // 二枚の牌 (完成対子)
     let mut v3 = vec![]; // 三枚の牌
@@ -362,7 +362,7 @@ pub fn calc_discards_to_chiitoitsu_ready(hand: &TileTable) -> Vec<(Tile, Vec<Til
 }
 
 // 国士無双
-pub fn calc_discards_to_kokushimusou_ready(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+pub fn calc_discards_to_kokushimusou_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut n_end = 0;
     for ti in 0..TZ {
         if hand[ti][1] > 0 {

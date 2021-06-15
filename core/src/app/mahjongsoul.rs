@@ -407,12 +407,12 @@ impl Mahjongsoul {
             }
         }
 
-        let mut is_ready = [false; SEAT];
+        let mut is_tenpai = [false; SEAT];
         for (s, player) in as_enumerate(&data["players"]) {
-            is_ready[s] = as_bool(&player["tingpai"]);
+            is_tenpai[s] = as_bool(&player["tingpai"]);
         }
 
-        self.ctrl.op_roundend_notile(&is_ready, &delta_scores);
+        self.ctrl.op_roundend_notile(&is_tenpai, &delta_scores);
         self.write_to_file();
     }
 }

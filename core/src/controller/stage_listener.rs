@@ -68,7 +68,7 @@ pub trait StageListener: Send {
     fn notify_op_roundend_notile(
         &mut self,
         _stage: &Stage,
-        _is_ready: &[bool; SEAT],
+        _is_tenpai: &[bool; SEAT],
         _points: &[Point; SEAT],
     ) {
     }

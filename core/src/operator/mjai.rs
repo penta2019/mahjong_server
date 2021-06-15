@@ -296,12 +296,12 @@ impl StageListener for MjaiEndpoint {
     fn notify_op_roundend_notile(
         &mut self,
         stage: &Stage,
-        is_ready: &[bool; SEAT],
+        is_tenpai: &[bool; SEAT],
         points: &[Point; SEAT],
     ) {
         self.add_record(mjai_ryukyoku(
             DrawType::Kouhaiheikyoku,
-            is_ready,
+            is_tenpai,
             points,
             &stage.get_scores(),
         ))

@@ -505,20 +505,20 @@ impl MahjongEngine {
                 match draw_type {
                     DrawType::Kouhaiheikyoku => {
                         // 聴牌集計
-                        let mut is_ready = [false; SEAT];
-                        let mut n_ready = 0;
+                        let mut is_tenpai = [false; SEAT];
+                        let mut n_tenpai = 0;
                         for s in 0..SEAT {
                             let h = &stg.players[s].hand;
-                            is_ready[s] = !calc_tiles_to_normal_win(h).is_empty()
+                            is_tenpai[s] = !calc_tiles_to_normal_win(h).is_empty()
                                 || !calc_tiles_to_chiitoitsu_win(h).is_empty()
                                 || !calc_tiles_to_kokushimusou_win(h).is_empty();
-                            if is_ready[s] {
-                                n_ready += 1;
+                            if is_tenpai[s] {
+                                n_tenpai += 1;
                             }
                         }
 
                         // 流局時の聴牌人数による得点変動
-                        let (pay, recv) = match n_ready {
+                        let (pay, recv) = match n_tenpai {
                             0 => (0, 0), // 全員ノーテン
                             1 => (1000, 3000),
                             2 => (1500, 1500),
@@ -530,11 +530,11 @@ impl MahjongEngine {
                         // プレイヤーごとの得点変動
                         let mut d_scores = [0; SEAT];
                         for s in 0..SEAT {
-                            d_scores[s] = if is_ready[s] { recv } else { -pay };
+                            d_scores[s] = if is_tenpai[s] { recv } else { -pay };
                         }
 
-                        self.ctrl.op_roundend_notile(&is_ready, &d_scores);
-                        need_leader_change = !is_ready[kyoku];
+                        self.ctrl.op_roundend_notile(&is_tenpai, &d_scores);
+                        need_leader_change = !is_tenpai[kyoku];
                     }
                     _ => {
                         self.ctrl.op_roundend_draw(*draw_type);
@@ -696,9 +696,9 @@ fn check_riichi(stg: &Stage) -> Vec<PlayerOperation> {
 
     let mut ops = vec![];
     let mut f = TileTable::default();
-    let ds1 = calc_discards_to_normal_ready(&pl.hand);
-    let ds2 = calc_discards_to_chiitoitsu_ready(&pl.hand);
-    let ds3 = calc_discards_to_kokushimusou_ready(&pl.hand);
+    let ds1 = calc_discards_to_normal_tenpai(&pl.hand);
+    let ds2 = calc_discards_to_chiitoitsu_tenpai(&pl.hand);
+    let ds3 = calc_discards_to_kokushimusou_tenpai(&pl.hand);
     for ds in &[ds1, ds2, ds3] {
         for &(d, _) in ds {
             if f[d.0][d.1] == 0 {

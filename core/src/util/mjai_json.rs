@@ -195,7 +195,7 @@ pub fn mjai_hora(
 
 pub fn mjai_ryukyoku(
     draw_type: DrawType,
-    is_ready: &[bool; SEAT],
+    is_tenpai: &[bool; SEAT],
     deltas: &[Point; SEAT],
     scores: &[Score; SEAT],
 ) -> Value {
@@ -207,7 +207,7 @@ pub fn mjai_ryukyoku(
         "type": "ryukyoku",
         "reason": type_, // TODO
         "tehais": [], // TODO
-        "tenpais": is_ready,
+        "tenpais": is_tenpai,
         "deltas": deltas,
         "scores": scores,
     })

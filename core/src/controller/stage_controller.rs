@@ -435,12 +435,12 @@ impl StageController {
         op!(self, notify_op_roundend_draw, draw_type);
     }
 
-    pub fn op_roundend_notile(&mut self, is_ready: &[bool; SEAT], points: &[Point; SEAT]) {
+    pub fn op_roundend_notile(&mut self, is_tenpai: &[bool; SEAT], points: &[Point; SEAT]) {
         let stg = &mut self.stage;
         stg.step += 1;
         update_scores(stg, &points);
 
-        op!(self, notify_op_roundend_notile, is_ready, points);
+        op!(self, notify_op_roundend_notile, is_tenpai, points);
     }
 
     pub fn op_game_over(&mut self) {

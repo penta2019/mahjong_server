@@ -63,11 +63,11 @@ impl StageListener for StagePrinter {
     fn notify_op_roundend_notile(
         &mut self,
         stage: &Stage,
-        is_ready: &[bool; SEAT],
+        is_tenpai: &[bool; SEAT],
         points: &[Point; SEAT],
     ) {
         println!("[ROUNDEND NOTILE]");
-        println!("is_ready: {:?}", is_ready);
+        println!("is_tenpai: {:?}", is_tenpai);
         self.print_score_change(&stage, &points);
         println!("{}", stage);
     }

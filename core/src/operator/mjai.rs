@@ -374,7 +374,7 @@ fn stream_handler(
             }
             let send_start_game = d.send_start_game;
             if cursor == 0 && (send_start_game || need_start_game) {
-                // start_game 新しい試合が始まった場合、またはクライアントの再接続時に送信
+                // start_game 新しい試合が始まった場合,またはクライアントの再接続時に送信
                 need_start_game = false;
                 d.send_start_game = false;
                 send(&mjai_start_game(d.seat))?;
@@ -395,7 +395,7 @@ fn stream_handler(
 
             let mut d = data.lock().unwrap();
             if d.possible_actions != json!(null) && cursor + 1 == d.record.len() {
-                // possible_actionsが存在する場合、送信用のjsonオブジェクトを生成して追加
+                // possible_actionsが存在する場合,送信用のjsonオブジェクトを生成して追加
                 let mut record = d.record[cursor].clone();
                 record["possible_actions"] = d.possible_actions.clone();
                 d.possible_actions = json!(null);

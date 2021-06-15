@@ -11,7 +11,7 @@ pub struct Player {
     pub kitas: Vec<Kita>,       // 北抜き vecの中身はすべてTile(TZ, TN)
     pub riichi: Option<Index>,  // リーチ宣言牌のdiscardsにおけるindex
     pub discards: Vec<Discard>, // 捨て牌一覧
-    pub is_shown: bool,         // 手牌が見えるかどうか 見えない場合、手牌はすべてz8(=unknown)
+    pub is_shown: bool,         // 手牌が見えるかどうか 見えない場合,手牌はすべてz8(=unknown)
     pub rank: usize,            // 現在の順位
 
     // 聴牌

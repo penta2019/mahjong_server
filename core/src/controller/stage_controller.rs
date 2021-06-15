@@ -488,7 +488,7 @@ fn player_dec_tile(stg: &mut Stage, tile: Tile) {
         h[t.0][5] -= 1;
     }
 
-    // 5がすべて手牌からなくなた時、赤5フラグをクリア(暗槓用)
+    // 5がすべて手牌からなくなた時,赤5フラグをクリア(暗槓用)
     if t.is_suit() && h[t.0][5] == 0 {
         h[t.0][0] = 0;
     }
@@ -501,7 +501,7 @@ fn disable_ippatsu(stg: &mut Stage) {
 }
 
 fn update_after_discard_completed(stg: &mut Stage) {
-    // 他のプレイヤーの捨て牌、または加槓した牌の見逃しフリテン
+    // 他のプレイヤーの捨て牌,または加槓した牌の見逃しフリテン
     if let Some((s, tp, t)) = stg.last_tile {
         if tp == OpType::Discard || tp == OpType::Kakan {
             for s2 in 0..SEAT {

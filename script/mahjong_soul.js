@@ -178,7 +178,7 @@ msc.UiController = class {
         }, 500);
     }
 
-    // action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
+    // action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる.
     //     let leftmost_pai = { x: 265, y: 980 };
     //     let pai_interval = (1405 - 265) / 12;
     //     let pos = {
@@ -188,7 +188,7 @@ msc.UiController = class {
     //     this.mouse_click(pos);
     // }
 
-    action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる。
+    action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる.
         let vp = window.view.ViewPlayer_Me.Inst;
         vp.setChoosePai(vp.hand[n]);
         vp.DoDiscardTile();
@@ -419,7 +419,7 @@ msc.Server = class {
         let res = eval(msg.data);
         this.send({ id: msg.id, type: "success", data: res || null });
 
-        // action実行後に5秒以内にmjactionが流れてこない場合、再度actionを実行
+        // action実行後に5秒以内にmjactionが流れてこない場合,再度actionを実行
         if (msg.data.startsWith("msc.ui.action_")) {
             this.retry_action = setTimeout(() => {
                 if (!window.uiscript.UI_Lobby.Inst.enable) {

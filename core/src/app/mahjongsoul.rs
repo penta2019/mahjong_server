@@ -162,7 +162,7 @@ impl Mahjongsoul {
         let stg = self.get_stage();
         let mut sleep = 1000;
         if self.random_sleep && seat == stg.turn && tp != Tsumo {
-            // ツモ・ロン・鳴きのキャンセル以外の操作の場合、ランダムにsleep時間(1 ~ 4秒)を取る
+            // ツモ・ロン・鳴きのキャンセル以外の操作の場合,ランダムにsleep時間(1 ~ 4秒)を取る
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
             let mut c = 0;
@@ -387,7 +387,7 @@ impl Mahjongsoul {
                 ),
             };
             wins.push((seat, delta_scores.clone(), ctx));
-            delta_scores = [0; SEAT]; // ダブロン、トリロンの場合の内訳は不明なので最初の和了に集約
+            delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
         self.ctrl.op_roundend_win(&vec![], &wins);
         self.write_to_file();

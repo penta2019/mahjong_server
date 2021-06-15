@@ -16,7 +16,7 @@ pub enum SetPairType {
     Ankan,   // 暗槓
 }
 
-// Tileは順子、チーの場合は先頭の牌
+// Tileは順子,チーの場合は先頭の牌
 #[derive(Debug, Clone, Copy)]
 pub struct SetPair(pub SetPairType, pub Tile);
 

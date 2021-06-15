@@ -129,9 +129,9 @@ pub fn evaluate_hand_ron(
     None
 }
 
-// 和了形である場合、最も高得点となるような役の組み合わせのSome(Result)を返却
-// 和了形でない場合、Noneを返却
-// 和了形でも無役の場合はResultの中身がyaku: [], points(0, 0, 0)となる。
+// 和了形である場合,最も高得点となるような役の組み合わせのSome(Result)を返却
+// 和了形でない場合,Noneを返却
+// 和了形でも無役の場合はResultの中身がyaku: [], points(0, 0, 0)となる.
 pub fn evaluate_hand(
     hand: &TileTable,      // 手牌(鳴き以外)
     melds: &Vec<Meld>,     // 鳴き

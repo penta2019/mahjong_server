@@ -61,8 +61,8 @@ pub fn calc_pair_candidate_index(tr: &TileRow) -> Vec<Tnum> {
     return pairs;
 }
 
-// 牌種が完成面子+雀頭のみで構成されている場合、雀頭のリストを返す。
-// 基本的に1つだが、3113、3111113のような形の場合2つ
+// 牌種が完成面子+雀頭のみで構成されている場合,雀頭のリストを返す.
+// 基本的に1つだが,3113,3111113のような形の場合2つ
 pub fn calc_pair_candidate(tr: &TileRow, ti: usize) -> Vec<Tile> {
     // 雀頭候補それぞれについて外してみた結果が完成面子になっているかをチェック
     let mut tr = tr.clone();
@@ -81,7 +81,7 @@ pub fn calc_pair_candidate(tr: &TileRow, ti: usize) -> Vec<Tile> {
     res
 }
 
-// 14 - (副露数) * 3 枚の手牌において和了形である場合、雀頭候補のリストを返却
+// 14 - (副露数) * 3 枚の手牌において和了形である場合,雀頭候補のリストを返却
 pub fn calc_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
     let (mods, cnts) = calc_mods_cnts(hand);
     let mut res = vec![];

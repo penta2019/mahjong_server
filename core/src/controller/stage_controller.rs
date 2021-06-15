@@ -159,7 +159,7 @@ impl StageController {
         let stg = &mut self.stage;
         let s = seat;
         let mut t = tile;
-        let riichi_no_meld = is_riichi && stg.players.iter().all(|pl| pl.melds.is_empty());
+        let no_meld = stg.players.iter().all(|pl| pl.melds.is_empty());
 
         stg.step += 1;
         stg.turn = s;
@@ -191,7 +191,7 @@ impl StageController {
             pl.riichi = Some(pl.discards.len());
             pl.is_riichi = true;
             pl.is_ippatsu = true;
-            if pl.discards.is_empty() && riichi_no_meld {
+            if is_riichi && no_meld && pl.discards.is_empty() {
                 pl.is_daburii = true;
             }
             stg.last_riichi = Some(s);

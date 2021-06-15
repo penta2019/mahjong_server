@@ -69,10 +69,7 @@ pub fn cartesian_product<'a, T>(vv: &'a Vec<Vec<T>>) -> Vec<Vec<&'a T>> {
 // 最も数字の大きい値のindexから順に格納した配列を返却
 // 同じ値が複数ある場合, 先に入っていた要素のindexが先になる
 pub fn rank_by_index_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
-    let mut i_n = vec![];
-    for e in v.iter().enumerate() {
-        i_n.push(e);
-    }
+    let mut i_n: Vec<(usize, &T)> = v.iter().enumerate().collect();
     i_n.sort_by(|a, b| {
         if a.1 != b.1 {
             b.1.cmp(a.1)
@@ -80,15 +77,14 @@ pub fn rank_by_index_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
             a.0.cmp(&b.0)
         }
     });
-
     i_n.iter().map(|e| e.0).collect()
 }
 
 // 値が大きい順に並べた時に各要素が何番目であるかを示す配列を返却
 pub fn rank_by_rank_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
     let mut res = vec![0; v.len()];
-    for e in rank_by_index_vec(v).iter().enumerate() {
-        res[*e.1] = e.0;
+    for (r, &i) in rank_by_index_vec(v).iter().enumerate() {
+        res[i] = r;
     }
     res
 }

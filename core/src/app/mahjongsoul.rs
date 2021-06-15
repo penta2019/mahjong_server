@@ -369,13 +369,17 @@ impl Mahjongsoul {
         let mut wins = vec![];
         for win in as_array(&data["hules"]) {
             let seat = as_usize(&win["seat"]);
+            let count = as_usize(&win["count"]);
+            let is_yakuman = as_bool(&win["yiman"]);
+            let fan = if is_yakuman { 0 } else { count };
+            let yakuman_times = if is_yakuman { count } else { 0 };
             let ctx = WinContext {
                 yaku: vec![],  // TODO
                 n_dora: 0,     // TODO
                 n_ura_dora: 0, // TODO
                 fu: as_usize(&win["fu"]),
-                fan_mag: as_usize(&win["count"]),
-                is_yakuman: as_bool(&win["yiman"]),
+                fan: fan,
+                yakuman_times: yakuman_times,
                 points: (
                     as_i32(&win["point_rong"]),
                     as_i32(&win["point_zimo_xian"]),

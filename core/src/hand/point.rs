@@ -106,18 +106,18 @@ pub fn get_points_non_leader_yakuman(mag: usize) -> Points {
     (s, s / 4, s / 2)
 }
 
-pub fn get_points(is_leader: bool, is_yakuman: bool, fu: usize, fan_mag: usize) -> Points {
+pub fn get_points(is_leader: bool, fu: usize, fan: usize, yakuman_times: usize) -> Points {
     if is_leader {
-        if is_yakuman {
-            get_points_leader_yakuman(fan_mag)
+        if yakuman_times > 0 {
+            get_points_leader_yakuman(yakuman_times)
         } else {
-            get_points_leader(fu, fan_mag)
+            get_points_leader(fu, fan)
         }
     } else {
-        if is_yakuman {
-            get_points_non_leader_yakuman(fan_mag)
+        if yakuman_times > 0 {
+            get_points_non_leader_yakuman(yakuman_times)
         } else {
-            get_points_non_leader(fu, fan_mag)
+            get_points_non_leader(fu, fan)
         }
     }
 }

@@ -10,8 +10,8 @@ pub struct WinContext {
     pub n_dora: usize,            // ドラの数(裏ドラは含まない)
     pub n_ura_dora: usize,        // 裏ドラの数
     pub fu: usize,                // 符数
-    pub fan_mag: usize,           // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
-    pub is_yakuman: bool,         // 役満かどうか
+    pub fan: usize,               // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
+    pub yakuman_times: usize,     // 役満かどうか
     pub points: Points,           // 支払い得点
 }
 
@@ -212,14 +212,14 @@ pub fn evaluate_hand(
     };
 
     let mut results = vec![];
-    for (fu, (yaku, is_yakuman, mut fan_mag)) in wins {
-        if !is_yakuman {
-            fan_mag += n_dora + n_ura_dora;
+    for (fu, (yaku, mut fan, yakuman_times)) in wins {
+        if yakuman_times == 0 {
+            fan += n_dora + n_ura_dora;
         }
         let points = if yaku.is_empty() {
             (0, 0, 0) // 役無し
         } else {
-            get_points(is_leader, is_yakuman, fu, fan_mag)
+            get_points(is_leader, fu, fan, yakuman_times)
         };
 
         results.push(WinContext {
@@ -227,8 +227,8 @@ pub fn evaluate_hand(
             n_dora,
             n_ura_dora,
             fu,
-            fan_mag,
-            is_yakuman,
+            fan,
+            yakuman_times,
             points,
         });
     }

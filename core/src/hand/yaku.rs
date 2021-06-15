@@ -56,8 +56,8 @@ impl YakuContext {
         }
     }
 
-    // (役一覧, 役満かどうか, 翻数または役満倍数)を返却
-    pub fn calc_yaku(&self) -> (Vec<&'static Yaku>, bool, usize) {
+    // (役一覧, 翻数, 役満倍数)を返却. 役満ではない場合,役満倍率は0
+    pub fn calc_yaku(&self) -> (Vec<&'static Yaku>, usize, usize) {
         let mut yaku = vec![];
         for y in YAKU_LIST {
             if (y.func)(&self) {
@@ -77,7 +77,7 @@ impl YakuContext {
             for y in &yakuman {
                 m += y.fan_close - 12;
             }
-            (yakuman, true, m) // 役満が含まれている場合、役満以上の役のみを返却
+            (yakuman, 0, m) // 役満が含まれている場合,役満以上の役のみを返却
         } else {
             let mut m = 0;
             for y in &yaku {
@@ -87,7 +87,7 @@ impl YakuContext {
                     y.fan_close
                 };
             }
-            (yaku, false, m) // 役満を含んでいない場合
+            (yaku, m, 0) // 役満を含んでいない場合
         }
     }
 

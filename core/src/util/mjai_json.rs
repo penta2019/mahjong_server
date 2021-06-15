@@ -186,7 +186,7 @@ pub fn mjai_hora(
         "hora_tehais": [], // TODO
         "yakus": [], // TODO
         "fu": context.fu,
-        "fan": context.fan_mag,
+        "fan": context.fan,
         "hora_points": context.points.0,
         "deltas": deltas,
         "scores": scores,

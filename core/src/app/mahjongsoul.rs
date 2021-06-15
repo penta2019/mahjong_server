@@ -376,10 +376,10 @@ impl Mahjongsoul {
                 fu: as_usize(&win["fu"]),
                 fan_mag: as_usize(&win["count"]),
                 is_yakuman: as_bool(&win["yiman"]),
-                pay_scores: (
+                points: (
                     as_i32(&win["point_rong"]),
                     as_i32(&win["point_zimo_xian"]),
-                    win["point_zimo_qin"].as_i64().unwrap_or(0) as Score,
+                    win["point_zimo_qin"].as_i64().unwrap_or(0) as Point,
                 ),
             };
             wins.push((seat, delta_scores.clone(), ctx));

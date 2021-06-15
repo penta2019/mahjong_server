@@ -52,7 +52,7 @@ pub struct Stage {
     pub kyoku: usize,                            // 局 (0~3 = 親のseat)
     pub honba: usize,                            // 本場
     pub kyoutaku: usize,                         // リーチ棒の供託
-    pub turn: Seat,                              // 順番
+    pub turn: Seat,                              // ツモ番のプレイヤーの座席
     pub step: usize,                             // ステップ op関数を呼び出す毎に+1する
     pub left_tile_count: usize,                  // 牌山の残り枚数
     pub doras: Vec<Tile>,                        // ドラ表示牌

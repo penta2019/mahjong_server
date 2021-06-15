@@ -3,8 +3,9 @@ pub type Seat = usize; // 座席
 pub type Type = usize; // 牌の種別部分 (萬子,筒子,索子,字牌)
 pub type Tnum = usize; // 牌の数字部分 (1~9, 0:赤5 の10種)
 pub type Index = usize; // その他Index
-                        // pub type Count = usize; // Index以外で0から1づつ増える物
-pub type Score = i32; // 得点またはその差分
+
+pub type Score = i32; // プレイヤーの持ち点
+pub type Point = i32; // 和了や聴牌などの打点 (= delta score)
 
 // Number
 pub const SEAT: usize = 4; // 座席の数

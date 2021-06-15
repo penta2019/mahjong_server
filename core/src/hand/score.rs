@@ -1,9 +1,9 @@
-use crate::model::Score;
+use crate::model::Point;
 
-pub type PayScores = (Score, Score, Score); // (ロンの支払い, ツモ・子の支払い, ツモ・親の支払い)
+pub type Points = (Point, Point, Point); // (ロンの支払い, ツモ・子の支払い, ツモ・親の支払い)
 
 // 親が他家を直撃した場合の点数表 (役満未満)
-const SCORE_LEADER: [[Score; 11]; 13] = [
+const POINT_LEADER: [[Point; 11]; 13] = [
     [0; 11],                                                      // 0翻
     [0, 0, 1500, 2000, 2400, 2900, 3400, 3900, 4400, 4800, 5300], // 1翻
     [
@@ -26,7 +26,7 @@ const SCORE_LEADER: [[Score; 11]; 13] = [
 ];
 
 // 子が他家を直撃した場合の点数表 (役満未満)
-const SCORE_NON_LEADER: [[Score; 11]; 13] = [
+const POINT_NON_LEADER: [[Point; 11]; 13] = [
     [0; 11],                                                      // 0翻
     [0, 0, 1000, 1300, 1600, 2000, 2300, 2600, 2900, 3200, 3600], // 1翻
     [
@@ -48,8 +48,8 @@ const SCORE_NON_LEADER: [[Score; 11]; 13] = [
     [24000; 11],                                                  // 12翻
 ];
 
-const SCORE_YAKUMAN_LEADER: Score = 48000;
-const SCORE_YAKUMAN_NON_LEADER: Score = 32000;
+const POINT_YAKUMAN_LEADER: Point = 48000;
+const POINT_YAKUMAN_NON_LEADER: Point = 32000;
 
 fn calc_fu_index(fu: usize) -> usize {
     match fu {
@@ -68,56 +68,56 @@ fn calc_fu_index(fu: usize) -> usize {
     }
 }
 
-fn ceil100(n: Score) -> Score {
+fn ceil100(n: Point) -> Point {
     (n + 99) / 100 * 100
 }
 
 // 親の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_pay_scores_leader(fu: usize, fan: usize) -> PayScores {
+pub fn get_points_leader(fu: usize, fan: usize) -> Points {
     let fu_index = calc_fu_index(fu);
-    let score = if fan < 13 {
-        SCORE_LEADER[fan][fu_index]
+    let point = if fan < 13 {
+        POINT_LEADER[fan][fu_index]
     } else {
-        SCORE_YAKUMAN_LEADER
+        POINT_YAKUMAN_LEADER
     };
-    (score, ceil100(score / 3), 0)
+    (point, ceil100(point / 3), 0)
 }
 
 // 子の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_pay_scores_non_leader(fu: usize, fan: usize) -> PayScores {
+pub fn get_points_non_leader(fu: usize, fan: usize) -> Points {
     let fu_index = calc_fu_index(fu);
-    let score = if fan < 13 {
-        SCORE_NON_LEADER[fan][fu_index]
+    let point = if fan < 13 {
+        POINT_NON_LEADER[fan][fu_index]
     } else {
-        SCORE_YAKUMAN_NON_LEADER
+        POINT_YAKUMAN_NON_LEADER
     };
-    (score, ceil100(score / 4), ceil100(score / 2))
+    (point, ceil100(point / 4), ceil100(point / 2))
 }
 
 // 親の役満 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_pay_scores_leader_yakuman(mag: usize) -> PayScores {
-    let s = SCORE_YAKUMAN_LEADER * mag as i32;
+pub fn get_points_leader_yakuman(mag: usize) -> Points {
+    let s = POINT_YAKUMAN_LEADER * mag as i32;
     (s, s / 3, 0)
 }
 
 // 子の役満 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_pay_scores_non_leader_yakuman(mag: usize) -> PayScores {
-    let s = SCORE_YAKUMAN_NON_LEADER * mag as i32;
+pub fn get_points_non_leader_yakuman(mag: usize) -> Points {
+    let s = POINT_YAKUMAN_NON_LEADER * mag as i32;
     (s, s / 4, s / 2)
 }
 
-pub fn get_pay_scores(is_leader: bool, is_yakuman: bool, fu: usize, fan_mag: usize) -> PayScores {
+pub fn get_points(is_leader: bool, is_yakuman: bool, fu: usize, fan_mag: usize) -> Points {
     if is_leader {
         if is_yakuman {
-            get_pay_scores_leader_yakuman(fan_mag)
+            get_points_leader_yakuman(fan_mag)
         } else {
-            get_pay_scores_leader(fu, fan_mag)
+            get_points_leader(fu, fan_mag)
         }
     } else {
         if is_yakuman {
-            get_pay_scores_non_leader_yakuman(fan_mag)
+            get_points_non_leader_yakuman(fan_mag)
         } else {
-            get_pay_scores_non_leader(fu, fan_mag)
+            get_points_non_leader(fu, fan_mag)
         }
     }
 }

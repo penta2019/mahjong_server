@@ -269,7 +269,7 @@ impl StageListener for MjaiEndpoint {
         &mut self,
         stage: &Stage,
         ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
+        contexts: &Vec<(Seat, [Point; SEAT], WinContext)>,
     ) {
         for (seat, deltas, ctx) in contexts {
             self.add_record(mjai_hora(
@@ -297,12 +297,12 @@ impl StageListener for MjaiEndpoint {
         &mut self,
         stage: &Stage,
         is_ready: &[bool; SEAT],
-        delta_scores: &[Score; SEAT],
+        points: &[Point; SEAT],
     ) {
         self.add_record(mjai_ryukyoku(
             DrawType::Kouhaiheikyoku,
             is_ready,
-            delta_scores,
+            points,
             &stage.get_scores(),
         ))
     }

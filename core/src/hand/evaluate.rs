@@ -12,7 +12,7 @@ pub struct WinContext {
     pub fu: usize,                // 符数
     pub fan_mag: usize,           // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
     pub is_yakuman: bool,         // 役満かどうか
-    pub pay_scores: PayScores,    // 支払い得点
+    pub points: Points,           // 支払い得点
 }
 
 pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
@@ -131,7 +131,7 @@ pub fn evaluate_hand_ron(
 
 // 和了形である場合、最も高得点となるような役の組み合わせのSome(Result)を返却
 // 和了形でない場合、Noneを返却
-// 和了形でも無役の場合はResultの中身がyaku: [], pay_scores(0, 0, 0)となる。
+// 和了形でも無役の場合はResultの中身がyaku: [], points(0, 0, 0)となる。
 pub fn evaluate_hand(
     hand: &TileTable,      // 手牌(鳴き以外)
     melds: &Vec<Meld>,     // 鳴き
@@ -216,10 +216,10 @@ pub fn evaluate_hand(
         if !is_yakuman {
             fan_mag += n_dora + n_ura_dora;
         }
-        let pay_scores = if yaku.is_empty() {
+        let points = if yaku.is_empty() {
             (0, 0, 0) // 役無し
         } else {
-            get_pay_scores(is_leader, is_yakuman, fu, fan_mag)
+            get_points(is_leader, is_yakuman, fu, fan_mag)
         };
 
         results.push(WinContext {
@@ -229,11 +229,11 @@ pub fn evaluate_hand(
             fu,
             fan_mag,
             is_yakuman,
-            pay_scores,
+            points,
         });
     }
 
-    results.sort_by_key(|r| r.pay_scores.0);
+    results.sort_by_key(|r| r.points.0);
     results.pop()
 }
 

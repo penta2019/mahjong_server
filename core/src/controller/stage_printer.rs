@@ -38,7 +38,7 @@ impl StageListener for StagePrinter {
         &mut self,
         stage: &Stage,
         ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
+        contexts: &Vec<(Seat, [Point; SEAT], WinContext)>,
     ) {
         println!("[ROUNDEND]");
         println!("ura_dora: {}", vec_to_string(ura_doras));
@@ -64,11 +64,11 @@ impl StageListener for StagePrinter {
         &mut self,
         stage: &Stage,
         is_ready: &[bool; SEAT],
-        delta_scores: &[Score; SEAT],
+        points: &[Point; SEAT],
     ) {
         println!("[ROUNDEND NOTILE]");
         println!("is_ready: {:?}", is_ready);
-        self.print_score_change(&stage, &delta_scores);
+        self.print_score_change(&stage, &points);
         println!("{}", stage);
     }
 }

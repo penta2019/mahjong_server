@@ -424,7 +424,7 @@ impl MahjongEngine {
                 let mut d_scores = [0; SEAT]; // 得点変動
 
                 let ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
-                let (_, mut non_leader, mut leader) = ctx.pay_scores;
+                let (_, mut non_leader, mut leader) = ctx.points;
 
                 // 積み棒
                 non_leader += honba as i32 * 100;
@@ -474,7 +474,7 @@ impl MahjongEngine {
                 let mut contexts = vec![];
                 for &s in seats {
                     let ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
-                    let (total, _, _) = ctx.pay_scores;
+                    let (total, _, _) = ctx.points;
                     let mut d_scores = [0; SEAT]; // 得点変動
                     d_scores[turn] -= total; // 直撃を受けたプレイヤー
                     d_scores[s] += total; // 和了ったプレイヤー

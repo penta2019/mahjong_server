@@ -59,7 +59,7 @@ pub trait StageListener: Send {
         &mut self,
         _stage: &Stage,
         _ura_doras: &Vec<Tile>,
-        _contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
+        _contexts: &Vec<(Seat, [Point; SEAT], WinContext)>,
     ) {
     }
 
@@ -69,7 +69,7 @@ pub trait StageListener: Send {
         &mut self,
         _stage: &Stage,
         _is_ready: &[bool; SEAT],
-        _delta_scores: &[Score; SEAT],
+        _points: &[Point; SEAT],
     ) {
     }
 

@@ -173,7 +173,7 @@ pub fn mjai_hora(
     tile: Tile,
     ura_doras: &Vec<Tile>,
     context: &WinContext,
-    deltas: &[Score; SEAT],
+    deltas: &[Point; SEAT],
     scores: &[Score; SEAT],
 ) -> Value {
     let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
@@ -187,7 +187,7 @@ pub fn mjai_hora(
         "yakus": [], // TODO
         "fu": context.fu,
         "fan": context.fan_mag,
-        "hora_points": context.pay_scores.0,
+        "hora_points": context.points.0,
         "deltas": deltas,
         "scores": scores,
     })
@@ -196,7 +196,7 @@ pub fn mjai_hora(
 pub fn mjai_ryukyoku(
     draw_type: DrawType,
     is_ready: &[bool; SEAT],
-    deltas: &[Score; SEAT],
+    deltas: &[Point; SEAT],
     scores: &[Score; SEAT],
 ) -> Value {
     let type_ = match draw_type {

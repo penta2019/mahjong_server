@@ -417,7 +417,7 @@ impl StageController {
     pub fn op_roundend_win(
         &mut self,
         ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [Score; SEAT], WinContext)>,
+        contexts: &Vec<(Seat, [Point; SEAT], WinContext)>,
     ) {
         let stg = &mut self.stage;
         stg.step += 1;
@@ -435,12 +435,12 @@ impl StageController {
         op!(self, notify_op_roundend_draw, draw_type);
     }
 
-    pub fn op_roundend_notile(&mut self, is_ready: &[bool; SEAT], delta_scores: &[Score; SEAT]) {
+    pub fn op_roundend_notile(&mut self, is_ready: &[bool; SEAT], points: &[Point; SEAT]) {
         let stg = &mut self.stage;
         stg.step += 1;
-        update_scores(stg, &delta_scores);
+        update_scores(stg, &points);
 
-        op!(self, notify_op_roundend_notile, is_ready, delta_scores);
+        op!(self, notify_op_roundend_notile, is_ready, points);
     }
 
     pub fn op_game_over(&mut self) {
@@ -522,10 +522,10 @@ fn update_after_discard_completed(stg: &mut Stage) {
     }
 }
 
-fn update_scores(stg: &mut Stage, delta_scores: &[Score; SEAT]) {
+fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
     for s in 0..SEAT {
         let mut pl = &mut stg.players[s];
-        pl.score = pl.score + delta_scores[s];
+        pl.score = pl.score + points[s];
     }
 
     let scores = stg.players.iter().map(|pl| pl.score).collect();

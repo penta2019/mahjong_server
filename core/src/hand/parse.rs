@@ -10,7 +10,7 @@ pub enum SetPairType {
     Pair,    // 雀頭
     Shuntsu, // 順子
     Koutsu,  // 刻子
-    Chii,    // チー
+    Chi,     // チー
     Pon,     // ポン
     Minkan,  // 明槓 (大明槓 + 加槓)
     Ankan,   // 暗槓
@@ -32,7 +32,7 @@ pub fn parse_melds(melds: &Vec<Meld>) -> ParsedHand {
             t.1 = 5;
         }
         res.push(match m.type_ {
-            MeldType::Chii => SetPair(Chii, t),
+            MeldType::Chi => SetPair(Chi, t),
             MeldType::Pon => SetPair(Pon, t),
             MeldType::Minkan | MeldType::Kakan => SetPair(Minkan, t),
             MeldType::Ankan => SetPair(Ankan, t),

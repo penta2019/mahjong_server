@@ -51,12 +51,16 @@ impl Operator for Manual {
             stdout().flush().unwrap();
             let mut buf = String::new();
             std::io::stdin().read_line(&mut buf).ok();
-            println!();
 
             let mut chars = buf.chars();
             let c = chars.next().unwrap();
             match c {
                 'm' | 'p' | 's' | 'z' => {
+                    if stage.turn != seat {
+                        println!("[Error] discard not allowed");
+                        continue;
+                    }
+
                     let ti = match c {
                         'm' => TM,
                         'p' => TP,
@@ -67,7 +71,7 @@ impl Operator for Manual {
                     let ni: Tnum = match chars.next().unwrap().to_digit(10) {
                         Some(n) => n as usize,
                         _ => {
-                            println!("invalid tile symbol");
+                            println!("[Error] invalid tile symbol");
                             continue;
                         }
                     };
@@ -75,12 +79,14 @@ impl Operator for Manual {
                     let h = &stage.players[seat].hand;
                     let t = Tile(ti, ni);
                     if t.0 > TZ || t.1 > 9 {
-                        println!("Invalid tile: {:?}", t);
+                        println!("[Error] invalid tile: {:?}", t);
                         continue;
                     } else if h[t.0][t.1] == 0 {
-                        println!("Tile not found: {}", t);
+                        println!("[Error] tile not found: {}", t);
                         continue;
                     }
+
+                    println!();
                     return Op::discard(Tile(ti, ni));
                 }
                 '!' => {
@@ -89,7 +95,7 @@ impl Operator for Manual {
                             println!("{}", stage);
                         }
                         _ => {
-                            println!("Unknown command: {}", &buf[1..]);
+                            println!("[Error] unknown command: {}", &buf[1..]);
                         }
                     }
                     continue;
@@ -101,15 +107,16 @@ impl Operator for Manual {
                     let n: usize = match buf.trim().parse() {
                         Ok(n) => n,
                         Err(_) => {
-                            println!("input must be number");
+                            println!("[Error] input must be number");
                             continue;
                         }
                     };
                     if n >= ops.len() {
-                        println!("invalid operation index");
+                        println!("[Error] invalid operation index");
                         continue;
                     }
 
+                    println!();
                     return ops[n].clone();
                 }
             };

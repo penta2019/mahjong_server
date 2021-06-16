@@ -8,7 +8,7 @@ pub mod tiitoitsu;
 
 use std::fmt;
 
-use crate::controller::stage_listener::StageListener;
+use crate::controller::stage_controller::StageListener;
 use crate::model::*;
 use crate::util::variant::*;
 

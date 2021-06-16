@@ -14,7 +14,7 @@ pub enum PlayerOperationType {
     Kita,         // 北抜き
 
     // Call Operations
-    Chii,   // チー (配列は鳴きが可能な組み合わせ 以下同様)
+    Chi,    // チー (配列は鳴きが可能な組み合わせ 以下同様)
     Pon,    // ポン
     Minkan, // 明槓
     Ron,    // ロン
@@ -23,7 +23,7 @@ pub enum PlayerOperationType {
 pub type OpType = PlayerOperationType;
 
 // Vec<Tile>は操作により手牌からなくなる牌
-// Chii, Ponなどの標的の牌はstage.last_tileを参照する
+// Chi, Ponなどの標的の牌はstage.last_tileを参照する
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PlayerOperation(pub PlayerOperationType, pub Vec<Tile>);
 
@@ -66,7 +66,7 @@ impl PlayerOperation {
     pub fn chi(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
         v.sort();
-        Self(OpType::Chii, v)
+        Self(OpType::Chi, v)
     }
     #[inline]
     pub fn pon(mut v: Vec<Tile>) -> Self {

@@ -20,7 +20,7 @@ fn test_hand1() {
     let melds = vec![Meld {
         step: 0,
         seat: 0,
-        type_: MeldType::Chii,
+        type_: MeldType::Chi,
         tiles: vec![Tile(TP, 7); 4],
         froms: vec![0; 4],
     }];

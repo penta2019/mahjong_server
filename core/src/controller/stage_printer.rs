@@ -1,5 +1,4 @@
-use super::stage_listener::StageListener;
-use crate::hand::evaluate::WinContext;
+use super::stage_controller::StageListener;
 use crate::model::*;
 use crate::util::common::vec_to_string;
 
@@ -19,56 +18,44 @@ impl StagePrinter {
 }
 
 impl StageListener for StagePrinter {
-    fn notify_op_roundnew(
-        &mut self,
-        stage: &Stage,
-        _round: usize,
-        _kyoku: usize,
-        _honba: usize,
-        _kyoutaku: usize,
-        _doras: &Vec<Tile>,
-        _scores: &[Score; SEAT],
-        _player_hands: &[Vec<Tile>; SEAT],
-    ) {
-        println!("[ROUNDNEW]");
-        println!("{}", stage);
-    }
-
-    fn notify_op_roundend_win(
-        &mut self,
-        stage: &Stage,
-        ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [Point; SEAT], WinContext)>,
-    ) {
-        println!("[ROUNDEND]");
-        println!("ura_dora: {}", vec_to_string(ura_doras));
-        println!("{:?}", contexts);
-        let mut deltas = [0; SEAT];
-        for ctx in contexts {
-            for s in 0..SEAT {
-                deltas[s] += ctx.1[s];
+    fn notify_action(&mut self, stg: &Stage, act: &Action) {
+        match act {
+            Action::GameStart(_) => {}
+            Action::RoundNew(_) => {
+                println!("[ROUNDNEW]");
+                println!("{}", stg);
             }
+            Action::DealTile(_) => {}
+            Action::DiscardTile(_) => {}
+            Action::Meld(_) => {}
+            Action::Kita(_) => {}
+            Action::Dora(_) => {}
+            Action::RoundEndWin(a) => {
+                println!("[ROUNDEND]");
+                println!("ura_dora: {}", vec_to_string(&a.ura_doras));
+                println!("{:?}", a.contexts);
+                let mut deltas = [0; SEAT];
+                for ctx in &a.contexts {
+                    for s in 0..SEAT {
+                        deltas[s] += ctx.1[s];
+                    }
+                }
+
+                self.print_score_change(&stg, &deltas);
+                println!("{}", stg);
+            }
+            Action::RoundEndDraw(a) => {
+                println!("[ROUNDEND DRAW]");
+                println!("{:?}", a.draw_type);
+                println!("{}", stg);
+            }
+            Action::RoundEndNoTile(a) => {
+                println!("[ROUNDEND NOTILE]");
+                println!("is_tenpai: {:?}", &a.tenpais);
+                self.print_score_change(&stg, &a.points);
+                println!("{}", stg);
+            }
+            Action::GameOver(_) => {}
         }
-
-        self.print_score_change(&stage, &deltas);
-        println!("{}", stage);
-    }
-
-    fn notify_op_roundend_draw(&mut self, stage: &Stage, draw_type: DrawType) {
-        println!("[ROUNDEND DRAW]");
-        println!("{:?}", draw_type);
-        println!("{}", stage);
-    }
-
-    fn notify_op_roundend_notile(
-        &mut self,
-        stage: &Stage,
-        is_tenpai: &[bool; SEAT],
-        points: &[Point; SEAT],
-    ) {
-        println!("[ROUNDEND NOTILE]");
-        println!("is_tenpai: {:?}", is_tenpai);
-        self.print_score_change(&stage, &points);
-        println!("{}", stage);
     }
 }

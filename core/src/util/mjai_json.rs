@@ -93,24 +93,12 @@ pub fn mjai_reach_accepted(seat: Seat, scores: [Score; SEAT]) -> Value {
 pub fn mjai_chiponkan(
     seat: Seat,
     meld_type: MeldType,
-    tiles: &Vec<Tile>,
-    froms: &Vec<Seat>,
+    consumed: &Vec<Tile>,
+    tile: Tile,
+    target: Seat,
 ) -> Value {
-    let mut consumed = vec![];
-    let mut pai = "".to_string();
-    let mut target = NO_SEAT;
-    for (&t, &f) in tiles.iter().zip(froms.iter()) {
-        if seat == f {
-            consumed.push(to_mjai_tile(t));
-        } else {
-            target = f;
-            pai = to_mjai_tile(t);
-        }
-    }
-    assert!(pai != "" && target != NO_SEAT);
-
     let type_ = match meld_type {
-        MeldType::Chii => "chi",
+        MeldType::Chi => "chi",
         MeldType::Pon => "pon",
         MeldType::Minkan => "daiminkan",
         _ => panic!(),
@@ -118,46 +106,27 @@ pub fn mjai_chiponkan(
     json!({
         "type": type_,
         "actor": seat,
-        "pai": pai,
+        "pai": to_mjai_tile(tile),
+        "consumed": vec_to_mjai_tile(consumed),
         "target": target,
-        "consumed": consumed,
     })
 }
 
-pub fn mjai_ankankakan(seat: Seat, meld_type: MeldType, tile: Tile, tiles: &Vec<Tile>) -> Value {
-    match meld_type {
-        MeldType::Ankan => {
-            let mut consumed = vec![];
-            for &t in tiles.iter() {
-                consumed.push(to_mjai_tile(t))
-            }
-            json!({
-                "type": "ankan",
-                "actor": seat,
-                "consumed": consumed,
-            })
-        }
-        MeldType::Kakan => {
-            let mut pai = "".to_string();
-            let mut consumed = vec![];
-            for &t in tiles.iter() {
-                if pai == "" && t == tile {
-                    pai = to_mjai_tile(t);
-                } else {
-                    consumed.push(to_mjai_tile(t))
-                }
-            }
-            assert!(pai != "");
+pub fn mjai_ankan(seat: Seat, consumed: &Vec<Tile>) -> Value {
+    json!({
+        "type": "ankan",
+        "actor": seat,
+        "consumed": vec_to_mjai_tile(consumed),
+    })
+}
 
-            json!({
-                "type": "kakan",
-                "actor": seat,
-                "pai": pai,
-                "consumed": consumed,
-            })
-        }
-        _ => panic!(),
-    }
+pub fn mjai_kakan(seat: Seat, consumed: &Vec<Tile>, pon_tiles: &Vec<Tile>) -> Value {
+    json!({
+        "type": "kakan",
+        "actor": seat,
+        "pai": to_mjai_tile(consumed[0]),
+        "consumed": vec_to_mjai_tile(pon_tiles),
+    })
 }
 
 pub fn mjai_dora(tile: Tile) -> Value {
@@ -430,7 +399,7 @@ impl MjaiAction {
                 reason: "kyushukyuhai".to_string(),
             }),
             Kita => panic!(),
-            Chii => {
+            Chi => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 MjaiAction::Chi(ActionChi {
                     type_: "chi".to_string(),

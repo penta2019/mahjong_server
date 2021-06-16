@@ -7,7 +7,6 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
-use crate::hand::evaluate::WinContext;
 use crate::util::common::{sleep_ms, vec_remove};
 use crate::util::mjai_json::*;
 
@@ -99,11 +98,132 @@ impl MjaiEndpoint {
         d.record.push(record);
     }
 
-    fn check_riichi_accepted(&mut self, stage: &Stage) {
+    fn confirm_riichi_accepted(&mut self, stg: &Stage) {
         if let Some(s) = self.try_riichi {
             self.try_riichi = None;
-            self.add_record(mjai_reach_accepted(s, stage.get_scores()));
+            self.add_record(mjai_reach_accepted(s, stg.get_scores()));
         }
+    }
+
+    fn notify_game_start(&mut self, _stg: &Stage, _act: &ActionGameStart) {
+        assert!(self.seat != NO_SEAT);
+        self.is_new_game = true;
+    }
+
+    fn notify_round_new(&mut self, stg: &Stage, act: &ActionRoundNew) {
+        assert!(self.seat != NO_SEAT);
+        let mut data = SharedData::new();
+        if self.is_new_game {
+            data.send_start_game = true;
+            self.is_new_game = false;
+        }
+        data.seat = self.seat;
+        *self.data.lock().unwrap() = data;
+        self.try_riichi = None;
+
+        // 親番の14枚目の牌は最初のツモとして扱うので取り除く
+        let mut ph = act.hands.clone();
+        let d = stg.players[stg.turn].drawn.unwrap();
+        vec_remove(&mut ph[stg.turn], &d);
+
+        self.add_record(mjai_start_kyoku(
+            self.seat,
+            act.round,
+            act.kyoku,
+            act.honba,
+            act.kyoutaku,
+            &act.doras,
+            &ph,
+        ));
+
+        let act2 = ActionDealTile {
+            seat: act.kyoku,
+            tile: stg.players[act.kyoku].drawn.unwrap(),
+        };
+        self.notify_deal_tile(&stg, &act2);
+    }
+
+    fn notify_deal_tile(&mut self, stg: &Stage, act: &ActionDealTile) {
+        self.confirm_riichi_accepted(stg);
+        self.add_record(mjai_tsumo(self.seat, act.seat, act.tile));
+    }
+
+    fn notify_discard_tile(&mut self, _stg: &Stage, act: &ActionDiscardTile) {
+        if act.is_riichi {
+            self.add_record(mjai_reach(act.seat));
+        }
+
+        self.add_record(mjai_dahai(act.seat, act.tile, act.is_drawn));
+
+        if act.is_riichi {
+            self.try_riichi = Some(act.seat);
+        }
+    }
+
+    fn notify_meld(&mut self, stg: &Stage, act: &ActionMeld) {
+        self.confirm_riichi_accepted(stg);
+
+        self.add_record(match act.meld_type {
+            MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
+                let lt = stg.last_tile.unwrap();
+                mjai_chiponkan(act.seat, act.meld_type, &act.consumed, lt.2, lt.0)
+            }
+            MeldType::Ankan => mjai_ankan(act.seat, &act.consumed),
+            MeldType::Kakan => {
+                let c = act.consumed[0];
+                let t = Tile(c.0, c.n());
+                let t0 = if t.is_suit() && t.1 == 5 && c.1 != 0 {
+                    Tile(t.0, 0)
+                } else {
+                    t
+                };
+                mjai_kakan(act.seat, &act.consumed, &vec![t, t, t0])
+            }
+        });
+    }
+
+    fn notify_kita(&mut self, _stg: &Stage, _act: &ActionKita) {
+        panic!();
+    }
+
+    fn notify_dora(&mut self, _stg: &Stage, act: &ActionDora) {
+        self.add_record(mjai_dora(act.tile));
+    }
+
+    fn notify_round_end_win(&mut self, stg: &Stage, act: &ActionRoundEndWin) {
+        for (seat, deltas, ctx) in &act.contexts {
+            self.add_record(mjai_hora(
+                *seat,
+                stg.turn,
+                stg.last_tile.unwrap().2,
+                &act.ura_doras,
+                ctx,
+                deltas,
+                &stg.get_scores(),
+            ));
+        }
+    }
+
+    fn notify_round_end_draw(&mut self, stg: &Stage, act: &ActionRoundEndDraw) {
+        self.add_record(mjai_ryukyoku(
+            act.draw_type,
+            &[false; SEAT],
+            &[0; SEAT],
+            &stg.get_scores(),
+        ));
+    }
+
+    fn notify_round_end_no_tile(&mut self, stg: &Stage, act: &ActionRoundEndNoTile) {
+        self.add_record(mjai_ryukyoku(
+            DrawType::Kouhaiheikyoku,
+            &act.tenpais,
+            &act.points,
+            &stg.get_scores(),
+        ))
+    }
+
+    fn notify_game_over(&mut self, stg: &Stage, _act: &ActionGameOver) {
+        self.add_record(mjai_end_game(&stg.get_scores()));
     }
 }
 
@@ -173,142 +293,20 @@ impl Operator for MjaiEndpoint {
 }
 
 impl StageListener for MjaiEndpoint {
-    fn notify_op_game_start(&mut self, _stage: &Stage) {
-        assert!(self.seat != NO_SEAT);
-        self.is_new_game = true;
-    }
-
-    fn notify_op_roundnew(
-        &mut self,
-        stage: &Stage,
-        round: usize,
-        kyoku: usize,
-        honba: usize,
-        kyoutaku: usize,
-        doras: &Vec<Tile>,
-        _scores: &[Score; SEAT],
-        player_hands: &[Vec<Tile>; SEAT],
-    ) {
-        assert!(self.seat != NO_SEAT);
-        let mut data = SharedData::new();
-        if self.is_new_game {
-            data.send_start_game = true;
-            self.is_new_game = false;
+    fn notify_action(&mut self, stg: &Stage, act: &Action) {
+        match act {
+            Action::GameStart(a) => self.notify_game_start(stg, a),
+            Action::RoundNew(a) => self.notify_round_new(stg, a),
+            Action::DealTile(a) => self.notify_deal_tile(stg, a),
+            Action::DiscardTile(a) => self.notify_discard_tile(stg, a),
+            Action::Meld(a) => self.notify_meld(stg, a),
+            Action::Kita(a) => self.notify_kita(stg, a),
+            Action::Dora(a) => self.notify_dora(stg, a),
+            Action::RoundEndWin(a) => self.notify_round_end_win(stg, a),
+            Action::RoundEndDraw(a) => self.notify_round_end_draw(stg, a),
+            Action::RoundEndNoTile(a) => self.notify_round_end_no_tile(stg, a),
+            Action::GameOver(a) => self.notify_game_over(stg, a),
         }
-        data.seat = self.seat;
-        *self.data.lock().unwrap() = data;
-        self.try_riichi = None;
-
-        // 親番の14枚目の牌は最初のツモとして扱うので取り除く
-        let mut ph = player_hands.clone();
-        let d = stage.players[stage.turn].drawn.unwrap();
-        vec_remove(&mut ph[stage.turn], &d);
-
-        self.add_record(mjai_start_kyoku(
-            self.seat, round, kyoku, honba, kyoutaku, doras, &ph,
-        ));
-
-        self.notify_op_dealtile(stage, kyoku, stage.players[kyoku].drawn.unwrap());
-    }
-
-    fn notify_op_dealtile(&mut self, stage: &Stage, seat: Seat, tile: Tile) {
-        self.check_riichi_accepted(stage);
-        self.add_record(mjai_tsumo(self.seat, seat, tile));
-    }
-
-    fn notify_op_discardtile(
-        &mut self,
-        _stage: &Stage,
-        seat: Seat,
-        tile: Tile,
-        is_drawn: bool,
-        is_riichi: bool,
-    ) {
-        if is_riichi {
-            self.add_record(mjai_reach(seat));
-        }
-
-        self.add_record(mjai_dahai(seat, tile, is_drawn));
-
-        if is_riichi {
-            self.try_riichi = Some(seat);
-        }
-    }
-
-    fn notify_op_chiponkan(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        meld_type: MeldType,
-        tiles: &Vec<Tile>,
-        froms: &Vec<Seat>,
-    ) {
-        self.check_riichi_accepted(stage);
-        self.add_record(mjai_chiponkan(seat, meld_type, tiles, froms));
-    }
-
-    fn notify_op_ankankakan(&mut self, stage: &Stage, seat: Seat, meld_type: MeldType, tile: Tile) {
-        let tiles = &stage.players[seat]
-            .melds
-            .iter()
-            .find(|m| m.tiles.contains(&tile))
-            .unwrap()
-            .tiles;
-        self.add_record(mjai_ankankakan(seat, meld_type, tile, tiles));
-    }
-
-    fn notify_op_dora(&mut self, _stage: &Stage, tile: Tile) {
-        self.add_record(mjai_dora(tile));
-    }
-
-    fn notify_op_kita(&mut self, _stage: &Stage, _seat: Seat, _is_drawn: bool) {
-        panic!();
-    }
-
-    fn notify_op_roundend_win(
-        &mut self,
-        stage: &Stage,
-        ura_doras: &Vec<Tile>,
-        contexts: &Vec<(Seat, [Point; SEAT], WinContext)>,
-    ) {
-        for (seat, deltas, ctx) in contexts {
-            self.add_record(mjai_hora(
-                *seat,
-                stage.turn,
-                stage.last_tile.unwrap().2,
-                ura_doras,
-                ctx,
-                deltas,
-                &stage.get_scores(),
-            ));
-        }
-    }
-
-    fn notify_op_roundend_draw(&mut self, stage: &Stage, draw_type: DrawType) {
-        self.add_record(mjai_ryukyoku(
-            draw_type,
-            &[false; SEAT],
-            &[0; SEAT],
-            &stage.get_scores(),
-        ));
-    }
-
-    fn notify_op_roundend_notile(
-        &mut self,
-        stage: &Stage,
-        is_tenpai: &[bool; SEAT],
-        points: &[Point; SEAT],
-    ) {
-        self.add_record(mjai_ryukyoku(
-            DrawType::Kouhaiheikyoku,
-            is_tenpai,
-            points,
-            &stage.get_scores(),
-        ))
-    }
-
-    fn notify_op_game_over(&mut self, stage: &Stage) {
-        self.add_record(mjai_end_game(&stage.get_scores()));
     }
 }
 

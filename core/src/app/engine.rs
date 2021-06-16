@@ -1,8 +1,7 @@
 use rand::prelude::*;
 use serde_json::json;
 
-use crate::controller::stage_controller::StageController;
-use crate::controller::stage_listener::StageListener;
+use crate::controller::stage_controller::{StageController, StageListener};
 use crate::controller::stage_printer::StagePrinter;
 use crate::hand::evaluate::*;
 use crate::hand::win::*;
@@ -155,7 +154,8 @@ impl MahjongEngine {
     }
 
     fn do_game_start(&mut self) {
-        self.ctrl.op_game_start();
+        let act = Action::GameStart(ActionGameStart {});
+        self.ctrl.handle_action(&act);
     }
 
     fn do_round_new(&mut self) {
@@ -200,15 +200,16 @@ impl MahjongEngine {
         let doras = vec![self.dora_wall[0]];
 
         let rn = &self.round_next;
-        self.ctrl.op_roundnew(
+
+        self.ctrl.handle_action(&Action::round_new(
             rn.round,
             rn.kyoku,
             rn.honba,
             rn.kyoutaku,
-            &doras,
-            &rn.scores,
-            &ph,
-        );
+            doras,
+            rn.scores,
+            ph,
+        ));
     }
 
     fn do_turn_operation(&mut self) {
@@ -229,7 +230,7 @@ impl MahjongEngine {
 
         let can_op = match self.melding {
             None => true,
-            Some(PlayerOperation(tp, _)) => tp != Chii && tp != Pon,
+            Some(PlayerOperation(tp, _)) => tp != Chi && tp != Pon,
         };
         if can_op {
             ops.append(&mut check_ankan(stg));
@@ -246,51 +247,55 @@ impl MahjongEngine {
         let PlayerOperation(tp, cs) = op.clone();
 
         let stg = &self.get_stage();
-        match tp {
+        let act = match tp {
             Nop => {
-                // ツモ切り
-                let t = stg.players[turn].drawn.unwrap();
-                self.ctrl.op_discardtile(turn, t, true, false);
+                // 打牌: ツモ切り
+                Action::discard_tile(turn, stg.players[turn].drawn.unwrap(), true, false)
             }
             Discard => {
-                self.ctrl.op_discardtile(turn, cs[0], false, false);
+                // 打牌: ツモ切り以外
+                Action::discard_tile(turn, cs[0], false, false)
             }
             Ankan => {
-                self.ctrl.op_ankankakan(turn, MeldType::Ankan, cs[3]);
                 self.melding = Some(op);
+                Action::meld(turn, MeldType::Ankan, cs)
             }
             Kakan => {
-                self.ctrl.op_ankankakan(turn, MeldType::Kakan, cs[0]);
                 self.melding = Some(op);
+                Action::meld(turn, MeldType::Kakan, cs)
             }
             Riichi => {
                 let t = cs[0];
                 let pl = &stg.players[turn];
                 let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
-                self.ctrl.op_discardtile(turn, t, m, true);
+                Action::discard_tile(turn, t, m, true)
             }
             Tsumo => {
                 self.round_result = Some(RoundResult::Tsumo);
+                return;
             }
             Kyushukyuhai => {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kyushukyuhai));
+                return;
             }
             Kita => {
-                self.ctrl.op_kita(turn, false);
                 self.melding = Some(op);
+                Action::kita(turn, false)
             }
-            op2 => panic!("Operation '{:?}' not found in {:?}", op2, ops),
-        }
+            _ => panic!("Operation {:?} not found in {:?}", op, ops),
+        };
+        self.ctrl.handle_action(&act);
 
         if let Some(kd) = self.kan_dora {
-            self.ctrl.op_dora(kd);
+            let act = Action::Dora(ActionDora { tile: kd });
+            self.ctrl.handle_action(&act);
             self.kan_dora = None;
         }
     }
 
     fn do_call_operation(&mut self) {
         // 順番以外のプレイヤーにPlayerOperationを要求
-        // op: Nop, Chii, Pon, Minkan, Ron
+        // op: Nop, Chi, Pon, Minkan, Ron
         let stg = self.get_stage();
         let turn = stg.turn;
         let mut ops_list: [Vec<PlayerOperation>; SEAT] = Default::default();
@@ -328,38 +333,32 @@ impl MahjongEngine {
             // calc_operation_index(&ops, &op); // opがops内に存在することを確認
             match op.0 {
                 Nop => {}
-                Chii => chi = Some((s, op)),
+                Chi => chi = Some((s, op)),
                 Pon => pon = Some((s, op)),
                 Minkan => minkan = Some((s, op)),
                 Ron => rons.push(s),
-                op2 => panic!("Operation '{:?}' not found in {:?}", op2, ops),
+                _ => panic!("Operation {:?} not found in {:?}", op, ops),
             }
         }
 
-        let d = self.get_stage().last_tile.unwrap().2;
         // dispatch operation
         if !rons.is_empty() {
             self.round_result = Some(RoundResult::Ron(rons));
+            return;
         } else if let Some((s, op)) = minkan {
-            let cs = &op.1;
-            let tiles = vec![d, cs[0], cs[1], cs[2]];
-            let froms = vec![turn, s, s, s];
-            self.ctrl.op_chiponkan(s, MeldType::Minkan, &tiles, &froms);
+            let act = Action::meld(s, MeldType::Minkan, op.1.clone());
+            self.ctrl.handle_action(&act);
             self.melding = Some(op);
         } else if let Some((s, op)) = pon {
             // PonをChiiより優先して処理
-            let cs = &op.1;
-            let tiles = vec![d, cs[0], cs[1]];
-            let froms = vec![turn, s, s];
-            self.ctrl.op_chiponkan(s, MeldType::Pon, &tiles, &froms);
+            let act = Action::meld(s, MeldType::Pon, op.1.clone());
+            self.ctrl.handle_action(&act);
             self.melding = Some(op);
         } else if let Some((s, op)) = chi {
-            let cs = &op.1;
-            let tiles = vec![d, cs[0], cs[1]];
-            let froms = vec![turn, s, s];
-            self.ctrl.op_chiponkan(s, MeldType::Chii, &tiles, &froms);
+            let act = Action::meld(s, MeldType::Chi, op.1.clone());
+            self.ctrl.handle_action(&act);
             self.melding = Some(op);
-        }
+        };
 
         // 途中流局の確認
         self.check_suufuurenda();
@@ -372,28 +371,28 @@ impl MahjongEngine {
         let turn = stg.turn;
         if let Some(m) = &self.melding {
             match m.0 {
-                Pon | Chii => {}
+                Pon | Chi => {}
                 Ankan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.op_dealtile(turn, r);
-                    self.ctrl.op_dora(kd); // 槓ドラは打牌前
+                    self.ctrl.handle_action(&Action::deal_tile(turn, r));
+                    self.ctrl.handle_action(&Action::dora(kd)); // 槓ドラは打牌前
                     self.check_suukansanra_needed();
                 }
                 Minkan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.op_dealtile(turn, r);
+                    self.ctrl.handle_action(&Action::deal_tile(turn, r));
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.op_dealtile(turn, r);
+                    self.ctrl.handle_action(&Action::deal_tile(turn, r));
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kita => {
                     let k = self.draw_kita_tile();
-                    self.ctrl.op_dealtile(turn, k);
+                    self.ctrl.handle_action(&Action::deal_tile(turn, k));
                 }
                 _ => panic!(),
             }
@@ -401,7 +400,7 @@ impl MahjongEngine {
             if stg.left_tile_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
-                self.ctrl.op_dealtile(s, t);
+                self.ctrl.handle_action(&Action::deal_tile(s, t));
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }
@@ -457,7 +456,8 @@ impl MahjongEngine {
 
                 let contexts = vec![(turn, d_scores, ctx)];
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.ctrl.op_roundend_win(&ura_doras, &contexts);
+                let act = Action::round_end_win(ura_doras, contexts);
+                self.ctrl.handle_action(&act);
             }
             RoundResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
@@ -499,20 +499,21 @@ impl MahjongEngine {
                 need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.ctrl.op_roundend_win(&ura_doras, &contexts);
+                let act = Action::round_end_win(ura_doras, contexts);
+                self.ctrl.handle_action(&act);
             }
             RoundResult::Draw(draw_type) => {
                 match draw_type {
                     DrawType::Kouhaiheikyoku => {
                         // 聴牌集計
-                        let mut is_tenpai = [false; SEAT];
+                        let mut tenpais = [false; SEAT];
                         let mut n_tenpai = 0;
                         for s in 0..SEAT {
                             let h = &stg.players[s].hand;
-                            is_tenpai[s] = !calc_tiles_to_normal_win(h).is_empty()
+                            tenpais[s] = !calc_tiles_to_normal_win(h).is_empty()
                                 || !calc_tiles_to_chiitoitsu_win(h).is_empty()
                                 || !calc_tiles_to_kokushimusou_win(h).is_empty();
-                            if is_tenpai[s] {
+                            if tenpais[s] {
                                 n_tenpai += 1;
                             }
                         }
@@ -530,14 +531,16 @@ impl MahjongEngine {
                         // プレイヤーごとの得点変動
                         let mut d_scores = [0; SEAT];
                         for s in 0..SEAT {
-                            d_scores[s] = if is_tenpai[s] { recv } else { -pay };
+                            d_scores[s] = if tenpais[s] { recv } else { -pay };
                         }
 
-                        self.ctrl.op_roundend_notile(&is_tenpai, &d_scores);
-                        need_leader_change = !is_tenpai[kyoku];
+                        let act = Action::round_end_no_tile(tenpais, d_scores);
+                        self.ctrl.handle_action(&act);
+                        need_leader_change = !tenpais[kyoku];
                     }
                     _ => {
-                        self.ctrl.op_roundend_draw(*draw_type);
+                        let act = Action::round_end_draw(*draw_type);
+                        self.ctrl.handle_action(&act);
                     }
                 }
                 honba += 1;
@@ -580,7 +583,7 @@ impl MahjongEngine {
     }
 
     fn do_game_result(&mut self) {
-        self.ctrl.op_game_over();
+        self.ctrl.handle_action(&Action::game_over());
     }
 
     fn draw_tile(&mut self) -> Tile {
@@ -1015,7 +1018,7 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
     let mut v = vec![];
     let PlayerOperation(tp, cs) = op;
     match tp {
-        Chii => {
+        Chi => {
             // 赤5が混じっている可能性を考慮
             let (t0, t1) = (cs[0], cs[1]);
             let ti = t0.0;

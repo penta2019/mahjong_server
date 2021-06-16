@@ -210,7 +210,7 @@ impl Mahjongsoul {
             Kita => {
                 format!("action_babei()")
             }
-            Chii => {
+            Chi => {
                 format!("action_chi({})", arg_idx)
             }
             Pon => {
@@ -245,13 +245,13 @@ impl Mahjongsoul {
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
                 let t = tile_from_symbol(as_str(doras.last().unwrap()));
-                self.ctrl.op_dora(t);
+                self.ctrl.handle_action(&Action::dora(t));
             }
         }
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
-        self.ctrl.op_game_start();
+        self.ctrl.handle_action(&Action::game_start());
     }
 
     fn handler_newround(&mut self, data: &Value) {
@@ -270,9 +270,9 @@ impl Mahjongsoul {
             scores[s] = as_i32(&score);
         }
 
-        let mut player_hands = [vec![], vec![], vec![], vec![]];
+        let mut hands = [vec![], vec![], vec![], vec![]];
         for s in 0..SEAT {
-            let hand = &mut player_hands[s];
+            let hand = &mut hands[s];
             if s == self.seat {
                 for ps in as_array(&data["tiles"]) {
                     hand.push(tile_from_symbol(as_str(ps)));
@@ -290,15 +290,8 @@ impl Mahjongsoul {
             }
         }
 
-        self.ctrl.op_roundnew(
-            round,
-            kyoku,
-            honba,
-            kyoutaku,
-            &doras,
-            &scores,
-            &player_hands,
-        );
+        let act = Action::round_new(round, kyoku, honba, kyoutaku, doras, scores, hands);
+        self.ctrl.handle_action(&act);
     }
 
     fn handler_dealtile(&mut self, data: &Value) {
@@ -307,9 +300,11 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            self.ctrl.op_dealtile(s, t);
+            self.ctrl.handle_action(&Action::deal_tile(s, t));
+            // self.ctrl.op_dealtile(s, t);
         } else {
-            self.ctrl.op_dealtile(s, Z8);
+            self.ctrl.handle_action(&Action::deal_tile(s, Z8));
+            // self.ctrl.op_dealtile(s, Z8);
         }
     }
 
@@ -318,14 +313,15 @@ impl Mahjongsoul {
         let t = tile_from_symbol(as_str(&data["tile"]));
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
-        self.ctrl.op_discardtile(s, t, m, r);
+        self.ctrl.handle_action(&Action::discard_tile(s, t, m, r));
+        // self.ctrl.op_discardtile(s, t, m, r);
         self.update_doras(data);
     }
 
     fn handler_chipenggang(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let tp = match as_usize(&data["type"]) {
-            0 => MeldType::Chii,
+            0 => MeldType::Chi,
             1 => MeldType::Pon,
             2 => MeldType::Minkan,
             _ => panic!("Unknown meld type"),
@@ -340,24 +336,44 @@ impl Mahjongsoul {
             froms.push(as_usize(f));
         }
 
-        self.ctrl.op_chiponkan(s, tp, &tiles, &froms);
+        let mut consumed = vec![];
+        for (&t, &f) in tiles.iter().zip(froms.iter()) {
+            if s == f {
+                consumed.push(t);
+            }
+        }
+
+        self.ctrl.handle_action(&Action::meld(s, tp, consumed));
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
-        let mt = match as_usize(&data["type"]) {
+        let tp = match as_usize(&data["type"]) {
             2 => MeldType::Kakan,
             3 => MeldType::Ankan,
             _ => panic!("invalid gang type"),
         };
-        let t = tile_from_symbol(as_str(&data["tiles"]));
-        self.ctrl.op_ankankakan(s, mt, t);
+
+        let mut t = tile_from_symbol(as_str(&data["tiles"]));
+        let consumed = if tp == MeldType::Ankan {
+            t = Tile(t.0, t.n());
+            let t0 = if t.is_suit() && t.1 == 5 {
+                Tile(t.0, 0)
+            } else {
+                t
+            };
+            vec![t, t, t, t0] // t0は数牌の5の場合,赤5になる
+        } else {
+            vec![t]
+        };
+        self.ctrl.handle_action(&Action::meld(s, tp, consumed));
     }
 
     fn handler_babei(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let m = as_bool(&data["moqie"]);
-        self.ctrl.op_kita(s, m);
+
+        self.ctrl.handle_action(&Action::kita(s, m));
     }
 
     fn handler_hule(&mut self, data: &Value) {
@@ -389,30 +405,34 @@ impl Mahjongsoul {
             wins.push((seat, delta_scores.clone(), ctx));
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
-        self.ctrl.op_roundend_win(&vec![], &wins);
+
+        let act = Action::round_end_win(vec![], wins);
+        self.ctrl.handle_action(&act);
         self.write_to_file();
     }
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
-        self.ctrl.op_roundend_draw(DrawType::Kyushukyuhai);
+        let act = Action::round_end_draw(DrawType::Kyushukyuhai);
+        self.ctrl.handle_action(&act);
         self.write_to_file();
     }
 
     fn handler_notile(&mut self, data: &Value) {
-        let mut delta_scores = [0; SEAT];
+        let mut points = [0; SEAT];
         if let Some(ds) = &data["scores"][0]["delta_scores"].as_array() {
             for (s, score) in ds.iter().enumerate() {
-                delta_scores[s] = as_i32(score);
+                points[s] = as_i32(score);
             }
         }
 
-        let mut is_tenpai = [false; SEAT];
+        let mut tenpais = [false; SEAT];
         for (s, player) in as_enumerate(&data["players"]) {
-            is_tenpai[s] = as_bool(&player["tingpai"]);
+            tenpais[s] = as_bool(&player["tingpai"]);
         }
 
-        self.ctrl.op_roundend_notile(&is_tenpai, &delta_scores);
+        let act = Action::round_end_no_tile(tenpais, points);
+        self.ctrl.handle_action(&act);
         self.write_to_file();
     }
 }

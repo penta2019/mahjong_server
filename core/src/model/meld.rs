@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum MeldType {
-    Chii,
+    Chi,
     Pon,
     Minkan,
     Kakan,

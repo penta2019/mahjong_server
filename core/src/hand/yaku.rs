@@ -215,7 +215,7 @@ fn count_type(ph: &ParsedHand) -> Counts {
             Pair => cnt.pair += 1,
             Shuntsu => cnt.shuntsu += 1,
             Koutsu => cnt.koutsu += 1,
-            Chii => cnt.chi += 1,
+            Chi => cnt.chi += 1,
             Pon => cnt.pon += 1,
             Minkan => cnt.minkan += 1,
             Ankan => cnt.ankan += 1,
@@ -388,7 +388,7 @@ fn is_tanyaochuu(ctx: &YakuContext) -> bool {
 
     for SetPair(tp, t) in &ctx.parsed_hand {
         match tp {
-            Chii | Shuntsu => {
+            Chi | Shuntsu => {
                 if t.1 == 1 || t.1 == 7 {
                     return false;
                 }
@@ -457,7 +457,7 @@ fn is_ikkitsuukan(ctx: &YakuContext) -> bool {
     let mut f147 = [false; 3];
     for SetPair(tp, t) in &ctx.parsed_hand {
         match tp {
-            Shuntsu | Chii => {
+            Shuntsu | Chi => {
                 if ctx.counts.tis[t.0] >= 3 {
                     match t.1 {
                         1 | 4 | 7 => f147[t.1 / 3] = true,
@@ -481,7 +481,7 @@ fn is_sanshokudoujun(ctx: &YakuContext) -> bool {
     let mut mps = [false; 3];
     for SetPair(tp, t) in &ctx.parsed_hand {
         match tp {
-            Shuntsu | Chii => {
+            Shuntsu | Chi => {
                 if t.is_suit() && ctx.counts.nis[t.1] >= 3 {
                     mps[t.0] = true;
                 }
@@ -530,7 +530,7 @@ fn is_chanta(ctx: &YakuContext) -> bool {
                     return false;
                 }
             }
-            Shuntsu | Chii => {
+            Shuntsu | Chi => {
                 if t.1 != 1 && t.1 != 7 {
                     return false;
                 }
@@ -554,7 +554,7 @@ fn is_junchan(ctx: &YakuContext) -> bool {
                     return false;
                 }
             }
-            Shuntsu | Chii => {
+            Shuntsu | Chi => {
                 if t.1 != 1 && t.1 != 7 {
                     return false;
                 }
@@ -709,7 +709,7 @@ fn is_ryuuiisou(ctx: &YakuContext) -> bool {
                     }
                 }
             }
-            Shuntsu | Chii => {
+            Shuntsu | Chi => {
                 if t.1 != 2 {
                     // 順子は234以外は不可
                     return false;

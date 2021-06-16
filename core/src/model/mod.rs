@@ -1,3 +1,4 @@
+pub mod action;
 pub mod define;
 pub mod discard;
 pub mod kita;
@@ -7,6 +8,7 @@ pub mod player;
 pub mod stage;
 pub mod tile;
 
+pub use action::*;
 pub use define::*;
 pub use discard::*;
 pub use kita::*;

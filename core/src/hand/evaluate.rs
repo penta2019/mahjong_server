@@ -1,10 +1,11 @@
-use crate::model::*;
+use serde::Serialize;
 
 use super::parse::*;
 use super::point::*;
 use super::yaku::*;
+use crate::model::*;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct WinContext {
     pub yaku: Vec<&'static Yaku>, // 役一覧(ドラは含まない)
     pub n_dora: usize,            // ドラの数(裏ドラは含まない)

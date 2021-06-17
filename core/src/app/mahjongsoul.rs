@@ -441,8 +441,8 @@ impl Mahjongsoul {
 
 pub struct App {
     game: Mahjongsoul,
-    wws_send_recv: SendRecv,
     cws_send_recv: SendRecv,
+    wws_send_recv: SendRecv,
     file_in: String,
     read_only: bool,
 }
@@ -456,14 +456,19 @@ impl App {
         let mut need_write = false;
         let mut read_only = false;
         let mut sleep = false;
+        let mut msc_port = 52000;
+        let mut gui_port = 52001;
+
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
                 "-f" => file_in = next_value(&mut it, "-f: file name missing"),
+                "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
                 "-w" => need_write = true,
                 "-r" => read_only = true,
                 "-s" => sleep = true,
-                "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
+                "-msc-port" => msc_port = next_value(&mut it, "-msc-port: port number missing"),
+                "-gui-port" => gui_port = next_value(&mut it, "-gui-port: port number missing"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -474,8 +479,8 @@ impl App {
         let operator = create_operator(&operator_name);
         Self {
             game: Mahjongsoul::new(operator, need_write, sleep),
-            wws_send_recv: create_ws_server(52001), // for Web-interface
-            cws_send_recv: create_ws_server(52000), // for Controller(mahjongsoul)
+            cws_send_recv: create_ws_server(msc_port), // for Controller(mahjongsoul)
+            wws_send_recv: create_ws_server(gui_port), // for Web-interface
             file_in,
             read_only,
         }

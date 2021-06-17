@@ -1,10 +1,10 @@
 use std::fmt;
 
-use crate::model::*;
+use serde::Serialize;
 
 use super::parse::{ParsedHand, SetPair, SetPairType};
 use super::win::is_kokushimusou_win;
-
+use crate::model::*;
 use SetPairType::*;
 
 #[derive(Debug)]
@@ -268,8 +268,10 @@ fn check_yakuhai(ph: &ParsedHand) -> TileRow {
     tr
 }
 
+#[derive(Serialize)]
 pub struct Yaku {
     pub name: &'static str,
+    #[serde(skip_serializing)]
     pub func: fn(&YakuContext) -> bool,
     pub fan_close: usize, // 鳴きなしの翻
     pub fan_open: usize,  // 鳴きありの翻(食い下がり)

@@ -1069,6 +1069,7 @@ pub struct App {
     names: [String; 4], // operator names
     n_game: u32,
     n_thread: u32,
+    gui_port: u32,
     debug: bool,
 }
 
@@ -1076,28 +1077,32 @@ impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        let mut seed = 0;
-        let mut n_game = 0;
-        let mut n_thread = 16;
-        let mut debug = false;
-        let mut it = args.iter();
-        let mut names = [
-            "".to_string(),
-            "".to_string(),
-            "".to_string(),
-            "".to_string(),
-        ];
+        let mut app = Self {
+            seed: 0,
+            names: [
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+            ],
+            n_game: 0,
+            n_thread: 16,
+            gui_port: 52001,
+            debug: false,
+        };
 
+        let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-s" => seed = next_value(&mut it, "-s: Seed missing"),
-                "-0" => names[0] = next_value(&mut it, "-0: operator name missing"),
-                "-1" => names[1] = next_value(&mut it, "-1: operator name missing"),
-                "-2" => names[2] = next_value(&mut it, "-2: operator name missing"),
-                "-3" => names[3] = next_value(&mut it, "-3: operator name missing"),
-                "-g" => n_game = next_value(&mut it, "-g: n_game missing"),
-                "-t" => n_thread = next_value(&mut it, "-t: n_thread missing"),
-                "-d" => debug = true,
+                "-s" => app.seed = next_value(&mut it, "-s: Seed missing"),
+                "-0" => app.names[0] = next_value(&mut it, "-0: operator name missing"),
+                "-1" => app.names[1] = next_value(&mut it, "-1: operator name missing"),
+                "-2" => app.names[2] = next_value(&mut it, "-2: operator name missing"),
+                "-3" => app.names[3] = next_value(&mut it, "-3: operator name missing"),
+                "-g" => app.n_game = next_value(&mut it, "-g: n_game missing"),
+                "-t" => app.n_thread = next_value(&mut it, "-t: n_thread missing"),
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
+                "-d" => app.debug = true,
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -1105,21 +1110,15 @@ impl App {
             }
         }
 
-        if seed == 0 {
-            seed = unixtime_now();
+        if app.seed == 0 {
+            app.seed = unixtime_now();
             println!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
-                seed
+                app.seed
             );
         }
 
-        Self {
-            seed,
-            n_game,
-            n_thread,
-            debug,
-            names,
-        }
+        app
     }
 
     pub fn run(&mut self) {

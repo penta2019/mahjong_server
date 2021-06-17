@@ -1,7 +1,7 @@
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Action {
     GameStart(ActionGameStart),
     RoundNew(ActionRoundNew),
@@ -93,10 +93,10 @@ impl Action {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionGameStart {}
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionRoundNew {
     pub round: usize,
     pub kyoku: usize,
@@ -107,13 +107,13 @@ pub struct ActionRoundNew {
     pub hands: [Vec<Tile>; SEAT],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionDealTile {
     pub seat: Seat,
     pub tile: Tile,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionDiscardTile {
     pub seat: Seat,
     pub tile: Tile,
@@ -121,40 +121,40 @@ pub struct ActionDiscardTile {
     pub is_riichi: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionMeld {
     pub seat: Seat,
     pub meld_type: MeldType,
     pub consumed: Vec<Tile>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionKita {
     pub seat: Seat,
     pub is_drawn: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionDora {
     pub tile: Tile,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionRoundEndWin {
     pub ura_doras: Vec<Tile>,
     pub contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionRoundEndDraw {
     pub draw_type: DrawType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionRoundEndNoTile {
     pub tenpais: [bool; SEAT],
     pub points: [Point; SEAT],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ActionGameOver {}

@@ -53,7 +53,12 @@ impl Operator for Manual {
             std::io::stdin().read_line(&mut buf).ok();
 
             let mut chars = buf.chars();
-            let c = chars.next().unwrap();
+            let c = if let Some(c) = chars.next() {
+                c
+            } else {
+                println!();
+                continue;
+            };
             match c {
                 'm' | 'p' | 's' | 'z' => {
                     if stage.turn != seat {

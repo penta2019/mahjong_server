@@ -12,14 +12,14 @@ use PlayerOperationType::*;
 // target: 行動の対象となるプレイヤー(ロン, チー, ポン, 槓など)
 
 pub fn mjai_hello() -> Value {
-    json!({"type":"hello","protocol":"mjsonp","protocol_version":3})
+    json!({"type": "hello","protocol": "mjsonp","protocol_version": 3})
 }
 
 pub fn mjai_start_game(id: Seat) -> Value {
     json!({
         "type":"start_game",
         "id": id,
-        "names":["Player0","Player1","Player2","Player3"],
+        "names":["Player0", "Player1", "Player2", "Player3"],
     })
 }
 
@@ -39,7 +39,7 @@ pub fn mjai_start_kyoku(
     let dora_marker = to_mjai_tile(doras[0]);
 
     json!({
-        "type":"start_kyoku",
+        "type": "start_kyoku",
         "bakaze": wind[round],
         "kyoku": kyoku + 1,
         "honba": honba,

@@ -192,7 +192,7 @@ pub fn mjai_end_game(scores: &[Score; SEAT]) -> Value {
 // Mjai Action ================================================================
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionDahai {
+pub struct MjaiActionDahai {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -201,7 +201,7 @@ pub struct ActionDahai {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionPon {
+pub struct MjaiActionPon {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -211,7 +211,7 @@ pub struct ActionPon {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionChi {
+pub struct MjaiActionChi {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -221,7 +221,7 @@ pub struct ActionChi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionKakan {
+pub struct MjaiActionKakan {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -230,7 +230,7 @@ pub struct ActionKakan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionDaiminkan {
+pub struct MjaiActionDaiminkan {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -240,7 +240,7 @@ pub struct ActionDaiminkan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionAnkan {
+pub struct MjaiActionAnkan {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -248,14 +248,14 @@ pub struct ActionAnkan {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionReach {
+pub struct MjaiActionReach {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionHora {
+pub struct MjaiActionHora {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -264,7 +264,7 @@ pub struct ActionHora {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionRyukyoku {
+pub struct MjaiActionRyukyoku {
     #[serde(rename = "type")]
     type_: String,
     actor: Seat,
@@ -272,23 +272,23 @@ pub struct ActionRyukyoku {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionNone {
+pub struct MjaiActionNone {
     #[serde(rename = "type")]
     type_: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MjaiAction {
-    Dahai(ActionDahai),
-    Pon(ActionPon),
-    Chi(ActionChi),
-    Kakan(ActionKakan),
-    Daiminkan(ActionDaiminkan),
-    Ankan(ActionAnkan),
-    Reach(ActionReach),
-    Hora(ActionHora),
-    Ryukyoku(ActionRyukyoku),
-    None(ActionNone),
+    Dahai(MjaiActionDahai),
+    Pon(MjaiActionPon),
+    Chi(MjaiActionChi),
+    Kakan(MjaiActionKakan),
+    Daiminkan(MjaiActionDaiminkan),
+    Ankan(MjaiActionAnkan),
+    Reach(MjaiActionReach),
+    Hora(MjaiActionHora),
+    Ryukyoku(MjaiActionRyukyoku),
+    None(MjaiActionNone),
 }
 
 impl MjaiAction {
@@ -301,27 +301,27 @@ impl MjaiAction {
         Ok(match type_ {
             "dahai" => MjaiAction::Dahai(from_value(v)?),
             "chi" => {
-                let mut act: ActionChi = from_value(v)?;
+                let mut act: MjaiActionChi = from_value(v)?;
                 act.consumed.sort();
                 MjaiAction::Chi(act)
             }
             "pon" => {
-                let mut act: ActionPon = from_value(v)?;
+                let mut act: MjaiActionPon = from_value(v)?;
                 act.consumed.sort();
                 MjaiAction::Pon(act)
             }
             "kakan" => {
-                let mut act: ActionKakan = from_value(v)?;
+                let mut act: MjaiActionKakan = from_value(v)?;
                 act.consumed.sort();
                 MjaiAction::Kakan(act)
             }
             "daiminkan" => {
-                let mut act: ActionDaiminkan = from_value(v)?;
+                let mut act: MjaiActionDaiminkan = from_value(v)?;
                 act.consumed.sort();
                 MjaiAction::Daiminkan(act)
             }
             "ankan" => {
-                let mut act: ActionAnkan = from_value(v)?;
+                let mut act: MjaiActionAnkan = from_value(v)?;
                 act.consumed.sort();
                 MjaiAction::Ankan(act)
             }
@@ -358,7 +358,7 @@ impl MjaiAction {
         Some(match tp {
             Nop => return None,
             Discard => return None,
-            Ankan => MjaiAction::Ankan(ActionAnkan {
+            Ankan => MjaiAction::Ankan(MjaiActionAnkan {
                 type_: "ankan".to_string(),
                 actor: seat,
                 consumed: vec_to_mjai_tile(cs),
@@ -379,7 +379,7 @@ impl MjaiAction {
                 .map(|&t| to_mjai_tile(t))
                 .collect();
 
-                MjaiAction::Kakan(ActionKakan {
+                MjaiAction::Kakan(MjaiActionKakan {
                     type_: "kakan".to_string(),
                     actor: seat,
                     pai: to_mjai_tile(t),
@@ -387,13 +387,13 @@ impl MjaiAction {
                 })
             }
             Riichi => return None,
-            Tsumo => MjaiAction::Hora(ActionHora {
+            Tsumo => MjaiAction::Hora(MjaiActionHora {
                 type_: "hora".to_string(),
                 actor: seat,
                 target: seat,
                 pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
             }),
-            Kyushukyuhai => MjaiAction::Ryukyoku(ActionRyukyoku {
+            Kyushukyuhai => MjaiAction::Ryukyoku(MjaiActionRyukyoku {
                 type_: "ryukyoku".to_string(),
                 actor: seat,
                 reason: "kyushukyuhai".to_string(),
@@ -401,7 +401,7 @@ impl MjaiAction {
             Kita => panic!(),
             Chi => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                MjaiAction::Chi(ActionChi {
+                MjaiAction::Chi(MjaiActionChi {
                     type_: "chi".to_string(),
                     actor: seat,
                     target: target_seat,
@@ -411,7 +411,7 @@ impl MjaiAction {
             }
             Pon => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                MjaiAction::Pon(ActionPon {
+                MjaiAction::Pon(MjaiActionPon {
                     type_: "pon".to_string(),
                     actor: seat,
                     target: target_seat,
@@ -421,7 +421,7 @@ impl MjaiAction {
             }
             Minkan => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                MjaiAction::Daiminkan(ActionDaiminkan {
+                MjaiAction::Daiminkan(MjaiActionDaiminkan {
                     type_: "daiminkan".to_string(),
                     actor: seat,
                     target: target_seat,
@@ -431,7 +431,7 @@ impl MjaiAction {
             }
             Ron => {
                 let lt = stage.last_tile.unwrap();
-                MjaiAction::Hora(ActionHora {
+                MjaiAction::Hora(MjaiActionHora {
                     type_: "hora".to_string(),
                     actor: seat,
                     target: lt.0,

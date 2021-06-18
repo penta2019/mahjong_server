@@ -69,10 +69,10 @@ impl StageController {
         }
 
         for l in &mut self.operators {
-            l.notify_action(stg, act);
+            l.notify_action(stg, &act);
         }
         for l in &mut self.listeners {
-            l.notify_action(stg, act);
+            l.notify_action(stg, &act);
         }
     }
 

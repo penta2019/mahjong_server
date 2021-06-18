@@ -43,8 +43,14 @@ impl Mahjongsoul {
         }
     }
 
+    #[inline]
     fn get_stage(&self) -> &Stage {
         return self.ctrl.get_stage();
+    }
+
+    #[inline]
+    fn act(&mut self, act: Action) {
+        self.ctrl.handle_action(&act);
     }
 
     fn apply(&mut self, msg: &Value) -> Option<Value> {
@@ -245,13 +251,13 @@ impl Mahjongsoul {
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
                 let t = tile_from_symbol(as_str(doras.last().unwrap()));
-                self.ctrl.handle_action(&Action::dora(t));
+                self.act(Action::dora(t));
             }
         }
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
-        self.ctrl.handle_action(&Action::game_start());
+        self.act(Action::game_start());
     }
 
     fn handler_newround(&mut self, data: &Value) {
@@ -290,8 +296,9 @@ impl Mahjongsoul {
             }
         }
 
-        let act = Action::round_new(round, kyoku, honba, kyoutaku, doras, scores, hands);
-        self.ctrl.handle_action(&act);
+        self.act(Action::round_new(
+            round, kyoku, honba, kyoutaku, doras, scores, hands,
+        ));
     }
 
     fn handler_dealtile(&mut self, data: &Value) {
@@ -300,11 +307,9 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            self.ctrl.handle_action(&Action::deal_tile(s, t));
-            // self.ctrl.op_dealtile(s, t);
+            self.act(Action::deal_tile(s, t));
         } else {
-            self.ctrl.handle_action(&Action::deal_tile(s, Z8));
-            // self.ctrl.op_dealtile(s, Z8);
+            self.act(Action::deal_tile(s, Z8));
         }
     }
 
@@ -313,8 +318,7 @@ impl Mahjongsoul {
         let t = tile_from_symbol(as_str(&data["tile"]));
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
-        self.ctrl.handle_action(&Action::discard_tile(s, t, m, r));
-        // self.ctrl.op_discardtile(s, t, m, r);
+        self.act(Action::discard_tile(s, t, m, r));
         self.update_doras(data);
     }
 
@@ -343,7 +347,7 @@ impl Mahjongsoul {
             }
         }
 
-        self.ctrl.handle_action(&Action::meld(s, tp, consumed));
+        self.act(Action::meld(s, tp, consumed));
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -366,14 +370,14 @@ impl Mahjongsoul {
         } else {
             vec![t]
         };
-        self.ctrl.handle_action(&Action::meld(s, tp, consumed));
+        self.act(Action::meld(s, tp, consumed));
     }
 
     fn handler_babei(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let m = as_bool(&data["moqie"]);
 
-        self.ctrl.handle_action(&Action::kita(s, m));
+        self.act(Action::kita(s, m));
     }
 
     fn handler_hule(&mut self, data: &Value) {
@@ -406,15 +410,13 @@ impl Mahjongsoul {
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
 
-        let act = Action::round_end_win(vec![], wins);
-        self.ctrl.handle_action(&act);
+        self.act(Action::round_end_win(vec![], wins));
         self.write_to_file();
     }
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
-        let act = Action::round_end_draw(DrawType::Kyushukyuhai);
-        self.ctrl.handle_action(&act);
+        self.act(Action::round_end_draw(DrawType::Kyushukyuhai));
         self.write_to_file();
     }
 
@@ -431,8 +433,7 @@ impl Mahjongsoul {
             tenpais[s] = as_bool(&player["tingpai"]);
         }
 
-        let act = Action::round_end_no_tile(tenpais, points);
-        self.ctrl.handle_action(&act);
+        self.act(Action::round_end_no_tile(tenpais, points));
         self.write_to_file();
     }
 }

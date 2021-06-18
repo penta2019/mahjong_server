@@ -112,6 +112,11 @@ impl MahjongEngine {
         return self.ctrl.get_stage();
     }
 
+    #[inline]
+    fn act(&mut self, act: Action) {
+        self.ctrl.handle_action(&act);
+    }
+
     fn next_step(&mut self) -> bool {
         if let Some(_) = self.round_result {
             self.next_op = End;
@@ -154,8 +159,7 @@ impl MahjongEngine {
     }
 
     fn do_game_start(&mut self) {
-        let act = Action::GameStart(ActionGameStart {});
-        self.ctrl.handle_action(&act);
+        self.act(Action::GameStart(ActionGameStart {}));
     }
 
     fn do_round_new(&mut self) {
@@ -201,7 +205,7 @@ impl MahjongEngine {
 
         let rn = &self.round_next;
 
-        self.ctrl.handle_action(&Action::round_new(
+        let act = Action::round_new(
             rn.round,
             rn.kyoku,
             rn.honba,
@@ -209,7 +213,8 @@ impl MahjongEngine {
             doras,
             rn.scores,
             ph,
-        ));
+        );
+        self.act(act);
     }
 
     fn do_turn_operation(&mut self) {
@@ -284,11 +289,10 @@ impl MahjongEngine {
             }
             _ => panic!("Operation {:?} not found in {:?}", op, ops),
         };
-        self.ctrl.handle_action(&act);
+        self.act(act);
 
         if let Some(kd) = self.kan_dora {
-            let act = Action::Dora(ActionDora { tile: kd });
-            self.ctrl.handle_action(&act);
+            self.act(Action::Dora(ActionDora { tile: kd }));
             self.kan_dora = None;
         }
     }
@@ -346,17 +350,14 @@ impl MahjongEngine {
             self.round_result = Some(RoundResult::Ron(rons));
             return;
         } else if let Some((s, op)) = minkan {
-            let act = Action::meld(s, MeldType::Minkan, op.1.clone());
-            self.ctrl.handle_action(&act);
+            self.act(Action::meld(s, MeldType::Minkan, op.1.clone()));
             self.melding = Some(op);
         } else if let Some((s, op)) = pon {
             // PonをChiiより優先して処理
-            let act = Action::meld(s, MeldType::Pon, op.1.clone());
-            self.ctrl.handle_action(&act);
+            self.act(Action::meld(s, MeldType::Pon, op.1.clone()));
             self.melding = Some(op);
         } else if let Some((s, op)) = chi {
-            let act = Action::meld(s, MeldType::Chi, op.1.clone());
-            self.ctrl.handle_action(&act);
+            self.act(Action::meld(s, MeldType::Chi, op.1.clone()));
             self.melding = Some(op);
         };
 
@@ -374,25 +375,25 @@ impl MahjongEngine {
                 Pon | Chi => {}
                 Ankan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.handle_action(&Action::deal_tile(turn, r));
-                    self.ctrl.handle_action(&Action::dora(kd)); // 槓ドラは打牌前
+                    self.act(Action::deal_tile(turn, r));
+                    self.act(Action::dora(kd)); // 槓ドラは打牌前
                     self.check_suukansanra_needed();
                 }
                 Minkan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.handle_action(&Action::deal_tile(turn, r));
+                    self.act(Action::deal_tile(turn, r));
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.ctrl.handle_action(&Action::deal_tile(turn, r));
+                    self.act(Action::deal_tile(turn, r));
                     self.kan_dora = Some(kd); // 槓ドラは打牌後
                     self.check_suukansanra_needed();
                 }
                 Kita => {
                     let k = self.draw_kita_tile();
-                    self.ctrl.handle_action(&Action::deal_tile(turn, k));
+                    self.act(Action::deal_tile(turn, k));
                 }
                 _ => panic!(),
             }
@@ -400,7 +401,7 @@ impl MahjongEngine {
             if stg.left_tile_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
-                self.ctrl.handle_action(&Action::deal_tile(s, t));
+                self.act(Action::deal_tile(s, t));
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }
@@ -456,8 +457,7 @@ impl MahjongEngine {
 
                 let contexts = vec![(turn, d_scores, ctx)];
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                let act = Action::round_end_win(ura_doras, contexts);
-                self.ctrl.handle_action(&act);
+                self.act(Action::round_end_win(ura_doras, contexts));
             }
             RoundResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
@@ -499,8 +499,7 @@ impl MahjongEngine {
                 need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                let act = Action::round_end_win(ura_doras, contexts);
-                self.ctrl.handle_action(&act);
+                self.act(Action::round_end_win(ura_doras, contexts));
             }
             RoundResult::Draw(draw_type) => {
                 match draw_type {
@@ -534,13 +533,12 @@ impl MahjongEngine {
                             d_scores[s] = if tenpais[s] { recv } else { -pay };
                         }
 
-                        let act = Action::round_end_no_tile(tenpais, d_scores);
-                        self.ctrl.handle_action(&act);
+                        self.act(Action::round_end_no_tile(tenpais, d_scores));
                         need_leader_change = !tenpais[kyoku];
                     }
                     _ => {
                         let act = Action::round_end_draw(*draw_type);
-                        self.ctrl.handle_action(&act);
+                        self.act(act);
                     }
                 }
                 honba += 1;
@@ -583,7 +581,7 @@ impl MahjongEngine {
     }
 
     fn do_game_result(&mut self) {
-        self.ctrl.handle_action(&Action::game_over());
+        self.act(Action::game_over());
     }
 
     fn draw_tile(&mut self) -> Tile {

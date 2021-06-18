@@ -1,8 +1,7 @@
 use super::*;
+use serde::{de, ser};
 
-use serde::Serialize;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)
 
 impl Tile {
@@ -57,11 +56,30 @@ impl Tile {
     pub fn is_doragon(&self) -> bool {
         self.0 == TZ && DW <= self.1 && self.1 <= DR
     }
+
+    fn from_symbol(s: &str) -> Self {
+        let b = s.as_bytes();
+        let n = b[1] - b'0';
+        let t = match b[0] as char {
+            'm' => 0,
+            'p' => 1,
+            's' => 2,
+            'z' => 3,
+            _ => panic!("invalid Tile type"),
+        };
+        Self(t, n as usize)
+    }
 }
 
 impl fmt::Display for Tile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}{}", ['m', 'p', 's', 'z'][self.0], self.1)
+    }
+}
+
+impl fmt::Debug for Tile {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
 
@@ -81,5 +99,40 @@ impl PartialOrd for Tile {
 impl Ord for Tile {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(&other).unwrap()
+    }
+}
+
+impl ser::Serialize for Tile {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+struct TileVisitor;
+
+impl<'de> de::Visitor<'de> for TileVisitor {
+    type Value = Tile;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("tile symbol")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Tile::from_symbol(v))
+    }
+}
+
+impl<'de> de::Deserialize<'de> for Tile {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as de::Deserializer<'de>>::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        deserializer.deserialize_identifier(TileVisitor)
     }
 }

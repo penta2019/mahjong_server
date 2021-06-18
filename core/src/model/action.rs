@@ -2,6 +2,7 @@ use crate::hand::evaluate::WinContext;
 use crate::model::*;
 
 #[derive(Debug, Serialize)]
+#[serde(tag = "type")]
 pub enum Action {
     GameStart(ActionGameStart),
     RoundNew(ActionRoundNew),

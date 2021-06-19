@@ -25,7 +25,6 @@ impl OperatorBuilder for MjaiEndpointBuilder {
     }
 }
 
-// MjaiEndpoint ===============================================================
 #[derive(Clone)]
 pub struct MjaiEndpoint {
     config: Config,

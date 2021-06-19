@@ -692,7 +692,7 @@ impl MahjongEngine {
     }
 }
 
-// Turn Operation Check =======================================================
+// [Turn Operation Check]
 // プレイヤーのツモ番に可能な操作をチェックする
 // fn(&Stage) -> Option<PlayerOperation>
 
@@ -858,7 +858,7 @@ fn check_kita(stg: &Stage) -> Vec<PlayerOperation> {
     ops
 }
 
-// Call Operation Check =======================================================
+// [Call Operation Check]
 // ツモ番のプレイヤーが打牌を行ったあとに,他のプレイヤーが可能な操作をチェックする
 // fn(&Stage) -> Vec<(Seat, PlayerOperation)>
 // ロン以外の返り値のリストは要素が2つ以上になることはないが一貫性のためVecを返却する
@@ -1001,8 +1001,7 @@ fn check_ron(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     ops
 }
 
-// Utility ====================================================================
-
+// [Utility]
 fn create_wall(seed: u64) -> Vec<Tile> {
     let mut wall = Vec::new();
     for ti in 0..TYPE {
@@ -1071,8 +1070,7 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
     v
 }
 
-// Application ================================================================
-
+// [Application]
 pub struct App {
     seed: u64,
     names: [String; 4], // operator names

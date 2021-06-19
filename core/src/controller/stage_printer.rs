@@ -2,7 +2,7 @@ use super::stage_controller::StageListener;
 use crate::model::*;
 use crate::util::common::vec_to_string;
 
-// StagePrinter
+// [StagePrinter]
 pub struct StagePrinter {}
 
 impl StagePrinter {
@@ -59,3 +59,17 @@ impl StageListener for StagePrinter {
         }
     }
 }
+
+// [StageDebugPrinter]
+pub struct StageDebugPrinter {}
+
+impl StageDebugPrinter {}
+
+impl StageListener for StageDebugPrinter {
+    fn notify_action(&mut self, stg: &Stage, act: &Action) {
+        println!("step: {}", stg.step);
+        println!("{}", serde_json::to_string(act).unwrap());
+    }
+}
+
+// [StageStepPrinter]

@@ -430,8 +430,7 @@ impl Mahjongsoul {
     }
 }
 
-// Application ================================================================
-
+// [Application]
 pub struct App {
     game: Mahjongsoul,
     cws_send_recv: SendRecv,
@@ -531,8 +530,6 @@ impl App {
         }
     }
 }
-
-// Utility ====================================================================
 
 fn tile_from_symbol(s: &str) -> Tile {
     let b = s.as_bytes();

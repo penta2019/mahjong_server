@@ -6,7 +6,7 @@ use crate::model::*;
 
 use PlayerOperationType::*;
 
-// Mjai Message ===============================================================
+// [Mjai Message]
 // id: 自分の座席
 // seat: 行動を行ったプレイヤーの座席
 // target: 行動の対象となるプレイヤー(ロン, チー, ポン, 槓など)
@@ -189,8 +189,7 @@ pub fn mjai_end_game(scores: &[Score; SEAT]) -> Value {
     })
 }
 
-// Mjai Action ================================================================
-
+// [Mjai Action]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MjaiActionDahai {
     #[serde(rename = "type")]

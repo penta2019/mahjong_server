@@ -1,4 +1,4 @@
-use std::io::{stdin, stdout, Write};
+use std::io::{stdout, Write};
 use std::time;
 
 use serde_json::{json, Value};
@@ -9,6 +9,7 @@ use crate::model::*;
 use crate::operator::create_operator;
 use crate::operator::nop::Nop;
 use crate::operator::Operator;
+use crate::util::action_writer::ActionWriter;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
@@ -20,15 +21,20 @@ struct Mahjongsoul {
     step: usize,
     seat: usize, // my seat
     actions: Vec<Value>,
-    operator: Box<dyn Operator>,
-    need_write: bool,
     random_sleep: bool,
+    writer: Option<ActionWriter>,
+    operator: Box<dyn Operator>,
 }
 
 impl Mahjongsoul {
-    fn new(operator: Box<dyn Operator>, need_write: bool, random_sleep: bool) -> Self {
+    fn new(random_sleep: bool, write_to_file: bool, operator: Box<dyn Operator>) -> Self {
         // operatorは座席0に暫定でセットする
         // 新しい局が開始されて座席が判明した際にスワップする
+        let writer = if write_to_file {
+            Some(ActionWriter::new())
+        } else {
+            None
+        };
         let nop = Box::new(Nop::new());
         let operators: [Box<dyn Operator>; SEAT] =
             [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
@@ -37,9 +43,9 @@ impl Mahjongsoul {
             step: 0,
             seat: NO_SEAT,
             actions: vec![],
-            operator: operator,
-            need_write: need_write,
             random_sleep: random_sleep,
+            writer: writer,
+            operator: operator,
         }
     }
 
@@ -51,6 +57,9 @@ impl Mahjongsoul {
     #[inline]
     fn act(&mut self, act: Action) {
         self.ctrl.handle_action(&act);
+        if let Some(w) = &mut self.writer {
+            w.push_action(act)
+        }
     }
 
     fn apply(&mut self, msg: &Value) -> Option<Value> {
@@ -232,20 +241,6 @@ impl Mahjongsoul {
         Some(json!(format!("msc.ui.{}", action)))
     }
 
-    fn write_to_file(&self) {
-        if !self.need_write {
-            return;
-        }
-
-        let file_name = format!("data/{}.json", unixtime_now().to_string());
-        let path = std::path::Path::new(&file_name);
-        let prefix = path.parent().unwrap();
-        std::fs::create_dir_all(prefix).unwrap();
-        let mut f = std::fs::File::create(path).unwrap();
-        let arr = Value::Array(self.actions.clone());
-        write!(f, "{}", serde_json::to_string_pretty(&arr).unwrap()).unwrap();
-    }
-
     fn update_doras(&mut self, data: &Value) {
         let stg = self.get_stage();
         if let Value::Array(doras) = &data["doras"] {
@@ -411,13 +406,11 @@ impl Mahjongsoul {
         }
 
         self.act(Action::round_end_win(vec![], wins));
-        self.write_to_file();
     }
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
         self.act(Action::round_end_draw(DrawType::Kyushukyuhai));
-        self.write_to_file();
     }
 
     fn handler_notile(&mut self, data: &Value) {
@@ -434,7 +427,6 @@ impl Mahjongsoul {
         }
 
         self.act(Action::round_end_no_tile(tenpais, points));
-        self.write_to_file();
     }
 }
 
@@ -444,7 +436,6 @@ pub struct App {
     game: Mahjongsoul,
     cws_send_recv: SendRecv,
     wws_send_recv: SendRecv,
-    file_in: String,
     read_only: bool,
 }
 
@@ -452,24 +443,22 @@ impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        let mut file_in = "".to_string();
-        let mut operator_name = "".to_string();
-        let mut need_write = false;
         let mut read_only = false;
         let mut sleep = false;
+        let mut write_to_file = false;
         let mut msc_port = 52000;
         let mut gui_port = 52001;
+        let mut operator_name = "".to_string();
 
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-f" => file_in = next_value(&mut it, "-f: file name missing"),
-                "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
-                "-w" => need_write = true,
                 "-r" => read_only = true,
                 "-s" => sleep = true,
+                "-w" => write_to_file = true,
                 "-msc-port" => msc_port = next_value(&mut it, "-msc-port: port number missing"),
                 "-gui-port" => gui_port = next_value(&mut it, "-gui-port: port number missing"),
+                "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -479,47 +468,14 @@ impl App {
 
         let operator = create_operator(&operator_name);
         Self {
-            game: Mahjongsoul::new(operator, need_write, sleep),
+            game: Mahjongsoul::new(sleep, write_to_file, operator),
             cws_send_recv: create_ws_server(msc_port), // for Controller(mahjongsoul)
             wws_send_recv: create_ws_server(gui_port), // for Web-interface
-            file_in,
             read_only,
         }
     }
 
     pub fn run(&mut self) {
-        if self.file_in == "" {
-            self.read_from_cws();
-        } else {
-            self.read_from_file();
-        }
-    }
-
-    fn read_from_file(&mut self) {
-        match std::fs::read_to_string(&self.file_in) {
-            Ok(contents) => {
-                if let Value::Array(record) = serde_json::from_str(&contents).unwrap() {
-                    for v in &record {
-                        print!("Enter>");
-                        stdout().flush().unwrap();
-
-                        let mut buf = String::new();
-                        stdin().read_line(&mut buf).ok();
-
-                        self.game.apply(v);
-                        println!("{}", self.game.get_stage());
-                        self.send_stage_data();
-                    }
-                }
-                println!("reached end of file: {}", self.file_in);
-            }
-            Err(err) => {
-                println!("IO Error: {}", err);
-            }
-        }
-    }
-
-    fn read_from_cws(&mut self) {
         let mut connected = false;
 
         loop {

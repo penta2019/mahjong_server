@@ -5,6 +5,7 @@ use serde::Serialize;
 use super::parse::{ParsedHand, SetPair, SetPairType};
 use super::win::is_kokushimusou_win;
 use crate::model::*;
+
 use SetPairType::*;
 
 #[derive(Debug)]

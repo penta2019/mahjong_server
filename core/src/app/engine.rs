@@ -8,6 +8,7 @@ use crate::hand::win::*;
 use crate::model::*;
 use crate::operator::create_operator;
 use crate::operator::Operator;
+use crate::util::action_writer::ActionWriter;
 use crate::util::common::*;
 use crate::util::ws_server::*;
 
@@ -33,13 +34,6 @@ enum RoundResult {
 }
 
 #[derive(Debug)]
-struct Config {
-    seed: u64,            // 牌山生成用の乱数のシード値
-    n_round: usize,       // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
-    initial_score: Score, // 初期得点
-}
-
-#[derive(Debug)]
 struct NextRoundInfo {
     round: usize,
     kyoku: usize,
@@ -50,8 +44,11 @@ struct NextRoundInfo {
 
 #[derive(Debug)]
 struct MahjongEngine {
-    config: Config,
+    seed: u64,               // 牌山生成用の乱数のシード値
+    n_round: usize,          // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
+    initial_score: Score,    // 初期得点
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
+    writer: Option<ActionWriter>,
     // ゲーム制御
     ctrl: StageController,
     next_op: StageOperation,
@@ -73,22 +70,33 @@ struct MahjongEngine {
 
 impl MahjongEngine {
     fn new(
-        config: Config,
+        seed: u64,
+        n_round: usize,
+        initial_score: Score,
+        write_to_file: bool,
         operators: [Box<dyn Operator>; SEAT],
         listeners: Vec<Box<dyn StageListener>>,
     ) -> Self {
         let ctrl = StageController::new(operators, listeners);
-        let rng = rand::SeedableRng::seed_from_u64(config.seed);
+        let writer = if write_to_file {
+            Some(ActionWriter::new())
+        } else {
+            None
+        };
+        let rng = rand::SeedableRng::seed_from_u64(seed);
         let round_next = NextRoundInfo {
             round: 0,
             kyoku: 0,
             honba: 0,
             kyoutaku: 0,
-            scores: [config.initial_score; SEAT],
+            scores: [initial_score; SEAT],
         };
         Self {
-            config: config,
+            seed: seed,
+            n_round: n_round,
+            initial_score: initial_score,
             rng: rng,
+            writer: writer,
             ctrl: ctrl,
             next_op: GameStart,
             melding: None,
@@ -115,6 +123,9 @@ impl MahjongEngine {
     #[inline]
     fn act(&mut self, act: Action) {
         self.ctrl.handle_action(&act);
+        if let Some(w) = &mut self.writer {
+            w.push_action(act)
+        }
     }
 
     fn next_step(&mut self) -> bool {
@@ -566,7 +577,7 @@ impl MahjongEngine {
         };
 
         // 対戦終了判定
-        if stg.round == self.config.n_round {
+        if stg.round == self.n_round {
             self.is_game_over = true;
         }
 
@@ -1067,6 +1078,7 @@ pub struct App {
     names: [String; 4], // operator names
     n_game: u32,
     n_thread: u32,
+    write_to_file: bool,
     gui_port: u32,
     debug: bool,
 }
@@ -1076,15 +1088,16 @@ impl App {
         use std::process::exit;
 
         let mut app = Self {
-            seed: 0,
             names: [
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
             ],
+            seed: 0,
             n_game: 0,
             n_thread: 16,
+            write_to_file: false,
             gui_port: 52001,
             debug: false,
         };
@@ -1093,14 +1106,15 @@ impl App {
         while let Some(s) = it.next() {
             match s.as_str() {
                 "-s" => app.seed = next_value(&mut it, "-s: Seed missing"),
+                "-g" => app.n_game = next_value(&mut it, "-g: n_game missing"),
+                "-t" => app.n_thread = next_value(&mut it, "-t: n_thread missing"),
+                "-w" => app.write_to_file = true,
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
+                "-d" => app.debug = true,
                 "-0" => app.names[0] = next_value(&mut it, "-0: operator name missing"),
                 "-1" => app.names[1] = next_value(&mut it, "-1: operator name missing"),
                 "-2" => app.names[2] = next_value(&mut it, "-2: operator name missing"),
                 "-3" => app.names[3] = next_value(&mut it, "-3: operator name missing"),
-                "-g" => app.n_game = next_value(&mut it, "-g: n_game missing"),
-                "-t" => app.n_thread = next_value(&mut it, "-t: n_thread missing"),
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
-                "-d" => app.debug = true,
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -1133,11 +1147,6 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        let config = Config {
-            seed: self.seed,
-            n_round: 2,
-            initial_score: 25000,
-        };
         let operators = [
             create_operator(&self.names[0]),
             create_operator(&self.names[1]),
@@ -1145,7 +1154,14 @@ impl App {
             create_operator(&self.names[3]),
         ];
         let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
-        let mut game = MahjongEngine::new(config, operators, listeners);
+        let mut game = MahjongEngine::new(
+            self.seed,
+            2,
+            25000,
+            self.write_to_file,
+            operators,
+            listeners,
+        );
         let send_recv = create_ws_server(52001);
 
         loop {
@@ -1200,8 +1216,6 @@ impl App {
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
-        let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
-        let (tx, rx) = mpsc::channel();
         let operators: [Box<dyn Operator>; 4] = [
             create_operator(&self.names[0]),
             create_operator(&self.names[1]),
@@ -1209,6 +1223,8 @@ impl App {
             create_operator(&self.names[3]),
         ];
 
+        let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
+        let (tx, rx) = mpsc::channel();
         let mut total_score_delta = [0; SEAT];
         let mut total_rank_sum = [0; SEAT];
         loop {
@@ -1232,14 +1248,9 @@ impl App {
 
                 let tx2 = tx.clone();
                 thread::spawn(move || {
-                    let config = Config {
-                        seed: seed,
-                        n_round: 2,
-                        initial_score: 25000,
-                    };
                     let start = time::Instant::now();
-
-                    let mut game = MahjongEngine::new(config, shuffled_operators, vec![]);
+                    let mut game =
+                        MahjongEngine::new(seed, 2, 25000, false, shuffled_operators, vec![]);
                     loop {
                         if game.next_step() {
                             break;
@@ -1253,12 +1264,12 @@ impl App {
             loop {
                 if let Ok((shuffle, game, elapsed)) = rx.try_recv() {
                     let ms = elapsed.as_nanos() / 1000000;
-                    print!("{:5},{:4}ms,{:20}", n_game_end, ms, game.config.seed);
+                    print!("{:5},{:4}ms,{:20}", n_game_end, ms, game.seed);
                     for s in 0..SEAT {
                         let pl = &game.get_stage().players[s];
                         let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
-                        total_score_delta[i] += score - game.config.initial_score;
+                        total_score_delta[i] += score - game.initial_score;
                         total_rank_sum[i] += rank;
                         print!(", op{}:{:5}({})", i, score, rank);
                     }

@@ -62,7 +62,13 @@ GUIを使用しない場合不要
 オプション一覧
 ```
 -s seed
-    牌山生成のシード値.指定しなかった場合は現在のunixtime(秒)を使用.  
+    牌山生成のシード値.指定しなかった場合は現在のunixtime(秒)を使用. 
+-w
+    ファイルに牌譜を出力
+-gui-port port
+    GUI用のwsサーバのポート
+-d
+    ステップ実行.各プレイヤーが牌をツモった後に一時停止します.  
 -0 operator_name
     座席0のOperator. デフォルト値はNop.
 -1 operator_name
@@ -71,8 +77,6 @@ GUIを使用しない場合不要
     座席2のOperator. デフォルト値はNop.
 -3 operator_name
     座席3のOperator. デフォルト値はNop.
--d
-    ステップ実行.各プレイヤーが牌をツモった後に一時停止します.  
 ```
 
 実行例  
@@ -89,11 +93,11 @@ cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 オプション一覧
 ```
 -s seed
-    牌山生成のシード値を生成するためのマスターのシード値.指定しなかった場合は現在のunixtime(秒)を使用.  
+    牌山生成のシード値を生成するためのマスターのシード値.指定しなかった場合は現在のunixtime(秒)を使用.
 -g n_game
-    必須オプション.実行数する試合の数.このオプションを指定しない場合シングル実行になります.  
+    必須オプション.実行数する試合の数.このオプションを指定しない場合シングル実行になります.
 -t n_thread
-    同時に実行するスレッド(試合)の数.デフォルト値は16.  
+    同時に実行するスレッド(試合)の数.デフォルト値は16.
 -0 operator_name
     座席0のOperator. デフォルト値はNop.
 -1 operator_name
@@ -115,14 +119,16 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
 
 オプション一覧
 ```
--w
-    局終了時にイベントデータ(MJAction)を/core/data/[unixtime].jsonに保存します.  
--f filename
-    保存したイベントデータをリプレイします.  
 -r
     読み込み専用モード.このモードではOperatorが指定した操作(雀魂の自動操作)を行いません.
 -s
     操作(ロン,ツモ,キャンセルを除く)を行う前にランダム時間スリープします.最大4秒
+-w
+    局終了時にイベントデータ(MJAction)を/core/data/[unixtime].jsonに保存します.  
+-msc-port port
+    雀魂側のスクリプトから接続するためのwsサーバのポート
+-gui-port port
+    GUI用のwsサーバのポート
 -0 operator_name
     使用するOperator(AI).
 ```

@@ -15,7 +15,7 @@
 
 <script>
 import { computed } from "vue";
-import { tile_types, seat_colors } from "../common.js";
+import { tile_types, seat_colors, tile_from_symbol } from "../common.js";
 import AnpaiIndicator from "./AnpaiIndicator.vue";
 
 function parse_hands(stage, seat) {
@@ -26,8 +26,7 @@ function parse_hands(stage, seat) {
   let drawn = stage.players[seat].drawn;
 
   if (drawn) {
-    let ti = tile_types[drawn[0]];
-    let ni = Number(drawn[1]);
+    let [ti, ni] = tile_from_symbol(drawn);
     if (ni == 0) {
       hand[ti][0] -= 1;
       hand[ti][5] -= 1;
@@ -51,8 +50,7 @@ function parse_hands(stage, seat) {
   }
 
   if (drawn) {
-    let ti = tile_types[drawn[0]];
-    let ni = Number(drawn[1]);
+    let [ti, ni] = tile_from_symbol(drawn);
     res.push({
       tile: "z9",
       type: 3,

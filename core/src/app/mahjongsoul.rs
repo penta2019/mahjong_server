@@ -444,8 +444,8 @@ impl App {
         let mut read_only = false;
         let mut sleep = false;
         let mut write_to_file = false;
-        let mut msc_port = 52000;
-        let mut gui_port = 52001;
+        let mut msc_port = super::MSC_PORT;
+        let mut gui_port = super::GUI_PORT;
         let mut operator_name = "".to_string();
 
         let mut it = args.iter();

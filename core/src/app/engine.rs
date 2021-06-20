@@ -1096,7 +1096,7 @@ impl App {
             n_game: 0,
             n_thread: 16,
             write_to_file: false,
-            gui_port: 52001,
+            gui_port: super::GUI_PORT,
             debug: false,
         };
 
@@ -1160,7 +1160,7 @@ impl App {
             operators,
             listeners,
         );
-        let send_recv = create_ws_server(52001);
+        let send_recv = create_ws_server(self.gui_port);
 
         loop {
             let stop = if let Deal = &game.next_op {

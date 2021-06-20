@@ -38,7 +38,7 @@
 
 <script>
 import { computed } from "vue";
-import { seat_colors, seat_pos } from "../common.js";
+import { tile_types, seat_colors, seat_pos } from "../common.js";
 import AnpaiIndicator from "./AnpaiIndicator.vue";
 
 function create_element(
@@ -140,7 +140,7 @@ export default {
   },
   setup(props) {
     return {
-      types: ["m", "p", "s", "z"],
+      types: tile_types,
       colors: seat_colors,
       tile_states: computed(() => parse_tile_states(props.stage, props.seat)),
     };

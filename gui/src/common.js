@@ -1,7 +1,4 @@
-export const tile_types = {
-    0: "m", 1: "p", 2: "s", 3: "z",
-    m: 0, p: 1, s: 2, z: 3,
-};
+export const tile_types = ["m", "p", "s", "z"];
 
 export const seat_colors = [
     "#FF8C00", // 0: 自家
@@ -14,4 +11,9 @@ export const seat_colors = [
 
 export function seat_pos(seat_self, seat_target) {
     return (4 + seat_target - seat_self) % 4;
+}
+
+export function tile_from_symbol(sym) {
+    let table = { m: 0, p: 1, s: 2, z: 3 };
+    return [table[sym[0]], Number(sym[1])];
 }

@@ -37,7 +37,7 @@ impl fmt::Display for TileStateType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DrawType {
     Kyushukyuhai,   // 九種九牌
     Suufuurenda,    // 四風連打
@@ -138,6 +138,6 @@ impl fmt::Display for Stage {
                 self.tile_remains[ti]
             )?;
         }
-        writeln!(f, "")
+        Ok(())
     }
 }

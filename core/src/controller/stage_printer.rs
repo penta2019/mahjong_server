@@ -1,6 +1,6 @@
 use super::stage_controller::StageListener;
 use crate::model::*;
-use crate::util::common::{prompt, vec_to_string};
+use crate::util::common::vec_to_string;
 
 // [StagePrinter]
 pub struct StagePrinter {}
@@ -125,8 +125,6 @@ impl StageListener for StageStepPrinter {
                 println!("{}", stg);
             }
         }
-
-        prompt();
-        println!();
+        // println!();
     }
 }

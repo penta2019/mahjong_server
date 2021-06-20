@@ -18,5 +18,5 @@ pub use player::*;
 pub use stage::*;
 pub use tile::*;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fmt;

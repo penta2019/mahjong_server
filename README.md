@@ -114,7 +114,7 @@ cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 ```
 
-### 雀魂自動操作モード (J)  
+### 雀魂自動操作モード (J)
 本体を起動した後,ゲーム画面の開発コンソールを開いて本体のwebsocketサーバに接続します.  
 
 オプション一覧
@@ -151,11 +151,6 @@ cargo run J -r -0 MjaiEndpoint    # 本体側
 akochan mjai_client 11601         # akochan側
 ```
 
-* データのリプレイ
-```
-cargo run J -f data/1620224228.json
-```
-
 ゲーム側から本体への接続  
 ブラウザにtampermonkeyなどのユーザースクリプト実行プラグインをインストールして/script/mahjong_soul.jsの中身を貼り付けます.  
 tampermonkeyの場合,行頭のコメントを自動で読み取って設定を反映します.  
@@ -175,6 +170,17 @@ arg 0:  0: 胴の間, 1: 銀の間, 2: 金の間
 arg 1: 0: 4人東, 1: 4人南
 ```
 > msc.ui.enable_auto_match(1, 0);
+```
+### 牌譜リプレイモード (R)
+E, J モードの-wオプションでファイルに書き出した牌譜(json)を読み込んで再生します。
+
+オプション一覧
+```
+-f
+    再生する牌譜のファイルパス
+-gui-port port
+    GUI用のwsサーバのポート
+
 ```
 
 ### GUI

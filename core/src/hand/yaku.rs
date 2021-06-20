@@ -1,7 +1,5 @@
 use std::fmt;
 
-use serde::Serialize;
-
 use super::parse::{ParsedHand, SetPair, SetPairType};
 use super::win::is_kokushimusou_win;
 use crate::model::*;
@@ -55,6 +53,10 @@ impl YakuContext {
             iipeikou_count,
             yakuhai_check,
         }
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.is_open
     }
 
     // (役一覧, 翻数, 役満倍数)を返却. 役満ではない場合,役満倍率は0
@@ -269,10 +271,8 @@ fn check_yakuhai(ph: &ParsedHand) -> TileRow {
     tr
 }
 
-#[derive(Serialize)]
 pub struct Yaku {
     pub name: &'static str,
-    #[serde(skip_serializing)]
     pub func: fn(&YakuContext) -> bool,
     pub fan_close: usize, // 鳴きなしの翻
     pub fan_open: usize,  // 鳴きありの翻(食い下がり)

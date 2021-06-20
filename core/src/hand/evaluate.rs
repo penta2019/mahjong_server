@@ -1,19 +1,19 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::parse::*;
 use super::point::*;
 use super::yaku::*;
 use crate::model::*;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct WinContext {
-    pub yaku: Vec<&'static Yaku>, // 役一覧(ドラは含まない)
-    pub n_dora: usize,            // ドラの数(裏ドラは含まない)
-    pub n_ura_dora: usize,        // 裏ドラの数
-    pub fu: usize,                // 符数
-    pub fan: usize,               // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
-    pub yakuman_times: usize,     // 役満かどうか
-    pub points: Points,           // 支払い得点
+    pub yakus: Vec<(String, usize)>, // 役一覧(ドラは含まない), Vec<(name, fan)>
+    pub n_dora: usize,               // ドラの数(裏ドラは含まない)
+    pub n_ura_dora: usize,           // 裏ドラの数
+    pub fu: usize,                   // 符数
+    pub fan: usize,                  // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
+    pub yakuman_times: usize,        // 役満かどうか
+    pub points: Points,              // 支払い得点
 }
 
 pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
@@ -50,7 +50,7 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
         stage.get_seat_wind(pl.seat),
         yf,
     ) {
-        if !res.yaku.is_empty() {
+        if !res.yakus.is_empty() {
             return Some(res);
         }
     }
@@ -117,12 +117,12 @@ pub fn evaluate_hand_ron(
         yf,
     ) {
         if tp == OpType::Ankan {
-            for y in &res.yaku {
-                if y.name == "国士無双" || y.name == "国士無双十三面待ち" {
+            for y in &res.yakus {
+                if y.0 == "国士無双" || y.0 == "国士無双十三面待ち" {
                     return Some(res);
                 }
             }
-        } else if !res.yaku.is_empty() {
+        } else if !res.yakus.is_empty() {
             return Some(res);
         }
     }
@@ -160,7 +160,7 @@ pub fn evaluate_hand(
             is_self_drawn,
             yaku_flags.clone(),
         );
-        wins.push((ctx.calc_fu(), ctx.calc_yaku()));
+        wins.push(ctx);
     }
 
     // 和了(七対子)
@@ -174,7 +174,7 @@ pub fn evaluate_hand(
             is_self_drawn,
             yaku_flags.clone(),
         );
-        wins.push((ctx.calc_fu(), ctx.calc_yaku()));
+        wins.push(ctx);
     }
 
     // 和了(国士無双)
@@ -188,7 +188,7 @@ pub fn evaluate_hand(
             is_self_drawn,
             yaku_flags.clone(),
         );
-        wins.push((ctx.calc_fu(), ctx.calc_yaku()));
+        wins.push(ctx);
     }
 
     if wins.is_empty() {
@@ -213,18 +213,31 @@ pub fn evaluate_hand(
     };
 
     let mut results = vec![];
-    for (fu, (yaku, mut fan, yakuman_times)) in wins {
+    for ctx in wins {
+        let fu = ctx.calc_fu();
+        let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
         if yakuman_times == 0 {
             fan += n_dora + n_ura_dora;
         }
-        let points = if yaku.is_empty() {
+        let points = if yakus.is_empty() {
             (0, 0, 0) // 役無し
         } else {
             get_points(is_leader, fu, fan, yakuman_times)
         };
 
+        let yakus: Vec<(String, usize)> = yakus
+            .iter()
+            .map(|y| {
+                let fan = if ctx.is_open() {
+                    y.fan_open
+                } else {
+                    y.fan_open
+                };
+                (y.name.to_string(), fan)
+            })
+            .collect();
         results.push(WinContext {
-            yaku,
+            yakus,
             n_dora,
             n_ura_dora,
             fu,

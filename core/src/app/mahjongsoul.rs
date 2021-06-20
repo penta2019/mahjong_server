@@ -388,7 +388,7 @@ impl Mahjongsoul {
             let fan = if is_yakuman { 0 } else { count };
             let yakuman_times = if is_yakuman { count } else { 0 };
             let ctx = WinContext {
-                yaku: vec![],  // TODO
+                yakus: vec![], // TODO
                 n_dora: 0,     // TODO
                 n_ura_dora: 0, // TODO
                 fu: as_usize(&win["fu"]),

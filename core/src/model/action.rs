@@ -1,7 +1,7 @@
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Action {
     GameStart(ActionGameStart),
@@ -94,10 +94,10 @@ impl Action {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionGameStart {}
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionRoundNew {
     pub round: usize,
     pub kyoku: usize,
@@ -108,13 +108,13 @@ pub struct ActionRoundNew {
     pub hands: [Vec<Tile>; SEAT],
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionDealTile {
     pub seat: Seat,
     pub tile: Tile,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionDiscardTile {
     pub seat: Seat,
     pub tile: Tile,
@@ -122,40 +122,40 @@ pub struct ActionDiscardTile {
     pub is_riichi: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionMeld {
     pub seat: Seat,
     pub meld_type: MeldType,
     pub consumed: Vec<Tile>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionKita {
     pub seat: Seat,
     pub is_drawn: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionDora {
     pub tile: Tile,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionRoundEndWin {
     pub ura_doras: Vec<Tile>,
     pub contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionRoundEndDraw {
     pub draw_type: DrawType,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionRoundEndNoTile {
     pub tenpais: [bool; SEAT],
     pub points: [Point; SEAT],
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionGameOver {}

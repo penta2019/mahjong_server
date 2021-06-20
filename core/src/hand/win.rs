@@ -1,6 +1,5 @@
-use crate::model::*;
-
 use super::parse::parse_into_chiitoitsu_win;
+use crate::model::*;
 
 // [完成形判定 (面子, 雀頭)]
 

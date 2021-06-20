@@ -524,5 +524,5 @@ window.addEventListener("load", function () {
         window.GameMgr.prototype.logUp = function (...args) {
             msc.log("logUp is disabled by MSC", args);
         }
-    }, 5000);　// GameMgrが初期化されていない場合があるので待機
+    }, 3000);
 }, false);

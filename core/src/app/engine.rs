@@ -1192,11 +1192,7 @@ impl App {
             }
 
             if self.debug && stop {
-                use std::io::{stdin, stdout, Write};
-                print!("step={} Enter>", game.get_stage().step);
-                stdout().flush().unwrap();
-                let mut buf = String::new();
-                stdin().read_line(&mut buf).ok();
+                prompt();
             }
 
             if end {

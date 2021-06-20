@@ -28,6 +28,20 @@ pub fn unixtime_now() -> u64 {
         .as_secs()
 }
 
+pub fn prompt() -> String {
+    use std::io::{stdin, stdout, Write};
+    print!("> ");
+    stdout().flush().unwrap();
+    let mut buf = String::new();
+    stdin().read_line(&mut buf).ok();
+    buf
+}
+
+pub fn flush() {
+    use std::io::{stdout, Write};
+    stdout().flush().unwrap();
+}
+
 pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
     v.remove(v.iter().position(|x| x == e).unwrap());
 }

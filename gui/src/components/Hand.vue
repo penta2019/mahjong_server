@@ -26,11 +26,13 @@ function parse_hands(stage, seat) {
   let drawn = stage.players[seat].drawn;
 
   if (drawn) {
-    if (drawn[1] == 0) {
-      hand[drawn[0]][0] -= 1;
-      hand[drawn[0]][5] -= 1;
+    let ti = tile_types[drawn[0]];
+    let ni = Number(drawn[1]);
+    if (ni == 0) {
+      hand[ti][0] -= 1;
+      hand[ti][5] -= 1;
     } else {
-      hand[drawn[0]][drawn[1]] -= 1;
+      hand[ti][ni] -= 1;
     }
   }
 
@@ -49,15 +51,17 @@ function parse_hands(stage, seat) {
   }
 
   if (drawn) {
+    let ti = tile_types[drawn[0]];
+    let ni = Number(drawn[1]);
     res.push({
       tile: "z9",
       type: 3,
       index: 9,
     });
     res.push({
-      tile: tile_types[drawn[0]] + drawn[1],
-      type: drawn[0],
-      index: drawn[1],
+      tile: drawn,
+      type: ti,
+      index: ni,
     });
   }
 

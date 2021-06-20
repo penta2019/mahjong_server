@@ -30,10 +30,10 @@ pub fn mjai_start_kyoku(
     honba: usize,
     kyotaku: usize,
     doras: &Vec<Tile>,
-    player_hands: &[Vec<Tile>; SEAT],
+    hands: &[Vec<Tile>; SEAT],
 ) -> Value {
     let wind = ["E", "S", "W", "N"];
-    let hands = create_tehais(player_hands, id);
+    let hands = create_tehais(hands, id);
 
     assert!(doras.len() == 1);
     let dora_marker = to_mjai_tile(doras[0]);
@@ -532,20 +532,20 @@ fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
     v.iter().map(|t| from_mjai_tile(t)).collect()
 }
 
-fn create_tehais(player_hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
-    let mut hands = vec![];
-    for (seat2, hands2) in player_hands.iter().enumerate() {
-        let mut hand = vec![];
-        for &t in hands2 {
+fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
+    let mut mjai_hands = vec![];
+    for (seat2, hand) in hands.iter().enumerate() {
+        let mut mjai_hand = vec![];
+        for &t in hand {
             if seat == seat2 {
-                hand.push(to_mjai_tile(t));
+                mjai_hand.push(to_mjai_tile(t));
             } else {
-                hand.push("?".to_string());
+                mjai_hand.push("?".to_string());
             }
         }
-        hands.push(hand);
+        mjai_hands.push(mjai_hand);
     }
-    hands
+    mjai_hands
 }
 
 #[test]

@@ -1,6 +1,5 @@
-use std::io::{stdout, Write};
-
 use super::*;
+use crate::util::common::prompt;
 
 pub struct ManualBuilder;
 
@@ -47,11 +46,7 @@ impl Operator for Manual {
         }
 
         loop {
-            print!("> ");
-            stdout().flush().unwrap();
-            let mut buf = String::new();
-            std::io::stdin().read_line(&mut buf).ok();
-
+            let buf = prompt();
             let mut chars = buf.chars();
             let c = if let Some(c) = chars.next() {
                 c

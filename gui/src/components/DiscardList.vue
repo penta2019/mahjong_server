@@ -31,7 +31,7 @@
 
 <script>
 import { computed } from "vue";
-import { tile_types, seat_colors, seat_pos } from "../common.js";
+import { seat_colors, seat_pos } from "../common.js";
 
 function parse_discards(stage, seat) {
   if (stage == null) return [];
@@ -57,7 +57,7 @@ function parse_discards(stage, seat) {
 
     let t = stage.players[p2[0]].discards[p2[1]];
     a1.push({
-      tile: tile_types[t.tile[0]] + t.tile[1],
+      tile: t.tile,
       bg: t.meld ? seat_pos(seat, t.meld[0]) : null,
       drawn: t.drawn,
       riichi: stage.players[p2[0]].riichi == p2[1],

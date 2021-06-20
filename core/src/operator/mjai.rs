@@ -7,7 +7,7 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
-use crate::util::common::{sleep_ms, vec_remove};
+use crate::util::common::{flush, sleep_ms, vec_remove};
 use crate::util::mjai_json::*;
 
 pub struct MjaiEndpointBuilder;
@@ -474,7 +474,7 @@ fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<(
     stream.write((value.to_string() + "\n").as_bytes())?;
     if debug {
         println!("-> {}", value.to_string());
-        io::stdout().flush().unwrap();
+        flush();
     }
     Ok(())
 }
@@ -485,7 +485,7 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
     buf_read.read_line(&mut buf)?;
     if debug {
         println!("<- {}", buf);
-        io::stdout().flush().unwrap();
+        flush();
     }
 
     if buf.len() == 0 {

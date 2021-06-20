@@ -1,6 +1,6 @@
 use super::stage_controller::StageListener;
 use crate::model::*;
-use crate::util::common::vec_to_string;
+use crate::util::common::{prompt, vec_to_string};
 
 // [StagePrinter]
 pub struct StagePrinter {}
@@ -73,3 +73,60 @@ impl StageListener for StageDebugPrinter {
 }
 
 // [StageStepPrinter]
+pub struct StageStepPrinter {}
+
+impl StageStepPrinter {}
+
+impl StageListener for StageStepPrinter {
+    fn notify_action(&mut self, stg: &Stage, act: &Action) {
+        println!("step: {}", stg.step);
+        match act {
+            Action::GameStart(_) => {
+                println!("[GameStart]");
+            }
+            Action::RoundNew(_) => {
+                println!("[ROUNDNEW]");
+                println!("{}", stg);
+            }
+            Action::DealTile(a) => {
+                println!("[DealTile]");
+                println!("{}", stg.players[a.seat]);
+            }
+            Action::DiscardTile(a) => {
+                println!("[DiscardTile]");
+                println!("{}", stg.players[a.seat]);
+            }
+            Action::Meld(a) => {
+                println!("[Meld]");
+                println!("{}", stg.players[a.seat]);
+            }
+            Action::Kita(a) => {
+                println!("[Kita]");
+                println!("{}", stg.players[a.seat]);
+            }
+            Action::Dora(_) => {
+                println!("[Dora]");
+                println!("{:?}", stg.doras);
+            }
+            Action::RoundEndWin(_) => {
+                println!("[RoundEndWin]");
+                println!("{}", stg);
+            }
+            Action::RoundEndDraw(_) => {
+                println!("[RoundEndDraw]");
+                println!("{}", stg);
+            }
+            Action::RoundEndNoTile(_) => {
+                println!("[RoundEndNoTile]");
+                println!("{}", stg);
+            }
+            Action::GameOver(_) => {
+                println!("[GameOver]");
+                println!("{}", stg);
+            }
+        }
+
+        prompt();
+        println!();
+    }
+}

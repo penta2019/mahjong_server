@@ -1,5 +1,6 @@
 use crate::hand::parse::*;
 use crate::model::*;
+use crate::util::common::flush;
 
 use SetPairType::*;
 use TileStateType::*;
@@ -164,9 +165,9 @@ fn calc_effective_tile(row: &TileRow, block: &BlockInfo) -> Vec<(usize, Vec<SetP
         len: ni_to - ni_from + 1,
         num: block.num + 1,
     };
-    use std::io::{stdout, Write};
+
     println!("{:?}", block2);
-    stdout().flush().unwrap();
+    flush();
 
     let mut row = row.clone();
     let mut effs = vec![];

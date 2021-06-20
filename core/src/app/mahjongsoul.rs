@@ -1,4 +1,3 @@
-use std::io::{stdout, Write};
 use std::time;
 
 use serde_json::{json, Value};
@@ -168,7 +167,7 @@ impl Mahjongsoul {
         println!("possible: {:?}", ops);
         println!("selected: {:?}", op);
         println!("");
-        stdout().flush().unwrap();
+        flush();
 
         let start = time::Instant::now();
         let PlayerOperation(tp, cs) = op;

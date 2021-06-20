@@ -1,4 +1,7 @@
-export const tile_types = ["m", "p", "s", "z"];
+export const tile_types = {
+    0: "m", 1: "p", 2: "s", 3: "z",
+    m: 0, p: 1, s: 2, z: 3,
+};
 
 export const seat_colors = [
     "#FF8C00", // 0: 自家

@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::process::exit;
 use std::str::FromStr;
 use std::{fmt, fs, io};
 
@@ -9,7 +10,6 @@ where
     T: std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Debug,
 {
-    use std::process::exit;
     if let Some(n) = it.next() {
         return n.parse().unwrap();
     } else {
@@ -43,21 +43,17 @@ pub fn flush() {
     stdout().flush().unwrap();
 }
 
-pub fn get_paths_starts_with(file_path: &str) -> io::Result<Vec<PathBuf>> {
-    let path = if !file_path.starts_with("/") && !file_path.starts_with("./") {
-        "./".to_string() + file_path
-    } else {
-        file_path.to_string()
-    };
-    let path = Path::new(&path);
-    let mut entries = fs::read_dir(path.parent().unwrap())?
+pub fn print_and_exit<T: fmt::Display, U>(t: T) -> U {
+    println!("[Error] {}", t);
+    exit(0);
+}
+
+pub fn get_paths(dir: &Path) -> io::Result<Vec<PathBuf>> {
+    let mut entries = fs::read_dir(dir)?
         .map(|res| res.map(|e| e.path()))
         .collect::<Result<Vec<_>, io::Error>>()?;
     entries.sort();
-    Ok(entries
-        .into_iter()
-        .filter(|d| d.to_str().unwrap().starts_with(path.to_str().unwrap()))
-        .collect())
+    Ok(entries)
 }
 
 pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {

@@ -49,7 +49,7 @@ impl ActionWriter {
 
     fn write_to_file(&mut self) {
         let file_name = format!(
-            "data/{}_{}.json",
+            "data/{}/{:02}.json",
             self.start_time.to_string(),
             self.round_index
         );

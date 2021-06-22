@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use serde_json::json;
 
 use crate::controller::stage_controller::StageController;
@@ -11,6 +13,7 @@ use crate::util::ws_server::*;
 #[derive(Debug)]
 pub struct App {
     file_path: String,
+    skip: String,
     gui_port: u32,
 }
 
@@ -20,6 +23,7 @@ impl App {
 
         let mut app = Self {
             file_path: String::new(),
+            skip: String::new(),
             gui_port: super::GUI_PORT,
         };
 
@@ -27,6 +31,7 @@ impl App {
         while let Some(s) = it.next() {
             match s.as_str() {
                 "-f" => app.file_path = next_value(&mut it, "-f: input file path missing"),
+                "-s" => app.skip = next_value(&mut it, "-s: skip position missing"),
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
                 opt => {
                     println!("Unknown option: {}", opt);
@@ -44,28 +49,53 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        use std::process::exit;
-
         let nop = Box::new(Nop::new());
         let operators: [Box<dyn Operator>; SEAT] =
             [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
         let mut ctrl = StageController::new(operators, vec![Box::new(StageStepPrinter {})]);
         let send_recv = create_ws_server(self.gui_port);
 
-        let paths = get_paths_starts_with(&self.file_path).unwrap_or_else(|e| {
-            println!("[Error] {}", e);
-            exit(0);
-        });
-        for p in paths {
-            let contents = match std::fs::read_to_string(&p) {
-                Ok(c) => c,
-                Err(err) => {
-                    println!("[Error] {}", err);
-                    exit(0);
-                }
-            };
+        // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む
+        let path = Path::new(&self.file_path);
+        let paths: Vec<std::path::PathBuf> = if path.is_dir() {
+            get_paths(path)
+                .unwrap_or_else(print_and_exit)
+                .into_iter()
+                .filter(|p| match p.extension() {
+                    Some(ext) => ext == "json",
+                    None => false,
+                })
+                .collect()
+        } else {
+            let mut buf = PathBuf::new();
+            buf.push(&self.file_path);
+            vec![buf]
+        };
 
+        // スキップ位置の情報をパース
+        let mut skips: Vec<usize> = if self.skip == "" {
+            vec![]
+        } else {
+            self.skip
+                .split(',')
+                .map(|s| s.parse().unwrap_or_else(print_and_exit))
+                .collect()
+        };
+        while skips.len() < 3 {
+            skips.push(0);
+        }
+        let rkh = (skips[0], skips[1], skips[2]);
+
+        for p in paths {
+            let contents = std::fs::read_to_string(&p).unwrap_or_else(print_and_exit);
             let record: Vec<Action> = serde_json::from_str(&contents).unwrap();
+
+            if let Action::RoundNew(a) = &record[0] {
+                if (a.round, a.kyoku, a.honba) < rkh {
+                    continue;
+                }
+            }
+
             for r in &record {
                 ctrl.handle_action(&r);
                 if let Some((s, _)) = send_recv.lock().unwrap().as_ref() {

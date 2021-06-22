@@ -10,7 +10,7 @@ use crate::util::ws_server::*;
 
 #[derive(Debug)]
 pub struct App {
-    file_name: String,
+    file_path: String,
     gui_port: u32,
 }
 
@@ -19,14 +19,14 @@ impl App {
         use std::process::exit;
 
         let mut app = Self {
-            file_name: String::new(),
+            file_path: String::new(),
             gui_port: super::GUI_PORT,
         };
 
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-f" => app.file_name = next_value(&mut it, "-f: input file name missing"),
+                "-f" => app.file_path = next_value(&mut it, "-f: input file path missing"),
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
                 opt => {
                     println!("Unknown option: {}", opt);
@@ -35,7 +35,7 @@ impl App {
             }
         }
 
-        if app.file_name == "" {
+        if app.file_path == "" {
             println!("file(-f) not specified");
             exit(0);
         }
@@ -52,26 +52,31 @@ impl App {
         let mut ctrl = StageController::new(operators, vec![Box::new(StageStepPrinter {})]);
         let send_recv = create_ws_server(self.gui_port);
 
-        let contents = match std::fs::read_to_string(&self.file_name) {
-            Ok(c) => c,
-            Err(err) => {
-                println!("[Error] {}", err);
-                exit(0);
-            }
-        };
+        let paths = get_paths_starts_with(&self.file_path).unwrap_or_else(|e| {
+            println!("[Error] {}", e);
+            exit(0);
+        });
+        for p in paths {
+            let contents = match std::fs::read_to_string(&p) {
+                Ok(c) => c,
+                Err(err) => {
+                    println!("[Error] {}", err);
+                    exit(0);
+                }
+            };
 
-        let record: Vec<Action> = serde_json::from_str(&contents).unwrap();
-        for r in &record {
-            ctrl.handle_action(&r);
-
-            if let Some((s, _)) = send_recv.lock().unwrap().as_ref() {
-                let msg = json!({
-                    "type": "stage",
-                    "data": &json!(ctrl.get_stage()),
-                });
-                s.send(msg.to_string()).ok();
+            let record: Vec<Action> = serde_json::from_str(&contents).unwrap();
+            for r in &record {
+                ctrl.handle_action(&r);
+                if let Some((s, _)) = send_recv.lock().unwrap().as_ref() {
+                    let msg = json!({
+                        "type": "stage",
+                        "data": &json!(ctrl.get_stage()),
+                    });
+                    s.send(msg.to_string()).ok();
+                }
+                prompt();
             }
-            prompt();
         }
     }
 }

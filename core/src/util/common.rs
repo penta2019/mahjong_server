@@ -1,5 +1,6 @@
-use std::fmt;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::{fmt, fs, io};
 
 use serde_json::Value;
 
@@ -40,6 +41,23 @@ pub fn prompt() -> String {
 pub fn flush() {
     use std::io::{stdout, Write};
     stdout().flush().unwrap();
+}
+
+pub fn get_paths_starts_with(file_path: &str) -> io::Result<Vec<PathBuf>> {
+    let path = if !file_path.starts_with("/") && !file_path.starts_with("./") {
+        "./".to_string() + file_path
+    } else {
+        file_path.to_string()
+    };
+    let path = Path::new(&path);
+    let mut entries = fs::read_dir(path.parent().unwrap())?
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()?;
+    entries.sort();
+    Ok(entries
+        .into_iter()
+        .filter(|d| d.to_str().unwrap().starts_with(path.to_str().unwrap()))
+        .collect())
 }
 
 pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {

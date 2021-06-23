@@ -30,9 +30,9 @@ impl App {
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-f" => app.file_path = next_value(&mut it, "-f: input file path missing"),
-                "-s" => app.skip = next_value(&mut it, "-s: skip position missing"),
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
+                "-f" => app.file_path = next_value(&mut it, "-f"),
+                "-s" => app.skip = next_value(&mut it, "-s"),
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);

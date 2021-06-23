@@ -454,9 +454,9 @@ impl App {
                 "-r" => read_only = true,
                 "-s" => sleep = true,
                 "-w" => write_to_file = true,
-                "-msc-port" => msc_port = next_value(&mut it, "-msc-port: port number missing"),
-                "-gui-port" => gui_port = next_value(&mut it, "-gui-port: port number missing"),
-                "-0" => operator_name = next_value(&mut it, "-0: file name missing"),
+                "-msc-port" => msc_port = next_value(&mut it, "-msc-port"),
+                "-gui-port" => gui_port = next_value(&mut it, "-gui-port"),
+                "-0" => operator_name = next_value(&mut it, "-0"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);

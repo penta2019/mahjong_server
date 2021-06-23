@@ -1103,16 +1103,16 @@ impl App {
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-s" => app.seed = next_value(&mut it, "-s: Seed missing"),
-                "-g" => app.n_game = next_value(&mut it, "-g: n_game missing"),
-                "-t" => app.n_thread = next_value(&mut it, "-t: n_thread missing"),
+                "-s" => app.seed = next_value(&mut it, "-s"),
+                "-g" => app.n_game = next_value(&mut it, "-g"),
+                "-t" => app.n_thread = next_value(&mut it, "-t"),
                 "-w" => app.write_to_file = true,
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port: port number missing"),
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 "-d" => app.debug = true,
-                "-0" => app.names[0] = next_value(&mut it, "-0: operator name missing"),
-                "-1" => app.names[1] = next_value(&mut it, "-1: operator name missing"),
-                "-2" => app.names[2] = next_value(&mut it, "-2: operator name missing"),
-                "-3" => app.names[3] = next_value(&mut it, "-3: operator name missing"),
+                "-0" => app.names[0] = next_value(&mut it, "-0"),
+                "-1" => app.names[1] = next_value(&mut it, "-1"),
+                "-2" => app.names[2] = next_value(&mut it, "-2"),
+                "-3" => app.names[3] = next_value(&mut it, "-3"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);

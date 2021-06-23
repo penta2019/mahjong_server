@@ -5,17 +5,17 @@ use std::{fmt, fs, io};
 
 use serde_json::Value;
 
-pub fn next_value<T: FromStr>(it: &mut std::slice::Iter<std::string::String>, emsg: &str) -> T
+pub fn next_value<T>(it: &mut std::slice::Iter<std::string::String>, opt: &str) -> T
 where
-    T: std::str::FromStr,
-    <T as std::str::FromStr>::Err: std::fmt::Debug,
+    T: FromStr,
+    <T as FromStr>::Err: fmt::Display,
 {
-    if let Some(n) = it.next() {
-        return n.parse().unwrap();
-    } else {
-        println!("{}", emsg);
-        exit(0);
-    }
+    let n = it
+        .next()
+        .unwrap_or_else(|| print_and_exit(format!("{}: value missing", opt)));
+    return n
+        .parse()
+        .unwrap_or_else(|e| print_and_exit(format!("{}: {} '{}'", opt, e, n)));
 }
 
 pub fn sleep_ms(ms: u64) {

@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  try to take over the world!
 // @author       You
-// @match        https://game.mahjongsoul.com/
+// @match        https://game.mahjongsoul.com/*
 // @grant        none
 // ==/UserScript==
 

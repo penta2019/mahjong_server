@@ -7,7 +7,7 @@ use crate::util::common::rank_by_rank_vec;
 
 use TileStateType::*;
 
-// StageListener (Observer Pattern)
+// [StageListener (Observer Pattern)]
 pub trait StageListener: Send {
     fn notify_action(&mut self, _stg: &Stage, _act: &Action) {}
 }
@@ -18,6 +18,7 @@ impl fmt::Debug for dyn StageListener {
     }
 }
 
+// [StageController]
 #[derive(Debug)]
 pub struct StageController {
     stage: Stage,

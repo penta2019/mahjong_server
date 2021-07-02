@@ -89,7 +89,7 @@ impl Mahjongsoul {
             self.step = 0;
             self.actions.clear();
             if !is_cache {
-                sleep_ms(3000);
+                sleep_ms(5000);
             }
         }
 

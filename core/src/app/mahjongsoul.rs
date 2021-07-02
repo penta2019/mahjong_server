@@ -431,32 +431,36 @@ impl Mahjongsoul {
 
 // [Application]
 pub struct App {
-    game: Mahjongsoul,
-    cws_send_recv: SendRecv,
-    wws_send_recv: SendRecv,
     read_only: bool,
+    sleep: bool,
+    write_to_file: bool,
+    msc_port: u32,
+    gui_port: u32,
+    operator_name: String,
 }
 
 impl App {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
-        let mut read_only = false;
-        let mut sleep = false;
-        let mut write_to_file = false;
-        let mut msc_port = super::MSC_PORT;
-        let mut gui_port = super::GUI_PORT;
-        let mut operator_name = "".to_string();
+        let mut app = Self {
+            read_only: false,
+            sleep: false,
+            write_to_file: false,
+            msc_port: super::MSC_PORT,
+            gui_port: super::GUI_PORT,
+            operator_name: "".to_string(),
+        };
 
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-r" => read_only = true,
-                "-s" => sleep = true,
-                "-w" => write_to_file = true,
-                "-msc-port" => msc_port = next_value(&mut it, "-msc-port"),
-                "-gui-port" => gui_port = next_value(&mut it, "-gui-port"),
-                "-0" => operator_name = next_value(&mut it, "-0"),
+                "-r" => app.read_only = true,
+                "-s" => app.sleep = true,
+                "-w" => app.write_to_file = true,
+                "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
+                "-0" => app.operator_name = next_value(&mut it, "-0"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -464,20 +468,18 @@ impl App {
             }
         }
 
-        let operator = create_operator(&operator_name);
-        Self {
-            game: Mahjongsoul::new(sleep, write_to_file, operator),
-            cws_send_recv: create_ws_server(msc_port), // for Controller(mahjongsoul)
-            wws_send_recv: create_ws_server(gui_port), // for Web-interface
-            read_only,
-        }
+        app
     }
 
     pub fn run(&mut self) {
+        let operator = create_operator(&self.operator_name);
+        let mut game = Mahjongsoul::new(self.sleep, self.write_to_file, operator);
+        let mut server_msc = create_ws_server(self.msc_port);
+        let mut server_gui = create_ws_server(self.gui_port);
         let mut connected = false;
 
         loop {
-            let msg = if let Some((s, r)) = self.cws_send_recv.lock().unwrap().as_ref() {
+            let msg = if let Some((s, r)) = server_msc.lock().unwrap().as_ref() {
                 if !connected {
                     connected = true;
                     let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
@@ -495,38 +497,35 @@ impl App {
                 continue;
             };
 
-            if let Some(act) = self.game.apply(&serde_json::from_str(&msg).unwrap()) {
+            if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
                 if !self.read_only {
-                    self.send_to_cws("0", "eval", &act);
+                    send_to_msc(&mut server_msc, "0", "eval", &act);
                 }
             }
-            self.send_stage_data();
+
+            send_to_gui(&mut server_gui, "stage", &json!(&game.get_stage()))
         }
     }
+}
 
-    fn send_stage_data(&mut self) {
-        self.send_to_wws("stage", &json!(&self.game.get_stage()));
+fn send_to_msc(server: &mut SendRecv, id: &str, op: &str, data: &Value) {
+    if let Some((s, _)) = server.lock().unwrap().as_ref() {
+        let msg = json!({
+            "id": id,
+            "op": op,
+            "data": data,
+        });
+        s.send(msg.to_string()).ok();
     }
+}
 
-    fn send_to_cws(&mut self, id: &str, op: &str, data: &Value) {
-        if let Some((s, _)) = self.cws_send_recv.lock().unwrap().as_ref() {
-            let msg = json!({
-                "id": id,
-                "op": op,
-                "data": data,
-            });
-            s.send(msg.to_string()).ok();
-        }
-    }
-
-    fn send_to_wws(&mut self, type_: &str, data: &Value) {
-        if let Some((s, _)) = self.wws_send_recv.lock().unwrap().as_ref() {
-            let msg = json!({
-                "type": type_,
-                "data": data,
-            });
-            s.send(msg.to_string()).ok();
-        }
+fn send_to_gui(server: &mut SendRecv, type_: &str, data: &Value) {
+    if let Some((s, _)) = server.lock().unwrap().as_ref() {
+        let msg = json!({
+            "type": type_,
+            "data": data,
+        });
+        s.send(msg.to_string()).ok();
     }
 }
 

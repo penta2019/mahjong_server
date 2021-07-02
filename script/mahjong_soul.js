@@ -139,19 +139,15 @@ msc.UiController = class {
         }
     }
 
-    click0(el) {
-        el.clickHandler.run();
-    }
-
-    click(el) {
-        let f = () => el.clickHandler.run();
+    btn_click(el) {
+        let f = () => { if (el.visible) { el.clickHandler.run() } };
         let ui = this.get_op_ui();
         let ui_detail = ui.container_Detail;
         if (ui_detail.visible) { // 鳴きの選択画面
-            this.click0(ui.btn_detail_back);
+            ui.btn_detail_back.clickHandler.run();
             setTimeout(() => { f(); }, 500);
         } else if (ui.btn_cancel._parent.visible && ui.btn_cancel.visible) {
-            this.click0(ui.btn_cancel);
+            ui.btn_cancel.clickHandler.run();
             setTimeout(() => { f(); }, 500);
         } else {
             f();
@@ -195,42 +191,42 @@ msc.UiController = class {
     }
 
     action_cancel() { // スキップ
-        this.click(this.get_op_ui().op_btns.btn_cancel);
+        this.btn_click(this.get_op_ui().op_btns.btn_cancel);
     }
 
     action_chi(choose_idx = 0) { // チー
-        this.click(this.get_op_ui().op_btns.btn_chi);
+        this.btn_click(this.get_op_ui().op_btns.btn_chi);
         this.choose_detail_if_visible(choose_idx);
     }
 
     action_peng() { // ポン
-        this.click(this.get_op_ui().op_btns.btn_peng);
+        this.btn_click(this.get_op_ui().op_btns.btn_peng);
     }
 
     action_gang(choose_idx = 0) { // カン(暗槓・明槓・加槓)
-        this.click(this.get_op_ui().op_btns.btn_gang);
+        this.btn_click(this.get_op_ui().op_btns.btn_gang);
         this.choose_detail_if_visible(choose_idx);
     }
 
     action_lizhi(discard_idx = 0) { // リーチ
-        this.click(this.get_op_ui().op_btns.btn_lizhi);
+        this.btn_click(this.get_op_ui().op_btns.btn_lizhi);
         setTimeout(() => { this.action_dapai(discard_idx, false); }, 500);
     }
 
     action_zimo() { // ツモ
-        this.click(this.get_op_ui().op_btns.btn_zimo);
+        this.btn_click(this.get_op_ui().op_btns.btn_zimo);
     }
 
     action_hu() { // ロン
-        this.click(this.get_op_ui().op_btns.btn_hu);
+        this.btn_click(this.get_op_ui().op_btns.btn_hu);
     }
 
     action_jiuzhongjiupai() { // 九種九牌
-        this.click(this.get_op_ui().op_btns.btn_jiuzhongjiupai);
+        this.btn_click(this.get_op_ui().op_btns.btn_jiuzhongjiupai);
     }
 
     action_babei() { // 北抜き
-        this.click(this.get_op_ui().op_btns.btn_babei);
+        this.btn_click(this.get_op_ui().op_btns.btn_babei);
     }
 
     check_hangup_warn() {
@@ -269,14 +265,14 @@ msc.UiController = class {
 
         for (let ui of uis) {
             if (ui && ui.enable && ui.btn_confirm.visible) {
-                this.mouse.click(ok_button);
+                this.mouse_click(ok_button);
                 return;
             }
         }
 
         let ui = window.uiscript.UI_GameEnd.Inst;
         if (ui && ui.enable) {
-            this.mouse.click(ok_button);
+            this.mouse_click(ok_button);
             return;
         }
     }

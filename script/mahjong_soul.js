@@ -13,6 +13,7 @@ let msc = { // MSC(MahjongSoulDriver)のオブジェクトはすべてここに�
     server: null,
     log_configs: [],
     debug: false,
+    enable_action: false,
 };
 
 // ロガー定義
@@ -123,6 +124,7 @@ msc.UiController = class {
     constructor() {
         this.mouse = new msc.MouseController();
         this.timer = null;
+        this.enable_action = false;
 
         setInterval(() => {
             window.GameMgr.Inst.clientHeatBeat(); // 長時間放置による切断対策
@@ -140,19 +142,7 @@ msc.UiController = class {
     }
 
     btn_click(el) {
-        let f = () => {
-            if (!el.visible) return;
-            let uis = [
-                window.uiscript.UI_Win.Inst,
-                window.uiscript.UI_ScoreChange.Inst,
-                window.uiscript.UI_Huleshow.Inst,
-                window.uiscript.UI_LiuJu.Inst,
-            ];
-            for (let ui in uis) {
-                if (ui.enable) return;
-            }
-            el.clickHandler.run()
-        };
+        let f = () => msc.enable_action && el.visible && el.clickHandler.run();
         let ui = this.get_op_ui();
         let ui_detail = ui.container_Detail;
         if (ui_detail.visible) { // 鳴きの選択画面
@@ -320,13 +310,13 @@ msc.Server = class {
         // syncGame
         this.sync = msc.inject_log("window.view.DesktopMgr.prototype.syncGameByStep");
         this.sync.level = 1;
-        this.sync.callback = this.on_sync_game.bind(this);
+        this.sync.callback = this.callback_syncGameByStep.bind(this);
 
         // subscribe
         this.channel_settings = {
             mjaction: {
                 config: msc.inject_log("window.view.DesktopMgr.prototype.DoMJAction"),
-                callback: this.callback_mjaction,
+                callback: this.callback_DoMJAction,
             },
         };
         for (let k in this.channel_settings) {
@@ -467,7 +457,17 @@ msc.Server = class {
         this.send({ id: msg.id, type: "success", data: null });
     }
 
-    callback_mjaction(caller, action, fast) {
+    callback_DoMJAction(caller, action, fast) {
+        this.on_mjaction(action);
+    }
+
+    callback_syncGameByStep(caller, store) {
+        for (let action of store.actions) {
+            this.on_mjaction(action);
+        }
+    }
+
+    on_mjaction(action) {
         msc.log_debug("(Server) mjaction:", action);
 
         if (this.retry_action) {
@@ -475,49 +475,32 @@ msc.Server = class {
             this.retry_action = null;
         }
 
-        let s = this.channel_settings.mjaction;
+        if (action.step == 0) {
+            this.action_store = [];
+        }
+
         let pm = net.ProtobufManager.lookupType("lq." + action.name);
         let data = {
             step: action.step,
             name: action.name,
             data: pm.decode(action.data),
         };
-        if (action.step == 0) {
-            this.action_store = [];
-        }
         this.action_store.push(data);
+        let s = this.channel_settings.mjaction;
         if (s.enable) {
-            this.send({
-                id: s.id,
-                type: "message",
-                data: data,
-            });
+            this.send({ id: s.id, type: "message", data: data });
         }
+
         switch (action.name) {
+            case "ActionNewRound":
+                msc.enable_action = true;
+                break;
             case "ActionHule":
             case "ActionLiuJu":
             case "ActionNoTile":
+                msc.enable_action = false;
                 this.action_store = [];
                 break;
-        }
-    }
-
-    on_sync_game(caller, store) {
-        this.action_store = [];
-        for (let a of store.actions) {
-            let pm = net.ProtobufManager.lookupType("lq." + a.name);
-            this.action_store.push({
-                step: a.step,
-                name: a.name,
-                data: pm.decode(a.data),
-            });
-        }
-
-        let s = this.channel_settings.mjaction;
-        if (s.enable) {
-            for (let a of this.action_store) {
-                this.send({ id: s.id, type: "message", data: a });
-            }
         }
     }
 };

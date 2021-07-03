@@ -88,9 +88,6 @@ impl Mahjongsoul {
             }
             self.step = 0;
             self.actions.clear();
-            if !is_cache {
-                sleep_ms(5000);
-            }
         }
 
         self.actions.push(act.clone());
@@ -121,6 +118,9 @@ impl Mahjongsoul {
 
             let data = &action["data"];
             let name = &action["name"];
+            if !is_cache && as_str(name) == "ActionNewRound" {
+                sleep_ms(3000);
+            }
             match as_str(name) {
                 "ActionMJStart" => self.handler_mjstart(data),
                 "ActionNewRound" => self.handler_newround(data),

@@ -140,7 +140,19 @@ msc.UiController = class {
     }
 
     btn_click(el) {
-        let f = () => { if (el.visible) { el.clickHandler.run() } };
+        let f = () => {
+            if (!el.visible) return;
+            let uis = [
+                window.uiscript.UI_Win.Inst,
+                window.uiscript.UI_ScoreChange.Inst,
+                window.uiscript.UI_Huleshow.Inst,
+                window.uiscript.UI_LiuJu.Inst,
+            ];
+            for (let ui in uis) {
+                if (ui.enable) return;
+            }
+            el.clickHandler.run()
+        };
         let ui = this.get_op_ui();
         let ui_detail = ui.container_Detail;
         if (ui_detail.visible) { // 鳴きの選択画面
@@ -365,8 +377,8 @@ msc.Server = class {
     }
 
     send(msg) {
+        msc.log_debug("(Server) send:", msg);
         let str = JSON.stringify(msg);
-        msc.log_debug("(Server) send:", str);
         this.ws.send(str);
     }
 
@@ -456,6 +468,8 @@ msc.Server = class {
     }
 
     callback_mjaction(caller, action, fast) {
+        msc.log_debug("(Server) mjaction:", action);
+
         if (this.retry_action) {
             clearTimeout(this.retry_action);
             this.retry_action = null;

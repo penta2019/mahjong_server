@@ -22,6 +22,10 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
         return None;
     }
 
+    if !pl.win_tiles.contains(&pl.drawn.unwrap().to_normal()) {
+        return None;
+    }
+
     let mut yf = YakuFlags::default();
     yf.menzentsumo = pl.melds.is_empty();
     yf.riichi = pl.is_riichi && !pl.is_daburii;
@@ -68,6 +72,11 @@ pub fn evaluate_hand_ron(
     }
 
     let pl = &stage.players[seat];
+    if let Some((_, _, t)) = stage.last_tile {
+        if !pl.win_tiles.contains(&t.to_normal()) {
+            return None;
+        }
+    }
     if !pl.is_shown || pl.is_furiten || pl.is_furiten_other {
         return None;
     }
@@ -76,7 +85,6 @@ pub fn evaluate_hand_ron(
     yf.riichi = pl.is_riichi && !pl.is_daburii;
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
-
     let (tp, t) = if let Some((_, tp, t)) = stage.last_tile {
         match tp {
             OpType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,

@@ -233,7 +233,8 @@ fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
                     }
                 }
                 for d in &pl.discards {
-                    if tt[d.tile.0][d.tile.n()] != 0 {
+                    let dt = d.tile.to_normal();
+                    if tt[dt.0][dt.1] != 0 {
                         pl.is_furiten = true;
                         break;
                     }
@@ -379,7 +380,8 @@ fn action_round_end_no_tile(stg: &mut Stage, act: &ActionRoundEndNoTile) {
 fn action_game_over(_stg: &mut Stage, _act: &ActionGameOver) {}
 
 fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateType) {
-    let te = &mut stg.tile_states[tile.0][tile.n()];
+    let tn = tile.to_normal();
+    let te = &mut stg.tile_states[tn.0][tn.1];
     // println!("[table_edit] {}: {:?} | {:?} => {:?}", tile, te, old, new);
     let i = te.iter().position(|&x| x == old).unwrap();
     te[i] = new.clone();
@@ -393,9 +395,9 @@ fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateTyp
         H(_) => false,
         _ => true,
     } {
-        stg.tile_remains[tile.0][tile.n()] -= 1;
+        stg.tile_remains[tn.0][tn.1] -= 1;
         if tile.1 == 0 {
-            stg.tile_remains[tile.0][0] -= 1;
+            stg.tile_remains[tile.0][tile.1] -= 1;
         }
     }
 }
@@ -417,11 +419,7 @@ fn player_dec_tile(stg: &mut Stage, tile: Tile) {
     if t.1 == 0 {
         h[t.0][5] -= 1;
     }
-
-    // 5がすべて手牌からなくなた時,赤5フラグをクリア(暗槓用)
-    if t.is_suit() && h[t.0][5] == 0 {
-        h[t.0][0] = 0;
-    }
+    assert!(h[t.0][5] != 0 || h[t.0][0] == 0);
 }
 
 fn disable_ippatsu(stg: &mut Stage) {

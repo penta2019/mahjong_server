@@ -287,7 +287,8 @@ fn count_dora(hand: &TileTable, melds: &Vec<Meld>, doras: &Vec<Tile>) -> usize {
 
     for m in melds {
         for t in &m.tiles {
-            n_dora += dt[t.0][t.n()];
+            let t = t.to_normal();
+            n_dora += dt[t.0][t.1];
         }
     }
 

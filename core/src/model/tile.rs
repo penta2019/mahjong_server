@@ -5,13 +5,13 @@ use serde::{de, ser};
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)
 
 impl Tile {
-    // number index(赤5考慮)を返却
+    // 赤5の場合,通常の5を返却. それ以外の場合はコピーをそのまま返却.
     #[inline]
-    pub fn n(&self) -> Tnum {
+    pub fn to_normal(&self) -> Self {
         if self.1 == 0 {
-            5
+            Self(self.0, 5)
         } else {
-            self.1
+            *self
         }
     }
 

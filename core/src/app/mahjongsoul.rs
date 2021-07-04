@@ -434,7 +434,7 @@ impl Mahjongsoul {
 
         let mut t = tile_from_symbol(as_str(&data["tiles"]));
         let consumed = if tp == MeldType::Ankan {
-            t = Tile(t.0, t.n());
+            t = t.to_normal();
             let t0 = if t.is_suit() && t.1 == 5 {
                 Tile(t.0, 0)
             } else {
@@ -566,7 +566,7 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
     for ti in 0..TYPE {
         for ni in 1..TNUM {
             if h[ti][ni] > 0 {
-                if ti == t.0 && ni == t.n() && !is_drawn {
+                if ti == t.0 && ni == t.to_normal().1 && !is_drawn {
                     if ni == 5
                         && h[ti][5] > 1
                         && h[ti][0] == 1
@@ -579,7 +579,7 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
                     }
                 }
                 idx += h[ti][ni];
-                if ti == d.0 && ni == d.n() {
+                if ti == d.0 && ni == d.to_normal().1 {
                     idx -= 1;
                 }
             }

@@ -974,7 +974,7 @@ fn check_ankan(stg: &Stage) -> Vec<PlayerOperation> {
     if pl.is_riichi {
         // リーチ中でも待ちが変わらない暗槓は可能
         if let Some(t) = pl.drawn {
-            let t = Tile(t.0, t.n());
+            let t = t.to_normal();
             if pl.hand[t.0][t.1] == 4 {
                 let mut h = pl.hand.clone();
 
@@ -1017,9 +1017,9 @@ fn check_kakan(stg: &Stage) -> Vec<PlayerOperation> {
     let mut ops = vec![];
     for m in &pl.melds {
         if m.type_ == MeldType::Pon {
-            let t = m.tiles[0];
-            if pl.hand[t.0][t.n()] != 0 {
-                ops.push(if t.is_suit() && t.n() == 5 && pl.hand[t.0][0] > 0 {
+            let t = m.tiles[0].to_normal();
+            if pl.hand[t.0][t.1] != 0 {
+                ops.push(if t.is_suit() && t.1 == 5 && pl.hand[t.0][0] > 0 {
                     Op::kakan(Tile(t.0, 0)) // 赤5
                 } else {
                     Op::kakan(t)
@@ -1093,7 +1093,7 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     }
 
     let pl_turn = &stg.players[stg.turn];
-    let d = pl_turn.discards.last().unwrap().tile;
+    let d = pl_turn.discards.last().unwrap().tile.to_normal();
     if d.is_hornor() {
         return vec![];
     }
@@ -1104,7 +1104,7 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     }
 
     let mut check: Vec<(Tnum, Tnum)> = vec![];
-    let i = d.n();
+    let i = d.1;
     // l2 l1 c0(discarded) r1 r2
     let l2 = if i >= 2 { i - 2 } else { 255 };
     let l1 = if i >= 1 { i - 1 } else { 255 };
@@ -1162,7 +1162,7 @@ fn check_pon(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     }
 
     let d = stg.last_tile.unwrap().2;
-    let t = Tile(d.0, d.n());
+    let t = d.to_normal();
     let mut ops = vec![];
     for s in 0..SEAT {
         let pl = &stg.players[s];
@@ -1195,7 +1195,7 @@ fn check_minkan(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     }
 
     let d = stg.last_tile.unwrap().2;
-    let t = Tile(d.0, d.n());
+    let t = d.to_normal();
     let mut ops = vec![];
     for s in 0..SEAT {
         let pl = &stg.players[s];
@@ -1252,10 +1252,10 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
     match tp {
         Chi => {
             // 赤5が混じっている可能性を考慮
-            let (t0, t1) = (cs[0], cs[1]);
+            let (t0, t1) = (cs[0].to_normal(), cs[1].to_normal());
             let ti = t0.0;
-            let ni0 = t0.n();
-            let ni1 = t1.n();
+            let ni0 = t0.1;
+            let ni1 = t1.1;
             let s = std::cmp::min(ni0, ni1);
             let b = std::cmp::max(ni0, ni1);
             if s + 1 == b {
@@ -1275,8 +1275,7 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
             }
         }
         Pon => {
-            let t = cs[0];
-            v.push(Tile(t.0, t.n()));
+            v.push(cs[0].to_normal());
         }
         _ => return vec![],
     }

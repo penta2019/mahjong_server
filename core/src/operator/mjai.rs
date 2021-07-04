@@ -164,7 +164,7 @@ impl MjaiEndpoint {
             MeldType::Ankan => mjai_ankan(act.seat, &act.consumed),
             MeldType::Kakan => {
                 let c = act.consumed[0];
-                let t = Tile(c.0, c.n());
+                let t = c.to_normal();
                 let t0 = if t.is_suit() && t.1 == 5 && c.1 != 0 {
                     Tile(t.0, 0)
                 } else {

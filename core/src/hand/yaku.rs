@@ -33,7 +33,7 @@ impl YakuContext {
         yaku_flags: YakuFlags,
     ) -> Self {
         let pair_tile = get_pair(&parsed_hand);
-        let win_tile = Tile(win_tile.0, win_tile.n()); // 赤5は通常5に変換
+        let win_tile = win_tile.to_normal(); // 赤5は通常5に変換
         let counts = count_type(&parsed_hand);
         let iipeikou_count = count_iipeikou(&parsed_hand);
         let yakuhai_check = check_yakuhai(&parsed_hand);

@@ -489,7 +489,7 @@ pub fn to_mjai_tile(t: Tile) -> String {
         let tile_type = ["m", "p", "s"];
         return format!(
             "{}{}{}",
-            t.n(),
+            t.to_normal().1,
             tile_type[t.0],
             if t.1 == 0 { "r" } else { "" }
         );

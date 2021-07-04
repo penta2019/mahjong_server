@@ -15,6 +15,230 @@ use crate::util::ws_server::*;
 use PlayerOperationType::*;
 use StageOperation::*;
 
+// [App]
+pub struct App {
+    seed: u64,
+    names: [String; 4], // operator names
+    n_game: u32,
+    n_thread: u32,
+    write_to_file: bool,
+    gui_port: u32,
+    debug: bool,
+}
+
+impl App {
+    pub fn new(args: Vec<String>) -> Self {
+        use std::process::exit;
+
+        let mut app = Self {
+            names: [
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+            ],
+            seed: 0,
+            n_game: 0,
+            n_thread: 16,
+            write_to_file: false,
+            gui_port: super::GUI_PORT,
+            debug: false,
+        };
+
+        let mut it = args.iter();
+        while let Some(s) = it.next() {
+            match s.as_str() {
+                "-s" => app.seed = next_value(&mut it, "-s"),
+                "-g" => app.n_game = next_value(&mut it, "-g"),
+                "-t" => app.n_thread = next_value(&mut it, "-t"),
+                "-w" => app.write_to_file = true,
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
+                "-d" => app.debug = true,
+                "-0" => app.names[0] = next_value(&mut it, "-0"),
+                "-1" => app.names[1] = next_value(&mut it, "-1"),
+                "-2" => app.names[2] = next_value(&mut it, "-2"),
+                "-3" => app.names[3] = next_value(&mut it, "-3"),
+                opt => {
+                    println!("Unknown option: {}", opt);
+                    exit(0);
+                }
+            }
+        }
+
+        if app.seed == 0 {
+            app.seed = unixtime_now();
+            println!(
+                "Random seed is not specified. Unix timestamp '{}' is used as seed.",
+                app.seed
+            );
+        }
+
+        app
+    }
+
+    pub fn run(&mut self) {
+        let start = std::time::Instant::now();
+        if self.n_game == 0 {
+            self.run_single_game();
+        } else {
+            self.run_multiple_game();
+        }
+        println!(
+            "total elapsed time: {:8.3}sec",
+            start.elapsed().as_nanos() as f32 / 1000000000.0
+        );
+    }
+
+    fn run_single_game(&mut self) {
+        let operators = [
+            create_operator(&self.names[0]),
+            create_operator(&self.names[1]),
+            create_operator(&self.names[2]),
+            create_operator(&self.names[3]),
+        ];
+        let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
+        let mut game = MahjongEngine::new(
+            self.seed,
+            2,
+            25000,
+            self.write_to_file,
+            operators,
+            listeners,
+        );
+        let send_recv = create_ws_server(self.gui_port);
+
+        loop {
+            let stop = if let Deal = &game.next_op {
+                true
+            } else {
+                false
+            };
+
+            let end = game.next_step();
+            if let Some((s, r)) = send_recv.lock().unwrap().as_ref() {
+                // 送られてきたメッセージをすべて表示
+                loop {
+                    match r.try_recv() {
+                        Ok(msg) => {
+                            println!("[WS] message: {}", msg);
+                        }
+                        Err(_) => {
+                            break;
+                        }
+                    }
+                }
+
+                // stageの状態をjsonにエンコードして送信
+                let value = json!({
+                    "type": "stage",
+                    "data": game.get_stage(),
+                });
+                s.send(value.to_string()).ok();
+            }
+
+            if self.debug && stop {
+                prompt();
+            }
+
+            if end {
+                break;
+            }
+        }
+    }
+
+    fn run_multiple_game(&mut self) {
+        use crate::operator::null::Null;
+
+        use std::sync::mpsc;
+        use std::{thread, time};
+
+        let mut n_game = 0;
+        let mut n_thread = 0;
+        let mut n_game_end = 0;
+        let operators: [Box<dyn Operator>; 4] = [
+            create_operator(&self.names[0]),
+            create_operator(&self.names[1]),
+            create_operator(&self.names[2]),
+            create_operator(&self.names[3]),
+        ];
+
+        let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
+        let (tx, rx) = mpsc::channel();
+        let mut total_score_delta = [0; SEAT];
+        let mut total_rank_sum = [0; SEAT];
+        loop {
+            if n_game < self.n_game && n_thread < self.n_thread {
+                n_game += 1;
+                n_thread += 1;
+
+                let seed = rng.next_u64();
+                let mut shuffle_table = [0, 1, 2, 3];
+                shuffle_table.shuffle(&mut rng);
+
+                let mut shuffled_operators: [Box<dyn Operator>; 4] = [
+                    Box::new(Null::new()),
+                    Box::new(Null::new()),
+                    Box::new(Null::new()),
+                    Box::new(Null::new()),
+                ];
+                for s in 0..SEAT {
+                    shuffled_operators[s] = operators[shuffle_table[s]].clone_box();
+                }
+
+                let tx2 = tx.clone();
+                thread::spawn(move || {
+                    let start = time::Instant::now();
+                    let mut game =
+                        MahjongEngine::new(seed, 2, 25000, false, shuffled_operators, vec![]);
+                    loop {
+                        if game.next_step() {
+                            break;
+                        }
+                    }
+
+                    tx2.send((shuffle_table, game, start.elapsed())).unwrap();
+                });
+            }
+
+            loop {
+                if let Ok((shuffle, game, elapsed)) = rx.try_recv() {
+                    let ms = elapsed.as_nanos() / 1000000;
+                    print!("{:5},{:4}ms,{:20}", n_game_end, ms, game.seed);
+                    for s in 0..SEAT {
+                        let pl = &game.get_stage().players[s];
+                        let (score, rank) = (pl.score, pl.rank + 1);
+                        let i = shuffle[s];
+                        total_score_delta[i] += score - game.initial_score;
+                        total_rank_sum[i] += rank;
+                        print!(", op{}:{:5}({})", i, score, rank);
+                    }
+                    println!();
+
+                    n_thread -= 1;
+                    n_game_end += 1;
+                }
+                if n_thread < self.n_thread {
+                    break;
+                }
+                sleep_ms(10);
+            }
+
+            if n_thread == 0 && n_game == self.n_game {
+                for i in 0..SEAT {
+                    println!(
+                        "op{} avg_rank: {:.2}, avg_score_delta: {:6}",
+                        i,
+                        total_rank_sum[i] as f32 / n_game as f32,
+                        total_score_delta[i] / n_game as i32,
+                    );
+                }
+                break;
+            }
+        }
+    }
+}
+
+// [Engine]
 #[derive(Debug)]
 enum StageOperation {
     GameStart, // 対戦開始
@@ -1068,227 +1292,4 @@ fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
     }
 
     v
-}
-
-// [Application]
-pub struct App {
-    seed: u64,
-    names: [String; 4], // operator names
-    n_game: u32,
-    n_thread: u32,
-    write_to_file: bool,
-    gui_port: u32,
-    debug: bool,
-}
-
-impl App {
-    pub fn new(args: Vec<String>) -> Self {
-        use std::process::exit;
-
-        let mut app = Self {
-            names: [
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-            ],
-            seed: 0,
-            n_game: 0,
-            n_thread: 16,
-            write_to_file: false,
-            gui_port: super::GUI_PORT,
-            debug: false,
-        };
-
-        let mut it = args.iter();
-        while let Some(s) = it.next() {
-            match s.as_str() {
-                "-s" => app.seed = next_value(&mut it, "-s"),
-                "-g" => app.n_game = next_value(&mut it, "-g"),
-                "-t" => app.n_thread = next_value(&mut it, "-t"),
-                "-w" => app.write_to_file = true,
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
-                "-d" => app.debug = true,
-                "-0" => app.names[0] = next_value(&mut it, "-0"),
-                "-1" => app.names[1] = next_value(&mut it, "-1"),
-                "-2" => app.names[2] = next_value(&mut it, "-2"),
-                "-3" => app.names[3] = next_value(&mut it, "-3"),
-                opt => {
-                    println!("Unknown option: {}", opt);
-                    exit(0);
-                }
-            }
-        }
-
-        if app.seed == 0 {
-            app.seed = unixtime_now();
-            println!(
-                "Random seed is not specified. Unix timestamp '{}' is used as seed.",
-                app.seed
-            );
-        }
-
-        app
-    }
-
-    pub fn run(&mut self) {
-        let start = std::time::Instant::now();
-        if self.n_game == 0 {
-            self.run_single_game();
-        } else {
-            self.run_multiple_game();
-        }
-        println!(
-            "total elapsed time: {:8.3}sec",
-            start.elapsed().as_nanos() as f32 / 1000000000.0
-        );
-    }
-
-    fn run_single_game(&mut self) {
-        let operators = [
-            create_operator(&self.names[0]),
-            create_operator(&self.names[1]),
-            create_operator(&self.names[2]),
-            create_operator(&self.names[3]),
-        ];
-        let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
-        let mut game = MahjongEngine::new(
-            self.seed,
-            2,
-            25000,
-            self.write_to_file,
-            operators,
-            listeners,
-        );
-        let send_recv = create_ws_server(self.gui_port);
-
-        loop {
-            let stop = if let Deal = &game.next_op {
-                true
-            } else {
-                false
-            };
-
-            let end = game.next_step();
-            if let Some((s, r)) = send_recv.lock().unwrap().as_ref() {
-                // 送られてきたメッセージをすべて表示
-                loop {
-                    match r.try_recv() {
-                        Ok(msg) => {
-                            println!("[WS] message: {}", msg);
-                        }
-                        Err(_) => {
-                            break;
-                        }
-                    }
-                }
-
-                // stageの状態をjsonにエンコードして送信
-                let value = json!({
-                    "type": "stage",
-                    "data": game.get_stage(),
-                });
-                s.send(value.to_string()).ok();
-            }
-
-            if self.debug && stop {
-                prompt();
-            }
-
-            if end {
-                break;
-            }
-        }
-    }
-
-    fn run_multiple_game(&mut self) {
-        use crate::operator::null::Null;
-
-        use std::sync::mpsc;
-        use std::{thread, time};
-
-        let mut n_game = 0;
-        let mut n_thread = 0;
-        let mut n_game_end = 0;
-        let operators: [Box<dyn Operator>; 4] = [
-            create_operator(&self.names[0]),
-            create_operator(&self.names[1]),
-            create_operator(&self.names[2]),
-            create_operator(&self.names[3]),
-        ];
-
-        let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
-        let (tx, rx) = mpsc::channel();
-        let mut total_score_delta = [0; SEAT];
-        let mut total_rank_sum = [0; SEAT];
-        loop {
-            if n_game < self.n_game && n_thread < self.n_thread {
-                n_game += 1;
-                n_thread += 1;
-
-                let seed = rng.next_u64();
-                let mut shuffle_table = [0, 1, 2, 3];
-                shuffle_table.shuffle(&mut rng);
-
-                let mut shuffled_operators: [Box<dyn Operator>; 4] = [
-                    Box::new(Null::new()),
-                    Box::new(Null::new()),
-                    Box::new(Null::new()),
-                    Box::new(Null::new()),
-                ];
-                for s in 0..SEAT {
-                    shuffled_operators[s] = operators[shuffle_table[s]].clone_box();
-                }
-
-                let tx2 = tx.clone();
-                thread::spawn(move || {
-                    let start = time::Instant::now();
-                    let mut game =
-                        MahjongEngine::new(seed, 2, 25000, false, shuffled_operators, vec![]);
-                    loop {
-                        if game.next_step() {
-                            break;
-                        }
-                    }
-
-                    tx2.send((shuffle_table, game, start.elapsed())).unwrap();
-                });
-            }
-
-            loop {
-                if let Ok((shuffle, game, elapsed)) = rx.try_recv() {
-                    let ms = elapsed.as_nanos() / 1000000;
-                    print!("{:5},{:4}ms,{:20}", n_game_end, ms, game.seed);
-                    for s in 0..SEAT {
-                        let pl = &game.get_stage().players[s];
-                        let (score, rank) = (pl.score, pl.rank + 1);
-                        let i = shuffle[s];
-                        total_score_delta[i] += score - game.initial_score;
-                        total_rank_sum[i] += rank;
-                        print!(", op{}:{:5}({})", i, score, rank);
-                    }
-                    println!();
-
-                    n_thread -= 1;
-                    n_game_end += 1;
-                }
-                if n_thread < self.n_thread {
-                    break;
-                }
-                sleep_ms(10);
-            }
-
-            if n_thread == 0 && n_game == self.n_game {
-                for i in 0..SEAT {
-                    println!(
-                        "op{} avg_rank: {:.2}, avg_score_delta: {:6}",
-                        i,
-                        total_rank_sum[i] as f32 / n_game as f32,
-                        total_score_delta[i] / n_game as i32,
-                    );
-                }
-                break;
-            }
-        }
-    }
 }

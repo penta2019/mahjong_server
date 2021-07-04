@@ -14,6 +14,86 @@ use crate::util::ws_server::{create_ws_server, SendRecv};
 
 use PlayerOperationType::*;
 
+// [App]
+pub struct App {
+    read_only: bool,
+    sleep: bool,
+    write_to_file: bool,
+    msc_port: u32,
+    gui_port: u32,
+    operator_name: String,
+}
+
+impl App {
+    pub fn new(args: Vec<String>) -> Self {
+        use std::process::exit;
+
+        let mut app = Self {
+            read_only: false,
+            sleep: false,
+            write_to_file: false,
+            msc_port: super::MSC_PORT,
+            gui_port: super::GUI_PORT,
+            operator_name: "".to_string(),
+        };
+
+        let mut it = args.iter();
+        while let Some(s) = it.next() {
+            match s.as_str() {
+                "-r" => app.read_only = true,
+                "-s" => app.sleep = true,
+                "-w" => app.write_to_file = true,
+                "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
+                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
+                "-0" => app.operator_name = next_value(&mut it, "-0"),
+                opt => {
+                    println!("Unknown option: {}", opt);
+                    exit(0);
+                }
+            }
+        }
+
+        app
+    }
+
+    pub fn run(&mut self) {
+        let operator = create_operator(&self.operator_name);
+        let mut game = Mahjongsoul::new(self.sleep, self.write_to_file, operator);
+        let mut server_msc = create_ws_server(self.msc_port);
+        let mut server_gui = create_ws_server(self.gui_port);
+        let mut connected = false;
+
+        loop {
+            let msg = if let Some((s, r)) = server_msc.lock().unwrap().as_ref() {
+                if !connected {
+                    connected = true;
+                    let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
+                    s.send(msg.into()).ok();
+                }
+                match r.recv() {
+                    Ok(m) => m,
+                    Err(e) => {
+                        println!("[Error] {}", e);
+                        continue;
+                    }
+                }
+            } else {
+                connected = false;
+                continue;
+            };
+
+            if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
+                if !self.read_only {
+                    send_to_msc(&mut server_msc, "0", "eval", &act);
+                }
+            }
+
+            send_to_gui(&mut server_gui, "stage", &json!(&game.get_stage()))
+        }
+    }
+}
+
+// [Mahjongsoul]
 #[derive(Debug)]
 struct Mahjongsoul {
     ctrl: StageController,
@@ -426,85 +506,6 @@ impl Mahjongsoul {
         }
 
         self.act(Action::round_end_no_tile(tenpais, points));
-    }
-}
-
-// [Application]
-pub struct App {
-    read_only: bool,
-    sleep: bool,
-    write_to_file: bool,
-    msc_port: u32,
-    gui_port: u32,
-    operator_name: String,
-}
-
-impl App {
-    pub fn new(args: Vec<String>) -> Self {
-        use std::process::exit;
-
-        let mut app = Self {
-            read_only: false,
-            sleep: false,
-            write_to_file: false,
-            msc_port: super::MSC_PORT,
-            gui_port: super::GUI_PORT,
-            operator_name: "".to_string(),
-        };
-
-        let mut it = args.iter();
-        while let Some(s) = it.next() {
-            match s.as_str() {
-                "-r" => app.read_only = true,
-                "-s" => app.sleep = true,
-                "-w" => app.write_to_file = true,
-                "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
-                "-0" => app.operator_name = next_value(&mut it, "-0"),
-                opt => {
-                    println!("Unknown option: {}", opt);
-                    exit(0);
-                }
-            }
-        }
-
-        app
-    }
-
-    pub fn run(&mut self) {
-        let operator = create_operator(&self.operator_name);
-        let mut game = Mahjongsoul::new(self.sleep, self.write_to_file, operator);
-        let mut server_msc = create_ws_server(self.msc_port);
-        let mut server_gui = create_ws_server(self.gui_port);
-        let mut connected = false;
-
-        loop {
-            let msg = if let Some((s, r)) = server_msc.lock().unwrap().as_ref() {
-                if !connected {
-                    connected = true;
-                    let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
-                    s.send(msg.into()).ok();
-                }
-                match r.recv() {
-                    Ok(m) => m,
-                    Err(e) => {
-                        println!("[Error] {}", e);
-                        continue;
-                    }
-                }
-            } else {
-                connected = false;
-                continue;
-            };
-
-            if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
-                if !self.read_only {
-                    send_to_msc(&mut server_msc, "0", "eval", &act);
-                }
-            }
-
-            send_to_gui(&mut server_gui, "stage", &json!(&game.get_stage()))
-        }
     }
 }
 

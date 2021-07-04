@@ -78,10 +78,8 @@ pub fn create_operator(exp: &str) -> Box<dyn Operator> {
                 std::process::exit(0);
             }
 
-            let mut is_defalt = vec![true; conf.args.len()];
             for (i, &a) in args.iter().enumerate() {
                 if a != "" {
-                    is_defalt[i] = false;
                     conf.args[i].value = match parse_as(&conf.args[i].value, a) {
                         Ok(v) => v,
                         Err(e) => {

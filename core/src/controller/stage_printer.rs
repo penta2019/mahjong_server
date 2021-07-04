@@ -125,6 +125,5 @@ impl StageListener for StageStepPrinter {
                 println!("{}", stg);
             }
         }
-        // println!();
     }
 }

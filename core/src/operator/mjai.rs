@@ -35,12 +35,6 @@ pub struct MjaiEndpoint {
 }
 
 impl MjaiEndpoint {
-    // pub fn new(addr: &str) -> Self {
-    //     let mut cfg = (MjaiEndpointBuilder {}).get_default_config();
-    //     cfg.set_arg("addr", Variant::String(addr.to_string()));
-    //     Self::from_config(cfg)
-    // }
-
     pub fn from_config(config: Config) -> Self {
         let data = Arc::new(Mutex::new(SharedData::new()));
         let obj = Self {

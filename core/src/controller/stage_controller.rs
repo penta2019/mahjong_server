@@ -91,15 +91,18 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
     stg.kyoku = act.kyoku;
     stg.honba = act.honba;
     stg.kyoutaku = act.kyoutaku;
+    stg.turn = act.kyoku;
     stg.left_tile_count = 69;
-
+    stg.doras = act.doras.clone();
     stg.tile_remains = [[TILE; TNUM]; TYPE];
     let r = &mut stg.tile_remains;
     r[TM][0] = 1;
     r[TP][0] = 1;
     r[TS][0] = 1;
     r[TZ][0] = 0;
+    update_scores(stg, &act.scores);
 
+    // プレイヤー情報
     for s in 0..SEAT {
         let ph = &act.hands[s];
         let pl = &mut stg.players[s];
@@ -107,7 +110,6 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
         pl.is_shown = !ph.is_empty() && !ph.contains(&Z8);
         pl.is_menzen = true;
 
-        stg.turn = s; // player_inc_tile() 用
         if pl.is_shown {
             let mut drawn = None; // 親番14枚目
             let last = if s == act.kyoku {
@@ -117,16 +119,14 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
                 ph.len()
             };
             for &t in &ph[..last] {
-                player_inc_tile(stg, t);
-                table_edit(stg, t, U, H(s));
+                player_inc_tile(pl, t);
             }
 
             let pl = &mut stg.players[s];
             pl.win_tiles = get_win_tiles(pl);
             if let Some(&t) = drawn {
                 pl.drawn = Some(t);
-                player_inc_tile(stg, t);
-                table_edit(stg, t, U, H(s));
+                player_inc_tile(pl, t);
             }
         } else {
             if s == act.kyoku {
@@ -136,13 +136,18 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
         }
     }
 
-    update_scores(stg, &act.scores);
-    stg.turn = act.kyoku;
-
+    // update tile_states
     for &d in &act.doras {
         table_edit(stg, d, U, R);
     }
-    stg.doras = act.doras.clone();
+    for s in 0..SEAT {
+        let ph = &act.hands[s];
+        if stg.players[s].is_shown {
+            for &t in ph {
+                table_edit(stg, t, U, H(s));
+            }
+        }
+    }
 }
 
 fn action_deal_tile(stg: &mut Stage, act: &ActionDealTile) {
@@ -157,11 +162,11 @@ fn action_deal_tile(stg: &mut Stage, act: &ActionDealTile) {
 
     stg.turn = s;
     stg.left_tile_count -= 1;
+    stg.players[s].drawn = Some(t);
+    player_inc_tile(&mut stg.players[s], t);
     if t != Z8 {
         table_edit(stg, t, U, H(s));
     }
-    player_inc_tile(stg, t);
-    stg.players[s].drawn = Some(t);
 }
 
 fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
@@ -217,10 +222,10 @@ fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
     pl.discards.push(d);
 
     if pl.is_shown {
-        player_dec_tile(stg, t);
+        player_dec_tile(pl, t);
         table_edit(stg, t, H(s), D(s, idx));
     } else {
-        player_dec_tile(stg, Z8);
+        player_dec_tile(pl, Z8);
         table_edit(stg, t, U, D(s, idx));
     }
 
@@ -331,11 +336,12 @@ fn action_meld(stg: &mut Stage, act: &ActionMeld) {
     }
 
     for &t in &act.consumed {
-        if stg.players[s].is_shown {
-            player_dec_tile(stg, t);
+        let pl = &mut stg.players[s];
+        if pl.is_shown {
+            player_dec_tile(pl, t);
             table_edit(stg, t, H(s), M(s, idx));
         } else {
-            player_dec_tile(stg, Z8);
+            player_dec_tile(pl, Z8);
             table_edit(stg, t, U, M(s, idx));
         }
     }
@@ -353,10 +359,10 @@ fn action_kita(stg: &mut Stage, act: &ActionKita) {
     };
 
     if pl.is_shown {
-        player_dec_tile(stg, t);
+        player_dec_tile(pl, t);
         table_edit(stg, t, H(s), K(s, idx));
     } else {
-        player_dec_tile(stg, Z8);
+        player_dec_tile(pl, Z8);
         table_edit(stg, t, U, K(s, idx));
     }
 
@@ -406,26 +412,6 @@ fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateTyp
     }
 }
 
-fn player_inc_tile(stg: &mut Stage, tile: Tile) {
-    let h = &mut stg.players[stg.turn].hand;
-    let t = tile;
-    h[t.0][t.1] += 1;
-    if t.1 == 0 {
-        // 0は赤5のフラグなので本来の5をたてる
-        h[t.0][5] += 1;
-    }
-}
-
-fn player_dec_tile(stg: &mut Stage, tile: Tile) {
-    let h = &mut stg.players[stg.turn].hand;
-    let t = tile;
-    h[t.0][t.1] -= 1;
-    if t.1 == 0 {
-        h[t.0][5] -= 1;
-    }
-    assert!(h[t.0][5] != 0 || h[t.0][0] == 0);
-}
-
 fn disable_ippatsu(stg: &mut Stage) {
     for s in 0..SEAT {
         stg.players[s].is_ippatsu = false;
@@ -465,6 +451,26 @@ fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
     for s in 0..SEAT {
         stg.players[s].rank = ranks[s];
     }
+}
+
+fn player_inc_tile(pl: &mut Player, tile: Tile) {
+    let h = &mut pl.hand;
+    let t = tile;
+    h[t.0][t.1] += 1;
+    if t.1 == 0 {
+        // 0は赤5のフラグなので本来の5をたてる
+        h[t.0][5] += 1;
+    }
+}
+
+fn player_dec_tile(pl: &mut Player, tile: Tile) {
+    let h = &mut pl.hand;
+    let t = tile;
+    h[t.0][t.1] -= 1;
+    if t.1 == 0 {
+        h[t.0][5] -= 1;
+    }
+    assert!(h[t.0][5] != 0 || h[t.0][0] == 0);
 }
 
 fn get_win_tiles(pl: &Player) -> Vec<Tile> {

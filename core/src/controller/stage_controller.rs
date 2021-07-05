@@ -82,6 +82,7 @@ impl StageController {
     }
 }
 
+// [Action]
 fn action_game_start(_stg: &mut Stage, _act: &ActionGameStart) {}
 
 fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
@@ -108,10 +109,22 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
 
         stg.turn = s; // player_inc_tile() 用
         if pl.is_shown {
-            if s == act.kyoku {
-                pl.drawn = Some(*ph.last().unwrap());
+            let mut drawn = None; // 親番14枚目
+            let last = if s == act.kyoku {
+                drawn = ph.last();
+                ph.len() - 1
+            } else {
+                ph.len()
+            };
+            for &t in &ph[..last] {
+                player_inc_tile(stg, t);
+                table_edit(stg, t, U, H(s));
             }
-            for &t in ph {
+
+            let pl = &mut stg.players[s];
+            pl.win_tiles = get_win_tiles(pl);
+            if let Some(&t) = drawn {
+                pl.drawn = Some(t);
                 player_inc_tile(stg, t);
                 table_edit(stg, t, U, H(s));
             }
@@ -122,6 +135,7 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
             pl.hand[TZ][UK] = if s == act.kyoku { 14 } else { 13 }; // 親:14, 子:13
         }
     }
+
     update_scores(stg, &act.scores);
     stg.turn = act.kyoku;
 
@@ -214,23 +228,12 @@ fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
     let pl = &mut stg.players[s];
     if pl.is_shown {
         if pl.drawn != Some(t) {
+            let wt = get_win_tiles(pl);
             pl.is_furiten = false;
-
-            // 和了牌を集計
-            let mut wait = vec![];
-            wait.append(&mut calc_tiles_to_kokushimusou_win(&pl.hand));
-            wait.append(&mut calc_tiles_to_normal_win(&pl.hand));
-            wait.append(&mut calc_tiles_to_chiitoitsu_win(&pl.hand));
-            wait.sort();
-            let mut dedup = vec![];
-            if !wait.is_empty() {
-                // フリテンの確認
+            if !wt.is_empty() {
                 let mut tt = TileTable::default();
-                for w in wait {
-                    if tt[w.0][w.1] == 0 {
-                        tt[w.0][w.1] = 1;
-                        dedup.push(w);
-                    }
+                for w in &wt {
+                    tt[w.0][w.1] = 1;
                 }
                 for d in &pl.discards {
                     let dt = d.tile.to_normal();
@@ -240,7 +243,7 @@ fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
                     }
                 }
             }
-            pl.win_tiles = dedup;
+            pl.win_tiles = wt;
         } else if pl.win_tiles.contains(&t) {
             // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
             pl.is_furiten = true;
@@ -379,6 +382,7 @@ fn action_round_end_no_tile(stg: &mut Stage, act: &ActionRoundEndNoTile) {
 
 fn action_game_over(_stg: &mut Stage, _act: &ActionGameOver) {}
 
+// [Utility]
 fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateType) {
     let tn = tile.to_normal();
     let te = &mut stg.tile_states[tn.0][tn.1];
@@ -461,4 +465,21 @@ fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
     for s in 0..SEAT {
         stg.players[s].rank = ranks[s];
     }
+}
+
+fn get_win_tiles(pl: &Player) -> Vec<Tile> {
+    let mut win_tiles = vec![];
+    let mut tt = TileTable::default();
+    let wts0 = calc_tiles_to_kokushimusou_win(&pl.hand);
+    let wts1 = calc_tiles_to_normal_win(&pl.hand);
+    let wts2 = calc_tiles_to_chiitoitsu_win(&pl.hand);
+    for wts in &[wts0, wts1, wts2] {
+        for &t in wts {
+            if tt[t.0][t.1] == 0 {
+                tt[t.0][t.1] += 1;
+                win_tiles.push(t);
+            }
+        }
+    }
+    win_tiles
 }

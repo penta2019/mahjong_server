@@ -198,7 +198,8 @@ impl Mahjongsoul {
 
             let data = &action["data"];
             let name = &action["name"];
-            if !is_cache && as_str(name) == "ActionNewRound" {
+            let is_last = self.step + 1 == self.actions.len();
+            if !is_cache && is_last && as_str(name) == "ActionNewRound" {
                 sleep_ms(3000);
             }
             match as_str(name) {

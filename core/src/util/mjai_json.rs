@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Result, Value};
+use serde_json::{json, Value};
 
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
@@ -189,179 +189,67 @@ pub fn mjai_end_game(scores: &[Score; SEAT]) -> Value {
     })
 }
 
-// [Mjai Action]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionDahai {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    pai: String,
-    tsumogiri: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionPon {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    target: Seat,
-    pai: String,
-    consumed: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionChi {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    target: Seat,
-    pai: String,
-    consumed: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionKakan {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    pai: String,
-    consumed: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionDaiminkan {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    target: Seat,
-    pai: String,
-    consumed: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionAnkan {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    consumed: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionReach {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionHora {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    target: Seat,
-    pai: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionRyukyoku {
-    #[serde(rename = "type")]
-    type_: String,
-    actor: Seat,
-    reason: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MjaiActionNone {
-    #[serde(rename = "type")]
-    type_: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+#[serde(rename_all = "snake_case")]
 pub enum MjaiAction {
-    Dahai(MjaiActionDahai),
-    Pon(MjaiActionPon),
-    Chi(MjaiActionChi),
-    Kakan(MjaiActionKakan),
-    Daiminkan(MjaiActionDaiminkan),
-    Ankan(MjaiActionAnkan),
-    Reach(MjaiActionReach),
-    Hora(MjaiActionHora),
-    Ryukyoku(MjaiActionRyukyoku),
-    None(MjaiActionNone),
+    Dahai {
+        actor: Seat,
+        pai: String,
+        tsumogiri: bool,
+    },
+    Pon {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Chi {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Kakan {
+        actor: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Daiminkan {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Ankan {
+        actor: Seat,
+        consumed: Vec<String>,
+    },
+    Reach {
+        actor: Seat,
+    },
+    Hora {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+    },
+    Ryukyoku {
+        actor: Seat,
+        reason: String,
+    },
+    None,
 }
 
 impl MjaiAction {
-    pub fn from_value(v: Value) -> Result<Self> {
-        use serde_json::from_value;
-        let type_ = v["type"]
-            .as_str()
-            .ok_or(serde::de::Error::missing_field("type"))?;
-
-        Ok(match type_ {
-            "dahai" => Self::Dahai(from_value(v)?),
-            "chi" => {
-                let mut act: MjaiActionChi = from_value(v)?;
-                act.consumed.sort();
-                Self::Chi(act)
-            }
-            "pon" => {
-                let mut act: MjaiActionPon = from_value(v)?;
-                act.consumed.sort();
-                Self::Pon(act)
-            }
-            "kakan" => {
-                let mut act: MjaiActionKakan = from_value(v)?;
-                act.consumed.sort();
-                Self::Kakan(act)
-            }
-            "daiminkan" => {
-                let mut act: MjaiActionDaiminkan = from_value(v)?;
-                act.consumed.sort();
-                Self::Daiminkan(act)
-            }
-            "ankan" => {
-                let mut act: MjaiActionAnkan = from_value(v)?;
-                act.consumed.sort();
-                Self::Ankan(act)
-            }
-            "reach" => Self::Reach(from_value(v)?),
-            "hora" => Self::Hora(from_value(v)?),
-            "ryukyoku" => Self::Ryukyoku(from_value(v)?),
-            "none" => Self::None(from_value(v)?),
-            t => {
-                return Err(serde::de::Error::invalid_value(
-                    serde::de::Unexpected::Str(t),
-                    &"type value",
-                ))
-            }
-        })
-    }
-
-    pub fn to_value(&self) -> Value {
-        match self {
-            Self::Dahai(act) => json!(act),
-            Self::Chi(act) => json!(act),
-            Self::Pon(act) => json!(act),
-            Self::Kakan(act) => json!(act),
-            Self::Daiminkan(act) => json!(act),
-            Self::Ankan(act) => json!(act),
-            Self::Reach(act) => json!(act),
-            Self::Hora(act) => json!(act),
-            Self::Ryukyoku(act) => json!(act),
-            Self::None(act) => json!(act),
-        }
-    }
-
     pub fn from_operation(stage: &Stage, seat: Seat, op: &PlayerOperation) -> Option<Self> {
         let PlayerOperation(tp, cs) = op;
         Some(match tp {
             Nop => return None,
             Discard => return None,
-            Ankan => Self::Ankan(MjaiActionAnkan {
-                type_: "ankan".to_string(),
+            Ankan => Self::Ankan {
                 actor: seat,
                 consumed: vec_to_mjai_tile(cs),
-            }),
+            },
             Kakan => {
                 let t = op.1[0];
                 let comsumed = if t.1 == 0 {
@@ -378,105 +266,86 @@ impl MjaiAction {
                 .map(|&t| to_mjai_tile(t))
                 .collect();
 
-                Self::Kakan(MjaiActionKakan {
-                    type_: "kakan".to_string(),
+                Self::Kakan {
                     actor: seat,
                     pai: to_mjai_tile(t),
                     consumed: comsumed,
-                })
+                }
             }
             Riichi => return None,
-            Tsumo => Self::Hora(MjaiActionHora {
-                type_: "hora".to_string(),
+            Tsumo => Self::Hora {
                 actor: seat,
                 target: seat,
                 pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
-            }),
-            Kyushukyuhai => Self::Ryukyoku(MjaiActionRyukyoku {
-                type_: "ryukyoku".to_string(),
+            },
+            Kyushukyuhai => Self::Ryukyoku {
                 actor: seat,
                 reason: "kyushukyuhai".to_string(),
-            }),
+            },
             Kita => panic!(),
             Chi => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                Self::Chi(MjaiActionChi {
-                    type_: "chi".to_string(),
+                Self::Chi {
                     actor: seat,
                     target: target_seat,
                     pai: to_mjai_tile(target_tile),
                     consumed: vec_to_mjai_tile(cs),
-                })
+                }
             }
             Pon => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                Self::Pon(MjaiActionPon {
-                    type_: "pon".to_string(),
+                Self::Pon {
                     actor: seat,
                     target: target_seat,
                     pai: to_mjai_tile(target_tile),
                     consumed: vec_to_mjai_tile(cs),
-                })
+                }
             }
             Minkan => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
-                Self::Daiminkan(MjaiActionDaiminkan {
-                    type_: "daiminkan".to_string(),
+                Self::Daiminkan {
                     actor: seat,
                     target: target_seat,
                     pai: to_mjai_tile(target_tile),
                     consumed: vec_to_mjai_tile(cs),
-                })
+                }
             }
             Ron => {
                 let lt = stage.last_tile.unwrap();
-                Self::Hora(MjaiActionHora {
-                    type_: "hora".to_string(),
+                Self::Hora {
                     actor: seat,
                     target: lt.0,
                     pai: to_mjai_tile(lt.2),
-                })
+                }
             }
         })
     }
 
     pub fn to_operation(&self, is_turn: bool) -> PlayerOperation {
         match self {
-            Self::Dahai(act) => {
-                if act.tsumogiri {
+            Self::Dahai { pai, tsumogiri, .. } => {
+                if *tsumogiri {
                     Op::nop()
                 } else {
-                    Op::discard(from_mjai_tile(&act.pai))
+                    Op::discard(from_mjai_tile(pai))
                 }
             }
-            Self::Chi(act) => Op::chi(vec_from_mjai_tile(&act.consumed)),
-            Self::Pon(act) => Op::pon(vec_from_mjai_tile(&act.consumed)),
-            Self::Kakan(act) => Op::kakan(from_mjai_tile(&act.pai)),
-            Self::Daiminkan(act) => Op::minkan(vec_from_mjai_tile(&act.consumed)),
-            Self::Ankan(act) => Op::ankan(vec_from_mjai_tile(&act.consumed)),
-            Self::Reach(_) => panic!(),
-            Self::Hora(_) => {
+            Self::Chi { consumed, .. } => Op::chi(vec_from_mjai_tile(consumed)),
+            Self::Pon { consumed, .. } => Op::pon(vec_from_mjai_tile(consumed)),
+            Self::Kakan { pai, .. } => Op::kakan(from_mjai_tile(pai)),
+            Self::Daiminkan { consumed, .. } => Op::minkan(vec_from_mjai_tile(consumed)),
+            Self::Ankan { consumed, .. } => Op::ankan(vec_from_mjai_tile(consumed)),
+            Self::Reach { .. } => panic!(),
+            Self::Hora { .. } => {
                 if is_turn {
                     Op::tsumo()
                 } else {
                     Op::ron()
                 }
             }
-            Self::Ryukyoku(_) => Op::kyushukyuhai(),
-            Self::None(_) => Op::nop(),
+            Self::Ryukyoku { .. } => Op::kyushukyuhai(),
+            Self::None => Op::nop(),
         }
-    }
-
-    pub fn from_value_to_operation(v: Value, is_turn: bool) -> Result<PlayerOperation> {
-        Self::from_value(v).and_then(|cmsg| Ok(cmsg.to_operation(is_turn)))
-    }
-
-    pub fn from_operation_to_value(
-        stage: &Stage,
-        seat: Seat,
-        op: &PlayerOperation,
-    ) -> Option<Value> {
-        Self::from_operation(stage, seat, op).and_then(|cmsg| Some(cmsg.to_value()))
     }
 }
 
@@ -563,7 +432,8 @@ fn test_mjai_message() {
     let msgs = [dahai, chi, pon, kakan, daiminkan, ankan, reach, hora, none];
 
     for &msg in &msgs {
-        let d = MjaiAction::from_value(serde_json::from_str(msg).unwrap()).unwrap();
-        println!("{}", d.to_value());
+        // let d = MjaiAction::from_value(serde_json::from_str(msg).unwrap()).unwrap();
+        let a: MjaiAction = serde_json::from_str(msg).unwrap();
+        println!("{}", serde_json::to_string(&a).unwrap());
     }
 }

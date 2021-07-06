@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use super::*;
 use crate::util::common::{flush, sleep_ms, vec_remove};
@@ -86,8 +86,8 @@ impl MjaiEndpoint {
 
     fn add_record(&mut self, record: Value) {
         let mut d = self.data.lock().unwrap();
-        d.selected_action = json!(null);
-        d.possible_actions = json!(null);
+        d.selected_action = None;
+        d.possible_actions = None;
         d.record.push(record);
     }
 
@@ -236,12 +236,13 @@ impl Operator for MjaiEndpoint {
             let mut d = self.data.lock().unwrap();
             let mut acts = vec![];
             for op in ops {
-                if let Some(v) = MjaiAction::from_operation_to_value(stage, seat, op) {
+                if let Some(v) = MjaiAction::from_operation(stage, seat, op) {
                     acts.push(v);
                 }
             }
-            d.possible_actions = json!(acts);
-            d.selected_action = json!(null);
+            d.possible_actions = Some(acts);
+            d.selected_action = None;
+            d.is_riichi = false;
         }
 
         // possible_actionに対する応答を待機
@@ -249,35 +250,31 @@ impl Operator for MjaiEndpoint {
         loop {
             sleep_ms(100);
             let mut d = self.data.lock().unwrap();
-            if d.selected_action != json!(null) {
+            if d.selected_action.is_some() {
                 break;
             }
             c += 1;
             if c == 50 {
                 println!("[Error] possible_action timeout");
-                d.possible_actions = json!(null);
+                d.possible_actions = None;
                 return Op::nop();
             }
         }
 
-        let v = std::mem::replace(&mut self.data.lock().unwrap().selected_action, json!(null));
+        let d = &mut self.data.lock().unwrap();
+        let a = std::mem::replace(&mut d.selected_action, None).unwrap();
+        d.selected_action = None;
 
-        // reachだけはmjaiと仕様が異なるため個別処理する
-        if v["type"] == json!("reach") {
-            if let Some(t) = v["pai"].as_str() {
-                return Op::riichi(from_mjai_tile(t));
+        if d.is_riichi {
+            d.is_riichi = false;
+            if let MjaiAction::Dahai { pai, .. } = a {
+                return Op::riichi(from_mjai_tile(&pai));
             } else {
-                println!("[Error] pai not found in reach message");
-                return Op::nop();
+                panic!();
             }
         }
 
-        if let Ok(cmsg) = MjaiAction::from_value_to_operation(v, seat == stage.turn) {
-            cmsg
-        } else {
-            println!("[Error] Failed to parse mjai action");
-            Op::nop()
-        }
+        a.to_operation(seat == stage.turn)
     }
 
     fn get_config(&self) -> &Config {
@@ -308,8 +305,9 @@ struct SharedData {
     send_start_game: bool,
     seat: Seat,
     record: Vec<Value>,
-    selected_action: Value,
-    possible_actions: Value,
+    selected_action: Option<MjaiAction>,
+    possible_actions: Option<Vec<MjaiAction>>,
+    is_riichi: bool,
 }
 
 impl SharedData {
@@ -318,8 +316,9 @@ impl SharedData {
             send_start_game: false,
             seat: NO_SEAT,
             record: vec![],
-            selected_action: json!(null),
-            possible_actions: json!(null),
+            selected_action: None,
+            possible_actions: None,
+            is_riichi: false,
         }
     }
 }
@@ -378,18 +377,19 @@ fn stream_handler(
         if cursor + 1 < len {
             send(&data.lock().unwrap().record[cursor])?;
         } else if cursor + 1 == len {
-            if data.lock().unwrap().possible_actions == json!(null) {
+            if data.lock().unwrap().possible_actions.is_none() {
                 // handle_operationがpossible_actionsを追加する可能性があるので待機
                 // data.lock()が開放されている必要があることに注意
                 sleep_ms(100);
             }
 
             let mut d = data.lock().unwrap();
-            if d.possible_actions != json!(null) && cursor + 1 == d.record.len() {
+            if d.possible_actions.is_some() && cursor + 1 == d.record.len() {
                 // possible_actionsが存在する場合,送信用のjsonオブジェクトを生成して追加
+                let a = std::mem::replace(&mut d.possible_actions, None).unwrap();
                 let mut record = d.record[cursor].clone();
-                record["possible_actions"] = d.possible_actions.clone();
-                d.possible_actions = json!(null);
+                record["possible_actions"] = serde_json::to_value(a).unwrap();
+                d.possible_actions = None;
                 wait_act = true;
                 send(&record)?;
             } else {
@@ -401,23 +401,28 @@ fn stream_handler(
         }
 
         cursor += 1;
-        let v = recv()?;
 
+        let v = recv()?;
         if !wait_act {
             continue;
         }
 
         // possible_actionsに対する応答を処理
         if v["type"].as_str().ok_or_else(err)? != "reach" {
-            data.lock().unwrap().selected_action = v;
+            let a = serde_json::from_value(v)?;
+            data.lock().unwrap().selected_action = Some(a);
         } else {
             // reachは仕様が特殊なので個別に処理
             send(&v)?; // send reach
-            let mut v2 = recv()?; // recv dahai
+            let v2 = recv()?; // recv dahai
             send(&v2)?; // send dahai
             recv()?; // recv none
-            v2["type"] = json!("reach");
-            data.lock().unwrap().selected_action = v2;
+            {
+                let d = &mut data.lock().unwrap();
+                let a = serde_json::from_value(v2)?;
+                d.selected_action = Some(a);
+                d.is_riichi = true;
+            }
 
             // recordに reach -> dahai -> (reach_accepted or hora) の順で追加される
             let mut step = 0;

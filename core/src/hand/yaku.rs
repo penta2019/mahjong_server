@@ -188,7 +188,7 @@ struct Counts {
 }
 
 // 特殊形&特殊条件の役
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone)]
 pub struct YakuFlags {
     pub menzentsumo: bool,
     pub riichi: bool,

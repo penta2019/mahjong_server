@@ -28,22 +28,17 @@ impl Bot2 {
 }
 
 impl Operator for Bot2 {
-    fn handle_operation(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        ops: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
+    fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         let h = &stage.players[seat].hand;
 
         if stage.turn == seat {
-            if ops.contains(&Op::tsumo()) {
-                return Op::tsumo();
+            if acts.contains(&Action::tsumo()) {
+                return Action::tsumo();
             }
 
             for ni in 1..=DR {
                 if h[TZ][ni] != 0 && h[TZ][ni] != 3 {
-                    return Op::discard(Tile(TZ, ni));
+                    return Action::discard(Tile(TZ, ni));
                 }
             }
 
@@ -62,7 +57,7 @@ impl Operator for Bot2 {
                 }
             }
             if t != Z8 {
-                return Op::discard(t);
+                return Action::discard(t);
             }
 
             // 有効牌が一番多くなるような不要牌を探して切る
@@ -82,15 +77,15 @@ impl Operator for Bot2 {
                 }
             }
             if t != Z8 {
-                return Op::discard(t);
+                return Action::discard(t);
             }
         } else {
-            if ops.contains(&Op::ron()) {
-                return Op::ron();
+            if acts.contains(&Action::ron()) {
+                return Action::ron();
             }
         }
 
-        Op::nop()
+        Action::nop()
     }
 
     fn get_config(&self) -> &Config {

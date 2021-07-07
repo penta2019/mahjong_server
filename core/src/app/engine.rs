@@ -12,7 +12,7 @@ use crate::util::common::*;
 use crate::util::event_writer::EventWriter;
 use crate::util::ws_server::*;
 
-use PlayerOperationType::*;
+use ActionType::*;
 use StageOperation::*;
 
 // [App]
@@ -210,7 +210,7 @@ impl App {
                         let i = shuffle[s];
                         total_score_delta[i] += score - game.initial_score;
                         total_rank_sum[i] += rank;
-                        print!(", op{}:{:5}({})", i, score, rank);
+                        print!(", ac{}:{:5}({})", i, score, rank);
                     }
                     println!();
 
@@ -226,7 +226,7 @@ impl App {
             if n_thread == 0 && n_game == self.n_game {
                 for i in 0..SEAT {
                     println!(
-                        "op{} avg_rank: {:.2}, avg_score_delta: {:6}",
+                        "ac{} avg_rank: {:.2}, avg_score_delta: {:6}",
                         i,
                         total_rank_sum[i] as f32 / n_game as f32,
                         total_score_delta[i] / n_game as i32,
@@ -276,12 +276,12 @@ struct MahjongEngine {
     // ゲーム制御
     ctrl: StageController,
     next_op: StageOperation,
-    melding: Option<PlayerOperation>, // 鳴き処理用
-    kan_dora: Option<Tile>,           // 加槓・明槓の打牌後の槓ドラ更新用
-    wall_count: usize,                // 牌山からツモを行った回数
-    kan_count: usize,                 // 槓した回数
-    kita_count: usize,                // 北抜きの回数
-    is_suukansanra: bool,             // 四槓散了の処理フラグ
+    melding: Option<Action>, // 鳴き処理用
+    kan_dora: Option<Tile>,  // 加槓・明槓の打牌後の槓ドラ更新用
+    wall_count: usize,       // 牌山からツモを行った回数
+    kan_count: usize,        // 槓した回数
+    kita_count: usize,       // 北抜きの回数
+    is_suukansanra: bool,    // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
     round_next: NextRoundInfo,
     is_game_over: bool,
@@ -453,38 +453,38 @@ impl MahjongEngine {
     }
 
     fn do_turn_operation(&mut self) {
-        // ツモ番のPlayerOperationの要求
-        // op: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
+        // ツモ番のActionの要求
+        // act: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
         let stg = &self.get_stage();
         let turn = stg.turn;
-        let mut ops = vec![Op::nop()];
+        let mut acts = vec![Action::nop()];
 
         if !stg.players[turn].is_riichi {
-            if let Some(op) = &self.melding {
+            if let Some(act) = &self.melding {
                 // 鳴き後に捨てられない牌を追加
-                ops.push(PlayerOperation(Discard, calc_prohibited_discards(op)));
+                acts.push(Action(Discard, calc_prohibited_discards(act)));
             } else {
-                ops.push(PlayerOperation(Discard, vec![]))
+                acts.push(Action(Discard, vec![]))
             }
         }
 
         let can_op = match self.melding {
             None => true,
-            Some(PlayerOperation(tp, _)) => tp != Chi && tp != Pon,
+            Some(Action(tp, _)) => tp != Chi && tp != Pon,
         };
         if can_op {
-            ops.append(&mut check_ankan(stg));
-            ops.append(&mut check_kakan(stg));
-            ops.append(&mut check_riichi(stg));
-            ops.append(&mut check_tsumo(stg));
-            ops.append(&mut check_kyushukyuhai(stg));
-            ops.append(&mut check_kita(stg));
+            acts.append(&mut check_ankan(stg));
+            acts.append(&mut check_kakan(stg));
+            acts.append(&mut check_riichi(stg));
+            acts.append(&mut check_tsumo(stg));
+            acts.append(&mut check_kyushukyuhai(stg));
+            acts.append(&mut check_kita(stg));
         }
 
         self.melding = None;
-        let op = self.ctrl.handle_operation(turn, &ops);
-        assert!(op.0 == Discard || ops.contains(&op));
-        let PlayerOperation(tp, cs) = op.clone();
+        let act = self.ctrl.select_action(turn, &acts);
+        assert!(act.0 == Discard || acts.contains(&act));
+        let Action(tp, cs) = act.clone();
 
         let stg = &self.get_stage();
         let event = match tp {
@@ -497,11 +497,11 @@ impl MahjongEngine {
                 Event::discard_tile(turn, cs[0], false, false)
             }
             Ankan => {
-                self.melding = Some(op);
+                self.melding = Some(act);
                 Event::meld(turn, MeldType::Ankan, cs)
             }
             Kakan => {
-                self.melding = Some(op);
+                self.melding = Some(act);
                 Event::meld(turn, MeldType::Kakan, cs)
             }
             Riichi => {
@@ -519,10 +519,10 @@ impl MahjongEngine {
                 return;
             }
             Kita => {
-                self.melding = Some(op);
+                self.melding = Some(act);
                 Event::kita(turn, false)
             }
-            _ => panic!("Operation {:?} not found in {:?}", op, ops),
+            _ => panic!("Action {:?} not found in {:?}", act, acts),
         };
         self.handle_event(event);
 
@@ -533,67 +533,67 @@ impl MahjongEngine {
     }
 
     fn do_call_operation(&mut self) {
-        // 順番以外のプレイヤーにPlayerOperationを要求
-        // op: Nop, Chi, Pon, Minkan, Ron
+        // 順番以外のプレイヤーにActionを要求
+        // act: Nop, Chi, Pon, Minkan, Ron
         let stg = self.get_stage();
         let turn = stg.turn;
-        let mut ops_list: [Vec<PlayerOperation>; SEAT] = Default::default();
+        let mut acts_list: [Vec<Action>; SEAT] = Default::default();
         for s in 0..SEAT {
-            ops_list[s].push(Op::nop());
+            acts_list[s].push(Action::nop());
         }
         // 暗槓,加槓,四槓散了に対して他家はロン以外の操作は行えない
         if self.melding == None && !self.is_suukansanra {
-            for (s, op) in check_chi(stg) {
-                ops_list[s].push(op);
+            for (s, act) in check_chi(stg) {
+                acts_list[s].push(act);
             }
-            for (s, op) in check_pon(stg) {
-                ops_list[s].push(op);
+            for (s, act) in check_pon(stg) {
+                acts_list[s].push(act);
             }
-            for (s, op) in check_minkan(stg) {
-                ops_list[s].push(op);
+            for (s, act) in check_minkan(stg) {
+                acts_list[s].push(act);
             }
         }
-        for (s, op) in check_ron(stg) {
-            ops_list[s].push(op);
+        for (s, act) in check_ron(stg) {
+            acts_list[s].push(act);
         }
 
-        // query operation
-        type Meld = Option<(Seat, PlayerOperation)>;
+        // query action
+        type Meld = Option<(Seat, Action)>;
         let mut rons = vec![];
         let mut minkan: Meld = None;
         let mut pon: Meld = None;
         let mut chi: Meld = None;
         for s in 0..SEAT {
-            let ops = &ops_list[s];
-            if s == turn || ops.len() == 1 {
+            let acts = &acts_list[s];
+            if s == turn || acts.len() == 1 {
                 continue;
             }
-            let op = self.ctrl.handle_operation(s, ops);
-            // calc_operation_index(&ops, &op); // opがops内に存在することを確認
-            match op.0 {
+            let act = self.ctrl.select_action(s, acts);
+            // calc_action_index(&acts, &act); // opがacts内に存在することを確認
+            match act.0 {
                 Nop => {}
-                Chi => chi = Some((s, op)),
-                Pon => pon = Some((s, op)),
-                Minkan => minkan = Some((s, op)),
+                Chi => chi = Some((s, act)),
+                Pon => pon = Some((s, act)),
+                Minkan => minkan = Some((s, act)),
                 Ron => rons.push(s),
-                _ => panic!("Operation {:?} not found in {:?}", op, ops),
+                _ => panic!("Action {:?} not found in {:?}", act, acts),
             }
         }
 
-        // dispatch operation
+        // dispatch action
         if !rons.is_empty() {
             self.round_result = Some(RoundResult::Ron(rons));
             return;
-        } else if let Some((s, op)) = minkan {
-            self.handle_event(Event::meld(s, MeldType::Minkan, op.1.clone()));
-            self.melding = Some(op);
-        } else if let Some((s, op)) = pon {
+        } else if let Some((s, act)) = minkan {
+            self.handle_event(Event::meld(s, MeldType::Minkan, act.1.clone()));
+            self.melding = Some(act);
+        } else if let Some((s, act)) = pon {
             // PonをChiiより優先して処理
-            self.handle_event(Event::meld(s, MeldType::Pon, op.1.clone()));
-            self.melding = Some(op);
-        } else if let Some((s, op)) = chi {
-            self.handle_event(Event::meld(s, MeldType::Chi, op.1.clone()));
-            self.melding = Some(op);
+            self.handle_event(Event::meld(s, MeldType::Pon, act.1.clone()));
+            self.melding = Some(act);
+        } else if let Some((s, act)) = chi {
+            self.handle_event(Event::meld(s, MeldType::Chi, act.1.clone()));
+            self.melding = Some(act);
         };
 
         // 途中流局の確認
@@ -916,11 +916,11 @@ impl MahjongEngine {
     }
 }
 
-// [Turn Operation Check]
+// [Turn Action Check]
 // プレイヤーのツモ番に可能な操作をチェックする
-// fn(&Stage) -> Option<PlayerOperation>
+// fn(&Stage) -> Option<Action>
 
-fn check_riichi(stg: &Stage) -> Vec<PlayerOperation> {
+fn check_riichi(stg: &Stage) -> Vec<Action> {
     if stg.left_tile_count < 4 {
         return vec![];
     }
@@ -930,7 +930,7 @@ fn check_riichi(stg: &Stage) -> Vec<PlayerOperation> {
         return vec![];
     }
 
-    let mut ops = vec![];
+    let mut acts = vec![];
     let mut f = TileTable::default();
     let ds1 = calc_discards_to_normal_tenpai(&pl.hand);
     let ds2 = calc_discards_to_chiitoitsu_tenpai(&pl.hand);
@@ -939,23 +939,23 @@ fn check_riichi(stg: &Stage) -> Vec<PlayerOperation> {
         for &(d, _) in ds {
             if f[d.0][d.1] == 0 {
                 f[d.0][d.1] += 1;
-                ops.push(Op::riichi(d));
+                acts.push(Action::riichi(d));
             }
         }
     }
 
-    ops
+    acts
 }
 
-fn check_tsumo(stg: &Stage) -> Vec<PlayerOperation> {
+fn check_tsumo(stg: &Stage) -> Vec<Action> {
     if let Some(_) = evaluate_hand_tsumo(&stg, &vec![]) {
-        vec![Op::tsumo()]
+        vec![Action::tsumo()]
     } else {
         vec![]
     }
 }
 
-fn check_ankan(stg: &Stage) -> Vec<PlayerOperation> {
+fn check_ankan(stg: &Stage) -> Vec<Action> {
     if stg.left_tile_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
@@ -963,14 +963,14 @@ fn check_ankan(stg: &Stage) -> Vec<PlayerOperation> {
     let ankan = |t: Tile| {
         if t.is_suit() && t.1 == 5 {
             // 赤5を含む暗槓
-            Op::ankan(vec![Tile(t.0, 0), t, t, t])
+            Action::ankan(vec![Tile(t.0, 0), t, t, t])
         } else {
-            Op::ankan(vec![t, t, t, t])
+            Action::ankan(vec![t, t, t, t])
         }
     };
 
     let pl = &stg.players[stg.turn];
-    let mut ops = vec![];
+    let mut acts = vec![];
     if pl.is_riichi {
         // リーチ中でも待ちが変わらない暗槓は可能
         if let Some(t) = pl.drawn {
@@ -987,7 +987,7 @@ fn check_ankan(stg: &Stage) -> Vec<PlayerOperation> {
                 v2.sort();
 
                 if v1 == v2 {
-                    ops.push(ankan(t));
+                    acts.push(ankan(t));
                 }
             }
         }
@@ -995,16 +995,16 @@ fn check_ankan(stg: &Stage) -> Vec<PlayerOperation> {
         for ti in 0..TYPE {
             for ni in 1..TNUM {
                 if pl.hand[ti][ni] == 4 {
-                    ops.push(ankan(Tile(ti, ni)));
+                    acts.push(ankan(Tile(ti, ni)));
                 }
             }
         }
     }
 
-    ops
+    acts
 }
 
-fn check_kakan(stg: &Stage) -> Vec<PlayerOperation> {
+fn check_kakan(stg: &Stage) -> Vec<Action> {
     if stg.left_tile_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
@@ -1014,24 +1014,24 @@ fn check_kakan(stg: &Stage) -> Vec<PlayerOperation> {
         return vec![];
     }
 
-    let mut ops = vec![];
+    let mut acts = vec![];
     for m in &pl.melds {
         if m.type_ == MeldType::Pon {
             let t = m.tiles[0].to_normal();
             if pl.hand[t.0][t.1] != 0 {
-                ops.push(if t.is_suit() && t.1 == 5 && pl.hand[t.0][0] > 0 {
-                    Op::kakan(Tile(t.0, 0)) // 赤5
+                acts.push(if t.is_suit() && t.1 == 5 && pl.hand[t.0][0] > 0 {
+                    Action::kakan(Tile(t.0, 0)) // 赤5
                 } else {
-                    Op::kakan(t)
+                    Action::kakan(t)
                 });
             }
         }
     }
 
-    ops
+    acts
 }
 
-fn check_kyushukyuhai(stg: &Stage) -> Vec<PlayerOperation> {
+fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
     let pl = &stg.players[stg.turn];
     if !pl.discards.is_empty() {
         return vec![];
@@ -1061,10 +1061,10 @@ fn check_kyushukyuhai(stg: &Stage) -> Vec<PlayerOperation> {
         return vec![];
     }
 
-    vec![Op::kyushukyuhai()]
+    vec![Action::kyushukyuhai()]
 }
 
-fn check_kita(stg: &Stage) -> Vec<PlayerOperation> {
+fn check_kita(stg: &Stage) -> Vec<Action> {
     if !stg.is_3p {
         return vec![];
     }
@@ -1074,20 +1074,20 @@ fn check_kita(stg: &Stage) -> Vec<PlayerOperation> {
         return vec![];
     }
 
-    let mut ops = vec![];
+    let mut acts = vec![];
     if stg.players[stg.turn].hand[TZ][WN] != 0 {
-        ops.push(Op::kita());
+        acts.push(Action::kita());
     }
 
-    ops
+    acts
 }
 
-// [Call Operation Check]
+// [Call Action Check]
 // ツモ番のプレイヤーが打牌を行ったあとに,他のプレイヤーが可能な操作をチェックする
-// fn(&Stage) -> Vec<(Seat, PlayerOperation)>
+// fn(&Stage) -> Vec<(Seat, Action)>
 // ロン以外の返り値のリストは要素が2つ以上になることはないが一貫性のためVecを返却する
 
-fn check_chi(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
+fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
     if stg.left_tile_count == 0 {
         return vec![];
     }
@@ -1146,24 +1146,24 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
     }
 
     let h = &stg.players[s].hand[d.0];
-    let mut ops = vec![];
+    let mut acts = vec![];
     for pair in check {
         if h[pair.0] > 0 && h[pair.1] > 0 {
-            ops.push((s, Op::chi(vec![Tile(d.0, pair.0), Tile(d.0, pair.1)])));
+            acts.push((s, Action::chi(vec![Tile(d.0, pair.0), Tile(d.0, pair.1)])));
         }
     }
 
-    ops
+    acts
 }
 
-fn check_pon(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
+fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
     if stg.left_tile_count == 0 {
         return vec![];
     }
 
     let d = stg.last_tile.unwrap().2;
     let t = d.to_normal();
-    let mut ops = vec![];
+    let mut acts = vec![];
     for s in 0..SEAT {
         let pl = &stg.players[s];
         if pl.hand[t.0][t.1] < 2 || stg.turn == s || pl.is_riichi {
@@ -1171,32 +1171,32 @@ fn check_pon(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
         }
 
         let t0 = Tile(t.0, 0);
-        let pon = Op::pon(vec![t, t]);
-        let pon0 = Op::pon(vec![t0, t]); // 手牌の赤5を含むPon
+        let pon = Action::pon(vec![t, t]);
+        let pon0 = Action::pon(vec![t0, t]); // 手牌の赤5を含むPon
         if t.is_suit() && t.1 == 5 && pl.hand[t.0][0] > 0 {
             // 赤5がある場合
             if pl.hand[t.0][t.1] > 2 {
-                ops.push((s, pon));
-                ops.push((s, pon0));
+                acts.push((s, pon));
+                acts.push((s, pon0));
             } else {
-                ops.push((s, pon0));
+                acts.push((s, pon0));
             }
         } else {
             // 5以外または赤なし
-            ops.push((s, pon));
+            acts.push((s, pon));
         }
     }
-    ops
+    acts
 }
 
-fn check_minkan(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
+fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
     if stg.left_tile_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
 
     let d = stg.last_tile.unwrap().2;
     let t = d.to_normal();
-    let mut ops = vec![];
+    let mut acts = vec![];
     for s in 0..SEAT {
         let pl = &stg.players[s];
         if pl.hand[t.0][t.1] != 3 || stg.turn == s || pl.is_riichi {
@@ -1204,23 +1204,23 @@ fn check_minkan(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
         }
 
         let cs = if t.is_suit() && t.1 == 5 && pl.hand[t.0][0] > 0 {
-            Op::minkan(vec![Tile(t.0, 0), t, t])
+            Action::minkan(vec![Tile(t.0, 0), t, t])
         } else {
-            Op::minkan(vec![t, t, t])
+            Action::minkan(vec![t, t, t])
         };
-        ops.push((s, cs));
+        acts.push((s, cs));
     }
-    ops
+    acts
 }
 
-fn check_ron(stg: &Stage) -> Vec<(Seat, PlayerOperation)> {
-    let mut ops = vec![];
+fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
+    let mut acts = vec![];
     for s in 0..SEAT {
         if let Some(_) = evaluate_hand_ron(stg, &vec![], s) {
-            ops.push((s, Op::ron()));
+            acts.push((s, Action::ron()));
         }
     }
-    ops
+    acts
 }
 
 // [Utility]
@@ -1244,9 +1244,9 @@ fn create_wall(seed: u64) -> Vec<Tile> {
     return wall;
 }
 
-fn calc_prohibited_discards(op: &PlayerOperation) -> Vec<Tile> {
+fn calc_prohibited_discards(act: &Action) -> Vec<Tile> {
     let mut v = vec![];
-    let PlayerOperation(tp, cs) = op;
+    let Action(tp, cs) = act;
     match tp {
         Chi => {
             // 赤5が混じっている可能性を考慮

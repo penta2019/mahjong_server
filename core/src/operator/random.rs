@@ -33,14 +33,9 @@ impl RandomDiscard {
 }
 
 impl Operator for RandomDiscard {
-    fn handle_operation(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        _ops: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
+    fn select_action(&mut self, stage: &Stage, seat: Seat, _acts: &Vec<Action>) -> Action {
         if stage.turn != seat {
-            return Op::nop();
+            return Action::nop();
         }
 
         let h = &stage.players[seat].hand;
@@ -50,7 +45,7 @@ impl Operator for RandomDiscard {
                 for ni in 1..TNUM {
                     if h[ti][ni] > 0 {
                         if n == 0 {
-                            return Op::discard(Tile(ti, ni));
+                            return Action::discard(Tile(ti, ni));
                         }
                         n -= 1;
                     }

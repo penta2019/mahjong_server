@@ -87,9 +87,9 @@ pub fn evaluate_hand_ron(
     yf.ippatsu = pl.is_ippatsu;
     let (tp, t) = if let Some((_, tp, t)) = stage.last_tile {
         match tp {
-            OpType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,
-            OpType::Kakan => yf.chankan = true,
-            OpType::Ankan => {}
+            ActionType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,
+            ActionType::Kakan => yf.chankan = true,
+            ActionType::Ankan => {}
             _ => panic!(),
         }
         (tp, t)
@@ -124,7 +124,7 @@ pub fn evaluate_hand_ron(
         stage.get_seat_wind(pl.seat),
         yf,
     ) {
-        if tp == OpType::Ankan {
+        if tp == ActionType::Ankan {
             for y in &res.yakus {
                 if y.0 == "国士無双" || y.0 == "国士無双十三面待ち" {
                     return Some(res);

@@ -31,12 +31,7 @@ impl Null {
 }
 
 impl Operator for Null {
-    fn handle_operation(
-        &mut self,
-        _stage: &Stage,
-        _seat: Seat,
-        _operatons: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
+    fn select_action(&mut self, _stage: &Stage, _seat: Seat, _operatons: &Vec<Action>) -> Action {
         panic!();
     }
 

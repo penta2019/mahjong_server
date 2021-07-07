@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
 
-use PlayerOperationType::*;
+use ActionType::*;
 
 // [Mjai Message]
 // id: 自分の座席
@@ -241,8 +241,8 @@ pub enum MjaiAction {
 }
 
 impl MjaiAction {
-    pub fn from_operation(stage: &Stage, seat: Seat, op: &PlayerOperation) -> Option<Self> {
-        let PlayerOperation(tp, cs) = op;
+    pub fn from_action(stage: &Stage, seat: Seat, act: &Action) -> Option<Self> {
+        let Action(tp, cs) = act;
         Some(match tp {
             Nop => return None,
             Discard => return None,
@@ -251,7 +251,7 @@ impl MjaiAction {
                 consumed: vec_to_mjai_tile(cs),
             },
             Kakan => {
-                let t = op.1[0];
+                let t = act.1[0];
                 let comsumed = if t.1 == 0 {
                     // 赤5
                     let t2 = Tile(t.0, 5);
@@ -321,30 +321,30 @@ impl MjaiAction {
         })
     }
 
-    pub fn to_operation(&self, is_turn: bool) -> PlayerOperation {
+    pub fn to_action(&self, is_turn: bool) -> Action {
         match self {
             Self::Dahai { pai, tsumogiri, .. } => {
                 if *tsumogiri {
-                    Op::nop()
+                    Action::nop()
                 } else {
-                    Op::discard(from_mjai_tile(pai))
+                    Action::discard(from_mjai_tile(pai))
                 }
             }
-            Self::Chi { consumed, .. } => Op::chi(vec_from_mjai_tile(consumed)),
-            Self::Pon { consumed, .. } => Op::pon(vec_from_mjai_tile(consumed)),
-            Self::Kakan { pai, .. } => Op::kakan(from_mjai_tile(pai)),
-            Self::Daiminkan { consumed, .. } => Op::minkan(vec_from_mjai_tile(consumed)),
-            Self::Ankan { consumed, .. } => Op::ankan(vec_from_mjai_tile(consumed)),
+            Self::Chi { consumed, .. } => Action::chi(vec_from_mjai_tile(consumed)),
+            Self::Pon { consumed, .. } => Action::pon(vec_from_mjai_tile(consumed)),
+            Self::Kakan { pai, .. } => Action::kakan(from_mjai_tile(pai)),
+            Self::Daiminkan { consumed, .. } => Action::minkan(vec_from_mjai_tile(consumed)),
+            Self::Ankan { consumed, .. } => Action::ankan(vec_from_mjai_tile(consumed)),
             Self::Reach { .. } => panic!(),
             Self::Hora { .. } => {
                 if is_turn {
-                    Op::tsumo()
+                    Action::tsumo()
                 } else {
-                    Op::ron()
+                    Action::ron()
                 }
             }
-            Self::Ryukyoku { .. } => Op::kyushukyuhai(),
-            Self::None => Op::nop(),
+            Self::Ryukyoku { .. } => Action::kyushukyuhai(),
+            Self::None => Action::nop(),
         }
     }
 }

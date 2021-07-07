@@ -214,7 +214,7 @@ Operatorとはゲームの操作を行う主体(Bot)のことです.
 つねにNopを返すOperator. (= 自分のツモ番ではツモ切り, 鳴き操作等一切なし)
 
 ### Manual Operatorの操作方法
-可能な操作をエンジン側が提示するのでoperation indexを指定します.  
+可能な操作をエンジン側が提示するのでaction indexを指定します.  
 例外として打牌(Discard)の場合は直接,牌のシンボルを指定します.  
 Discardに渡されるリストは鳴きの後に捨てることが出来ない牌(面子の組み換え禁止)です.  
 以下に具体例を示します.
@@ -227,9 +227,9 @@ hand:  m1 m3 m4 m6 m8 p1 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
 discards:  s7
 
-[Turn Operation] select tile or operation
-0 => PlayerOperation(Nop, [])
-1 => PlayerOperation(Discard, [])
+[Turn Action] select tile or action
+0 => Action(Nop, [])
+1 => Action(Discard, [])
 > p1
 
 ```
@@ -242,9 +242,9 @@ hand:  m1 m3 m4 m6 m8 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
 discards:  s7 p1
 
-[Call Operation] select operation
-0 => PlayerOperation(Nop, [])
-1 => PlayerOperation(Chi, [Tile(1, 4), Tile(1, 5)])
+[Call Action] select action
+0 => Action(Nop, [])
+1 => Action(Chi, [Tile(1, 4), Tile(1, 5)])
 > 1
 ```
 
@@ -257,7 +257,7 @@ discards:  s7 p1
 
 可能な操作一覧 (/core/src/util/operator.rs から抜粋)
 ```
-pub enum PlayerOperation {
+pub enum Action {
     Nop,           // キャンセル (鳴き,ロンのスキップ)
     Discard,       // 打牌 (配列はチー後に捨てることができない牌)
     Chi,          // チー (配列は鳴きが可能な組み合わせ 以下同様)

@@ -77,8 +77,8 @@ impl StageController {
         }
     }
 
-    pub fn handle_operation(&mut self, seat: Seat, ops: &Vec<PlayerOperation>) -> PlayerOperation {
-        self.operators[seat].handle_operation(&self.stage, seat, &ops)
+    pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>) -> Action {
+        self.operators[seat].select_action(&self.stage, seat, &acts)
     }
 }
 
@@ -256,7 +256,7 @@ fn event_discard_tile(stg: &mut Stage, event: &EventDiscardTile) {
     }
 
     pl.drawn = None;
-    stg.last_tile = Some((s, OpType::Discard, t));
+    stg.last_tile = Some((s, ActionType::Discard, t));
 }
 
 fn event_meld(stg: &mut Stage, event: &EventMeld) {
@@ -273,7 +273,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
     match event.meld_type {
         MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
             let lt = stg.last_tile.unwrap();
-            assert!(lt.1 == OpType::Discard);
+            assert!(lt.1 == ActionType::Discard);
 
             pl.is_menzen = false;
             if event.meld_type == MeldType::Minkan {
@@ -312,7 +312,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             let t = event.consumed[0];
             if t.is_end() {
                 // 国士の暗槓ロン
-                stg.last_tile = Some((s, OpType::Ankan, t));
+                stg.last_tile = Some((s, ActionType::Ankan, t));
             }
         }
         MeldType::Kakan => {
@@ -331,7 +331,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
                 idx += 1;
             }
 
-            stg.last_tile = Some((s, OpType::Kakan, t)); // 槍槓+フリテン用
+            stg.last_tile = Some((s, ActionType::Kakan, t)); // 槍槓+フリテン用
         }
     }
 
@@ -421,7 +421,7 @@ fn disable_ippatsu(stg: &mut Stage) {
 fn update_after_discard_completed(stg: &mut Stage) {
     // 他のプレイヤーの捨て牌,または加槓した牌の見逃しフリテン
     if let Some((s, tp, t)) = stg.last_tile {
-        if tp == OpType::Discard || tp == OpType::Kakan {
+        if tp == ActionType::Discard || tp == ActionType::Kakan {
             for s2 in 0..SEAT {
                 if s2 != s {
                     if stg.players[s2].win_tiles.contains(&t) {

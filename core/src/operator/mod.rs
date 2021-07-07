@@ -117,12 +117,7 @@ fn parse_as(target: &Variant, value: &str) -> Result<Variant, String> {
 // Operator trait
 pub trait Operator: StageListener + OperatorClone + Send {
     fn set_seat(&mut self, _: Seat) {}
-    fn handle_operation(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        operatons: &Vec<PlayerOperation>,
-    ) -> PlayerOperation;
+    fn select_action(&mut self, stage: &Stage, seat: Seat, operatons: &Vec<Action>) -> Action;
     fn get_config(&self) -> &Config;
 }
 

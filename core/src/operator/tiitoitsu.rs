@@ -29,18 +29,13 @@ impl TiitoitsuBot {
 }
 
 impl Operator for TiitoitsuBot {
-    fn handle_operation(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        ops: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
+    fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         let h = &stage.players[seat].hand;
 
         if stage.turn == seat {
             // turn
-            if ops.contains(&Op::tsumo()) {
-                return Op::tsumo();
+            if acts.contains(&Action::tsumo()) {
+                return Action::tsumo();
             }
 
             let mut ones = vec![]; // 手牌に1枚のみある牌(left_count, Tile)
@@ -50,7 +45,7 @@ impl Operator for TiitoitsuBot {
                     match h[ti][ni] {
                         0 | 2 => {}
                         3 | 4 => {
-                            return Op::discard(t);
+                            return Action::discard(t);
                         }
                         1 => {
                             ones.push((count_left_tile(stage, seat, t), t));
@@ -63,16 +58,16 @@ impl Operator for TiitoitsuBot {
             // 1枚の牌で最も残り枚数が少ない牌から切る
             ones.sort();
             if !ones.is_empty() {
-                return Op::discard(ones[0].1);
+                return Action::discard(ones[0].1);
             }
         } else {
             // call
-            if ops.contains(&Op::ron()) {
-                return Op::ron();
+            if acts.contains(&Action::ron()) {
+                return Action::ron();
             }
         }
 
-        Op::nop()
+        Action::nop()
     }
 
     fn get_config(&self) -> &Config {

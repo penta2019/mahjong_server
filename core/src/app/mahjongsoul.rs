@@ -12,7 +12,7 @@ use crate::util::common::*;
 use crate::util::event_writer::EventWriter;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
-use PlayerOperationType::*;
+use ActionType::*;
 
 // [App]
 pub struct App {
@@ -172,8 +172,8 @@ impl Mahjongsoul {
 
         self.events.push(event.clone());
         if self.seat == NO_SEAT {
-            if let Value::Object(op) = &data["operation"] {
-                self.seat = as_usize(&op["seat"]);
+            if let Value::Object(act) = &data["operation"] {
+                self.seat = as_usize(&act["seat"]);
             }
 
             if name == "ActionDealTile" {
@@ -191,7 +191,7 @@ impl Mahjongsoul {
             self.ctrl.swap_operator(self.seat, &mut self.operator);
         }
 
-        let mut op = None;
+        let mut act = None;
         while self.step < self.events.len() {
             let event = self.events[self.step].clone();
             assert!(self.step == as_usize(&event["step"]));
@@ -218,40 +218,40 @@ impl Mahjongsoul {
             self.step += 1;
 
             if !is_cache {
-                let operation = &data["operation"];
-                if operation != &json!(null) {
-                    // self.ctrl.handle_operationはstageを更新した直後sleepを挟まずに実行する必要がる
-                    op = self.handle_operation(operation);
+                let a = &data["operation"];
+                if a != &json!(null) {
+                    // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がる
+                    act = self.select_action(a);
                 }
             }
         }
 
-        op
+        act
     }
 
-    fn handle_operation(&mut self, data: &Value) -> Option<Value> {
+    fn select_action(&mut self, data: &Value) -> Option<Value> {
         if data["operation_list"] == json!(null) {
             return None;
         }
 
         let seat = as_usize(&data["seat"]);
 
-        let (ops, idxs) = json_parse_operation(data);
+        let (acts, idxs) = json_parse_action(data);
 
-        let op = self.ctrl.handle_operation(seat, &ops);
-        let arg_idx = if op.0 == Discard || op.0 == Riichi {
+        let act = self.ctrl.select_action(seat, &acts);
+        let arg_idx = if act.0 == Discard || act.0 == Riichi {
             0
         } else {
-            idxs[ops.iter().position(|op2| op2 == &op).unwrap()]
+            idxs[acts.iter().position(|act2| act2 == &act).unwrap()]
         };
 
-        println!("possible: {:?}", ops);
-        println!("selected: {:?}", op);
+        println!("possible: {:?}", acts);
+        println!("selected: {:?}", act);
         println!("");
         flush();
 
         let start = time::Instant::now();
-        let PlayerOperation(tp, cs) = op;
+        let Action(tp, cs) = act;
         let ellapsed = start.elapsed().as_millis();
 
         let stg = self.get_stage();
@@ -594,85 +594,85 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
     idx
 }
 
-// PlayerOperationと元々のデータの各Operation内のIndexを返す
-fn json_parse_operation(v: &Value) -> (Vec<PlayerOperation>, Vec<Index>) {
-    let mut ops = vec![Op::nop()]; // Nop: ツモ切り or スキップ
+// Actionと元々のデータの各Action内のIndexを返す
+fn json_parse_action(v: &Value) -> (Vec<Action>, Vec<Index>) {
+    let mut acts = vec![Action::nop()]; // Nop: ツモ切り or スキップ
     let mut idxs = vec![0];
-    let mut push = |op: PlayerOperation, idx: usize| {
-        ops.push(op);
+    let mut push = |act: Action, idx: usize| {
+        acts.push(act);
         idxs.push(idx);
     };
 
-    for op in as_array(&v["operation_list"]) {
-        let combs = &op["combination"];
-        match as_i32(&op["type"]) {
+    for act in as_array(&v["operation_list"]) {
+        let combs = &act["combination"];
+        match as_i32(&act["type"]) {
             0 => panic!(),
             1 => {
                 // 打牌
-                let combs = if op["combination"] != json!(null) {
+                let combs = if act["combination"] != json!(null) {
                     json_parse_combination(combs)
                 } else {
                     vec![vec![]]
                 };
-                push(PlayerOperation(Discard, combs[0].clone()), 0);
+                push(Action(Discard, combs[0].clone()), 0);
             }
             2 => {
                 // チー
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::chi(comb.clone()), idx);
+                    push(Action::chi(comb.clone()), idx);
                 }
             }
             3 => {
                 // ポン
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::pon(comb.clone()), idx);
+                    push(Action::pon(comb.clone()), idx);
                 }
             }
             4 => {
                 // 暗槓
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::ankan(comb.clone()), idx);
+                    push(Action::ankan(comb.clone()), idx);
                 }
             }
             5 => {
                 // 明槓
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::minkan(comb.clone()), idx);
+                    push(Action::minkan(comb.clone()), idx);
                 }
             }
             6 => {
                 // 加槓
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::kakan(comb[0]), idx);
+                    push(Action::kakan(comb[0]), idx);
                 }
             }
             7 => {
                 // リーチ
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Op::riichi(comb[0]), idx);
+                    push(Action::riichi(comb[0]), idx);
                 }
             }
             8 => {
                 // ツモ
-                push(Op::tsumo(), 0);
+                push(Action::tsumo(), 0);
             }
             9 => {
                 // ロン
-                push(Op::ron(), 0);
+                push(Action::ron(), 0);
             }
             10 => {
                 // 九種九牌
-                push(Op::kyushukyuhai(), 0);
+                push(Action::kyushukyuhai(), 0);
             }
             11 => {
                 // 北抜き
-                push(Op::kita(), 0);
+                push(Action::kita(), 0);
             }
             _ => panic!(),
         }
     }
 
-    (ops, idxs)
+    (acts, idxs)
 }
 
 fn json_parse_combination(combs: &Value) -> Vec<Vec<Tile>> {

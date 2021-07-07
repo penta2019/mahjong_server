@@ -225,22 +225,17 @@ impl Operator for MjaiEndpoint {
         self.seat = seat;
     }
 
-    fn handle_operation(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        ops: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
+    fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         // possible_actionを追加
         {
             let mut d = self.data.lock().unwrap();
-            let mut acts = vec![];
-            for op in ops {
-                if let Some(v) = MjaiAction::from_operation(stage, seat, op) {
-                    acts.push(v);
+            let mut mjai_acts = vec![];
+            for act in acts {
+                if let Some(v) = MjaiAction::from_action(stage, seat, act) {
+                    mjai_acts.push(v);
                 }
             }
-            d.possible_actions = Some(acts);
+            d.possible_actions = Some(mjai_acts);
             d.selected_action = None;
             d.is_riichi = false;
         }
@@ -257,7 +252,7 @@ impl Operator for MjaiEndpoint {
             if c == 50 {
                 println!("[Error] possible_action timeout");
                 d.possible_actions = None;
-                return Op::nop();
+                return Action::nop();
             }
         }
 
@@ -268,13 +263,13 @@ impl Operator for MjaiEndpoint {
         if d.is_riichi {
             d.is_riichi = false;
             if let MjaiAction::Dahai { pai, .. } = a {
-                return Op::riichi(from_mjai_tile(&pai));
+                return Action::riichi(from_mjai_tile(&pai));
             } else {
                 panic!();
             }
         }
 
-        a.to_operation(seat == stage.turn)
+        a.to_action(seat == stage.turn)
     }
 
     fn get_config(&self) -> &Config {
@@ -378,7 +373,7 @@ fn stream_handler(
             send(&data.lock().unwrap().record[cursor])?;
         } else if cursor + 1 == len {
             if data.lock().unwrap().possible_actions.is_none() {
-                // handle_operationがpossible_actionsを追加する可能性があるので待機
+                // select_actionがpossible_actionsを追加する可能性があるので待機
                 // data.lock()が開放されている必要があることに注意
                 sleep_ms(100);
             }

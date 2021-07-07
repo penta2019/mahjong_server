@@ -48,19 +48,19 @@ pub enum DrawType {
 
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
-    pub round: usize,                            // 場 (東:0, 南:1, 西:2, 北:3)
-    pub kyoku: usize,                            // 局 (0~3 = 親のseat)
-    pub honba: usize,                            // 本場
-    pub kyoutaku: usize,                         // リーチ棒の供託
-    pub turn: Seat,                              // ツモ番のプレイヤーの座席
-    pub step: usize,                             // ステップ op関数を呼び出す毎に+1する
-    pub left_tile_count: usize,                  // 牌山の残り枚数
-    pub doras: Vec<Tile>,                        // ドラ表示牌
-    pub discards: Vec<(Seat, Index)>,            // プレイヤー全員の捨て牌
-    pub last_tile: Option<(Seat, OpType, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
-    pub last_riichi: Option<Seat>,               // リーチがロンされずに成立した場合の供託更新用
-    pub players: [Player; SEAT],                 // 各プレイヤー情報
-    pub is_3p: bool,                             // 三麻フラグ(未実装, 常にfalse)
+    pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
+    pub kyoku: usize,                                // 局 (0~3 = 親のseat)
+    pub honba: usize,                                // 本場
+    pub kyoutaku: usize,                             // リーチ棒の供託
+    pub turn: Seat,                                  // ツモ番のプレイヤーの座席
+    pub step: usize,                                 // ステップ op関数を呼び出す毎に+1する
+    pub left_tile_count: usize,                      // 牌山の残り枚数
+    pub doras: Vec<Tile>,                            // ドラ表示牌
+    pub discards: Vec<(Seat, Index)>,                // プレイヤー全員の捨て牌
+    pub last_tile: Option<(Seat, ActionType, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
+    pub last_riichi: Option<Seat>,                   // リーチがロンされずに成立した場合の供託更新用
+    pub players: [Player; SEAT],                     // 各プレイヤー情報
+    pub is_3p: bool,                                 // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileStateType; TILE]; TNUM]; TYPE],
     pub tile_remains: [[usize; TNUM]; TYPE], // 牌の残り枚数 = 山+手牌(捨て牌,副露牌,ドラ表示牌以外)
 }

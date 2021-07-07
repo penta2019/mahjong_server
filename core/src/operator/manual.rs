@@ -28,21 +28,16 @@ impl Manual {
 }
 
 impl Operator for Manual {
-    fn handle_operation(
-        &mut self,
-        stage: &Stage,
-        seat: Seat,
-        ops: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
+    fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         println!("{}", &stage.players[seat]);
         println!();
         if stage.turn == seat {
-            println!("[Turn Operation] select tile or operation");
+            println!("[Turn Action] select tile or action");
         } else {
-            println!("[Call Operation] select operation");
+            println!("[Call Action] select action");
         }
-        for (idx, op) in ops.iter().enumerate() {
-            println!("{} => {:?}", idx, op);
+        for (idx, act) in acts.iter().enumerate() {
+            println!("{} => {:?}", idx, act);
         }
 
         loop {
@@ -87,7 +82,7 @@ impl Operator for Manual {
                     }
 
                     println!();
-                    return Op::discard(Tile(ti, ni));
+                    return Action::discard(Tile(ti, ni));
                 }
                 '!' => {
                     match &buf[1..] {
@@ -111,13 +106,13 @@ impl Operator for Manual {
                             continue;
                         }
                     };
-                    if n >= ops.len() {
-                        println!("[Error] invalid operation index");
+                    if n >= acts.len() {
+                        println!("[Error] invalid action index");
                         continue;
                     }
 
                     println!();
-                    return ops[n].clone();
+                    return acts[n].clone();
                 }
             };
         }

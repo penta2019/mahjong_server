@@ -31,13 +31,8 @@ impl Nop {
 }
 
 impl Operator for Nop {
-    fn handle_operation(
-        &mut self,
-        _stage: &Stage,
-        _seat: Seat,
-        _operatons: &Vec<PlayerOperation>,
-    ) -> PlayerOperation {
-        Op::nop()
+    fn select_action(&mut self, _stage: &Stage, _seat: Seat, _operatons: &Vec<Action>) -> Action {
+        Action::nop()
     }
 
     fn get_config(&self) -> &Config {

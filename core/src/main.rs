@@ -1,8 +1,8 @@
+mod actor;
 mod app;
 mod controller;
 mod hand;
 mod model;
-mod operator;
 mod util;
 
 fn main() {

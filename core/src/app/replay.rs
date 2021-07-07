@@ -2,11 +2,11 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
+use crate::actor::nop::Nop;
+use crate::actor::Operator;
 use crate::controller::stage_controller::StageController;
 use crate::controller::stage_printer::StageStepPrinter;
 use crate::model::*;
-use crate::operator::nop::Nop;
-use crate::operator::Operator;
 use crate::util::common::*;
 use crate::util::ws_server::*;
 

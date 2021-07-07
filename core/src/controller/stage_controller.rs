@@ -1,8 +1,8 @@
 use std::fmt;
 
+use crate::actor::Operator;
 use crate::hand::win::*;
 use crate::model::*;
-use crate::operator::Operator;
 use crate::util::common::rank_by_rank_vec;
 
 use TileStateType::*;

@@ -1,13 +1,13 @@
 use rand::prelude::*;
 use serde_json::json;
 
+use crate::actor::create_operator;
+use crate::actor::Operator;
 use crate::controller::stage_controller::{StageController, StageListener};
 use crate::controller::stage_printer::StagePrinter;
 use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
-use crate::operator::create_operator;
-use crate::operator::Operator;
 use crate::util::common::*;
 use crate::util::event_writer::EventWriter;
 use crate::util::ws_server::*;
@@ -147,7 +147,7 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
-        use crate::operator::null::Null;
+        use crate::actor::null::Null;
 
         use std::sync::mpsc;
         use std::{thread, time};

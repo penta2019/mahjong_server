@@ -9,7 +9,7 @@ use TileStateType::*;
 
 // [StageListener (Observer Pattern)]
 pub trait StageListener: Send {
-    fn notify_action(&mut self, _stg: &Stage, _act: &Action) {}
+    fn notify_event(&mut self, _stg: &Stage, _act: &Event) {}
 }
 
 impl fmt::Debug for dyn StageListener {
@@ -47,33 +47,33 @@ impl StageController {
         return &self.stage;
     }
 
-    pub fn handle_action(&mut self, act: &Action) {
+    pub fn handle_event(&mut self, event: &Event) {
         let stg = &mut self.stage;
         stg.step += 1;
-        match act {
-            Action::GameStart(a) => {
+        match event {
+            Event::GameStart(e) => {
                 for s in 0..SEAT {
                     self.operators[s].set_seat(s);
                 }
-                action_game_start(stg, a);
+                event_game_start(stg, e);
             }
-            Action::RoundNew(a) => action_round_new(stg, a),
-            Action::DealTile(a) => action_deal_tile(stg, a),
-            Action::DiscardTile(a) => action_discard_tile(stg, a),
-            Action::Meld(a) => action_meld(stg, a),
-            Action::Kita(a) => action_kita(stg, a),
-            Action::Dora(a) => action_dora(stg, a),
-            Action::RoundEndWin(a) => action_round_end_win(stg, a),
-            Action::RoundEndDraw(a) => action_round_end_draw(stg, a),
-            Action::RoundEndNoTile(a) => action_round_end_no_tile(stg, a),
-            Action::GameOver(a) => action_game_over(stg, a),
+            Event::RoundNew(e) => event_round_new(stg, e),
+            Event::DealTile(e) => event_deal_tile(stg, e),
+            Event::DiscardTile(e) => event_discard_tile(stg, e),
+            Event::Meld(e) => event_meld(stg, e),
+            Event::Kita(e) => event_kita(stg, e),
+            Event::Dora(e) => event_dora(stg, e),
+            Event::RoundEndWin(e) => event_round_end_win(stg, e),
+            Event::RoundEndDraw(e) => event_round_end_draw(stg, e),
+            Event::RoundEndNoTile(e) => event_round_end_no_tile(stg, e),
+            Event::GameOver(e) => event_game_over(stg, e),
         }
 
         for l in &mut self.operators {
-            l.notify_action(stg, &act);
+            l.notify_event(stg, &event);
         }
         for l in &mut self.listeners {
-            l.notify_action(stg, &act);
+            l.notify_event(stg, &event);
         }
     }
 
@@ -82,29 +82,29 @@ impl StageController {
     }
 }
 
-// [Action]
-fn action_game_start(_stg: &mut Stage, _act: &ActionGameStart) {}
+// [Event]
+fn event_game_start(_stg: &mut Stage, _act: &EventGameStart) {}
 
-fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
+fn event_round_new(stg: &mut Stage, event: &EventRoundNew) {
     *stg = Stage::default();
-    stg.round = act.round;
-    stg.kyoku = act.kyoku;
-    stg.honba = act.honba;
-    stg.kyoutaku = act.kyoutaku;
-    stg.turn = act.kyoku;
+    stg.round = event.round;
+    stg.kyoku = event.kyoku;
+    stg.honba = event.honba;
+    stg.kyoutaku = event.kyoutaku;
+    stg.turn = event.kyoku;
     stg.left_tile_count = 69;
-    stg.doras = act.doras.clone();
+    stg.doras = event.doras.clone();
     stg.tile_remains = [[TILE; TNUM]; TYPE];
     let r = &mut stg.tile_remains;
     r[TM][0] = 1;
     r[TP][0] = 1;
     r[TS][0] = 1;
     r[TZ][0] = 0;
-    update_scores(stg, &act.scores);
+    update_scores(stg, &event.scores);
 
     // プレイヤー情報
     for s in 0..SEAT {
-        let ph = &act.hands[s];
+        let ph = &event.hands[s];
         let pl = &mut stg.players[s];
         pl.seat = s;
         pl.is_shown = !ph.is_empty() && !ph.contains(&Z8);
@@ -112,7 +112,7 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
 
         if pl.is_shown {
             let mut drawn = None; // 親番14枚目
-            let last = if s == act.kyoku {
+            let last = if s == event.kyoku {
                 drawn = ph.last();
                 ph.len() - 1
             } else {
@@ -129,19 +129,19 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
                 player_inc_tile(pl, t);
             }
         } else {
-            if s == act.kyoku {
+            if s == event.kyoku {
                 pl.drawn = Some(Z8);
             }
-            pl.hand[TZ][UK] = if s == act.kyoku { 14 } else { 13 }; // 親:14, 子:13
+            pl.hand[TZ][UK] = if s == event.kyoku { 14 } else { 13 }; // 親:14, 子:13
         }
     }
 
     // update tile_states
-    for &d in &act.doras {
+    for &d in &event.doras {
         table_edit(stg, d, U, R);
     }
     for s in 0..SEAT {
-        let ph = &act.hands[s];
+        let ph = &event.hands[s];
         if stg.players[s].is_shown {
             for &t in ph {
                 table_edit(stg, t, U, H(s));
@@ -150,9 +150,9 @@ fn action_round_new(stg: &mut Stage, act: &ActionRoundNew) {
     }
 }
 
-fn action_deal_tile(stg: &mut Stage, act: &ActionDealTile) {
-    let s = act.seat;
-    let t = act.tile; // tileはplayer.is_shown = falseの場合,Z8になることに注意
+fn event_deal_tile(stg: &mut Stage, event: &EventDealTile) {
+    let s = event.seat;
+    let t = event.tile; // tileはplayer.is_shown = falseの場合,Z8になることに注意
 
     update_after_discard_completed(stg);
     if stg.players[s].is_rinshan {
@@ -169,9 +169,9 @@ fn action_deal_tile(stg: &mut Stage, act: &ActionDealTile) {
     }
 }
 
-fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
-    let s = act.seat;
-    let mut t = act.tile;
+fn event_discard_tile(stg: &mut Stage, event: &EventDiscardTile) {
+    let s = event.seat;
+    let mut t = event.tile;
     let no_meld = stg.players.iter().all(|pl| pl.melds.is_empty());
 
     stg.turn = s;
@@ -189,15 +189,15 @@ fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
             if pl.hand[t.0][t.1] == 1 {
                 true
             } else {
-                act.is_drawn
+                event.is_drawn
             }
         } else {
             false
         }
     } else {
-        act.is_drawn
+        event.is_drawn
     };
-    if act.is_riichi {
+    if event.is_riichi {
         assert!(pl.riichi == None);
         pl.riichi = Some(pl.discards.len());
         pl.is_riichi = true;
@@ -259,35 +259,35 @@ fn action_discard_tile(stg: &mut Stage, act: &ActionDiscardTile) {
     stg.last_tile = Some((s, OpType::Discard, t));
 }
 
-fn action_meld(stg: &mut Stage, act: &ActionMeld) {
+fn event_meld(stg: &mut Stage, event: &EventMeld) {
     // リーチ一発や槍槓, フリテンなどに必要な前処理
     update_after_discard_completed(stg);
-    if act.meld_type != MeldType::Kakan {
+    if event.meld_type != MeldType::Kakan {
         disable_ippatsu(stg); // 加槓の場合は槍槓リーチ一発があるので一旦スルー
     }
 
-    let s = act.seat;
+    let s = event.seat;
     stg.turn = s;
     let pl = &mut stg.players[s];
     let mut idx; // Vec<Meld>のインデックス
-    match act.meld_type {
+    match event.meld_type {
         MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
             let lt = stg.last_tile.unwrap();
             assert!(lt.1 == OpType::Discard);
 
             pl.is_menzen = false;
-            if act.meld_type == MeldType::Minkan {
+            if event.meld_type == MeldType::Minkan {
                 pl.is_rinshan = true;
             }
             idx = pl.melds.len();
-            let mut tiles = act.consumed.clone();
+            let mut tiles = event.consumed.clone();
             let mut froms = vec![s; tiles.len()];
             tiles.push(lt.2);
             froms.push(lt.0);
             let m = Meld {
                 step: stg.step,
                 seat: s,
-                type_: act.meld_type,
+                type_: event.meld_type,
                 tiles: tiles,
                 froms: froms,
             };
@@ -298,7 +298,7 @@ fn action_meld(stg: &mut Stage, act: &ActionMeld) {
         MeldType::Ankan => {
             pl.is_rinshan = true;
             idx = pl.melds.len();
-            let tiles = act.consumed.clone();
+            let tiles = event.consumed.clone();
             let froms = vec![s; tiles.len()];
             let m = Meld {
                 step: stg.step,
@@ -309,7 +309,7 @@ fn action_meld(stg: &mut Stage, act: &ActionMeld) {
             };
             pl.melds.push(m);
 
-            let t = act.consumed[0];
+            let t = event.consumed[0];
             if t.is_end() {
                 // 国士の暗槓ロン
                 stg.last_tile = Some((s, OpType::Ankan, t));
@@ -319,7 +319,7 @@ fn action_meld(stg: &mut Stage, act: &ActionMeld) {
             // disable_ippatsu(stg); // 槍槓リーチ一発があるのでここではフラグをリセットしない
             pl.is_rinshan = true;
             idx = 0;
-            let t = act.consumed[0];
+            let t = event.consumed[0];
             for m in pl.melds.iter_mut() {
                 if m.tiles[0] == t || m.tiles[1] == t {
                     m.step = stg.step;
@@ -335,7 +335,7 @@ fn action_meld(stg: &mut Stage, act: &ActionMeld) {
         }
     }
 
-    for &t in &act.consumed {
+    for &t in &event.consumed {
         let pl = &mut stg.players[s];
         if pl.is_shown {
             player_dec_tile(pl, t);
@@ -347,15 +347,15 @@ fn action_meld(stg: &mut Stage, act: &ActionMeld) {
     }
 }
 
-fn action_kita(stg: &mut Stage, act: &ActionKita) {
-    let s = act.seat;
+fn event_kita(stg: &mut Stage, event: &EventKita) {
+    let s = event.seat;
     let t = Tile(TZ, WN); // z4
     let pl = &mut stg.players[s];
     let idx = pl.kitas.len();
     let k = Kita {
         step: stg.step,
         seat: s,
-        drawn: act.is_drawn,
+        drawn: event.is_drawn,
     };
 
     if pl.is_shown {
@@ -369,24 +369,24 @@ fn action_kita(stg: &mut Stage, act: &ActionKita) {
     stg.players[s].kitas.push(k);
 }
 
-fn action_dora(stg: &mut Stage, act: &ActionDora) {
-    table_edit(stg, act.tile, TileStateType::U, TileStateType::R);
-    stg.doras.push(act.tile);
+fn event_dora(stg: &mut Stage, event: &EventDora) {
+    table_edit(stg, event.tile, TileStateType::U, TileStateType::R);
+    stg.doras.push(event.tile);
 }
 
-fn action_round_end_win(stg: &mut Stage, act: &ActionRoundEndWin) {
-    for ctx in &act.contexts {
+fn event_round_end_win(stg: &mut Stage, event: &EventRoundEndWin) {
+    for ctx in &event.contexts {
         update_scores(stg, &ctx.1);
     }
 }
 
-fn action_round_end_draw(_stg: &mut Stage, _act: &ActionRoundEndDraw) {}
+fn event_round_end_draw(_stg: &mut Stage, _act: &EventRoundEndDraw) {}
 
-fn action_round_end_no_tile(stg: &mut Stage, act: &ActionRoundEndNoTile) {
-    update_scores(stg, &act.points);
+fn event_round_end_no_tile(stg: &mut Stage, event: &EventRoundEndNoTile) {
+    update_scores(stg, &event.points);
 }
 
-fn action_game_over(_stg: &mut Stage, _act: &ActionGameOver) {}
+fn event_game_over(_stg: &mut Stage, _act: &EventGameOver) {}
 
 // [Utility]
 fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateType) {

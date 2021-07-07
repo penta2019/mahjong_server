@@ -283,7 +283,7 @@ pub enum PlayerOperation {
 ### 変数名省略
 s: seat  
 t: tile  
-e: element(entity)  
+e: event
 c: count  
 stg: stage  
 ti: Tile type index  

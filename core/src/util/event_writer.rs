@@ -6,13 +6,13 @@ use crate::model::*;
 use crate::util::common::*;
 
 #[derive(Debug)]
-pub struct ActionWriter {
+pub struct EventWriter {
     start_time: u64,
     round_index: i32,
-    record: Vec<Action>,
+    record: Vec<Event>,
 }
 
-impl ActionWriter {
+impl EventWriter {
     pub fn new() -> Self {
         Self {
             start_time: unixtime_now(),
@@ -21,25 +21,25 @@ impl ActionWriter {
         }
     }
 
-    pub fn push_action(&mut self, act: Action) {
+    pub fn push_event(&mut self, event: Event) {
         let mut write = false;
-        match act {
-            Action::GameStart(_) => {
+        match event {
+            Event::GameStart(_) => {
                 self.record.clear();
                 self.start_time = unixtime_now();
                 self.round_index = 0;
             }
-            Action::RoundNew(_) => {
+            Event::RoundNew(_) => {
                 self.record.clear();
             }
-            Action::RoundEndWin(_) | Action::RoundEndDraw(_) | Action::RoundEndNoTile(_) => {
+            Event::RoundEndWin(_) | Event::RoundEndDraw(_) | Event::RoundEndNoTile(_) => {
                 write = true;
             }
-            Action::GameOver(_) => {}
+            Event::GameOver(_) => {}
             _ => {}
         }
 
-        self.record.push(act);
+        self.record.push(event);
         if write {
             self.write_to_file();
             self.record.clear();

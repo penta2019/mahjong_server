@@ -18,24 +18,24 @@ impl StagePrinter {
 }
 
 impl StageListener for StagePrinter {
-    fn notify_action(&mut self, stg: &Stage, act: &Action) {
-        match act {
-            Action::GameStart(_) => {}
-            Action::RoundNew(_) => {
+    fn notify_event(&mut self, stg: &Stage, event: &Event) {
+        match event {
+            Event::GameStart(_) => {}
+            Event::RoundNew(_) => {
                 println!("[ROUNDNEW]");
                 println!("{}", stg);
             }
-            Action::DealTile(_) => {}
-            Action::DiscardTile(_) => {}
-            Action::Meld(_) => {}
-            Action::Kita(_) => {}
-            Action::Dora(_) => {}
-            Action::RoundEndWin(a) => {
+            Event::DealTile(_) => {}
+            Event::DiscardTile(_) => {}
+            Event::Meld(_) => {}
+            Event::Kita(_) => {}
+            Event::Dora(_) => {}
+            Event::RoundEndWin(e) => {
                 println!("[ROUNDEND]");
-                println!("ura_dora: {}", vec_to_string(&a.ura_doras));
-                println!("{:?}", a.contexts);
+                println!("ura_dora: {}", vec_to_string(&e.ura_doras));
+                println!("{:?}", e.contexts);
                 let mut deltas = [0; SEAT];
-                for ctx in &a.contexts {
+                for ctx in &e.contexts {
                     for s in 0..SEAT {
                         deltas[s] += ctx.1[s];
                     }
@@ -44,18 +44,18 @@ impl StageListener for StagePrinter {
                 self.print_score_change(&stg, &deltas);
                 println!("{}", stg);
             }
-            Action::RoundEndDraw(a) => {
+            Event::RoundEndDraw(e) => {
                 println!("[ROUNDEND DRAW]");
-                println!("{:?}", a.draw_type);
+                println!("{:?}", e.draw_type);
                 println!("{}", stg);
             }
-            Action::RoundEndNoTile(a) => {
+            Event::RoundEndNoTile(e) => {
                 println!("[ROUNDEND NOTILE]");
-                println!("is_tenpai: {:?}", &a.tenpais);
-                self.print_score_change(&stg, &a.points);
+                println!("is_tenpai: {:?}", &e.tenpais);
+                self.print_score_change(&stg, &e.points);
                 println!("{}", stg);
             }
-            Action::GameOver(_) => {}
+            Event::GameOver(_) => {}
         }
     }
 }
@@ -66,9 +66,9 @@ pub struct StageDebugPrinter {}
 impl StageDebugPrinter {}
 
 impl StageListener for StageDebugPrinter {
-    fn notify_action(&mut self, stg: &Stage, act: &Action) {
+    fn notify_event(&mut self, stg: &Stage, event: &Event) {
         println!("step: {}", stg.step);
-        println!("{}", serde_json::to_string(act).unwrap());
+        println!("{}", serde_json::to_string(event).unwrap());
     }
 }
 
@@ -78,49 +78,49 @@ pub struct StageStepPrinter {}
 impl StageStepPrinter {}
 
 impl StageListener for StageStepPrinter {
-    fn notify_action(&mut self, stg: &Stage, act: &Action) {
+    fn notify_event(&mut self, stg: &Stage, event: &Event) {
         println!("step: {}", stg.step);
-        match act {
-            Action::GameStart(_) => {
+        match event {
+            Event::GameStart(_) => {
                 println!("[GameStart]");
             }
-            Action::RoundNew(_) => {
+            Event::RoundNew(_) => {
                 println!("[ROUNDNEW]");
                 println!("{}", stg);
             }
-            Action::DealTile(a) => {
+            Event::DealTile(e) => {
                 println!("[DealTile]");
-                println!("{}", stg.players[a.seat]);
+                println!("{}", stg.players[e.seat]);
             }
-            Action::DiscardTile(a) => {
+            Event::DiscardTile(e) => {
                 println!("[DiscardTile]");
-                println!("{}", stg.players[a.seat]);
+                println!("{}", stg.players[e.seat]);
             }
-            Action::Meld(a) => {
+            Event::Meld(e) => {
                 println!("[Meld]");
-                println!("{}", stg.players[a.seat]);
+                println!("{}", stg.players[e.seat]);
             }
-            Action::Kita(a) => {
+            Event::Kita(e) => {
                 println!("[Kita]");
-                println!("{}", stg.players[a.seat]);
+                println!("{}", stg.players[e.seat]);
             }
-            Action::Dora(_) => {
+            Event::Dora(_) => {
                 println!("[Dora]");
                 println!("{:?}", stg.doras);
             }
-            Action::RoundEndWin(_) => {
+            Event::RoundEndWin(_) => {
                 println!("[RoundEndWin]");
                 println!("{}", stg);
             }
-            Action::RoundEndDraw(_) => {
+            Event::RoundEndDraw(_) => {
                 println!("[RoundEndDraw]");
                 println!("{}", stg);
             }
-            Action::RoundEndNoTile(_) => {
+            Event::RoundEndNoTile(_) => {
                 println!("[RoundEndNoTile]");
                 println!("{}", stg);
             }
-            Action::GameOver(_) => {
+            Event::GameOver(_) => {
                 println!("[GameOver]");
                 println!("{}", stg);
             }

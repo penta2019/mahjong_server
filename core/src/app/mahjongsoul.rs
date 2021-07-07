@@ -8,8 +8,8 @@ use crate::model::*;
 use crate::operator::create_operator;
 use crate::operator::nop::Nop;
 use crate::operator::Operator;
-use crate::util::action_writer::ActionWriter;
 use crate::util::common::*;
+use crate::util::event_writer::EventWriter;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
 use PlayerOperationType::*;
@@ -82,9 +82,9 @@ impl App {
                 continue;
             };
 
-            if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
+            if let Some(event) = game.apply(&serde_json::from_str(&msg).unwrap()) {
                 if !self.read_only {
-                    send_to_msc(&mut server_msc, "0", "eval", &act);
+                    send_to_msc(&mut server_msc, "0", "eval", &event);
                 }
             }
 
@@ -99,9 +99,9 @@ struct Mahjongsoul {
     ctrl: StageController,
     step: usize,
     seat: usize, // my seat
-    actions: Vec<Value>,
+    events: Vec<Value>,
     random_sleep: bool,
-    writer: Option<ActionWriter>,
+    writer: Option<EventWriter>,
     operator: Box<dyn Operator>,
 }
 
@@ -110,7 +110,7 @@ impl Mahjongsoul {
         // operatorは座席0に暫定でセットする
         // 新しい局が開始されて座席が判明した際にスワップする
         let writer = if write_to_file {
-            Some(ActionWriter::new())
+            Some(EventWriter::new())
         } else {
             None
         };
@@ -121,7 +121,7 @@ impl Mahjongsoul {
             ctrl: StageController::new(operators, vec![]),
             step: 0,
             seat: NO_SEAT,
-            actions: vec![],
+            events: vec![],
             random_sleep: random_sleep,
             writer: writer,
             operator: operator,
@@ -134,10 +134,10 @@ impl Mahjongsoul {
     }
 
     #[inline]
-    fn act(&mut self, act: Action) {
-        self.ctrl.handle_action(&act);
+    fn event(&mut self, event: Event) {
+        self.ctrl.handle_event(&event);
         if let Some(w) = &mut self.writer {
-            w.push_action(act)
+            w.push_event(event)
         }
     }
 
@@ -145,9 +145,9 @@ impl Mahjongsoul {
         match as_str(&msg["id"]) {
             "id_mjaction" => {
                 if msg["type"] == json!("message") {
-                    self.apply_action(&msg["data"], false)
+                    self.apply_event(&msg["data"], false)
                 } else if msg["type"] == json!("message_cache") {
-                    self.apply_action(&msg["data"], true)
+                    self.apply_event(&msg["data"], true)
                 } else {
                     None
                 }
@@ -156,10 +156,10 @@ impl Mahjongsoul {
         }
     }
 
-    fn apply_action(&mut self, act: &Value, is_cache: bool) -> Option<Value> {
-        let step = as_usize(&act["step"]);
-        let name = as_str(&act["name"]);
-        let data = &act["data"];
+    fn apply_event(&mut self, event: &Value, is_cache: bool) -> Option<Value> {
+        let step = as_usize(&event["step"]);
+        let name = as_str(&event["name"]);
+        let data = &event["data"];
 
         if step == 0 {
             if self.seat != NO_SEAT {
@@ -167,10 +167,10 @@ impl Mahjongsoul {
                 self.seat = NO_SEAT;
             }
             self.step = 0;
-            self.actions.clear();
+            self.events.clear();
         }
 
-        self.actions.push(act.clone());
+        self.events.push(event.clone());
         if self.seat == NO_SEAT {
             if let Value::Object(op) = &data["operation"] {
                 self.seat = as_usize(&op["seat"]);
@@ -192,13 +192,13 @@ impl Mahjongsoul {
         }
 
         let mut op = None;
-        while self.step < self.actions.len() {
-            let action = self.actions[self.step].clone();
-            assert!(self.step == as_usize(&action["step"]));
+        while self.step < self.events.len() {
+            let event = self.events[self.step].clone();
+            assert!(self.step == as_usize(&event["step"]));
 
-            let data = &action["data"];
-            let name = &action["name"];
-            let is_last = self.step + 1 == self.actions.len();
+            let data = &event["data"];
+            let name = &event["name"];
+            let is_last = self.step + 1 == self.events.len();
             if !is_cache && is_last && as_str(name) == "ActionNewRound" {
                 sleep_ms(3000);
             }
@@ -213,7 +213,7 @@ impl Mahjongsoul {
                 "ActionHule" => self.handler_hule(data),
                 "ActionLiuJu" => self.handler_liuju(data),
                 "ActionNoTile" => self.handler_notile(data),
-                s => panic!("Unknown action {}", s),
+                s => panic!("Unknown event {}", s),
             };
             self.step += 1;
 
@@ -326,13 +326,13 @@ impl Mahjongsoul {
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
                 let t = tile_from_symbol(as_str(doras.last().unwrap()));
-                self.act(Action::dora(t));
+                self.event(Event::dora(t));
             }
         }
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
-        self.act(Action::game_start());
+        self.event(Event::game_start());
     }
 
     fn handler_newround(&mut self, data: &Value) {
@@ -371,7 +371,7 @@ impl Mahjongsoul {
             }
         }
 
-        self.act(Action::round_new(
+        self.event(Event::round_new(
             round, kyoku, honba, kyoutaku, doras, scores, hands,
         ));
     }
@@ -382,9 +382,9 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_symbol(&ps);
-            self.act(Action::deal_tile(s, t));
+            self.event(Event::deal_tile(s, t));
         } else {
-            self.act(Action::deal_tile(s, Z8));
+            self.event(Event::deal_tile(s, Z8));
         }
     }
 
@@ -393,7 +393,7 @@ impl Mahjongsoul {
         let t = tile_from_symbol(as_str(&data["tile"]));
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
-        self.act(Action::discard_tile(s, t, m, r));
+        self.event(Event::discard_tile(s, t, m, r));
         self.update_doras(data);
     }
 
@@ -422,7 +422,7 @@ impl Mahjongsoul {
             }
         }
 
-        self.act(Action::meld(s, tp, consumed));
+        self.event(Event::meld(s, tp, consumed));
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -445,14 +445,14 @@ impl Mahjongsoul {
         } else {
             vec![t]
         };
-        self.act(Action::meld(s, tp, consumed));
+        self.event(Event::meld(s, tp, consumed));
     }
 
     fn handler_babei(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
         let m = as_bool(&data["moqie"]);
 
-        self.act(Action::kita(s, m));
+        self.event(Event::kita(s, m));
     }
 
     fn handler_hule(&mut self, data: &Value) {
@@ -485,12 +485,12 @@ impl Mahjongsoul {
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
 
-        self.act(Action::round_end_win(vec![], wins));
+        self.event(Event::round_end_win(vec![], wins));
     }
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
-        self.act(Action::round_end_draw(DrawType::Kyushukyuhai));
+        self.event(Event::round_end_draw(DrawType::Kyushukyuhai));
     }
 
     fn handler_notile(&mut self, data: &Value) {
@@ -506,7 +506,7 @@ impl Mahjongsoul {
             tenpais[s] = as_bool(&player["tingpai"]);
         }
 
-        self.act(Action::round_end_no_tile(tenpais, points));
+        self.event(Event::round_end_no_tile(tenpais, points));
     }
 }
 

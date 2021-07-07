@@ -88,16 +88,16 @@ impl App {
 
         for p in paths {
             let contents = std::fs::read_to_string(&p).unwrap_or_else(print_and_exit);
-            let record: Vec<Action> = serde_json::from_str(&contents).unwrap();
+            let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
-            if let Action::RoundNew(a) = &record[0] {
-                if (a.round, a.kyoku, a.honba) < rkh {
+            if let Event::RoundNew(e) = &record[0] {
+                if (e.round, e.kyoku, e.honba) < rkh {
                     continue;
                 }
             }
 
             for r in &record {
-                ctrl.handle_action(&r);
+                ctrl.handle_event(&r);
                 if let Some((s, _)) = send_recv.lock().unwrap().as_ref() {
                     let msg = json!({
                         "type": "stage",

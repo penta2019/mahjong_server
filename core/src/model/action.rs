@@ -3,23 +3,23 @@ use crate::model::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum Action {
-    GameStart(ActionGameStart),
-    RoundNew(ActionRoundNew),
-    DealTile(ActionDealTile),
-    DiscardTile(ActionDiscardTile),
-    Meld(ActionMeld),
-    Kita(ActionKita),
-    Dora(ActionDora),
-    RoundEndWin(ActionRoundEndWin),
-    RoundEndDraw(ActionRoundEndDraw),
-    RoundEndNoTile(ActionRoundEndNoTile),
-    GameOver(ActionGameOver),
+pub enum Event {
+    GameStart(EventGameStart),
+    RoundNew(EventRoundNew),
+    DealTile(EventDealTile),
+    DiscardTile(EventDiscardTile),
+    Meld(EventMeld),
+    Kita(EventKita),
+    Dora(EventDora),
+    RoundEndWin(EventRoundEndWin),
+    RoundEndDraw(EventRoundEndDraw),
+    RoundEndNoTile(EventRoundEndNoTile),
+    GameOver(EventGameOver),
 }
 
-impl Action {
+impl Event {
     pub fn game_start() -> Self {
-        Self::GameStart(ActionGameStart {})
+        Self::GameStart(EventGameStart {})
     }
 
     pub fn round_new(
@@ -31,7 +31,7 @@ impl Action {
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
     ) -> Self {
-        Self::RoundNew(ActionRoundNew {
+        Self::RoundNew(EventRoundNew {
             round,
             kyoku,
             honba,
@@ -43,11 +43,11 @@ impl Action {
     }
 
     pub fn deal_tile(seat: Seat, tile: Tile) -> Self {
-        Self::DealTile(ActionDealTile { seat, tile })
+        Self::DealTile(EventDealTile { seat, tile })
     }
 
     pub fn discard_tile(seat: Seat, tile: Tile, is_drawn: bool, is_riichi: bool) -> Self {
-        Self::DiscardTile(ActionDiscardTile {
+        Self::DiscardTile(EventDiscardTile {
             seat,
             tile,
             is_drawn,
@@ -56,7 +56,7 @@ impl Action {
     }
 
     pub fn meld(seat: Seat, meld_type: MeldType, consumed: Vec<Tile>) -> Self {
-        Self::Meld(ActionMeld {
+        Self::Meld(EventMeld {
             seat,
             meld_type,
             consumed,
@@ -64,41 +64,41 @@ impl Action {
     }
 
     pub fn kita(seat: Seat, is_drawn: bool) -> Self {
-        Self::Kita(ActionKita { seat, is_drawn })
+        Self::Kita(EventKita { seat, is_drawn })
     }
 
     pub fn dora(tile: Tile) -> Self {
-        Self::Dora(ActionDora { tile })
+        Self::Dora(EventDora { tile })
     }
 
     pub fn round_end_win(
         ura_doras: Vec<Tile>,
         contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
     ) -> Self {
-        Self::RoundEndWin(ActionRoundEndWin {
+        Self::RoundEndWin(EventRoundEndWin {
             ura_doras,
             contexts,
         })
     }
 
     pub fn round_end_draw(draw_type: DrawType) -> Self {
-        Self::RoundEndDraw(ActionRoundEndDraw { draw_type })
+        Self::RoundEndDraw(EventRoundEndDraw { draw_type })
     }
 
     pub fn round_end_no_tile(tenpais: [bool; SEAT], points: [Point; SEAT]) -> Self {
-        Self::RoundEndNoTile(ActionRoundEndNoTile { tenpais, points })
+        Self::RoundEndNoTile(EventRoundEndNoTile { tenpais, points })
     }
 
     pub fn game_over() -> Self {
-        Self::GameOver(ActionGameOver {})
+        Self::GameOver(EventGameOver {})
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionGameStart {}
+pub struct EventGameStart {}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionRoundNew {
+pub struct EventRoundNew {
     pub round: usize,
     pub kyoku: usize,
     pub honba: usize,
@@ -109,13 +109,13 @@ pub struct ActionRoundNew {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionDealTile {
+pub struct EventDealTile {
     pub seat: Seat,
     pub tile: Tile,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionDiscardTile {
+pub struct EventDiscardTile {
     pub seat: Seat,
     pub tile: Tile,
     pub is_drawn: bool,
@@ -123,39 +123,39 @@ pub struct ActionDiscardTile {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionMeld {
+pub struct EventMeld {
     pub seat: Seat,
     pub meld_type: MeldType,
     pub consumed: Vec<Tile>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionKita {
+pub struct EventKita {
     pub seat: Seat,
     pub is_drawn: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionDora {
+pub struct EventDora {
     pub tile: Tile,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionRoundEndWin {
+pub struct EventRoundEndWin {
     pub ura_doras: Vec<Tile>,
     pub contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionRoundEndDraw {
+pub struct EventRoundEndDraw {
     pub draw_type: DrawType,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionRoundEndNoTile {
+pub struct EventRoundEndNoTile {
     pub tenpais: [bool; SEAT],
     pub points: [Point; SEAT],
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ActionGameOver {}
+pub struct EventGameOver {}

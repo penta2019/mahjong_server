@@ -324,8 +324,10 @@ fn stream_handler(
     debug: bool,
 ) -> io::Result<()> {
     let stream2 = &mut stream.try_clone().unwrap();
+    let stream3 = &mut stream.try_clone().unwrap();
     let mut send = |m: &Value| send_json(stream, m, debug);
     let mut recv = || recv_json(stream2, debug);
+    let mut is_alive = || is_alive(stream3);
     let err = || io::Error::new(io::ErrorKind::InvalidData, "json field not found");
 
     // hello
@@ -342,12 +344,7 @@ fn stream_handler(
         return Ok(());
     }
 
-    while data.lock().unwrap().seat == NO_SEAT {
-        sleep_ms(100);
-    }
-
     let mut cursor = 0;
-    let mut need_start_game = true;
     loop {
         // 初期化処理
         {
@@ -358,9 +355,7 @@ fn stream_handler(
                 cursor = 0;
             }
             let send_start_game = d.send_start_game;
-            if cursor == 0 && (send_start_game || need_start_game) {
-                // start_game 新しい試合が始まった場合,またはクライアントの再接続時に送信
-                need_start_game = false;
+            if cursor == 0 && send_start_game {
                 d.send_start_game = false;
                 send(&mjai_start_game(d.seat))?;
                 recv()?; // recv none
@@ -392,6 +387,7 @@ fn stream_handler(
             }
         } else {
             sleep_ms(10);
+            is_alive()?;
             continue;
         }
 
@@ -423,6 +419,7 @@ fn stream_handler(
             let mut step = 0;
             loop {
                 sleep_ms(10);
+                is_alive()?;
                 if data.lock().unwrap().record.len() == cursor {
                     continue;
                 }
@@ -486,4 +483,15 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, ""));
     }
     serde_json::from_str(&buf[..buf.len() - 1]).or_else(|e| Err(e.into()))
+}
+
+fn is_alive(stream: &mut TcpStream) -> io::Result<()> {
+    stream.set_nonblocking(true).ok();
+    let res = stream.peek(&mut [0; 1024]);
+    stream.set_nonblocking(false).ok();
+    if let Ok(0) = res {
+        Err(io::Error::new(io::ErrorKind::UnexpectedEof, ""))
+    } else {
+        Ok(())
+    }
 }

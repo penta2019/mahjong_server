@@ -2,7 +2,7 @@ use super::*;
 
 pub struct NopBuilder;
 
-impl OperatorBuilder for NopBuilder {
+impl ActorBuilder for NopBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "Nop".to_string(),
@@ -10,7 +10,7 @@ impl OperatorBuilder for NopBuilder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(Nop::from_config(config))
     }
 }
@@ -30,7 +30,7 @@ impl Nop {
     }
 }
 
-impl Operator for Nop {
+impl Actor for Nop {
     fn select_action(&mut self, _stage: &Stage, _seat: Seat, _operatons: &Vec<Action>) -> Action {
         Action::nop()
     }

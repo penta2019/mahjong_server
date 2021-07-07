@@ -30,13 +30,13 @@ pub struct Config {
 //     }
 // }
 
-trait OperatorBuilder {
+trait ActorBuilder {
     fn get_default_config(&self) -> Config;
-    fn create(&self, config: Config) -> Box<dyn Operator>;
+    fn create(&self, config: Config) -> Box<dyn Actor>;
 }
 
-pub fn create_operator(exp: &str) -> Box<dyn Operator> {
-    let builders: Vec<Box<dyn OperatorBuilder>> = vec![
+pub fn create_actor(exp: &str) -> Box<dyn Actor> {
+    let builders: Vec<Box<dyn ActorBuilder>> = vec![
         Box::new(null::NullBuilder {}),
         Box::new(nop::NopBuilder {}),
         Box::new(random::RandomDiscardBuilder {}),
@@ -96,12 +96,12 @@ pub fn create_operator(exp: &str) -> Box<dyn Operator> {
                 .map(|a| format!("{}={}", a.name, a.value))
                 .collect::<Vec<String>>()
                 .join(",");
-            println!("Operator: {}({})", conf.name, arg_str);
+            println!("Actor: {}({})", conf.name, arg_str);
             return b.create(conf);
         }
     }
 
-    println!("Unknown operator name: {}", name);
+    println!("Unknown actor name: {}", name);
     std::process::exit(0);
 }
 
@@ -114,29 +114,29 @@ fn parse_as(target: &Variant, value: &str) -> Result<Variant, String> {
     })
 }
 
-// Operator trait
-pub trait Operator: StageListener + OperatorClone + Send {
+// Actor trait
+pub trait Actor: StageListener + ActorClone + Send {
     fn set_seat(&mut self, _: Seat) {}
     fn select_action(&mut self, stage: &Stage, seat: Seat, operatons: &Vec<Action>) -> Action;
     fn get_config(&self) -> &Config;
 }
 
-impl fmt::Debug for dyn Operator {
+impl fmt::Debug for dyn Actor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_config().name)
     }
 }
 
 // https://stackoverflow.com/questions/30353462/how-to-clone-a-struct-storing-a-boxed-trait-object
-pub trait OperatorClone {
-    fn clone_box(&self) -> Box<dyn Operator>;
+pub trait ActorClone {
+    fn clone_box(&self) -> Box<dyn Actor>;
 }
 
-impl<T> OperatorClone for T
+impl<T> ActorClone for T
 where
-    T: 'static + Operator + Clone,
+    T: 'static + Actor + Clone,
 {
-    fn clone_box(&self) -> Box<dyn Operator> {
+    fn clone_box(&self) -> Box<dyn Actor> {
         Box::new(self.clone())
     }
 }

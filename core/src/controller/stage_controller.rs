@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::actor::Operator;
+use crate::actor::Actor;
 use crate::hand::win::*;
 use crate::model::*;
 use crate::util::common::rank_by_rank_vec;
@@ -22,25 +22,22 @@ impl fmt::Debug for dyn StageListener {
 #[derive(Debug)]
 pub struct StageController {
     stage: Stage,
-    operators: [Box<dyn Operator>; SEAT],
+    actors: [Box<dyn Actor>; SEAT],
     listeners: Vec<Box<dyn StageListener>>,
 }
 
 impl StageController {
-    pub fn new(
-        operators: [Box<dyn Operator>; SEAT],
-        listeners: Vec<Box<dyn StageListener>>,
-    ) -> Self {
+    pub fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn StageListener>>) -> Self {
         let stage = Stage::default();
         Self {
             stage,
-            operators,
+            actors,
             listeners,
         }
     }
 
-    pub fn swap_operator(&mut self, seat: usize, operator: &mut Box<dyn Operator>) {
-        std::mem::swap(&mut self.operators[seat], operator);
+    pub fn swap_actor(&mut self, seat: usize, actor: &mut Box<dyn Actor>) {
+        std::mem::swap(&mut self.actors[seat], actor);
     }
 
     pub fn get_stage(&self) -> &Stage {
@@ -53,7 +50,7 @@ impl StageController {
         match event {
             Event::GameStart(e) => {
                 for s in 0..SEAT {
-                    self.operators[s].set_seat(s);
+                    self.actors[s].set_seat(s);
                 }
                 event_game_start(stg, e);
             }
@@ -69,7 +66,7 @@ impl StageController {
             Event::GameOver(e) => event_game_over(stg, e),
         }
 
-        for l in &mut self.operators {
+        for l in &mut self.actors {
             l.notify_event(stg, &event);
         }
         for l in &mut self.listeners {
@@ -78,7 +75,7 @@ impl StageController {
     }
 
     pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>) -> Action {
-        self.operators[seat].select_action(&self.stage, seat, &acts)
+        self.actors[seat].select_action(&self.stage, seat, &acts)
     }
 }
 

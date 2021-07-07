@@ -1,8 +1,8 @@
 use rand::prelude::*;
 use serde_json::json;
 
-use crate::actor::create_operator;
-use crate::actor::Operator;
+use crate::actor::create_actor;
+use crate::actor::Actor;
 use crate::controller::stage_controller::{StageController, StageListener};
 use crate::controller::stage_printer::StagePrinter;
 use crate::hand::evaluate::*;
@@ -18,7 +18,7 @@ use StageOperation::*;
 // [App]
 pub struct App {
     seed: u64,
-    names: [String; 4], // operator names
+    names: [String; 4], // actor names
     n_game: u32,
     n_thread: u32,
     write_to_file: bool,
@@ -90,21 +90,15 @@ impl App {
     }
 
     fn run_single_game(&mut self) {
-        let operators = [
-            create_operator(&self.names[0]),
-            create_operator(&self.names[1]),
-            create_operator(&self.names[2]),
-            create_operator(&self.names[3]),
+        let actors = [
+            create_actor(&self.names[0]),
+            create_actor(&self.names[1]),
+            create_actor(&self.names[2]),
+            create_actor(&self.names[3]),
         ];
         let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
-        let mut game = MahjongEngine::new(
-            self.seed,
-            2,
-            25000,
-            self.write_to_file,
-            operators,
-            listeners,
-        );
+        let mut game =
+            MahjongEngine::new(self.seed, 2, 25000, self.write_to_file, actors, listeners);
         let send_recv = create_ws_server(self.gui_port);
 
         loop {
@@ -155,11 +149,11 @@ impl App {
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
-        let operators: [Box<dyn Operator>; 4] = [
-            create_operator(&self.names[0]),
-            create_operator(&self.names[1]),
-            create_operator(&self.names[2]),
-            create_operator(&self.names[3]),
+        let actors: [Box<dyn Actor>; 4] = [
+            create_actor(&self.names[0]),
+            create_actor(&self.names[1]),
+            create_actor(&self.names[2]),
+            create_actor(&self.names[3]),
         ];
 
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
@@ -175,21 +169,21 @@ impl App {
                 let mut shuffle_table = [0, 1, 2, 3];
                 shuffle_table.shuffle(&mut rng);
 
-                let mut shuffled_operators: [Box<dyn Operator>; 4] = [
+                let mut shuffled_actors: [Box<dyn Actor>; 4] = [
                     Box::new(Null::new()),
                     Box::new(Null::new()),
                     Box::new(Null::new()),
                     Box::new(Null::new()),
                 ];
                 for s in 0..SEAT {
-                    shuffled_operators[s] = operators[shuffle_table[s]].clone_box();
+                    shuffled_actors[s] = actors[shuffle_table[s]].clone_box();
                 }
 
                 let tx2 = tx.clone();
                 thread::spawn(move || {
                     let start = time::Instant::now();
                     let mut game =
-                        MahjongEngine::new(seed, 2, 25000, false, shuffled_operators, vec![]);
+                        MahjongEngine::new(seed, 2, 25000, false, shuffled_actors, vec![]);
                     loop {
                         if game.next_step() {
                             break;
@@ -298,10 +292,10 @@ impl MahjongEngine {
         n_round: usize,
         initial_score: Score,
         write_to_file: bool,
-        operators: [Box<dyn Operator>; SEAT],
+        actors: [Box<dyn Actor>; SEAT],
         listeners: Vec<Box<dyn StageListener>>,
     ) -> Self {
-        let ctrl = StageController::new(operators, listeners);
+        let ctrl = StageController::new(actors, listeners);
         let writer = if write_to_file {
             Some(EventWriter::new())
         } else {

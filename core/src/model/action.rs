@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum ActionType {
-    Nop, // Operator用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
+    Nop, // Actor用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
 
     // Turn Actions
     Discard,      // 打牌 (ゲーム側から提供される配列は鳴き後に捨てられない配)

@@ -12,7 +12,7 @@ use crate::util::mjai_json::*;
 
 pub struct MjaiEndpointBuilder;
 
-impl OperatorBuilder for MjaiEndpointBuilder {
+impl ActorBuilder for MjaiEndpointBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "MjaiEndpoint".to_string(),
@@ -20,7 +20,7 @@ impl OperatorBuilder for MjaiEndpointBuilder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(MjaiEndpoint::from_config(config))
     }
 }
@@ -220,7 +220,7 @@ impl MjaiEndpoint {
     }
 }
 
-impl Operator for MjaiEndpoint {
+impl Actor for MjaiEndpoint {
     fn set_seat(&mut self, seat: Seat) {
         self.seat = seat;
     }

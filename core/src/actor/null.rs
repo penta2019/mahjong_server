@@ -2,7 +2,7 @@ use super::*;
 
 pub struct NullBuilder;
 
-impl OperatorBuilder for NullBuilder {
+impl ActorBuilder for NullBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "Null".to_string(),
@@ -10,7 +10,7 @@ impl OperatorBuilder for NullBuilder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(Null::from_config(config))
     }
 }
@@ -30,7 +30,7 @@ impl Null {
     }
 }
 
-impl Operator for Null {
+impl Actor for Null {
     fn select_action(&mut self, _stage: &Stage, _seat: Seat, _operatons: &Vec<Action>) -> Action {
         panic!();
     }

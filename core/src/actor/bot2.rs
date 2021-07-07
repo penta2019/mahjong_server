@@ -3,7 +3,7 @@ use crate::util::parse_block::*;
 
 pub struct Bot2Builder;
 
-impl OperatorBuilder for Bot2Builder {
+impl ActorBuilder for Bot2Builder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "Bot2".to_string(),
@@ -11,7 +11,7 @@ impl OperatorBuilder for Bot2Builder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(Bot2::from_config(config))
     }
 }
@@ -27,7 +27,7 @@ impl Bot2 {
     }
 }
 
-impl Operator for Bot2 {
+impl Actor for Bot2 {
     fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         let h = &stage.players[seat].hand;
 

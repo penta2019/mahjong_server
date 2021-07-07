@@ -3,7 +3,7 @@ use crate::util::common::prompt;
 
 pub struct ManualBuilder;
 
-impl OperatorBuilder for ManualBuilder {
+impl ActorBuilder for ManualBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "Manual".to_string(),
@@ -11,7 +11,7 @@ impl OperatorBuilder for ManualBuilder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(Manual::from_config(config))
     }
 }
@@ -27,7 +27,7 @@ impl Manual {
     }
 }
 
-impl Operator for Manual {
+impl Actor for Manual {
     fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         println!("{}", &stage.players[seat]);
         println!();

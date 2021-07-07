@@ -3,7 +3,7 @@ use crate::util::parse_block::*;
 
 pub struct TiitoitsuBotBuilder;
 
-impl OperatorBuilder for TiitoitsuBotBuilder {
+impl ActorBuilder for TiitoitsuBotBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "TiitoitsuBot".to_string(),
@@ -11,7 +11,7 @@ impl OperatorBuilder for TiitoitsuBotBuilder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(TiitoitsuBot::from_config(config))
     }
 }
@@ -28,7 +28,7 @@ impl TiitoitsuBot {
     }
 }
 
-impl Operator for TiitoitsuBot {
+impl Actor for TiitoitsuBot {
     fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
         let h = &stage.players[seat].hand;
 

@@ -2,12 +2,12 @@ use std::time;
 
 use serde_json::{json, Value};
 
+use crate::actor::create_actor;
+use crate::actor::nop::Nop;
+use crate::actor::Actor;
 use crate::controller::stage_controller::StageController;
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
-use crate::actor::create_operator;
-use crate::actor::nop::Nop;
-use crate::actor::Operator;
 use crate::util::common::*;
 use crate::util::event_writer::EventWriter;
 use crate::util::ws_server::{create_ws_server, SendRecv};
@@ -21,7 +21,7 @@ pub struct App {
     write_to_file: bool,
     msc_port: u32,
     gui_port: u32,
-    operator_name: String,
+    actor_name: String,
 }
 
 impl App {
@@ -34,7 +34,7 @@ impl App {
             write_to_file: false,
             msc_port: super::MSC_PORT,
             gui_port: super::GUI_PORT,
-            operator_name: "".to_string(),
+            actor_name: "".to_string(),
         };
 
         let mut it = args.iter();
@@ -45,7 +45,7 @@ impl App {
                 "-w" => app.write_to_file = true,
                 "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
-                "-0" => app.operator_name = next_value(&mut it, "-0"),
+                "-0" => app.actor_name = next_value(&mut it, "-0"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -57,8 +57,8 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        let operator = create_operator(&self.operator_name);
-        let mut game = Mahjongsoul::new(self.sleep, self.write_to_file, operator);
+        let actor = create_actor(&self.actor_name);
+        let mut game = Mahjongsoul::new(self.sleep, self.write_to_file, actor);
         let mut server_msc = create_ws_server(self.msc_port);
         let mut server_gui = create_ws_server(self.gui_port);
         let mut connected = false;
@@ -102,12 +102,12 @@ struct Mahjongsoul {
     events: Vec<Value>,
     random_sleep: bool,
     writer: Option<EventWriter>,
-    operator: Box<dyn Operator>,
+    actor: Box<dyn Actor>,
 }
 
 impl Mahjongsoul {
-    fn new(random_sleep: bool, write_to_file: bool, operator: Box<dyn Operator>) -> Self {
-        // operatorは座席0に暫定でセットする
+    fn new(random_sleep: bool, write_to_file: bool, actor: Box<dyn Actor>) -> Self {
+        // actorは座席0に暫定でセットする
         // 新しい局が開始されて座席が判明した際にスワップする
         let writer = if write_to_file {
             Some(EventWriter::new())
@@ -115,16 +115,16 @@ impl Mahjongsoul {
             None
         };
         let nop = Box::new(Nop::new());
-        let operators: [Box<dyn Operator>; SEAT] =
+        let actors: [Box<dyn Actor>; SEAT] =
             [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
         Self {
-            ctrl: StageController::new(operators, vec![]),
+            ctrl: StageController::new(actors, vec![]),
             step: 0,
             seat: NO_SEAT,
             events: vec![],
             random_sleep: random_sleep,
             writer: writer,
-            operator: operator,
+            actor: actor,
         }
     }
 
@@ -163,7 +163,7 @@ impl Mahjongsoul {
 
         if step == 0 {
             if self.seat != NO_SEAT {
-                self.ctrl.swap_operator(self.seat, &mut self.operator);
+                self.ctrl.swap_actor(self.seat, &mut self.actor);
                 self.seat = NO_SEAT;
             }
             self.step = 0;
@@ -186,9 +186,9 @@ impl Mahjongsoul {
                 return None;
             }
 
-            // seatが確定し時点でoperatorを設定
-            self.operator.set_seat(self.seat);
-            self.ctrl.swap_operator(self.seat, &mut self.operator);
+            // seatが確定し時点でactorを設定
+            self.actor.set_seat(self.seat);
+            self.ctrl.swap_actor(self.seat, &mut self.actor);
         }
 
         let mut act = None;

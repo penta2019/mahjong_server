@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use serde_json::json;
 
 use crate::actor::nop::Nop;
-use crate::actor::Operator;
+use crate::actor::Actor;
 use crate::controller::stage_controller::StageController;
 use crate::controller::stage_printer::StageStepPrinter;
 use crate::model::*;
@@ -50,9 +50,8 @@ impl App {
 
     pub fn run(&mut self) {
         let nop = Box::new(Nop::new());
-        let operators: [Box<dyn Operator>; SEAT] =
-            [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
-        let mut ctrl = StageController::new(operators, vec![Box::new(StageStepPrinter {})]);
+        let actors: [Box<dyn Actor>; SEAT] = [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
+        let mut ctrl = StageController::new(actors, vec![Box::new(StageStepPrinter {})]);
         let send_recv = create_ws_server(self.gui_port);
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む

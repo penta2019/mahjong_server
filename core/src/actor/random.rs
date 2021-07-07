@@ -4,7 +4,7 @@ use super::*;
 
 pub struct RandomDiscardBuilder;
 
-impl OperatorBuilder for RandomDiscardBuilder {
+impl ActorBuilder for RandomDiscardBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "RandomDiscard".to_string(),
@@ -12,7 +12,7 @@ impl OperatorBuilder for RandomDiscardBuilder {
         }
     }
 
-    fn create(&self, config: Config) -> Box<dyn Operator> {
+    fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(RandomDiscard::from_config(config))
     }
 }
@@ -32,7 +32,7 @@ impl RandomDiscard {
     }
 }
 
-impl Operator for RandomDiscard {
+impl Actor for RandomDiscard {
     fn select_action(&mut self, stage: &Stage, seat: Seat, _acts: &Vec<Action>) -> Action {
         if stage.turn != seat {
             return Action::nop();

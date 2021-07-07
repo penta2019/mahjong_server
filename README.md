@@ -69,14 +69,14 @@ GUIを使用しない場合不要
     GUI用のwsサーバのポート
 -d
     ステップ実行.各プレイヤーが牌をツモった後に一時停止します.  
--0 operator_name
-    座席0のOperator. デフォルト値はNop.
--1 operator_name
-    座席1のOperator. デフォルト値はNop.
--2 operator_name
-    座席2のOperator. デフォルト値はNop.
--3 operator_name
-    座席3のOperator. デフォルト値はNop.
+-0 actor_name
+    座席0のActor. デフォルト値はNop.
+-1 actor_name
+    座席1のActor. デフォルト値はNop.
+-2 actor_name
+    座席2のActor. デフォルト値はNop.
+-3 actor_name
+    座席3のActor. デフォルト値はNop.
 ```
 
 実行例  
@@ -87,8 +87,8 @@ cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 
 #### マルチプル実行
 複数の試合を実行して結果を集計します.   
-このモードでは入出力を行うOperator(=Manual, MjaiEndpoint)は使用できません.  
-各operatorの座席は試合開始時にランダムで決定されます.  
+このモードでは入出力を行うActor(=Manual, MjaiEndpoint)は使用できません.  
+各actorの座席は試合開始時にランダムで決定されます.  
 
 オプション一覧
 ```
@@ -98,14 +98,14 @@ cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
     必須オプション.実行数する試合の数.このオプションを指定しない場合シングル実行になります.
 -t n_thread
     同時に実行するスレッド(試合)の数.デフォルト値は16.
--0 operator_name
-    座席0のOperator. デフォルト値はNop.
--1 operator_name
-    座席1のOperator. デフォルト値はNop.
--2 operator_name
-    座席2のOperator. デフォルト値はNop.
--3 operator_name
-    座席3のOperator. デフォルト値はNop.
+-0 actor_name
+    座席0のActor. デフォルト値はNop.
+-1 actor_name
+    座席1のActor. デフォルト値はNop.
+-2 actor_name
+    座席2のActor. デフォルト値はNop.
+-3 actor_name
+    座席3のActor. デフォルト値はNop.
 ```
 
 実行例  
@@ -120,7 +120,7 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
 オプション一覧
 ```
 -r
-    読み込み専用モード.このモードではOperatorが指定した操作(雀魂の自動操作)を行いません.
+    読み込み専用モード.このモードではActorが指定した操作(雀魂の自動操作)を行いません.
 -s
     操作(ロン,ツモ,キャンセルを除く)を行う前にランダム時間スリープします.最大4秒
 -w
@@ -129,8 +129,8 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
     雀魂側のスクリプトから接続するためのwsサーバのポート
 -gui-port port
     GUI用のwsサーバのポート
--0 operator_name
-    使用するOperator(AI).
+-0 actor_name
+    使用するActor(AI).
 ```
 
 実行例
@@ -195,11 +195,11 @@ npm run serve
 ```
 127.0.0.1:8080にアクセス.
 
-### Operator
-Operatorとはゲームの操作を行う主体(Bot)のことです.  
+### Actor
+Actorとはゲームの操作を行う主体(Bot)のことです.  
 現在実用的なAIは実装できていませんが,Mjaiプロトコルに対応した外部AIを使用することが出来ます.
-ソースコードは /core/src/operator/instanceの下に配置されています.
-* Manual (ManualOperator)  
+ソースコードは /core/src/actor/instanceの下に配置されています.
+* Manual (ManualActor)  
 手動により操作します.デバッグ用.
 * RandomDiscard (random.rs)  
 手牌からランダムに牌を捨てます.
@@ -211,9 +211,9 @@ Operatorとはゲームの操作を行う主体(Bot)のことです.
 [akochan](https://github.com/critter-mj/akochan)で動作確認済み.
 現在, portは11601で固定.
 * Nop (nop.rs)  
-つねにNopを返すOperator. (= 自分のツモ番ではツモ切り, 鳴き操作等一切なし)
+つねにNopを返すActor. (= 自分のツモ番ではツモ切り, 鳴き操作等一切なし)
 
-### Manual Operatorの操作方法
+### Manual Actorの操作方法
 可能な操作をエンジン側が提示するのでaction indexを指定します.  
 例外として打牌(Discard)の場合は直接,牌のシンボルを指定します.  
 Discardに渡されるリストは鳴きの後に捨てることが出来ない牌(面子の組み換え禁止)です.  
@@ -255,7 +255,7 @@ discards:  s7 p1
 (出力結果省略)
 ```
 
-可能な操作一覧 (/core/src/util/operator.rs から抜粋)
+可能な操作一覧 (/core/src/util/actor.rs から抜粋)
 ```
 pub enum Action {
     Nop,           // キャンセル (鳴き,ロンのスキップ)

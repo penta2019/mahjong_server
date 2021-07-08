@@ -398,7 +398,9 @@ fn vec_to_mjai_tile(v: &Vec<Tile>) -> Vec<String> {
 }
 
 fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
-    v.iter().map(|t| from_mjai_tile(t)).collect()
+    let mut v2: Vec<Tile> = v.iter().map(|t| from_mjai_tile(t)).collect();
+    v2.sort();
+    v2
 }
 
 fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {

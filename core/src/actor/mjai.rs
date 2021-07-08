@@ -344,7 +344,15 @@ fn stream_handler(
         return Ok(());
     }
 
+    while data.lock().unwrap().seat == NO_SEAT {
+        sleep_ms(100);
+        is_alive()?;
+    }
+
+    // TODO: 座席が確定する前に,一度も自身の順番, 鳴き操作が発生せずに
+    //       流局などで局が終了するとその局の情報が一切送信されない
     let mut cursor = 0;
+    let mut need_start_game = true;
     loop {
         // 初期化処理
         {
@@ -355,7 +363,9 @@ fn stream_handler(
                 cursor = 0;
             }
             let send_start_game = d.send_start_game;
-            if cursor == 0 && send_start_game {
+            if cursor == 0 && (send_start_game || need_start_game) {
+                // start_game 新しい試合が始まった場合,またはクライアントの再接続時に送信
+                need_start_game = false;
                 d.send_start_game = false;
                 send(&mjai_start_game(d.seat))?;
                 recv()?; // recv none

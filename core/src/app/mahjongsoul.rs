@@ -233,27 +233,28 @@ impl Mahjongsoul {
             return None;
         }
 
+        let start = time::Instant::now();
         let seat = as_usize(&data["seat"]);
 
+        // 可能なactionのパースと選択
         let (acts, idxs) = json_parse_action(data);
-
         let act = self.ctrl.select_action(seat, &acts);
-        let arg_idx = if act.0 == Discard || act.0 == Riichi {
-            0
-        } else {
-            idxs[acts.iter().position(|act2| act2 == &act).unwrap()]
-        };
-
         println!("possible: {:?}", acts);
         println!("selected: {:?}", act);
         println!("");
         flush();
 
-        let start = time::Instant::now();
+        // 選択されたactionのパース
+        let arg_idx = if act.0 == Discard || act.0 == Riichi {
+            0
+        } else {
+            idxs[acts.iter().position(|act2| act2 == &act).unwrap()]
+        };
         let Action(tp, cs) = act;
-        let ellapsed = start.elapsed().as_millis();
 
+        // sleep処理
         let stg = self.get_stage();
+        let ellapsed = start.elapsed().as_millis();
         let mut sleep = 1000;
         if self.random_sleep && seat == stg.turn && tp != Tsumo {
             // ツモ・ロン・鳴きのキャンセル以外の操作の場合,ランダムにsleep時間(1 ~ 4秒)を取る

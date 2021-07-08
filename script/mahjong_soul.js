@@ -188,6 +188,7 @@ msc.UiController = class {
 
     action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる.
         let vp = window.view.ViewPlayer_Me.Inst;
+        if (!vp.can_discard) return;
         vp.setChoosePai(vp.hand[n]);
         vp.DoDiscardTile();
     }

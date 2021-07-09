@@ -582,7 +582,7 @@ impl MahjongEngine {
             self.handle_event(Event::meld(s, MeldType::Minkan, act.1.clone()));
             self.melding = Some(act);
         } else if let Some((s, act)) = pon {
-            // PonをChiiより優先して処理
+            // PonをChiより優先して処理
             self.handle_event(Event::meld(s, MeldType::Pon, act.1.clone()));
             self.melding = Some(act);
         } else if let Some((s, act)) = chi {

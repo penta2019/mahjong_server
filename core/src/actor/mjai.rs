@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use super::*;
 use crate::util::common::{flush, sleep_ms, vec_remove};
@@ -84,17 +84,17 @@ impl MjaiEndpoint {
         obj
     }
 
-    fn add_record(&mut self, record: Value) {
+    fn add_record(&mut self, event: MjaiEvent) {
         let mut d = self.data.lock().unwrap();
         d.selected_action = None;
         d.possible_actions = None;
-        d.record.push(record);
+        d.record.push(event);
     }
 
     fn confirm_riichi_accepted(&mut self, stg: &Stage) {
         if let Some(s) = self.try_riichi {
             self.try_riichi = None;
-            self.add_record(mjai_reach_accepted(s, stg.get_scores()));
+            self.add_record(MjaiEvent::reach_accepted(s, &stg.get_scores()));
         }
     }
 
@@ -119,7 +119,7 @@ impl MjaiEndpoint {
         let d = stg.players[stg.turn].drawn.unwrap();
         vec_remove(&mut ph[stg.turn], &d);
 
-        self.add_record(mjai_start_kyoku(
+        self.add_record(MjaiEvent::start_kyoku(
             self.seat,
             event.round,
             event.kyoku,
@@ -138,15 +138,15 @@ impl MjaiEndpoint {
 
     fn notify_deal_tile(&mut self, stg: &Stage, event: &EventDealTile) {
         self.confirm_riichi_accepted(stg);
-        self.add_record(mjai_tsumo(self.seat, event.seat, event.tile));
+        self.add_record(MjaiEvent::tsumo(self.seat, event.seat, event.tile));
     }
 
     fn notify_discard_tile(&mut self, _stg: &Stage, event: &EventDiscardTile) {
         if event.is_riichi {
-            self.add_record(mjai_reach(event.seat));
+            self.add_record(MjaiEvent::reach(event.seat));
         }
 
-        self.add_record(mjai_dahai(event.seat, event.tile, event.is_drawn));
+        self.add_record(MjaiEvent::dahai(event.seat, event.tile, event.is_drawn));
 
         if event.is_riichi {
             self.try_riichi = Some(event.seat);
@@ -157,11 +157,19 @@ impl MjaiEndpoint {
         self.confirm_riichi_accepted(stg);
 
         self.add_record(match event.meld_type {
-            MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
+            MeldType::Chi => {
                 let lt = stg.last_tile.unwrap();
-                mjai_chiponkan(event.seat, event.meld_type, &event.consumed, lt.2, lt.0)
+                MjaiEvent::chi(event.seat, &event.consumed, lt.2, lt.0)
             }
-            MeldType::Ankan => mjai_ankan(event.seat, &event.consumed),
+            MeldType::Pon => {
+                let lt = stg.last_tile.unwrap();
+                MjaiEvent::pon(event.seat, &event.consumed, lt.2, lt.0)
+            }
+            MeldType::Minkan => {
+                let lt = stg.last_tile.unwrap();
+                MjaiEvent::daiminkan(event.seat, &event.consumed, lt.2, lt.0)
+            }
+            MeldType::Ankan => MjaiEvent::ankan(event.seat, &event.consumed),
             MeldType::Kakan => {
                 let c = event.consumed[0];
                 let t = c.to_normal();
@@ -170,7 +178,7 @@ impl MjaiEndpoint {
                 } else {
                     t
                 };
-                mjai_kakan(event.seat, &event.consumed, &vec![t, t, t0])
+                MjaiEvent::kakan(event.seat, &event.consumed, &vec![t, t, t0])
             }
         });
     }
@@ -180,12 +188,12 @@ impl MjaiEndpoint {
     }
 
     fn notify_dora(&mut self, _stg: &Stage, event: &EventDora) {
-        self.add_record(mjai_dora(event.tile));
+        self.add_record(MjaiEvent::dora(event.tile));
     }
 
     fn notify_round_end_win(&mut self, stg: &Stage, event: &EventRoundEndWin) {
         for (seat, deltas, ctx) in &event.contexts {
-            self.add_record(mjai_hora(
+            self.add_record(MjaiEvent::hora(
                 *seat,
                 stg.turn,
                 stg.last_tile.unwrap().2,
@@ -198,7 +206,7 @@ impl MjaiEndpoint {
     }
 
     fn notify_round_end_draw(&mut self, stg: &Stage, event: &EventRoundEndDraw) {
-        self.add_record(mjai_ryukyoku(
+        self.add_record(MjaiEvent::ryukyoku(
             event.draw_type,
             &[false; SEAT],
             &[0; SEAT],
@@ -207,7 +215,7 @@ impl MjaiEndpoint {
     }
 
     fn notify_round_end_no_tile(&mut self, stg: &Stage, event: &EventRoundEndNoTile) {
-        self.add_record(mjai_ryukyoku(
+        self.add_record(MjaiEvent::ryukyoku(
             DrawType::Kouhaiheikyoku,
             &event.tenpais,
             &event.points,
@@ -216,7 +224,7 @@ impl MjaiEndpoint {
     }
 
     fn notify_game_over(&mut self, stg: &Stage, _event: &EventGameOver) {
-        self.add_record(mjai_end_game(&stg.get_scores()));
+        self.add_record(MjaiEvent::end_game(&stg.get_scores()));
     }
 }
 
@@ -299,7 +307,7 @@ impl StageListener for MjaiEndpoint {
 struct SharedData {
     send_start_game: bool,
     seat: Seat,
-    record: Vec<Value>,
+    record: Vec<MjaiEvent>,
     selected_action: Option<MjaiAction>,
     possible_actions: Option<Vec<MjaiAction>>,
     is_riichi: bool,
@@ -328,17 +336,13 @@ fn stream_handler(
     let mut send = |m: &Value| send_json(stream, m, debug);
     let mut recv = || recv_json(stream2, debug);
     let mut is_alive = || is_alive(stream3);
-    let err = || io::Error::new(io::ErrorKind::InvalidData, "json field not found");
 
     // hello
-    send(&mjai_hello())?;
-    let v = recv()?;
+    send(&json!(MjaiEvent::hello()))?;
+    let v = serde_json::from_value(recv()?)?;
 
-    if v["type"].as_str().ok_or_else(err)? == "join" {
-        println!(
-            "Player joined. name: {}",
-            v["name"].as_str().ok_or_else(err)?
-        );
+    if let MjaiAction::Join { name, .. } = v {
+        println!("Player joined. name: {}", name);
     } else {
         println!("[Error] First message type must be 'join'");
         return Ok(());
@@ -367,7 +371,7 @@ fn stream_handler(
                 // start_game 新しい試合が始まった場合,またはクライアントの再接続時に送信
                 need_start_game = false;
                 d.send_start_game = false;
-                send(&mjai_start_game(d.seat))?;
+                send(&json!(MjaiEvent::start_game(d.seat)))?;
                 recv()?; // recv none
             }
         }
@@ -375,7 +379,7 @@ fn stream_handler(
         let len = data.lock().unwrap().record.len();
         let mut wait_act = false;
         if cursor + 1 < len {
-            send(&data.lock().unwrap().record[cursor])?;
+            send(&json!(data.lock().unwrap().record[cursor]))?;
         } else if cursor + 1 == len {
             if data.lock().unwrap().possible_actions.is_none() {
                 // select_actionがpossible_actionsを追加する可能性があるので待機
@@ -387,13 +391,13 @@ fn stream_handler(
             if d.possible_actions.is_some() && cursor + 1 == d.record.len() {
                 // possible_actionsが存在する場合,送信用のjsonオブジェクトを生成して追加
                 let a = std::mem::replace(&mut d.possible_actions, None).unwrap();
-                let mut record = d.record[cursor].clone();
+                let mut record = json!(d.record[cursor]);
                 record["possible_actions"] = serde_json::to_value(a).unwrap();
                 d.possible_actions = None;
                 wait_act = true;
                 send(&record)?;
             } else {
-                send(&d.record[cursor])?;
+                send(&json!(d.record[cursor]))?;
             }
         } else {
             sleep_ms(10);
@@ -403,18 +407,15 @@ fn stream_handler(
 
         cursor += 1;
 
-        let v = recv()?;
+        let v = serde_json::from_value(recv()?)?;
         if !wait_act {
             continue;
         }
 
         // possible_actionsに対する応答を処理
-        if v["type"].as_str().ok_or_else(err)? != "reach" {
-            let a = serde_json::from_value(v)?;
-            data.lock().unwrap().selected_action = Some(a);
-        } else {
+        if let MjaiAction::Reach { .. } = v {
             // reachは仕様が特殊なので個別に処理
-            send(&v)?; // send reach
+            send(&json!(v))?; // send reach
             let v2 = recv()?; // recv dahai
             send(&v2)?; // send dahai
             recv()?; // recv none
@@ -441,25 +442,25 @@ fn stream_handler(
                 }
                 let rec = &d.record[cursor];
                 cursor += 1;
-                match rec["type"].as_str().ok_or_else(err)? {
-                    "reach" => {
+                match rec {
+                    MjaiEvent::Reach { .. } => {
                         assert!(step == 0);
                         step = 1;
                     }
-                    "dahai" => {
+                    MjaiEvent::Dahai { .. } => {
                         if step == 0 {
                             // 手動でリーチ判断を無視した場合
                             break;
                         }
                         step = 2;
                     }
-                    "reach_accepted" => {
+                    MjaiEvent::ReachAccepted { .. } => {
                         assert!(step == 2);
-                        send(rec)?; // send reach_accepted
+                        send(&json!(rec))?; // send reach_accepted
                         recv()?; // recv none
                         break;
                     }
-                    "hora" => {
+                    MjaiEvent::Hora { .. } => {
                         assert!(step == 2);
                         cursor -= 1; // horaはここでは処理しない
                         break;
@@ -467,6 +468,8 @@ fn stream_handler(
                     _ => {}
                 }
             }
+        } else {
+            data.lock().unwrap().selected_action = Some(v);
         }
     }
 }

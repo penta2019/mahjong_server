@@ -1,198 +1,297 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 
 use crate::hand::evaluate::WinContext;
 use crate::model::*;
 
 use ActionType::*;
 
-// [Mjai Message]
+// [MjaiEvent]
+// サーバ側から送信する情報
 // id: 自分の座席
 // seat: 行動を行ったプレイヤーの座席
 // target: 行動の対象となるプレイヤー(ロン, チー, ポン, 槓など)
-
-pub fn mjai_hello() -> Value {
-    json!({"type": "hello","protocol": "mjsonp","protocol_version": 3})
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+#[serde(rename_all = "snake_case")]
+pub enum MjaiEvent {
+    Hello {
+        protocol: String,
+        protocol_version: usize,
+    },
+    StartGame {
+        id: Seat,
+        names: [String; SEAT],
+    },
+    StartKyoku {
+        bakaze: String,
+        dora_marker: String,
+        kyoku: usize, // counts from 1
+        honba: usize,
+        kyotaku: usize,
+        oya: Seat,
+        tehais: [Vec<String>; SEAT],
+    },
+    Tsumo {
+        actor: Seat,
+        pai: String,
+    },
+    Dahai {
+        actor: usize,
+        pai: String,
+        tsumogiri: bool,
+    },
+    Chi {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Pon {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Daiminkan {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Kakan {
+        actor: Seat,
+        pai: String,
+        consumed: Vec<String>,
+    },
+    Ankan {
+        actor: Seat,
+        consumed: Vec<String>,
+    },
+    Dora {
+        dora_marker: String,
+    },
+    Reach {
+        actor: Seat,
+    },
+    ReachAccepted {
+        actor: Seat,
+        deltas: [Point; SEAT],
+        scores: [Score; SEAT],
+    },
+    Hora {
+        actor: Seat,
+        target: Seat,
+        pai: String,
+        uradora_markers: Vec<String>,
+        hora_tehais: Vec<String>,
+        yakus: Vec<String>,
+        fu: usize,
+        fan: usize,
+        hora_points: Point,
+        deltas: [Point; SEAT],
+        scores: [Score; SEAT],
+    },
+    Ryukyoku {
+        reason: String,      // TODO
+        tehais: Vec<String>, // TODO
+        tenpais: [bool; SEAT],
+        deltas: [Point; SEAT],
+        scores: [Score; SEAT],
+    },
+    EndKyoku {},
+    EndGame {
+        scores: [Score; SEAT],
+    },
+    None {},
 }
 
-pub fn mjai_start_game(id: Seat) -> Value {
-    json!({
-        "type":"start_game",
-        "id": id,
-        "names":["Player0", "Player1", "Player2", "Player3"],
-    })
+impl MjaiEvent {
+    pub fn hello() -> Self {
+        Self::Hello {
+            protocol: "mjsonp".to_string(),
+            protocol_version: 3,
+        }
+    }
+
+    pub fn start_game(id: Seat) -> Self {
+        Self::StartGame {
+            id: id,
+            names: [
+                "Player0".to_string(),
+                "Player1".to_string(),
+                "Player2".to_string(),
+                "Player3".to_string(),
+            ],
+        }
+    }
+
+    pub fn start_kyoku(
+        id: Seat,
+        round: usize,
+        kyoku: usize,
+        honba: usize,
+        kyotaku: usize,
+        doras: &Vec<Tile>,
+        hands: &[Vec<Tile>; SEAT],
+    ) -> Self {
+        assert!(doras.len() == 1);
+        let wind = ["E", "S", "W", "N"];
+        Self::StartKyoku {
+            bakaze: wind[round].to_string(),
+            kyoku: kyoku + 1,
+            honba: honba,
+            kyotaku: kyotaku,
+            oya: kyoku,
+            dora_marker: to_mjai_tile(doras[0]),
+            tehais: create_tehais(hands, id),
+        }
+    }
+
+    pub fn tsumo(id: Seat, seat: Seat, tile: Tile) -> Self {
+        let t = if id == seat {
+            to_mjai_tile(tile)
+        } else {
+            "?".to_string()
+        };
+        Self::Tsumo {
+            actor: seat,
+            pai: t,
+        }
+    }
+
+    pub fn dahai(seat: Seat, tile: Tile, is_drawn: bool) -> Self {
+        Self::Dahai {
+            actor: seat,
+            pai: to_mjai_tile(tile),
+            tsumogiri: is_drawn,
+        }
+    }
+
+    pub fn reach(seat: Seat) -> Self {
+        Self::Reach { actor: seat }
+    }
+
+    pub fn reach_accepted(seat: Seat, scores: &[Score; SEAT]) -> Self {
+        let mut deltas = [0, 0, 0, 0];
+        deltas[seat] = -1000;
+        Self::ReachAccepted {
+            actor: seat,
+            deltas: deltas,
+            scores: scores.clone(),
+        }
+    }
+
+    pub fn chi(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
+        Self::Chi {
+            actor: seat,
+            pai: to_mjai_tile(tile),
+            consumed: vec_to_mjai_tile(consumed),
+            target: target,
+        }
+    }
+
+    pub fn pon(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
+        Self::Pon {
+            actor: seat,
+            pai: to_mjai_tile(tile),
+            consumed: vec_to_mjai_tile(consumed),
+            target: target,
+        }
+    }
+
+    pub fn daiminkan(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
+        Self::Daiminkan {
+            actor: seat,
+            pai: to_mjai_tile(tile),
+            consumed: vec_to_mjai_tile(consumed),
+            target: target,
+        }
+    }
+
+    pub fn ankan(seat: Seat, consumed: &Vec<Tile>) -> Self {
+        Self::Ankan {
+            actor: seat,
+            consumed: vec_to_mjai_tile(consumed),
+        }
+    }
+
+    pub fn kakan(seat: Seat, consumed: &Vec<Tile>, pon_tiles: &Vec<Tile>) -> Self {
+        Self::Kakan {
+            actor: seat,
+            pai: to_mjai_tile(consumed[0]),
+            consumed: vec_to_mjai_tile(pon_tiles),
+        }
+    }
+
+    pub fn dora(tile: Tile) -> Self {
+        Self::Dora {
+            dora_marker: to_mjai_tile(tile),
+        }
+    }
+
+    pub fn hora(
+        seat: Seat,
+        target: Seat,
+        tile: Tile,
+        ura_doras: &Vec<Tile>,
+        context: &WinContext,
+        deltas: &[Point; SEAT],
+        scores: &[Score; SEAT],
+    ) -> Self {
+        let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
+        Self::Hora {
+            actor: seat,
+            target: target,
+            pai: to_mjai_tile(tile),
+            uradora_markers: ura,
+            hora_tehais: vec![], // TODO
+            yakus: vec![],       // TODO
+            fu: context.fu,
+            fan: context.fan,
+            hora_points: context.points.0,
+            deltas: deltas.clone(),
+            scores: scores.clone(),
+        }
+    }
+
+    pub fn ryukyoku(
+        draw_type: DrawType,
+        is_tenpai: &[bool; SEAT],
+        deltas: &[Point; SEAT],
+        scores: &[Score; SEAT],
+    ) -> Self {
+        let reason = match draw_type {
+            DrawType::Kouhaiheikyoku => "fanpai",
+            _ => "",
+        };
+        Self::Ryukyoku {
+            reason: reason.to_string(), // TODO
+            tehais: vec![],             // TODO
+            tenpais: is_tenpai.clone(),
+            deltas: deltas.clone(),
+            scores: scores.clone(),
+        }
+    }
+
+    // pub fn end_kyoku(deltas: &[Score; SEAT]) {}
+
+    pub fn end_game(scores: &[Score; SEAT]) -> Self {
+        Self::EndGame {
+            scores: scores.clone(),
+        }
+    }
 }
 
-pub fn mjai_start_kyoku(
-    id: Seat,
-    round: usize,
-    kyoku: usize,
-    honba: usize,
-    kyotaku: usize,
-    doras: &Vec<Tile>,
-    hands: &[Vec<Tile>; SEAT],
-) -> Value {
-    let wind = ["E", "S", "W", "N"];
-    let hands = create_tehais(hands, id);
-
-    assert!(doras.len() == 1);
-    let dora_marker = to_mjai_tile(doras[0]);
-
-    json!({
-        "type": "start_kyoku",
-        "bakaze": wind[round],
-        "kyoku": kyoku + 1,
-        "honba": honba,
-        "kyotaku": kyotaku,
-        "oya": kyoku,
-        "dora_marker": dora_marker,
-        "tehais": hands,
-    })
-}
-
-pub fn mjai_tsumo(id: Seat, seat: Seat, tile: Tile) -> Value {
-    let t = if id == seat {
-        to_mjai_tile(tile)
-    } else {
-        "?".to_string()
-    };
-    json!({
-        "type": "tsumo",
-        "actor": seat,
-        "pai": t,
-    })
-}
-
-pub fn mjai_dahai(seat: Seat, tile: Tile, is_drawn: bool) -> Value {
-    json!({
-        "type": "dahai",
-        "actor": seat,
-        "pai": to_mjai_tile(tile),
-        "tsumogiri": is_drawn,
-    })
-}
-
-pub fn mjai_reach(seat: Seat) -> Value {
-    json!({
-        "type": "reach",
-        "actor": seat,
-    })
-}
-
-pub fn mjai_reach_accepted(seat: Seat, scores: [Score; SEAT]) -> Value {
-    let mut deltas = [0, 0, 0, 0];
-    deltas[seat] = -1000;
-    json!({
-        "type": "reach_accepted",
-        "actor": seat,
-        "deltas": deltas,
-        "scores": scores,
-    })
-}
-
-pub fn mjai_chiponkan(
-    seat: Seat,
-    meld_type: MeldType,
-    consumed: &Vec<Tile>,
-    tile: Tile,
-    target: Seat,
-) -> Value {
-    let type_ = match meld_type {
-        MeldType::Chi => "chi",
-        MeldType::Pon => "pon",
-        MeldType::Minkan => "daiminkan",
-        _ => panic!(),
-    };
-    json!({
-        "type": type_,
-        "actor": seat,
-        "pai": to_mjai_tile(tile),
-        "consumed": vec_to_mjai_tile(consumed),
-        "target": target,
-    })
-}
-
-pub fn mjai_ankan(seat: Seat, consumed: &Vec<Tile>) -> Value {
-    json!({
-        "type": "ankan",
-        "actor": seat,
-        "consumed": vec_to_mjai_tile(consumed),
-    })
-}
-
-pub fn mjai_kakan(seat: Seat, consumed: &Vec<Tile>, pon_tiles: &Vec<Tile>) -> Value {
-    json!({
-        "type": "kakan",
-        "actor": seat,
-        "pai": to_mjai_tile(consumed[0]),
-        "consumed": vec_to_mjai_tile(pon_tiles),
-    })
-}
-
-pub fn mjai_dora(tile: Tile) -> Value {
-    json!({
-        "type": "dora",
-        "dora_marker": to_mjai_tile(tile),
-    })
-}
-
-pub fn mjai_hora(
-    seat: Seat,
-    target: Seat,
-    tile: Tile,
-    ura_doras: &Vec<Tile>,
-    context: &WinContext,
-    deltas: &[Point; SEAT],
-    scores: &[Score; SEAT],
-) -> Value {
-    let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
-    json!({
-        "type": "hora",
-        "actor": seat,
-        "target": target,
-        "pai": to_mjai_tile(tile),
-        "uradora_markers": ura,
-        "hora_tehais": [], // TODO
-        "yakus": [], // TODO
-        "fu": context.fu,
-        "fan": context.fan,
-        "hora_points": context.points.0,
-        "deltas": deltas,
-        "scores": scores,
-    })
-}
-
-pub fn mjai_ryukyoku(
-    draw_type: DrawType,
-    is_tenpai: &[bool; SEAT],
-    deltas: &[Point; SEAT],
-    scores: &[Score; SEAT],
-) -> Value {
-    let type_ = match draw_type {
-        DrawType::Kouhaiheikyoku => "fanpai",
-        _ => "",
-    };
-    json!({
-        "type": "ryukyoku",
-        "reason": type_, // TODO
-        "tehais": [], // TODO
-        "tenpais": is_tenpai,
-        "deltas": deltas,
-        "scores": scores,
-    })
-}
-
-pub fn mjai_end_game(scores: &[Score; SEAT]) -> Value {
-    json!({
-        "type": "end_game",
-        "scores": scores,
-    })
-}
-
+// [MjaiAction]
+// MjaiEvent内のpossible_actionの中身とクライアント側の応答
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
 pub enum MjaiAction {
+    Join {
+        name: String,
+        room: String,
+    },
     Dahai {
         actor: Seat,
         pai: String,
@@ -237,7 +336,7 @@ pub enum MjaiAction {
         actor: Seat,
         reason: String,
     },
-    None,
+    None {},
 }
 
 impl MjaiAction {
@@ -323,6 +422,7 @@ impl MjaiAction {
 
     pub fn to_action(&self, is_turn: bool) -> Action {
         match self {
+            Self::Join { .. } => panic!(),
             Self::Dahai { pai, tsumogiri, .. } => {
                 if *tsumogiri {
                     Action::nop()
@@ -344,11 +444,12 @@ impl MjaiAction {
                 }
             }
             Self::Ryukyoku { .. } => Action::kyushukyuhai(),
-            Self::None => Action::nop(),
+            Self::None {} => Action::nop(),
         }
     }
 }
 
+// [Utility]
 pub fn to_mjai_tile(t: Tile) -> String {
     if t.is_hornor() {
         assert!(WE <= t.1 && t.1 <= DR);
@@ -403,8 +504,8 @@ fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
     v2
 }
 
-fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
-    let mut mjai_hands = vec![];
+fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> [Vec<String>; SEAT] {
+    let mut mjai_hands = [vec![], vec![], vec![], vec![]];
     for (seat2, hand) in hands.iter().enumerate() {
         let mut mjai_hand = vec![];
         for &t in hand {
@@ -414,7 +515,7 @@ fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> Vec<Vec<String>> {
                 mjai_hand.push("?".to_string());
             }
         }
-        mjai_hands.push(mjai_hand);
+        mjai_hands[seat2] = mjai_hand;
     }
     mjai_hands
 }
@@ -434,8 +535,7 @@ fn test_mjai_message() {
     let msgs = [dahai, chi, pon, kakan, daiminkan, ankan, reach, hora, none];
 
     for &msg in &msgs {
-        // let d = MjaiAction::from_value(serde_json::from_str(msg).unwrap()).unwrap();
         let a: MjaiAction = serde_json::from_str(msg).unwrap();
-        println!("{}", serde_json::to_string(&a).unwrap());
+        println!("{:?}", a);
     }
 }

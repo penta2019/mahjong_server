@@ -30,6 +30,7 @@ pub enum MjaiEvent {
         kyotaku: usize,
         oya: Seat,
         tehais: [Vec<String>; SEAT],
+        scores: [Score; SEAT],
     },
     Tsumo {
         actor: Seat,
@@ -133,6 +134,7 @@ impl MjaiEvent {
         kyotaku: usize,
         doras: &Vec<Tile>,
         hands: &[Vec<Tile>; SEAT],
+        scores: &[Score; SEAT],
     ) -> Self {
         assert!(doras.len() == 1);
         let wind = ["E", "S", "W", "N"];
@@ -144,6 +146,7 @@ impl MjaiEvent {
             oya: kyoku,
             dora_marker: to_mjai_tile(doras[0]),
             tehais: create_tehais(hands, id),
+            scores: scores.clone(),
         }
     }
 

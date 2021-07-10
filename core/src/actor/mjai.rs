@@ -127,6 +127,7 @@ impl MjaiEndpoint {
             event.kyoutaku,
             &event.doras,
             &ph,
+            &stg.get_scores(),
         ));
 
         let event2 = EventDealTile {

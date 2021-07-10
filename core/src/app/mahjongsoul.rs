@@ -68,7 +68,7 @@ impl App {
                 if !connected {
                     connected = true;
                     let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
-                    s.send(msg.into()).ok();
+                    s.send(msg.to_string()).ok();
                 }
                 match r.recv() {
                     Ok(m) => m,

@@ -111,6 +111,7 @@ impl MjaiEndpoint {
             self.is_new_game = false;
         }
         data.seat = self.seat;
+        data.mode = event.mode;
         *self.data.lock().unwrap() = data;
         self.try_riichi = None;
 
@@ -312,6 +313,7 @@ struct SharedData {
     selected_action: Option<MjaiAction>,
     possible_actions: Option<Vec<MjaiAction>>,
     is_riichi: bool,
+    mode: usize, // (= EventRoundNew.mode)
 }
 
 impl SharedData {
@@ -323,6 +325,7 @@ impl SharedData {
             selected_action: None,
             possible_actions: None,
             is_riichi: false,
+            mode: 1,
         }
     }
 }
@@ -372,7 +375,7 @@ fn stream_handler(
                 // start_game 新しい試合が始まった場合,またはクライアントの再接続時に送信
                 need_start_game = false;
                 d.send_start_game = false;
-                send(&json!(MjaiEvent::start_game(d.seat)))?;
+                send(&json!(MjaiEvent::start_game(d.seat, d.mode)))?;
                 recv()?; // recv none
             }
         }

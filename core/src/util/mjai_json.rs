@@ -21,6 +21,8 @@ pub enum MjaiEvent {
     StartGame {
         id: Seat,
         names: [String; SEAT],
+        kyoku_first: usize, // 0: 4人南, 4: 4人東 (EventRoundNew.modeとは割当が異なることに注意)
+        aka_flag: bool,     // true: 赤ドラあり
     },
     StartKyoku {
         bakaze: String,
@@ -114,7 +116,12 @@ impl MjaiEvent {
         }
     }
 
-    pub fn start_game(id: Seat) -> Self {
+    pub fn start_game(id: Seat, mode: usize) -> Self {
+        let kyoku_first = match mode {
+            1 => 4, // 4人東
+            2 => 0, // 4人南
+            _ => 4, // 不明な場合は4人東にしておく
+        };
         Self::StartGame {
             id: id,
             names: [
@@ -123,6 +130,8 @@ impl MjaiEvent {
                 "Player2".to_string(),
                 "Player3".to_string(),
             ],
+            kyoku_first: kyoku_first,
+            aka_flag: true,
         }
     }
 

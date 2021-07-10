@@ -442,6 +442,7 @@ impl MahjongEngine {
             doras,
             rn.scores,
             ph,
+            1, // TODO: 4人東固定
         );
         self.handle_event(event);
     }

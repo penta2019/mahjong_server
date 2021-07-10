@@ -30,6 +30,7 @@ impl Event {
         doras: Vec<Tile>,
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
+        mode: usize,
     ) -> Self {
         Self::RoundNew(EventRoundNew {
             round,
@@ -39,6 +40,7 @@ impl Event {
             doras,
             scores,
             hands,
+            mode,
         })
     }
 
@@ -106,6 +108,7 @@ pub struct EventRoundNew {
     pub doras: Vec<Tile>,
     pub scores: [Score; SEAT],
     pub hands: [Vec<Tile>; SEAT],
+    pub mode: usize, // 1: 4人東, 2: 4人南
 }
 
 #[derive(Debug, Serialize, Deserialize)]

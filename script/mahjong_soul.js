@@ -484,8 +484,14 @@ msc.Server = class {
         let data = {
             step: action.step,
             name: action.name,
-            data: pm.decode(action.data),
+            data: JSON.parse(JSON.stringify(pm.decode(action.data))),
+            // dataをdeep-copyしないと後から追加した変数(mode)がstringifyで何故か消える
         };
+        if (action.name == "ActionNewRound") {
+            // 1: 四人東, 2: 四人南
+            data.data.mode = window.view.DesktopMgr.Inst.game_config.mode.mode;
+        }
+
         this.action_store.push(data);
         let s = this.channel_settings.mjaction;
         if (s.enable) {

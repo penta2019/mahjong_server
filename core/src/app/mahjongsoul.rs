@@ -340,6 +340,7 @@ impl Mahjongsoul {
         let kyoku = as_usize(&data["ju"]);
         let honba = as_usize(&data["ben"]);
         let kyoutaku = as_usize(&data["liqibang"]);
+        let mode = as_usize(&data["mode"]);
 
         let mut doras: Vec<Tile> = Vec::new();
         for ps in as_array(&data["doras"]) {
@@ -372,7 +373,7 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::round_new(
-            round, kyoku, honba, kyoutaku, doras, scores, hands,
+            round, kyoku, honba, kyoutaku, doras, scores, hands, mode,
         ));
     }
 

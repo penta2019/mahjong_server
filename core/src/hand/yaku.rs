@@ -12,7 +12,7 @@ pub struct YakuContext {
     parsed_hand: ParsedHand, // 鳴きを含むすべての面子
     pair_tile: Tile,         // 雀頭の牌
     win_tile: Tile,          // 上がり牌
-    is_self_drawn: bool,     // ツモ和了
+    is_tsumo: bool,          // ツモ和了
     is_open: bool,           // 鳴きの有無
     prevalent_wind: Tnum,    // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Tnum,         // 自風 (同上)
@@ -29,7 +29,7 @@ impl YakuContext {
         win_tile: Tile,
         prevalent_wind: Tnum,
         seat_wind: Tnum,
-        is_self_drawn: bool,
+        is_tsumo: bool,
         yaku_flags: YakuFlags,
     ) -> Self {
         let pair_tile = get_pair(&parsed_hand);
@@ -44,7 +44,7 @@ impl YakuContext {
             parsed_hand,
             pair_tile,
             win_tile,
-            is_self_drawn,
+            is_tsumo,
             is_open,
             prevalent_wind,
             seat_wind,
@@ -106,7 +106,7 @@ impl YakuContext {
         let mut fu = 20;
 
         // 和了り方
-        fu += if self.is_self_drawn {
+        fu += if self.is_tsumo {
             2 // ツモ
         } else if !self.is_open {
             10 // 門前ロン
@@ -295,21 +295,28 @@ macro_rules! yaku {
     };
 }
 
+// 役の名称は天鳳に準拠 https://tenhou.net/6
 static YAKU_LIST: &'static [Yaku] = &[
-    yaku!("場風", is_bakaze, 1, 1),
-    yaku!("自風", is_jikaze, 1, 1),
-    yaku!("白", is_haku, 1, 1),
-    yaku!("發", is_hatsu, 1, 1),
-    yaku!("中", is_chun, 1, 1),
-    yaku!("断么九", is_tanyaochuu, 1, 1),
+    yaku!("場風 東", is_bakaze_e, 1, 1),
+    yaku!("場風 南", is_bakaze_s, 1, 1),
+    yaku!("場風 西", is_bakaze_w, 1, 1),
+    yaku!("場風 北", is_bakaze_n, 1, 1),
+    yaku!("自風 東", is_jikaze_e, 1, 1),
+    yaku!("自風 南", is_jikaze_s, 1, 1),
+    yaku!("自風 西", is_jikaze_w, 1, 1),
+    yaku!("自風 北", is_jikaze_n, 1, 1),
+    yaku!("役牌 白", is_haku, 1, 1),
+    yaku!("役牌 發", is_hatsu, 1, 1),
+    yaku!("役牌 中", is_chun, 1, 1),
+    yaku!("断幺九", is_tanyaochuu, 1, 1),
     yaku!("平和", is_pinfu, 1, 0),
     yaku!("一盃口", is_iipeikou, 1, 0),
     yaku!("二盃口", is_ryanpeikou, 3, 0),
     yaku!("一気通貫", is_ikkitsuukan, 2, 1),
     yaku!("三色同順", is_sanshokudoujun, 2, 1),
     yaku!("三色同刻", is_sanshokudoukou, 2, 2),
-    yaku!("チャンタ", is_chanta, 2, 1),
-    yaku!("純チャン", is_junchan, 3, 2),
+    yaku!("混全帯幺九", is_chanta, 2, 1),
+    yaku!("純全帯幺九", is_junchan, 3, 2),
     yaku!("混老頭", is_honroutou, 2, 2),
     yaku!("清老頭", is_chinroutou, 13, 13),
     yaku!("対々和", is_toitoihou, 2, 2),
@@ -330,12 +337,12 @@ static YAKU_LIST: &'static [Yaku] = &[
     yaku!("純正九蓮宝燈", is_junseichuurenpoutou, 14, 0),
     // 特殊な組み合わせ
     yaku!("国士無双", is_kokushimusou, 13, 0),
-    yaku!("国士無双十三面待ち", is_kokushimusoujuusanmenmachi, 14, 0),
+    yaku!("国士無双１３面", is_kokushimusoujuusanmenmachi, 14, 0),
     yaku!("七対子", is_chiitoitsu, 2, 0),
     // 特殊条件
-    yaku!("門前自摸", is_menzentsumo, 1, 0),
-    yaku!("リーチ", is_riichi, 1, 0),
-    yaku!("ダブルリーチ", is_dabururiichi, 2, 0),
+    yaku!("門前清自摸和", is_menzentsumo, 1, 0),
+    yaku!("立直", is_riichi, 1, 0),
+    yaku!("両立直", is_dabururiichi, 2, 0),
     yaku!("一発", is_ippatsu, 1, 0),
     yaku!("海底撈月", is_haiteiraoyue, 1, 1),
     yaku!("河底撈魚", is_houteiraoyui, 1, 1),
@@ -359,13 +366,31 @@ static YAKU_LIST: &'static [Yaku] = &[
 //     国士無双, 国士無双十三面待ち
 
 // 場風
-fn is_bakaze(ctx: &YakuContext) -> bool {
-    ctx.yakuhai_check[ctx.prevalent_wind] == 1
+fn is_bakaze_e(ctx: &YakuContext) -> bool {
+    ctx.prevalent_wind == WE && ctx.yakuhai_check[WE] == 1
+}
+fn is_bakaze_s(ctx: &YakuContext) -> bool {
+    ctx.prevalent_wind == WS && ctx.yakuhai_check[WS] == 1
+}
+fn is_bakaze_w(ctx: &YakuContext) -> bool {
+    ctx.prevalent_wind == WW && ctx.yakuhai_check[WW] == 1
+}
+fn is_bakaze_n(ctx: &YakuContext) -> bool {
+    ctx.prevalent_wind == WN && ctx.yakuhai_check[WN] == 1
 }
 
 // 自風
-fn is_jikaze(ctx: &YakuContext) -> bool {
-    ctx.yakuhai_check[ctx.seat_wind] == 1
+fn is_jikaze_e(ctx: &YakuContext) -> bool {
+    ctx.seat_wind == WE && ctx.yakuhai_check[WE] == 1
+}
+fn is_jikaze_s(ctx: &YakuContext) -> bool {
+    ctx.seat_wind == WS && ctx.yakuhai_check[WS] == 1
+}
+fn is_jikaze_w(ctx: &YakuContext) -> bool {
+    ctx.seat_wind == WW && ctx.yakuhai_check[WW] == 1
+}
+fn is_jikaze_n(ctx: &YakuContext) -> bool {
+    ctx.seat_wind == WN && ctx.yakuhai_check[WN] == 1
 }
 
 // 白
@@ -621,7 +646,7 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
     let mut cnt = 0;
     for SetPair(tp, t) in &ctx.parsed_hand {
         if let Koutsu = tp {
-            if !ctx.is_self_drawn && ctx.win_tile == *t {
+            if !ctx.is_tsumo && ctx.win_tile == *t {
                 continue;
             }
             cnt += 1;
@@ -633,7 +658,7 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
 
 // 四暗刻
 fn is_suuankou(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 4 && ctx.win_tile != ctx.pair_tile && ctx.is_self_drawn
+    ctx.counts.ankou_total == 4 && ctx.win_tile != ctx.pair_tile && ctx.is_tsumo
 }
 
 // 四暗刻単騎

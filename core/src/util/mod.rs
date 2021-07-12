@@ -1,7 +1,7 @@
 pub mod common;
-pub mod event_writer;
-pub mod mjai_json;
+pub mod mjai;
 pub mod parse_block;
+pub mod tenhou;
 pub mod test;
 pub mod variant;
 pub mod ws_server;

@@ -5,11 +5,12 @@ use serde_json::{json, Value};
 use crate::actor::create_actor;
 use crate::actor::nop::Nop;
 use crate::actor::Actor;
-use crate::controller::stage_controller::StageController;
+use crate::controller::event_writer::EventWriter;
+use crate::controller::stage_controller::{StageController, StageListener};
 use crate::hand::evaluate::WinContext;
+use crate::hand::point::get_score_title;
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::event_writer::EventWriter;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
 use ActionType::*;
@@ -58,7 +59,11 @@ impl App {
 
     pub fn run(&mut self) {
         let actor = create_actor(&self.actor_name);
-        let mut game = Mahjongsoul::new(self.sleep, self.write_to_file, actor);
+        let mut listeners: Vec<Box<dyn StageListener>> = vec![];
+        if self.write_to_file {
+            listeners.push(Box::new(EventWriter::new()));
+        };
+        let mut game = Mahjongsoul::new(self.sleep, actor, listeners);
         let mut server_msc = create_ws_server(self.msc_port);
         let mut server_gui = create_ws_server(self.gui_port);
         let mut connected = false;
@@ -101,28 +106,25 @@ struct Mahjongsoul {
     seat: usize, // my seat
     events: Vec<Value>,
     random_sleep: bool,
-    writer: Option<EventWriter>,
     actor: Box<dyn Actor>,
 }
 
 impl Mahjongsoul {
-    fn new(random_sleep: bool, write_to_file: bool, actor: Box<dyn Actor>) -> Self {
+    fn new(
+        random_sleep: bool,
+        actor: Box<dyn Actor>,
+        listeners: Vec<Box<dyn StageListener>>,
+    ) -> Self {
         // actorは座席0に暫定でセットする
         // 新しい局が開始されて座席が判明した際にスワップする
-        let writer = if write_to_file {
-            Some(EventWriter::new())
-        } else {
-            None
-        };
         let nop = Box::new(Nop::new());
         let actors: [Box<dyn Actor>; SEAT] = [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
         Self {
-            ctrl: StageController::new(actors, vec![]),
+            ctrl: StageController::new(actors, listeners),
             step: 0,
             seat: NO_SEAT,
             events: vec![],
             random_sleep: random_sleep,
-            writer: writer,
             actor: actor,
         }
     }
@@ -135,9 +137,6 @@ impl Mahjongsoul {
     #[inline]
     fn handle_event(&mut self, event: Event) {
         self.ctrl.handle_event(&event);
-        if let Some(w) = &mut self.writer {
-            w.push_event(event)
-        }
     }
 
     fn apply(&mut self, msg: &Value) -> Option<Value> {
@@ -467,13 +466,17 @@ impl Mahjongsoul {
             let seat = as_usize(&win["seat"]);
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
+            let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let yakuman_times = if is_yakuman { count } else { 0 };
             let ctx = WinContext {
                 yakus: vec![], // TODO
-                n_dora: 0,     // TODO
-                n_ura_dora: 0, // TODO
-                fu: as_usize(&win["fu"]),
+                is_tsumo: as_bool(&win["zimo"]),
+                score_title: get_score_title(fu, fan, yakuman_times), // TODO
+                n_dora: 0,                                            // TODO
+                n_red_dora: 0,                                        // TODO
+                n_ura_dora: 0,                                        // TODO
+                fu: fu,
                 fan: fan,
                 yakuman_times: yakuman_times,
                 points: (

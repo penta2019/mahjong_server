@@ -1,5 +1,6 @@
-use super::*;
 use serde::{de, ser};
+
+use super::*;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)

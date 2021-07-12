@@ -73,7 +73,7 @@ fn ceil100(n: Point) -> Point {
 }
 
 // 親の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_points_leader(fu: usize, fan: usize) -> Points {
+fn get_points_leader(fu: usize, fan: usize) -> Points {
     let fu_index = calc_fu_index(fu);
     let point = if fan < 13 {
         POINT_LEADER[fan][fu_index]
@@ -84,7 +84,7 @@ pub fn get_points_leader(fu: usize, fan: usize) -> Points {
 }
 
 // 子の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_points_non_leader(fu: usize, fan: usize) -> Points {
+fn get_points_non_leader(fu: usize, fan: usize) -> Points {
     let fu_index = calc_fu_index(fu);
     let point = if fan < 13 {
         POINT_NON_LEADER[fan][fu_index]
@@ -95,13 +95,13 @@ pub fn get_points_non_leader(fu: usize, fan: usize) -> Points {
 }
 
 // 親の役満 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_points_leader_yakuman(mag: usize) -> Points {
+fn get_points_leader_yakuman(mag: usize) -> Points {
     let s = POINT_YAKUMAN_LEADER * mag as i32;
     (s, s / 3, 0)
 }
 
 // 子の役満 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-pub fn get_points_non_leader_yakuman(mag: usize) -> Points {
+fn get_points_non_leader_yakuman(mag: usize) -> Points {
     let s = POINT_YAKUMAN_NON_LEADER * mag as i32;
     (s, s / 4, s / 2)
 }
@@ -120,4 +120,32 @@ pub fn get_points(is_leader: bool, fu: usize, fan: usize, yakuman_times: usize) 
             get_points_non_leader(fu, fan)
         }
     }
+}
+
+pub fn get_score_title(fu: usize, fan: usize, yakuman_times: usize) -> String {
+    let fu_index = calc_fu_index(fu);
+    match yakuman_times {
+        0 => {
+            if fan >= 13 {
+                "数え役満"
+            } else {
+                match POINT_NON_LEADER[fan][fu_index] {
+                    8000 => "満貫",
+                    12000 => "跳満",
+                    16000 => "倍満",
+                    24000 => "三倍満",
+                    _ => "",
+                }
+            }
+        }
+        1 => "役満",
+        2 => "二倍役満",
+        3 => "三倍役満",
+        4 => "四倍役満",
+        5 => "五倍役満",
+        6 => "六倍役満",
+        7 => "七倍役満",
+        _ => panic!(),
+    }
+    .to_string()
 }

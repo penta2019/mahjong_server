@@ -38,16 +38,17 @@ impl Actor for RandomDiscard {
             return Action::nop();
         }
 
-        let h = &stage.players[seat].hand;
-        let mut n: u32 = self.rng.gen_range(0..13);
+        let pl = &stage.players[seat];
+        let mut n: usize = self.rng.gen_range(0..13);
         loop {
             for ti in 0..TYPE {
                 for ni in 1..TNUM {
-                    if h[ti][ni] > 0 {
-                        if n == 0 {
-                            return Action::discard(Tile(ti, ni));
-                        }
-                        n -= 1;
+                    let t = Tile(ti, ni);
+                    let c = pl.count_tile(t);
+                    if c > n {
+                        return Action::discard(Tile(ti, ni));
+                    } else {
+                        n -= c;
                     }
                 }
             }

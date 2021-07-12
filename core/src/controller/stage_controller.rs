@@ -9,7 +9,7 @@ use TileStateType::*;
 
 // [StageListener (Observer Pattern)]
 pub trait StageListener: Send {
-    fn notify_event(&mut self, _stg: &Stage, _act: &Event) {}
+    fn notify_event(&mut self, _stg: &Stage, _event: &Event) {}
 }
 
 impl fmt::Debug for dyn StageListener {
@@ -80,7 +80,7 @@ impl StageController {
 }
 
 // [Event]
-fn event_game_start(_stg: &mut Stage, _act: &EventGameStart) {}
+fn event_game_start(_stg: &mut Stage, _event: &EventGameStart) {}
 
 fn event_round_new(stg: &mut Stage, event: &EventRoundNew) {
     *stg = Stage::default();
@@ -108,22 +108,15 @@ fn event_round_new(stg: &mut Stage, event: &EventRoundNew) {
         pl.is_menzen = true;
 
         if pl.is_shown {
-            let mut drawn = None; // 親番14枚目
-            let last = if s == event.kyoku {
-                drawn = ph.last();
-                ph.len() - 1
-            } else {
-                ph.len()
-            };
-            for &t in &ph[..last] {
+            for &t in &ph[..13] {
                 player_inc_tile(pl, t);
             }
-
             let pl = &mut stg.players[s];
             pl.win_tiles = get_win_tiles(pl);
-            if let Some(&t) = drawn {
-                pl.drawn = Some(t);
-                player_inc_tile(pl, t);
+            if ph.len() == 14 {
+                // 親番
+                pl.drawn = Some(ph[13]);
+                player_inc_tile(pl, ph[13]);
             }
         } else {
             if s == event.kyoku {
@@ -168,7 +161,7 @@ fn event_deal_tile(stg: &mut Stage, event: &EventDealTile) {
 
 fn event_discard_tile(stg: &mut Stage, event: &EventDiscardTile) {
     let s = event.seat;
-    let mut t = event.tile;
+    let t = event.tile;
     let no_meld = stg.players.iter().all(|pl| pl.melds.is_empty());
 
     stg.turn = s;
@@ -176,9 +169,8 @@ fn event_discard_tile(stg: &mut Stage, event: &EventDiscardTile) {
     pl.is_rinshan = false;
     pl.is_furiten_other = false;
 
-    // 5の牌を捨てようとしたとき赤5の牌しか手牌にない場合は赤5に変換
-    if t.1 == 5 && pl.hand[t.0][5] == 1 && pl.hand[t.0][0] == 1 {
-        t = Tile(t.0, 0);
+    if pl.is_shown {
+        assert!(pl.count_tile(t) > 0, "{} not found in hand", t);
     }
 
     let is_drawn = if pl.is_shown {
@@ -317,7 +309,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             pl.is_rinshan = true;
             idx = 0;
             let t = event.consumed[0];
-            for m in pl.melds.iter_mut() {
+            for m in &mut pl.melds {
                 if m.tiles[0] == t || m.tiles[1] == t {
                     m.step = stg.step;
                     m.type_ = MeldType::Kakan;
@@ -377,13 +369,13 @@ fn event_round_end_win(stg: &mut Stage, event: &EventRoundEndWin) {
     }
 }
 
-fn event_round_end_draw(_stg: &mut Stage, _act: &EventRoundEndDraw) {}
+fn event_round_end_draw(_stg: &mut Stage, _event: &EventRoundEndDraw) {}
 
 fn event_round_end_no_tile(stg: &mut Stage, event: &EventRoundEndNoTile) {
     update_scores(stg, &event.points);
 }
 
-fn event_game_over(_stg: &mut Stage, _act: &EventGameOver) {}
+fn event_game_over(_stg: &mut Stage, _event: &EventGameOver) {}
 
 // [Utility]
 fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateType) {

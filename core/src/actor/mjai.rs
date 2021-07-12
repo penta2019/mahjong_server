@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 
 use super::*;
 use crate::util::common::{flush, sleep_ms, vec_remove};
-use crate::util::mjai_json::*;
+use crate::util::mjai::*;
 
 pub struct MjaiEndpointBuilder;
 
@@ -392,6 +392,10 @@ fn stream_handler(
             }
 
             let mut d = data.lock().unwrap();
+            if cursor > d.record.len() {
+                // スリープ中にrecordがリセットされている場合
+                continue;
+            }
             if d.possible_actions.is_some() && cursor + 1 == d.record.len() {
                 // possible_actionsが存在する場合,送信用のjsonオブジェクトを生成して追加
                 let a = std::mem::replace(&mut d.possible_actions, None).unwrap();

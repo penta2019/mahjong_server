@@ -61,22 +61,24 @@ GUIを使用しない場合不要
 
 オプション一覧
 ```
--s seed
-    牌山生成のシード値.指定しなかった場合は現在のunixtime(秒)を使用. 
+-s seed (デフォルト値:現在のUnixTime(秒))
+    牌山生成のシード値.
+-m mode (デフォルト値:1)
+    1: 4人東, 2: 4人南
 -w
     ファイルに牌譜を出力
--gui-port port
+-gui-port port (デフォルト値: 52001)
     GUI用のwsサーバのポート
 -d
     ステップ実行.各プレイヤーが牌をツモった後に一時停止します.  
--0 actor_name
-    座席0のActor. デフォルト値はNop.
--1 actor_name
-    座席1のActor. デフォルト値はNop.
--2 actor_name
-    座席2のActor. デフォルト値はNop.
--3 actor_name
-    座席3のActor. デフォルト値はNop.
+-0 actor_name (デフォルト値: Nop)
+    座席0のActor.
+-1 actor_name (デフォルト値: Nop)
+    座席1のActor.
+-2 actor_name (デフォルト値: Nop)
+    座席2のActor.
+-3 actor_name (デフォルト値: Nop)
+    座席3のActor.
 ```
 
 実行例  
@@ -92,20 +94,22 @@ cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 
 オプション一覧
 ```
--s seed
-    牌山生成のシード値を生成するためのマスターのシード値.指定しなかった場合は現在のunixtime(秒)を使用.
--g n_game
-    必須オプション.実行数する試合の数.このオプションを指定しない場合シングル実行になります.
--t n_thread
-    同時に実行するスレッド(試合)の数.デフォルト値は16.
--0 actor_name
-    座席0のActor. デフォルト値はNop.
--1 actor_name
-    座席1のActor. デフォルト値はNop.
--2 actor_name
-    座席2のActor. デフォルト値はNop.
--3 actor_name
-    座席3のActor. デフォルト値はNop.
+-s seed (デフォルト値:現在のUnixTime(秒))
+    牌山生成のシード値を生成するためのマスターのシード値.
+-m mode (デフォルト値:1)
+    1: 4人東, 2: 4人南
+-g n_game (必須)
+    実行数する試合の数.このオプションを指定しない場合シングル実行になります.
+-t n_thread (デフォルト値:16)
+    同時に実行するスレッド(試合)の数.
+-0 actor_name (デフォルト値: Nop)
+    座席0のActor.
+-1 actor_name (デフォルト値: Nop)
+    座席1のActor.
+-2 actor_name (デフォルト値: Nop)
+    座席2のActor.
+-3 actor_name (デフォルト値: Nop)
+    座席3のActor.
 ```
 
 実行例  
@@ -125,11 +129,11 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
     操作(ロン,ツモ,キャンセルを除く)を行う前にランダム時間スリープします.最大4秒
 -w
     局終了時にイベントデータ(MJAction)を/core/data/[unixtime].jsonに保存します.  
--msc-port port
+-msc-port port (デフォルト値:52000)
     雀魂側のスクリプトから接続するためのwsサーバのポート
--gui-port port
+-gui-port port (デフォルト値:52001)
     GUI用のwsサーバのポート
--0 actor_name
+-0 actor_name (必須)
     使用するActor(AI).
 ```
 

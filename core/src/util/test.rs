@@ -25,8 +25,8 @@ fn test_hand1() {
         froms: vec![0; 4],
     }];
     let doras = vec![Tile(TP, 9), Tile(TP, 1), Tile(TP, 2)];
-    let winnig_tile = Tile(TM, 1);
-    let is_self_drawn = false;
+    let win_tile = Tile(TM, 1);
+    let is_tsumo = false;
     let is_leader = true;
     let yaku = YakuFlags::default();
     // yaku.menzentsumo = true;
@@ -40,8 +40,8 @@ fn test_hand1() {
     //         &hand,
     //         &melds,
     //         &doras,
-    //         winnig_tile,
-    //         is_self_drawn,
+    //         win_tile,
+    //         is_tsumo,
     //         is_leader,
     //         WW,
     //         WE,
@@ -54,8 +54,8 @@ fn test_hand1() {
         &melds,
         &doras,
         &vec![],
-        winnig_tile,
-        is_self_drawn,
+        win_tile,
+        is_tsumo,
         is_leader,
         WW,
         WE,

@@ -3,13 +3,15 @@ use serde_json::json;
 
 use crate::actor::create_actor;
 use crate::actor::Actor;
+// use crate::controller::event_writer::EventWriter;
 use crate::controller::stage_controller::{StageController, StageListener};
 use crate::controller::stage_printer::StagePrinter;
+use crate::controller::tenhou_writer::EventWriter;
 use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::event_writer::EventWriter;
+use crate::util::tenhou::TenhouLog;
 use crate::util::ws_server::*;
 
 use ActionType::*;
@@ -18,12 +20,13 @@ use StageOperation::*;
 // [App]
 pub struct App {
     seed: u64,
-    names: [String; 4], // actor names
+    mode: usize,
     n_game: u32,
     n_thread: u32,
     write_to_file: bool,
     gui_port: u32,
     debug: bool,
+    names: [String; 4], // actor names
 }
 
 impl App {
@@ -31,24 +34,26 @@ impl App {
         use std::process::exit;
 
         let mut app = Self {
+            seed: 0,
+            mode: 1,
+            n_game: 0,
+            n_thread: 16,
+            write_to_file: false,
+            gui_port: super::GUI_PORT,
+            debug: false,
             names: [
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
                 "".to_string(),
             ],
-            seed: 0,
-            n_game: 0,
-            n_thread: 16,
-            write_to_file: false,
-            gui_port: super::GUI_PORT,
-            debug: false,
         };
 
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
                 "-s" => app.seed = next_value(&mut it, "-s"),
+                "-m" => app.mode = next_value(&mut it, "-m"),
                 "-g" => app.n_game = next_value(&mut it, "-g"),
                 "-t" => app.n_thread = next_value(&mut it, "-t"),
                 "-w" => app.write_to_file = true,
@@ -96,9 +101,13 @@ impl App {
             create_actor(&self.names[2]),
             create_actor(&self.names[3]),
         ];
-        let listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
-        let mut game =
-            MahjongEngine::new(self.seed, 2, 25000, self.write_to_file, actors, listeners);
+
+        let mut listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})]; // , Box::new(tenhou)];
+        if self.write_to_file {
+            // listeners.push(Box::new(EventWriter::new()));
+            listeners.push(Box::new(EventWriter::new(TenhouLog::new())));
+        }
+        let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
         let send_recv = create_ws_server(self.gui_port);
 
         loop {
@@ -146,6 +155,7 @@ impl App {
         use std::sync::mpsc;
         use std::{thread, time};
 
+        let mode = self.mode;
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
@@ -182,8 +192,7 @@ impl App {
                 let tx2 = tx.clone();
                 thread::spawn(move || {
                     let start = time::Instant::now();
-                    let mut game =
-                        MahjongEngine::new(seed, 2, 25000, false, shuffled_actors, vec![]);
+                    let mut game = MahjongEngine::new(seed, mode, 25000, shuffled_actors, vec![]);
                     loop {
                         if game.next_step() {
                             break;
@@ -266,7 +275,6 @@ struct MahjongEngine {
     n_round: usize,          // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
     initial_score: Score,    // 初期得点
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
-    writer: Option<EventWriter>,
     // ゲーム制御
     ctrl: StageController,
     next_op: StageOperation,
@@ -291,16 +299,10 @@ impl MahjongEngine {
         seed: u64,
         n_round: usize,
         initial_score: Score,
-        write_to_file: bool,
         actors: [Box<dyn Actor>; SEAT],
         listeners: Vec<Box<dyn StageListener>>,
     ) -> Self {
         let ctrl = StageController::new(actors, listeners);
-        let writer = if write_to_file {
-            Some(EventWriter::new())
-        } else {
-            None
-        };
         let rng = rand::SeedableRng::seed_from_u64(seed);
         let round_next = NextRoundInfo {
             round: 0,
@@ -309,12 +311,12 @@ impl MahjongEngine {
             kyoutaku: 0,
             scores: [initial_score; SEAT],
         };
+
         Self {
             seed: seed,
             n_round: n_round,
             initial_score: initial_score,
             rng: rng,
-            writer: writer,
             ctrl: ctrl,
             next_op: GameStart,
             melding: None,
@@ -341,9 +343,6 @@ impl MahjongEngine {
     #[inline]
     fn handle_event(&mut self, event: Event) {
         self.ctrl.handle_event(&event);
-        if let Some(w) = &mut self.writer {
-            w.push_event(event)
-        }
     }
 
     fn next_step(&mut self) -> bool {
@@ -426,14 +425,15 @@ impl MahjongEngine {
         }
         // 親の14枚目
         let t = self.draw_tile();
-
         ph[self.round_next.kyoku].push(t);
+        for s in 0..SEAT {
+            ph[s].sort();
+        }
 
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
         let rn = &self.round_next;
-
         let event = Event::round_new(
             rn.round,
             rn.kyoku,
@@ -442,7 +442,7 @@ impl MahjongEngine {
             doras,
             rn.scores,
             ph,
-            1, // TODO: 4人東固定
+            self.n_round, // TODO: 4人東固定
         );
         self.handle_event(event);
     }
@@ -605,8 +605,8 @@ impl MahjongEngine {
                 Pon | Chi => {}
                 Ankan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.handle_event(Event::deal_tile(turn, r));
                     self.handle_event(Event::dora(kd)); // 槓ドラは打牌前
+                    self.handle_event(Event::deal_tile(turn, r));
                     self.check_suukansanra_needed();
                 }
                 Minkan => {
@@ -796,7 +796,7 @@ impl MahjongEngine {
         };
 
         // 対戦終了判定
-        if stg.round == self.n_round {
+        if round == self.n_round {
             self.is_game_over = true;
         }
 

@@ -27,6 +27,17 @@ pub struct Player {
     pub is_rinshan: bool, // 槓の操作中にtrueをセット 打牌でfalseをセット
 }
 
+impl Player {
+    pub fn count_tile(&self, t: Tile) -> usize {
+        let h = &self.hand;
+        if t.1 == 5 {
+            h[t.0][t.1] - h[t.0][0]
+        } else {
+            h[t.0][t.1]
+        }
+    }
+}
+
 impl fmt::Display for Player {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut hand = vec![];

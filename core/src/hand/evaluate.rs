@@ -8,11 +8,14 @@ use crate::model::*;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct WinContext {
     pub yakus: Vec<(String, usize)>, // 役一覧(ドラは含まない), Vec<(name, fan)>
-    pub n_dora: usize,               // ドラの数(裏ドラは含まない)
+    pub is_tsumo: bool,              // true: ツモ, false: ロン
+    pub score_title: String,         // 倍満, 跳満, ...
+    pub n_dora: usize,               // 通常のドラの数
+    pub n_red_dora: usize,           // 赤ドラの数
     pub n_ura_dora: usize,           // 裏ドラの数
     pub fu: usize,                   // 符数
     pub fan: usize,                  // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
-    pub yakuman_times: usize,        // 役満かどうか
+    pub yakuman_times: usize,        // 役満倍率 (0: 通常役, 1: 役満, 2: 二倍役満, ...)
     pub points: Points,              // 支払い得点
 }
 
@@ -147,7 +150,7 @@ pub fn evaluate_hand(
     doras: &Vec<Tile>,     // ドラ表示牌 (注:ドラそのものではない)
     ura_doras: &Vec<Tile>, // 裏ドラ表示牌 リーチしていない場合は空
     win_tile: Tile,        // 上がり牌
-    is_self_drawn: bool,   // ツモ和了
+    is_tsumo: bool,        // ツモ和了
     is_leader: bool,       // 親番
     prevalent_wind: Tnum,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Tnum,       // 自風 (同上)
@@ -165,7 +168,7 @@ pub fn evaluate_hand(
             win_tile,
             prevalent_wind,
             seat_wind,
-            is_self_drawn,
+            is_tsumo,
             yaku_flags.clone(),
         );
         wins.push(ctx);
@@ -179,7 +182,7 @@ pub fn evaluate_hand(
             win_tile,
             prevalent_wind,
             seat_wind,
-            is_self_drawn,
+            is_tsumo,
             yaku_flags.clone(),
         );
         wins.push(ctx);
@@ -193,7 +196,7 @@ pub fn evaluate_hand(
             win_tile,
             prevalent_wind,
             seat_wind,
-            is_self_drawn,
+            is_tsumo,
             yaku_flags.clone(),
         );
         wins.push(ctx);
@@ -203,17 +206,15 @@ pub fn evaluate_hand(
         return None; // 和了形以外
     }
 
-    // 赤5の勘定
-    let mut n_red = hand[0][0] + hand[1][0] + hand[2][0];
+    let n_dora = count_dora(hand, melds, doras);
+    let mut n_red_dora = hand[0][0] + hand[1][0] + hand[2][0];
     for m in melds {
         for t in &m.tiles {
             if t.1 == 0 {
-                n_red += 1;
+                n_red_dora += 1;
             }
         }
     }
-
-    let n_dora = count_dora(hand, melds, doras) + n_red;
     let n_ura_dora = if yaku_flags.riichi || yaku_flags.dabururiichi {
         count_dora(hand, melds, ura_doras)
     } else {
@@ -225,28 +226,31 @@ pub fn evaluate_hand(
         let fu = ctx.calc_fu();
         let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
         if yakuman_times == 0 {
-            fan += n_dora + n_ura_dora;
+            fan += n_dora + n_red_dora + n_ura_dora;
         }
         let points = if yakus.is_empty() {
             (0, 0, 0) // 役無し
         } else {
             get_points(is_leader, fu, fan, yakuman_times)
         };
-
         let yakus: Vec<(String, usize)> = yakus
             .iter()
             .map(|y| {
                 let fan = if ctx.is_open() {
                     y.fan_open
                 } else {
-                    y.fan_open
+                    y.fan_close
                 };
                 (y.name.to_string(), fan)
             })
             .collect();
+        let score_title = get_score_title(fu, fan, yakuman_times);
         results.push(WinContext {
             yakus,
+            is_tsumo,
+            score_title,
             n_dora,
+            n_red_dora,
             n_ura_dora,
             fu,
             fan,

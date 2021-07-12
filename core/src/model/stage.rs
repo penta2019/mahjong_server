@@ -46,6 +46,22 @@ pub enum DrawType {
     Kouhaiheikyoku, // 荒廃平局
 }
 
+impl fmt::Display for DrawType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(
+            f,
+            "{}",
+            match self {
+                DrawType::Kyushukyuhai => "九種九牌",
+                DrawType::Suufuurenda => "四風連打",
+                DrawType::Suukansanra => "四槓散了",
+                DrawType::Suuchariichi => "四家立直",
+                DrawType::Kouhaiheikyoku => "荒廃平局",
+            }
+        )
+    }
+}
+
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
     pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
@@ -94,7 +110,7 @@ impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(
             f,
-            "round: {}, hand: {}, honba: {}, kyoutaku: {}\n\
+            "round: {}, kyoku: {}, honba: {}, kyoutaku: {}\n\
             turn: {}, left_tile_count: {}, doras: {}, last_tile: {:?}",
             self.round,
             self.kyoku,

@@ -30,7 +30,7 @@ impl TiitoitsuBot {
 
 impl Actor for TiitoitsuBot {
     fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
-        let h = &stage.players[seat].hand;
+        let pl = &stage.players[seat];
 
         if stage.turn == seat {
             // turn
@@ -40,9 +40,9 @@ impl Actor for TiitoitsuBot {
 
             let mut ones = vec![]; // 手牌に1枚のみある牌(left_count, Tile)
             for ti in 0..TYPE {
-                for ni in 1..TNUM {
+                for ni in 0..TNUM {
                     let t = Tile(ti, ni);
-                    match h[ti][ni] {
+                    match pl.count_tile(t) {
                         0 | 2 => {}
                         3 | 4 => {
                             return Action::discard(t);

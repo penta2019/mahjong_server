@@ -1,7 +1,8 @@
 use std::io::Write;
 
-use serde_json::json;
+use serde_json::{json, Value};
 
+use crate::controller::stage_controller::StageListener;
 use crate::model::*;
 use crate::util::common::*;
 
@@ -9,7 +10,7 @@ use crate::util::common::*;
 pub struct EventWriter {
     start_time: u64,
     round_index: i32,
-    record: Vec<Event>,
+    record: Vec<Value>,
 }
 
 impl EventWriter {
@@ -21,7 +22,23 @@ impl EventWriter {
         }
     }
 
-    pub fn push_event(&mut self, event: Event) {
+    fn write_to_file(&mut self) {
+        let file_name = format!(
+            "data/{}/{:02}.json",
+            self.start_time.to_string(),
+            self.round_index
+        );
+        let path = std::path::Path::new(&file_name);
+        let prefix = path.parent().unwrap();
+        std::fs::create_dir_all(prefix).unwrap();
+        let mut f = std::fs::File::create(path).unwrap();
+        let data = serde_json::to_string_pretty(&json!(self.record)).unwrap();
+        write!(f, "{}", data).unwrap();
+    }
+}
+
+impl StageListener for EventWriter {
+    fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         let mut write = false;
         match event {
             Event::GameStart(_) => {
@@ -39,25 +56,11 @@ impl EventWriter {
             _ => {}
         }
 
-        self.record.push(event);
+        self.record.push(json!(event));
         if write {
             self.write_to_file();
             self.record.clear();
             self.round_index += 1;
         }
-    }
-
-    fn write_to_file(&mut self) {
-        let file_name = format!(
-            "data/{}/{:02}.json",
-            self.start_time.to_string(),
-            self.round_index
-        );
-        let path = std::path::Path::new(&file_name);
-        let prefix = path.parent().unwrap();
-        std::fs::create_dir_all(prefix).unwrap();
-        let mut f = std::fs::File::create(path).unwrap();
-        let data = serde_json::to_string_pretty(&json!(self.record)).unwrap();
-        write!(f, "{}", data).unwrap();
     }
 }

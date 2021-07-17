@@ -56,6 +56,15 @@ pub fn get_paths(dir: &Path) -> io::Result<Vec<PathBuf>> {
     Ok(entries)
 }
 
+pub fn write_to_file(file_path: &String, data: &String) {
+    use std::io::Write;
+    let path = std::path::Path::new(file_path);
+    let prefix = path.parent().unwrap();
+    std::fs::create_dir_all(prefix).unwrap();
+    let mut f = std::fs::File::create(path).unwrap();
+    write!(f, "{}", data).unwrap();
+}
+
 pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
     v.remove(v.iter().position(|x| x == e).unwrap());
 }

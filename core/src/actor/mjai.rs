@@ -7,8 +7,8 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
+use crate::convert::mjai::*;
 use crate::util::common::{flush, sleep_ms, vec_remove};
-use crate::util::mjai::*;
 
 pub struct MjaiEndpointBuilder;
 

@@ -7,11 +7,11 @@ use crate::actor::Actor;
 use crate::controller::stage_controller::{StageController, StageListener};
 use crate::controller::stage_printer::StagePrinter;
 use crate::controller::tenhou_writer::EventWriter;
+use crate::convert::tenhou::TenhouLog;
 use crate::hand::evaluate::*;
 use crate::hand::win::*;
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::tenhou::TenhouLog;
 use crate::util::ws_server::*;
 
 use ActionType::*;

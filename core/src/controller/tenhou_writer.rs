@@ -1,9 +1,9 @@
 use std::io::Write;
 
 use crate::controller::stage_controller::StageListener;
+use crate::convert::tenhou::{TenhouLog, TenhouSerializer};
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::tenhou::{TenhouLog, TenhouSerializer};
 
 #[derive(Debug)]
 pub struct EventWriter {

@@ -1,12 +1,12 @@
-pub mod action;
-pub mod define;
-pub mod discard;
-pub mod event;
-pub mod kita;
-pub mod meld;
-pub mod player;
-pub mod stage;
-pub mod tile;
+mod action;
+mod define;
+mod discard;
+mod event;
+mod kita;
+mod meld;
+mod player;
+mod stage;
+mod tile;
 
 use std::fmt;
 

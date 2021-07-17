@@ -1,5 +1,4 @@
 use super::*;
-use crate::util::parse_block::*;
 
 pub struct TiitoitsuBotBuilder;
 
@@ -75,4 +74,23 @@ impl Actor for TiitoitsuBot {
     }
 }
 
-impl StageListener for TiitoitsuBot {}
+impl EventListener for TiitoitsuBot {}
+
+pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
+    use TileStateType::*;
+    let mut n = 0;
+    for &st in &stage.tile_states[tile.0][tile.1] {
+        match st {
+            U => {
+                n += 1;
+            }
+            H(s) => {
+                if s != seat {
+                    n += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    n
+}

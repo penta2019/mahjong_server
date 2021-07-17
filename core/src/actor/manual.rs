@@ -123,4 +123,4 @@ impl Actor for Manual {
     }
 }
 
-impl StageListener for Manual {}
+impl EventListener for Manual {}

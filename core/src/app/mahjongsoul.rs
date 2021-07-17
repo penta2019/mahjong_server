@@ -2,13 +2,9 @@ use std::time;
 
 use serde_json::{json, Value};
 
-use crate::actor::create_actor;
-use crate::actor::nop::Nop;
-use crate::actor::Actor;
-use crate::controller::event_writer::EventWriter;
-use crate::controller::stage_controller::{StageController, StageListener};
-use crate::hand::evaluate::WinContext;
-use crate::hand::point::get_score_title;
+use crate::actor::{create_actor, Actor};
+use crate::controller::*;
+use crate::hand::{get_score_title, WinContext};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
@@ -16,7 +12,7 @@ use crate::util::ws_server::{create_ws_server, SendRecv};
 use ActionType::*;
 
 // [App]
-pub struct App {
+pub struct MahjongsoulApp {
     read_only: bool,
     sleep: bool,
     write_to_file: bool,
@@ -25,7 +21,7 @@ pub struct App {
     actor_name: String,
 }
 
-impl App {
+impl MahjongsoulApp {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
@@ -59,7 +55,7 @@ impl App {
 
     pub fn run(&mut self) {
         let actor = create_actor(&self.actor_name);
-        let mut listeners: Vec<Box<dyn StageListener>> = vec![];
+        let mut listeners: Vec<Box<dyn EventListener>> = vec![];
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
         };
@@ -113,12 +109,16 @@ impl Mahjongsoul {
     fn new(
         random_sleep: bool,
         actor: Box<dyn Actor>,
-        listeners: Vec<Box<dyn StageListener>>,
+        listeners: Vec<Box<dyn EventListener>>,
     ) -> Self {
-        // actorは座席0に暫定でセットする
         // 新しい局が開始されて座席が判明した際にスワップする
-        let nop = Box::new(Nop::new());
-        let actors: [Box<dyn Actor>; SEAT] = [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
+        let nop = create_actor("Nop");
+        let actors: [Box<dyn Actor>; SEAT] = [
+            nop.clone_box(),
+            nop.clone_box(),
+            nop.clone_box(),
+            nop.clone_box(),
+        ];
         Self {
             ctrl: StageController::new(actors, listeners),
             step: 0,

@@ -21,10 +21,6 @@ pub struct Null {
 }
 
 impl Null {
-    pub fn new() -> Self {
-        Self::from_config((NullBuilder {}).get_default_config())
-    }
-
     pub fn from_config(config: Config) -> Self {
         Null { config: config }
     }
@@ -40,4 +36,4 @@ impl Actor for Null {
     }
 }
 
-impl StageListener for Null {}
+impl EventListener for Null {}

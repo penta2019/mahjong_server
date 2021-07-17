@@ -17,15 +17,15 @@ fn main() {
     match args[1].as_str() {
         "E" => {
             // Engine (bot対戦シミュレーションモード)
-            app::engine::App::new(args2).run();
+            app::EngineApp::new(args2).run();
         }
         "J" => {
             // Jantama (雀魂botモード)
-            app::mahjongsoul::App::new(args2).run();
+            app::MahjongsoulApp::new(args2).run();
         }
         "R" => {
             // Replay (牌譜リプレイモード)
-            app::replay::App::new(args2).run();
+            app::ReplayApp::new(args2).run();
         }
         m => {
             println!("[Error] Unknown mode: {}", m)

@@ -60,4 +60,4 @@ impl Actor for RandomDiscard {
     }
 }
 
-impl StageListener for RandomDiscard {}
+impl EventListener for RandomDiscard {}

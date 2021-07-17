@@ -2,22 +2,20 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
-use crate::actor::nop::Nop;
-use crate::actor::Actor;
-use crate::controller::event_printer::StageStepPrinter;
-use crate::controller::stage_controller::StageController;
+use crate::actor::{create_actor, Actor};
+use crate::controller::{StageController, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::*;
 
 #[derive(Debug)]
-pub struct App {
+pub struct ReplayApp {
     file_path: String,
     skip: String,
     gui_port: u32,
 }
 
-impl App {
+impl ReplayApp {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
@@ -49,8 +47,13 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        let nop = Box::new(Nop::new());
-        let actors: [Box<dyn Actor>; SEAT] = [nop.clone(), nop.clone(), nop.clone(), nop.clone()];
+        let nop = create_actor("Nop");
+        let actors: [Box<dyn Actor>; SEAT] = [
+            nop.clone_box(),
+            nop.clone_box(),
+            nop.clone_box(),
+            nop.clone_box(),
+        ];
         let mut ctrl = StageController::new(actors, vec![Box::new(StageStepPrinter {})]);
         let send_recv = create_ws_server(self.gui_port);
 

@@ -1,34 +1,55 @@
-pub mod bot2;
-pub mod manual;
-pub mod mjai;
-pub mod nop;
-pub mod null;
-pub mod random;
-pub mod tiitoitsu;
+mod manual;
+mod mjai;
+mod nop;
+mod null;
+mod random;
+mod tiitoitsu;
 
 use std::fmt;
 
-use crate::controller::stage_controller::StageListener;
+use crate::controller::EventListener;
 use crate::model::*;
 use crate::util::variant::*;
+
+// Actor trait
+pub trait Actor: EventListener + ActorClone + Send {
+    fn set_seat(&mut self, _: Seat) {}
+    fn select_action(&mut self, stage: &Stage, seat: Seat, operatons: &Vec<Action>) -> Action;
+    fn get_config(&self) -> &Config;
+}
+
+impl fmt::Debug for dyn Actor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let conf = self.get_config();
+        let arg_str = conf
+            .args
+            .iter()
+            .map(|a| format!("{}={}", a.name, a.value))
+            .collect::<Vec<String>>()
+            .join(",");
+        write!(f, "Actor: {}({})", conf.name, arg_str)
+    }
+}
+
+// https://stackoverflow.com/questions/30353462/how-to-clone-a-struct-storing-a-boxed-trait-object
+pub trait ActorClone {
+    fn clone_box(&self) -> Box<dyn Actor>;
+}
+
+impl<T> ActorClone for T
+where
+    T: 'static + Actor + Clone,
+{
+    fn clone_box(&self) -> Box<dyn Actor> {
+        Box::new(self.clone())
+    }
+}
 
 #[derive(Clone)]
 pub struct Config {
     name: String,
     args: Vec<Arg>,
 }
-
-// impl Config {
-//     fn set_arg(&mut self, name: &str, value: Variant) {
-//         for a in &mut self.args {
-//             if &a.name == name {
-//                 a.value = value;
-//                 return;
-//             }
-//         }
-//         panic!("name not found: {}", name);
-//     }
-// }
 
 trait ActorBuilder {
     fn get_default_config(&self) -> Config;
@@ -43,7 +64,6 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
         Box::new(manual::ManualBuilder {}),
         Box::new(mjai::MjaiEndpointBuilder {}),
         Box::new(tiitoitsu::TiitoitsuBotBuilder {}),
-        Box::new(bot2::Bot2Builder {}),
     ];
 
     let name: &str;
@@ -90,13 +110,6 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
                 }
             }
 
-            let arg_str = conf
-                .args
-                .iter()
-                .map(|a| format!("{}={}", a.name, a.value))
-                .collect::<Vec<String>>()
-                .join(",");
-            println!("Actor: {}({})", conf.name, arg_str);
             return b.create(conf);
         }
     }
@@ -112,31 +125,4 @@ fn parse_as(target: &Variant, value: &str) -> Result<Variant, String> {
         Variant::Bool(_) => Variant::Bool(value.parse::<bool>().map_err(|e| e.to_string())?),
         Variant::String(_) => Variant::String(value.parse::<String>().map_err(|e| e.to_string())?),
     })
-}
-
-// Actor trait
-pub trait Actor: StageListener + ActorClone + Send {
-    fn set_seat(&mut self, _: Seat) {}
-    fn select_action(&mut self, stage: &Stage, seat: Seat, operatons: &Vec<Action>) -> Action;
-    fn get_config(&self) -> &Config;
-}
-
-impl fmt::Debug for dyn Actor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.get_config().name)
-    }
-}
-
-// https://stackoverflow.com/questions/30353462/how-to-clone-a-struct-storing-a-boxed-trait-object
-pub trait ActorClone {
-    fn clone_box(&self) -> Box<dyn Actor>;
-}
-
-impl<T> ActorClone for T
-where
-    T: 'static + Actor + Clone,
-{
-    fn clone_box(&self) -> Box<dyn Actor> {
-        Box::new(self.clone())
-    }
 }

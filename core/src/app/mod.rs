@@ -1,6 +1,10 @@
-pub mod engine;
-pub mod mahjongsoul;
-pub mod replay;
+mod engine;
+mod mahjongsoul;
+mod replay;
 
 const MSC_PORT: u32 = 52000;
 const GUI_PORT: u32 = 52001;
+
+pub use engine::EngineApp;
+pub use mahjongsoul::MahjongsoulApp;
+pub use replay::ReplayApp;

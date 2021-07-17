@@ -1,33 +1,20 @@
-use std::fmt;
-
+use super::EventListener;
 use crate::actor::Actor;
-use crate::hand::win::*;
+use crate::hand::*;
 use crate::model::*;
 use crate::util::common::rank_by_rank_vec;
 
 use TileStateType::*;
 
-// [StageListener (Observer Pattern)]
-pub trait StageListener: Send {
-    fn notify_event(&mut self, _stg: &Stage, _event: &Event) {}
-}
-
-impl fmt::Debug for dyn StageListener {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "StageListener")
-    }
-}
-
-// [StageController]
 #[derive(Debug)]
 pub struct StageController {
     stage: Stage,
     actors: [Box<dyn Actor>; SEAT],
-    listeners: Vec<Box<dyn StageListener>>,
+    listeners: Vec<Box<dyn EventListener>>,
 }
 
 impl StageController {
-    pub fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn StageListener>>) -> Self {
+    pub fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn EventListener>>) -> Self {
         let stage = Stage::default();
         Self {
             stage,

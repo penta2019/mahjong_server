@@ -1,4 +1,4 @@
-use crate::hand::evaluate::WinContext;
+use crate::hand::WinContext;
 use crate::model::*;
 
 #[derive(Debug, Serialize, Deserialize)]

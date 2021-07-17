@@ -1,14 +1,10 @@
 use rand::prelude::*;
 use serde_json::json;
 
-use crate::actor::create_actor;
-use crate::actor::Actor;
-use crate::controller::event_printer::StagePrinter;
-use crate::controller::event_writer::TenhouEventWriter;
-use crate::controller::stage_controller::{StageController, StageListener};
+use crate::actor::{create_actor, Actor};
+use crate::controller::*;
 use crate::convert::tenhou::TenhouLog;
-use crate::hand::evaluate::*;
-use crate::hand::win::*;
+use crate::hand::*;
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::*;
@@ -17,7 +13,7 @@ use ActionType::*;
 use StageOperation::*;
 
 // [App]
-pub struct App {
+pub struct EngineApp {
     seed: u64,
     mode: usize,
     n_game: u32,
@@ -28,7 +24,7 @@ pub struct App {
     names: [String; 4], // actor names
 }
 
-impl App {
+impl EngineApp {
     pub fn new(args: Vec<String>) -> Self {
         use std::process::exit;
 
@@ -101,7 +97,7 @@ impl App {
             create_actor(&self.names[3]),
         ];
 
-        let mut listeners: Vec<Box<dyn StageListener>> = vec![Box::new(StagePrinter {})];
+        let mut listeners: Vec<Box<dyn EventListener>> = vec![Box::new(StagePrinter {})];
         if self.write_to_file {
             listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         }
@@ -148,8 +144,6 @@ impl App {
     }
 
     fn run_multiple_game(&mut self) {
-        use crate::actor::null::Null;
-
         use std::sync::mpsc;
         use std::{thread, time};
 
@@ -176,12 +170,12 @@ impl App {
                 let seed = rng.next_u64();
                 let mut shuffle_table = [0, 1, 2, 3];
                 shuffle_table.shuffle(&mut rng);
-
+                let null = create_actor("Null");
                 let mut shuffled_actors: [Box<dyn Actor>; 4] = [
-                    Box::new(Null::new()),
-                    Box::new(Null::new()),
-                    Box::new(Null::new()),
-                    Box::new(Null::new()),
+                    null.clone_box(),
+                    null.clone_box(),
+                    null.clone_box(),
+                    null.clone_box(),
                 ];
                 for s in 0..SEAT {
                     shuffled_actors[s] = actors[shuffle_table[s]].clone_box();
@@ -298,7 +292,7 @@ impl MahjongEngine {
         n_round: usize,
         initial_score: Score,
         actors: [Box<dyn Actor>; SEAT],
-        listeners: Vec<Box<dyn StageListener>>,
+        listeners: Vec<Box<dyn EventListener>>,
     ) -> Self {
         let ctrl = StageController::new(actors, listeners);
         let rng = rand::SeedableRng::seed_from_u64(seed);

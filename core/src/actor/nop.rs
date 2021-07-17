@@ -21,10 +21,6 @@ pub struct Nop {
 }
 
 impl Nop {
-    pub fn new() -> Self {
-        Self::from_config((NopBuilder {}).get_default_config())
-    }
-
     pub fn from_config(config: Config) -> Self {
         Nop { config: config }
     }
@@ -40,4 +36,4 @@ impl Actor for Nop {
     }
 }
 
-impl StageListener for Nop {}
+impl EventListener for Nop {}

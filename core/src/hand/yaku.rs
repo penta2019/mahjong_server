@@ -59,7 +59,7 @@ impl YakuContext {
         self.is_open
     }
 
-    // (役一覧, 翻数, 役満倍数)を返却. 役満ではない場合,役満倍率は0
+    // (役一覧, 飜数, 役満倍数)を返却. 役満ではない場合,役満倍率は0, 役一覧に鳴き0飜とドラは含まない
     pub fn calc_yaku(&self) -> (Vec<&'static Yaku>, usize, usize) {
         let mut yaku = vec![];
         for y in YAKU_LIST {
@@ -272,10 +272,23 @@ fn check_yakuhai(ph: &ParsedHand) -> TileRow {
 }
 
 pub struct Yaku {
-    pub name: &'static str,
-    pub func: fn(&YakuContext) -> bool,
-    pub fan_close: usize, // 鳴きなしの翻
-    pub fan_open: usize,  // 鳴きありの翻(食い下がり)
+    pub id: usize, // 雀魂のID > for(let y of cfg.fan.fan.rows_) {console.log(y.id, y.name_jp);}
+    pub name: &'static str, // 天鳳の名称 https://tenhou.net/6
+    pub func: fn(&YakuContext) -> bool, // 役判定関数
+    pub fan_close: usize, // 鳴きなしの飜
+    pub fan_open: usize, // 鳴きありの飜(食い下がり)
+}
+
+impl Yaku {
+    pub fn get_from_id(id: usize) -> Option<&'static Yaku> {
+        assert!(id != 10 && id != 11); // 自風, 場風は特定不能
+        for y in YAKU_LIST {
+            if y.id == id {
+                return Some(y);
+            }
+        }
+        None
+    }
 }
 
 impl fmt::Debug for Yaku {
@@ -285,8 +298,9 @@ impl fmt::Debug for Yaku {
 }
 
 macro_rules! yaku {
-    ($n: expr, $f: expr, $c: expr, $o: expr) => {
+    ($id: expr, $n: expr, $f: expr, $c: expr, $o: expr) => {
         Yaku {
+            id: $id,
             name: $n,
             func: $f,
             fan_close: $c,
@@ -295,61 +309,64 @@ macro_rules! yaku {
     };
 }
 
-// 役の名称は天鳳に準拠 https://tenhou.net/6
 static YAKU_LIST: &'static [Yaku] = &[
-    yaku!("場風 東", is_bakaze_e, 1, 1),
-    yaku!("場風 南", is_bakaze_s, 1, 1),
-    yaku!("場風 西", is_bakaze_w, 1, 1),
-    yaku!("場風 北", is_bakaze_n, 1, 1),
-    yaku!("自風 東", is_jikaze_e, 1, 1),
-    yaku!("自風 南", is_jikaze_s, 1, 1),
-    yaku!("自風 西", is_jikaze_w, 1, 1),
-    yaku!("自風 北", is_jikaze_n, 1, 1),
-    yaku!("役牌 白", is_haku, 1, 1),
-    yaku!("役牌 發", is_hatsu, 1, 1),
-    yaku!("役牌 中", is_chun, 1, 1),
-    yaku!("断幺九", is_tanyaochuu, 1, 1),
-    yaku!("平和", is_pinfu, 1, 0),
-    yaku!("一盃口", is_iipeikou, 1, 0),
-    yaku!("二盃口", is_ryanpeikou, 3, 0),
-    yaku!("一気通貫", is_ikkitsuukan, 2, 1),
-    yaku!("三色同順", is_sanshokudoujun, 2, 1),
-    yaku!("三色同刻", is_sanshokudoukou, 2, 2),
-    yaku!("混全帯幺九", is_chanta, 2, 1),
-    yaku!("純全帯幺九", is_junchan, 3, 2),
-    yaku!("混老頭", is_honroutou, 2, 2),
-    yaku!("清老頭", is_chinroutou, 13, 13),
-    yaku!("対々和", is_toitoihou, 2, 2),
-    yaku!("三暗刻", is_sanankou, 2, 2),
-    yaku!("四暗刻", is_suuankou, 13, 0),
-    yaku!("四暗刻単騎", is_suuankoutanki, 14, 0),
-    yaku!("三槓子", is_sankantsu, 2, 2),
-    yaku!("四槓子", is_suukantsu, 13, 13),
-    yaku!("混一色", is_honiisou, 3, 2),
-    yaku!("清一色", is_chiniisou, 6, 5),
-    yaku!("小三元", is_shousangen, 2, 2),
-    yaku!("大三元", is_daisangen, 13, 13),
-    yaku!("小四喜", is_shousuushii, 13, 13),
-    yaku!("大四喜", is_daisuushii, 14, 14),
-    yaku!("緑一色", is_ryuuiisou, 13, 13),
-    yaku!("字一色", is_tuuiisou, 13, 13),
-    yaku!("九蓮宝燈", is_chuurenpoutou, 13, 0),
-    yaku!("純正九蓮宝燈", is_junseichuurenpoutou, 14, 0),
+    yaku!(11, "場風 東", is_bakaze_e, 1, 1),
+    yaku!(11, "場風 南", is_bakaze_s, 1, 1),
+    yaku!(11, "場風 西", is_bakaze_w, 1, 1),
+    yaku!(11, "場風 北", is_bakaze_n, 1, 1),
+    yaku!(10, "自風 東", is_jikaze_e, 1, 1),
+    yaku!(10, "自風 南", is_jikaze_s, 1, 1),
+    yaku!(10, "自風 西", is_jikaze_w, 1, 1),
+    yaku!(10, "自風 北", is_jikaze_n, 1, 1),
+    yaku!(7, "役牌 白", is_haku, 1, 1),
+    yaku!(8, "役牌 發", is_hatsu, 1, 1),
+    yaku!(9, "役牌 中", is_chun, 1, 1),
+    yaku!(12, "断幺九", is_tanyaochuu, 1, 1),
+    yaku!(14, "平和", is_pinfu, 1, 0),
+    yaku!(13, "一盃口", is_iipeikou, 1, 0),
+    yaku!(28, "二盃口", is_ryanpeikou, 3, 0),
+    yaku!(16, "一気通貫", is_ikkitsuukan, 2, 1),
+    yaku!(17, "三色同順", is_sanshokudoujun, 2, 1),
+    yaku!(19, "三色同刻", is_sanshokudoukou, 2, 2),
+    yaku!(15, "混全帯幺九", is_chanta, 2, 1),
+    yaku!(26, "純全帯幺九", is_junchan, 3, 2),
+    yaku!(24, "混老頭", is_honroutou, 2, 2),
+    yaku!(41, "清老頭", is_chinroutou, 13, 13),
+    yaku!(21, "対々和", is_toitoihou, 2, 2),
+    yaku!(22, "三暗刻", is_sanankou, 2, 2),
+    yaku!(38, "四暗刻", is_suuankou, 13, 0),
+    yaku!(48, "四暗刻単騎", is_suuankoutanki, 14, 0),
+    yaku!(20, "三槓子", is_sankantsu, 2, 2),
+    yaku!(44, "四槓子", is_suukantsu, 13, 13),
+    yaku!(27, "混一色", is_honiisou, 3, 2),
+    yaku!(29, "清一色", is_chiniisou, 6, 5),
+    yaku!(23, "小三元", is_shousangen, 2, 2),
+    yaku!(37, "大三元", is_daisangen, 13, 13),
+    yaku!(43, "小四喜", is_shousuushii, 13, 13),
+    yaku!(50, "大四喜", is_daisuushii, 14, 14),
+    yaku!(40, "緑一色", is_ryuuiisou, 13, 13),
+    yaku!(39, "字一色", is_tuuiisou, 13, 13),
+    yaku!(45, "九蓮宝燈", is_chuurenpoutou, 13, 0),
+    yaku!(47, "純正九蓮宝燈", is_junseichuurenpoutou, 14, 0),
     // 特殊な組み合わせ
-    yaku!("国士無双", is_kokushimusou, 13, 0),
-    yaku!("国士無双１３面", is_kokushimusoujuusanmenmachi, 14, 0),
-    yaku!("七対子", is_chiitoitsu, 2, 0),
+    yaku!(42, "国士無双", is_kokushimusou, 13, 0),
+    yaku!(49, "国士無双１３面", is_kokushimusoujuusanmenmachi, 14, 0),
+    yaku!(1007, "七対子", is_chiitoitsu, 2, 0),
     // 特殊条件
-    yaku!("門前清自摸和", is_menzentsumo, 1, 0),
-    yaku!("立直", is_riichi, 1, 0),
-    yaku!("両立直", is_dabururiichi, 2, 0),
-    yaku!("一発", is_ippatsu, 1, 0),
-    yaku!("海底撈月", is_haiteiraoyue, 1, 1),
-    yaku!("河底撈魚", is_houteiraoyui, 1, 1),
-    yaku!("嶺上開花", is_rinshankaihou, 1, 1),
-    yaku!("槍槓", is_chankan, 1, 1),
-    yaku!("天和", is_tenhou, 1, 1),
-    yaku!("地和", is_tiihou, 1, 1),
+    yaku!(1, "門前清自摸和", is_menzentsumo, 1, 0),
+    yaku!(2, "立直", is_riichi, 1, 0),
+    yaku!(18, "両立直", is_dabururiichi, 2, 0),
+    yaku!(30, "一発", is_ippatsu, 1, 0),
+    yaku!(5, "海底摸月", is_haiteiraoyue, 1, 1),
+    yaku!(6, "河底撈魚", is_houteiraoyui, 1, 1),
+    yaku!(4, "嶺上開花", is_rinshankaihou, 1, 1),
+    yaku!(1004, "槍槓", is_chankan, 1, 1),
+    yaku!(35, "天和", is_tenhou, 1, 1),
+    yaku!(36, "地和", is_tiihou, 1, 1),
+    yaku!(31, "ドラ", skip, 0, 0),
+    yaku!(32, "赤ドラ", skip, 0, 0),
+    yaku!(33, "裏ドラ", skip, 0, 0),
+    yaku!(34, "抜きドラ", skip, 0, 0),
 ];
 
 // [役の優先順位]
@@ -871,4 +888,9 @@ fn is_chuurenpoutou2(ctx: &YakuContext) -> bool {
     }
 
     true
+}
+
+// 判定スキップ
+fn skip(_ctx: &YakuContext) -> bool {
+    false
 }

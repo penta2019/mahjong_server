@@ -213,15 +213,6 @@ impl TenhouSerializer {
                     for y in &ctx.yakus {
                         detail.push(json!(format!("{}({}飜)", y.0, y.1)));
                     }
-                    if ctx.n_dora != 0 {
-                        detail.push(json!(format!("ドラ({}飜)", ctx.n_dora)));
-                    }
-                    if ctx.n_red_dora != 0 {
-                        detail.push(json!(format!("赤ドラ({}飜)", ctx.n_red_dora)));
-                    }
-                    if ctx.n_ura_dora != 0 {
-                        detail.push(json!(format!("裏ドラ({}飜)", ctx.n_ura_dora)));
-                    }
                     k.result_detail.push(detail);
                 }
             }

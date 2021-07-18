@@ -7,14 +7,11 @@ use crate::model::*;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct WinContext {
-    pub yakus: Vec<(String, usize)>, // 役一覧(ドラは含まない), Vec<(name, fan)>
+    pub yakus: Vec<(String, usize)>, // 役一覧(ドラを含む), Vec<(name, fan)>
     pub is_tsumo: bool,              // true: ツモ, false: ロン
     pub score_title: String,         // 倍満, 跳満, ...
-    pub n_dora: usize,               // 通常のドラの数
-    pub n_red_dora: usize,           // 赤ドラの数
-    pub n_ura_dora: usize,           // 裏ドラの数
     pub fu: usize,                   // 符数
-    pub fan: usize,                  // 翻数(ドラを含む), 役満倍率(is_yakuman=trueの時)
+    pub fan: usize,                  // 飜数(ドラを含む), 役満倍率(is_yakuman=trueの時)
     pub yakuman_times: usize,        // 役満倍率 (0: 通常役, 1: 役満, 2: 二倍役満, ...)
     pub points: Points,              // 支払い得点
 }
@@ -84,17 +81,7 @@ pub fn evaluate_hand_ron(
         return None;
     }
 
-    let mut yf = YakuFlags::default();
-    yf.riichi = pl.is_riichi && !pl.is_daburii;
-    yf.dabururiichi = pl.is_daburii;
-    yf.ippatsu = pl.is_ippatsu;
     let (tp, t) = if let Some((_, tp, t)) = stage.last_tile {
-        match tp {
-            ActionType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,
-            ActionType::Kakan => yf.chankan = true,
-            ActionType::Ankan => {}
-            _ => panic!(),
-        }
         (tp, t)
     } else {
         return None;
@@ -107,6 +94,21 @@ pub fn evaluate_hand_ron(
         hand[t.0][5] += 1;
     } else {
         hand[t.0][t.1] += 1;
+    }
+
+    let mut yf = YakuFlags::default();
+    yf.riichi = pl.is_riichi && !pl.is_daburii;
+    yf.dabururiichi = pl.is_daburii;
+    yf.ippatsu = pl.is_ippatsu;
+    match tp {
+        ActionType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,
+        ActionType::Kakan => yf.chankan = true,
+        ActionType::Ankan => {
+            if parse_into_kokusimusou_win(&hand).is_empty() {
+                return None; // 暗槓のロンは国士無双のみ
+            }
+        }
+        _ => panic!(),
     }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
@@ -127,13 +129,7 @@ pub fn evaluate_hand_ron(
         stage.get_seat_wind(pl.seat),
         yf,
     ) {
-        if tp == ActionType::Ankan {
-            for y in &res.yakus {
-                if y.0 == "国士無双" || y.0 == "国士無双十三面待ち" {
-                    return Some(res);
-                }
-            }
-        } else if !res.yakus.is_empty() {
+        if !res.yakus.is_empty() {
             return Some(res);
         }
     }
@@ -156,7 +152,7 @@ fn evaluate_hand(
     seat_wind: Tnum,       // 自風 (同上)
     yaku_flags: YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
 ) -> Option<WinContext> {
-    let mut wins = vec![];
+    let mut wins = vec![]; // 和了形のリスト (無役を含む)
 
     // 和了(通常)
     let pm = parse_melds(melds);
@@ -225,15 +221,10 @@ fn evaluate_hand(
     for ctx in wins {
         let fu = ctx.calc_fu();
         let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
-        if yakuman_times == 0 {
-            fan += n_dora + n_red_dora + n_ura_dora;
+        if yakus.is_empty() {
+            continue; // 無役
         }
-        let points = if yakus.is_empty() {
-            (0, 0, 0) // 役無し
-        } else {
-            get_points(is_leader, fu, fan, yakuman_times)
-        };
-        let yakus: Vec<(String, usize)> = yakus
+        let mut yakus: Vec<(String, usize)> = yakus
             .iter()
             .map(|y| {
                 let fan = if ctx.is_open() {
@@ -244,14 +235,24 @@ fn evaluate_hand(
                 (y.name.to_string(), fan)
             })
             .collect();
+        if yakuman_times == 0 {
+            fan += n_dora + n_red_dora + n_ura_dora;
+            if n_dora != 0 {
+                yakus.push(("ドラ".to_string(), n_dora));
+            }
+            if n_red_dora != 0 {
+                yakus.push(("赤ドラ".to_string(), n_red_dora));
+            }
+            if n_ura_dora != 0 {
+                yakus.push(("裏ドラ".to_string(), n_ura_dora));
+            }
+        }
+        let points = get_points(is_leader, fu, fan, yakuman_times);
         let score_title = get_score_title(fu, fan, yakuman_times);
         results.push(WinContext {
             yakus,
             is_tsumo,
             score_title,
-            n_dora,
-            n_red_dora,
-            n_ura_dora,
             fu,
             fan,
             yakuman_times,

@@ -4,7 +4,8 @@ use serde_json::{json, Value};
 
 use crate::actor::{create_actor, Actor};
 use crate::controller::*;
-use crate::hand::{get_score_title, WinContext};
+use crate::convert::tenhou::TenhouLog;
+use crate::hand::{get_score_title, WinContext, Yaku};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
@@ -57,7 +58,8 @@ impl MahjongsoulApp {
         let actor = create_actor(&self.actor_name);
         let mut listeners: Vec<Box<dyn EventListener>> = vec![];
         if self.write_to_file {
-            listeners.push(Box::new(EventWriter::new()));
+            // listeners.push(Box::new(EventWriter::new()));
+            listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners);
         let mut server_msc = create_ws_server(self.msc_port);
@@ -469,13 +471,34 @@ impl Mahjongsoul {
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let yakuman_times = if is_yakuman { count } else { 0 };
+            let mut yakus = vec![];
+            for yaku in as_array(&win["fans"]) {
+                let id = as_usize(&yaku["id"]);
+                let val = as_usize(&yaku["val"]);
+                let stg = self.ctrl.get_stage();
+                let jp_wind = ["東", "南", "西", "北"];
+                match id {
+                    10 => {
+                        // 自風
+                        yakus.push((format!("自風 {}", jp_wind[stg.get_seat_wind(seat)]), 1));
+                    }
+                    11 => {
+                        // 場風
+                        yakus.push((format!("場風 {}", jp_wind[stg.get_prevalent_wind()]), 1));
+                    }
+                    _ => {
+                        if let Some(y) = Yaku::get_from_id(id) {
+                            yakus.push((y.name.to_string(), val));
+                        } else {
+                            println!("[Error] yaku not found: id = {}", id);
+                        }
+                    }
+                };
+            }
             let ctx = WinContext {
-                yakus: vec![], // TODO
+                yakus: yakus,
                 is_tsumo: as_bool(&win["zimo"]),
-                score_title: get_score_title(fu, fan, yakuman_times), // TODO
-                n_dora: 0,                                            // TODO
-                n_red_dora: 0,                                        // TODO
-                n_ura_dora: 0,                                        // TODO
+                score_title: get_score_title(fu, fan, yakuman_times),
                 fu: fu,
                 fan: fan,
                 yakuman_times: yakuman_times,

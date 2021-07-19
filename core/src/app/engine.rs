@@ -434,7 +434,7 @@ impl MahjongEngine {
             doras,
             rn.scores,
             ph,
-            self.n_round, // TODO: 4人東固定
+            self.n_round,
         );
         self.handle_event(event);
     }
@@ -474,44 +474,42 @@ impl MahjongEngine {
         let Action(tp, cs) = act.clone();
 
         let stg = &self.get_stage();
-        let event = match tp {
+        match tp {
             Nop => {
                 // 打牌: ツモ切り
-                Event::discard_tile(turn, stg.players[turn].drawn.unwrap(), true, false)
+                let drawn = stg.players[turn].drawn.unwrap();
+                self.handle_event(Event::discard_tile(turn, drawn, true, false));
             }
             Discard => {
                 // 打牌: ツモ切り以外
-                Event::discard_tile(turn, cs[0], false, false)
+                self.handle_event(Event::discard_tile(turn, cs[0], false, false))
             }
             Ankan => {
                 self.melding = Some(act);
-                Event::meld(turn, MeldType::Ankan, cs)
+                self.handle_event(Event::meld(turn, MeldType::Ankan, cs));
             }
             Kakan => {
                 self.melding = Some(act);
-                Event::meld(turn, MeldType::Kakan, cs)
+                self.handle_event(Event::meld(turn, MeldType::Kakan, cs));
             }
             Riichi => {
                 let t = cs[0];
                 let pl = &stg.players[turn];
                 let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
-                Event::discard_tile(turn, t, m, true)
+                self.handle_event(Event::discard_tile(turn, t, m, true));
             }
             Tsumo => {
                 self.round_result = Some(RoundResult::Tsumo);
-                return;
             }
             Kyushukyuhai => {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kyushukyuhai));
-                return;
             }
             Kita => {
                 self.melding = Some(act);
-                Event::kita(turn, false)
+                self.handle_event(Event::kita(turn, false));
             }
             _ => panic!("Action {:?} not found in {:?}", act, acts),
         };
-        self.handle_event(event);
 
         if let Some(kd) = self.kan_dora {
             self.handle_event(Event::Dora(EventDora { tile: kd }));
@@ -592,25 +590,18 @@ impl MahjongEngine {
     fn do_deal_tile(&mut self) {
         let stg = self.get_stage();
         let turn = stg.turn;
-        if let Some(m) = &self.melding {
-            match m.0 {
+        if let Some(Action(meld_type, _)) = self.melding {
+            match meld_type {
                 Pon | Chi => {}
-                Ankan => {
+                Ankan | Minkan | Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    self.handle_event(Event::dora(kd)); // 槓ドラは打牌前
-                    self.handle_event(Event::deal_tile(turn, r));
-                    self.check_suukansanra_needed();
-                }
-                Minkan => {
-                    let (r, kd) = self.draw_kan_tile();
-                    self.handle_event(Event::deal_tile(turn, r));
-                    self.kan_dora = Some(kd); // 槓ドラは打牌後
-                    self.check_suukansanra_needed();
-                }
-                Kakan => {
-                    let (r, kd) = self.draw_kan_tile();
-                    self.handle_event(Event::deal_tile(turn, r));
-                    self.kan_dora = Some(kd); // 槓ドラは打牌後
+                    if meld_type == Ankan {
+                        self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
+                        self.handle_event(Event::deal_tile(turn, r));
+                    } else {
+                        self.handle_event(Event::deal_tile(turn, r));
+                        self.kan_dora = Some(kd); // 明槓,加槓の槓ドラは打牌後
+                    }
                     self.check_suukansanra_needed();
                 }
                 Kita => {

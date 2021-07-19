@@ -95,7 +95,7 @@ impl YakuContext {
     }
 
     pub fn calc_fu(&self) -> usize {
-        if is_pinfu(&self) {
+        if self.is_tsumo && is_pinfu(&self) {
             return 20;
         }
         if is_chiitoitsu(&self) {

@@ -78,7 +78,6 @@ pub struct Stage {
     pub players: [Player; SEAT],                     // 各プレイヤー情報
     pub is_3p: bool,                                 // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileStateType; TILE]; TNUM]; TYPE],
-    pub tile_remains: [[usize; TNUM]; TYPE], // 牌の残り枚数 = 山+手牌(捨て牌,副露牌,ドラ表示牌以外)
 }
 
 impl Stage {
@@ -145,15 +144,6 @@ impl fmt::Display for Stage {
             writeln!(f, "")?;
         }
 
-        writeln!(f, "remaining tiles")?;
-        for ti in 0..TYPE {
-            writeln!(
-                f,
-                "{}: {:?}",
-                ['m', 'p', 's', 'z'][ti],
-                self.tile_remains[ti]
-            )?;
-        }
         Ok(())
     }
 }

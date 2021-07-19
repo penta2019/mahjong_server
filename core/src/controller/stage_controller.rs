@@ -78,12 +78,6 @@ fn event_round_new(stg: &mut Stage, event: &EventRoundNew) {
     stg.turn = event.kyoku;
     stg.left_tile_count = 69;
     stg.doras = event.doras.clone();
-    stg.tile_remains = [[TILE; TNUM]; TYPE];
-    let r = &mut stg.tile_remains;
-    r[TM][0] = 1;
-    r[TP][0] = 1;
-    r[TS][0] = 1;
-    r[TZ][0] = 0;
     update_scores(stg, &event.scores);
 
     // プレイヤー情報
@@ -372,20 +366,6 @@ fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateTyp
     let i = te.iter().position(|&x| x == old).unwrap();
     te[i] = new.clone();
     te.sort();
-
-    if match old {
-        U => true,
-        H(_) => true,
-        _ => false,
-    } && match new {
-        H(_) => false,
-        _ => true,
-    } {
-        stg.tile_remains[tn.0][tn.1] -= 1;
-        if tile.1 == 0 {
-            stg.tile_remains[tile.0][tile.1] -= 1;
-        }
-    }
 }
 
 fn disable_ippatsu(stg: &mut Stage) {

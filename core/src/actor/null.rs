@@ -36,4 +36,4 @@ impl Actor for Null {
     }
 }
 
-impl EventListener for Null {}
+impl Listener for Null {}

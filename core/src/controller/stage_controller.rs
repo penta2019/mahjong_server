@@ -1,5 +1,4 @@
-use super::EventListener;
-use crate::actor::Actor;
+use super::*;
 use crate::hand::*;
 use crate::model::*;
 use crate::util::common::rank_by_rank_vec;
@@ -10,11 +9,11 @@ use TileStateType::*;
 pub struct StageController {
     stage: Stage,
     actors: [Box<dyn Actor>; SEAT],
-    listeners: Vec<Box<dyn EventListener>>,
+    listeners: Vec<Box<dyn Listener>>,
 }
 
 impl StageController {
-    pub fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn EventListener>>) -> Self {
+    pub fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn Listener>>) -> Self {
         let stage = Stage::default();
         Self {
             stage,

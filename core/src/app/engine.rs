@@ -1,10 +1,11 @@
 use rand::prelude::*;
 use serde_json::json;
 
-use crate::actor::{create_actor, Actor};
+use crate::actor::create_actor;
 use crate::controller::*;
 use crate::convert::tenhou::TenhouLog;
 use crate::hand::*;
+use crate::listener::{StagePrinter, TenhouEventWriter};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::*;
@@ -97,7 +98,7 @@ impl EngineApp {
             create_actor(&self.names[3]),
         ];
 
-        let mut listeners: Vec<Box<dyn EventListener>> = vec![Box::new(StagePrinter {})];
+        let mut listeners: Vec<Box<dyn Listener>> = vec![Box::new(StagePrinter {})];
         if self.write_to_file {
             listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         }
@@ -292,7 +293,7 @@ impl MahjongEngine {
         n_round: usize,
         initial_score: Score,
         actors: [Box<dyn Actor>; SEAT],
-        listeners: Vec<Box<dyn EventListener>>,
+        listeners: Vec<Box<dyn Listener>>,
     ) -> Self {
         let ctrl = StageController::new(actors, listeners);
         let rng = rand::SeedableRng::seed_from_u64(seed);

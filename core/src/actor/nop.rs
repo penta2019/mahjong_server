@@ -36,4 +36,4 @@ impl Actor for Nop {
     }
 }
 
-impl EventListener for Nop {}
+impl Listener for Nop {}

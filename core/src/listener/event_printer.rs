@@ -1,4 +1,4 @@
-use super::EventListener;
+use crate::controller::Listener;
 use crate::model::*;
 use crate::util::common::vec_to_string;
 
@@ -17,7 +17,7 @@ impl StagePrinter {
     }
 }
 
-impl EventListener for StagePrinter {
+impl Listener for StagePrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         match event {
             Event::GameStart(_) => {}
@@ -65,7 +65,7 @@ pub struct StageDebugPrinter {}
 
 impl StageDebugPrinter {}
 
-impl EventListener for StageDebugPrinter {
+impl Listener for StageDebugPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         println!("step: {}", stg.step);
         println!("{}", serde_json::to_string(event).unwrap());
@@ -77,7 +77,7 @@ pub struct StageStepPrinter {}
 
 impl StageStepPrinter {}
 
-impl EventListener for StageStepPrinter {
+impl Listener for StageStepPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         println!("step: {}", stg.step);
         match event {

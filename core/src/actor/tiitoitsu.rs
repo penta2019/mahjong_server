@@ -74,7 +74,7 @@ impl Actor for TiitoitsuBot {
     }
 }
 
-impl EventListener for TiitoitsuBot {}
+impl Listener for TiitoitsuBot {}
 
 pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
     use TileStateType::*;

@@ -287,7 +287,7 @@ impl Actor for MjaiEndpoint {
     }
 }
 
-impl EventListener for MjaiEndpoint {
+impl Listener for MjaiEndpoint {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         match event {
             Event::GameStart(e) => self.notify_game_start(stg, e),

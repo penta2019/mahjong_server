@@ -513,7 +513,7 @@ msc.Server = class {
 };
 
 // 初期化
-window.addEventListener("load", function () {
+window.addListener("load", function () {
     setTimeout(() => {
         msc.log("MSC is enabled");
         msc.ui = new msc.UiController();

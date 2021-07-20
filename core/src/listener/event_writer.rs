@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-use super::EventListener;
+use crate::controller::Listener;
 use crate::convert::tenhou::{TenhouLog, TenhouSerializer};
 use crate::model::*;
 use crate::util::common::*;
@@ -23,7 +23,7 @@ impl EventWriter {
     }
 }
 
-impl EventListener for EventWriter {
+impl Listener for EventWriter {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         let mut write = false;
         match event {
@@ -72,7 +72,7 @@ impl TenhouEventWriter {
     }
 }
 
-impl EventListener for TenhouEventWriter {
+impl Listener for TenhouEventWriter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         let mut write = false;
         match event {

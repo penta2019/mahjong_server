@@ -292,3 +292,6 @@ c: count
 stg: stage  
 ti: Tile type index  
 ni: Tile number index  
+
+## Module構成
+![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg)

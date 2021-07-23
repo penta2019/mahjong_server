@@ -473,7 +473,7 @@ impl Mahjongsoul {
                 let id = as_usize(&yaku["id"]);
                 let val = as_usize(&yaku["val"]);
                 let stg = self.ctrl.get_stage();
-                let jp_wind = ["東", "南", "西", "北"];
+                let jp_wind = ["?", "東", "南", "西", "北"];
                 match id {
                     10 => {
                         // 自風

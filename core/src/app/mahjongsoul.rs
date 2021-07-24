@@ -4,9 +4,8 @@ use serde_json::{json, Value};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::convert::tenhou::TenhouLog;
 use crate::hand::{get_score_title, WinContext, Yaku};
-use crate::listener::TenhouEventWriter;
+use crate::listener::EventWriter;
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
@@ -59,8 +58,8 @@ impl MahjongsoulApp {
         let actor = create_actor(&self.actor_name);
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         if self.write_to_file {
-            // listeners.push(Box::new(EventWriter::new()));
-            listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
+            listeners.push(Box::new(EventWriter::new()));
+            // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners);
         let mut server_msc = create_ws_server(self.msc_port);

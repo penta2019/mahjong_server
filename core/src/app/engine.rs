@@ -3,9 +3,8 @@ use serde_json::json;
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::convert::tenhou::TenhouLog;
 use crate::hand::*;
-use crate::listener::{StagePrinter, TenhouEventWriter};
+use crate::listener::{EventWriter, StagePrinter};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::*;
@@ -100,7 +99,7 @@ impl EngineApp {
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![Box::new(StagePrinter {})];
         if self.write_to_file {
-            listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
+            listeners.push(Box::new(EventWriter::new()));
         }
         let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
         let send_recv = create_ws_server(self.gui_port);

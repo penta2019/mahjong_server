@@ -14,6 +14,7 @@ let msc = { // MSC(MahjongSoulDriver)のオブジェクトはすべてここに�
     log_configs: [],
     debug: false,
     enable_action: false,
+    is_connected: false,
 };
 
 // ロガー定義
@@ -124,11 +125,12 @@ msc.UiController = class {
     constructor() {
         this.mouse = new msc.MouseController();
         this.timer = null;
-        this.enable_action = false;
 
         setInterval(() => {
-            window.GameMgr.Inst.clientHeatBeat(); // 長時間放置による切断対策
-            this.check_hangup_warn(); // AFKツモ切り対策
+            if (msc.is_connected) {
+                window.GameMgr.Inst.clientHeatBeat(); // 長時間放置による切断対策
+                this.check_hangup_warn(); // AFKツモ切り対策
+            }
         }, 1000);
     }
 
@@ -243,7 +245,7 @@ msc.UiController = class {
     // rank: 0 => 胴の間, 1 => 銀の間, 2 => 金の間, 3 => 玉の間
     // round: 0 => 四人東, 1 => 四人南
     async check_and_start_rank_match(rank, round) {
-        if (!window.uiscript.UI_Lobby.Inst.page0.me.visible) {
+        if (!window.uiscript.UI_Lobby.Inst.page0.me.visible || !msc.is_connected) {
             return;
         }
         await msc.sleep(1000);
@@ -374,10 +376,12 @@ msc.Server = class {
     }
 
     on_open() {
+        msc.is_connected = true;
         msc.log("(Server) open:", this.endpoint);
     }
 
     on_close() {
+        msc.is_connected = false;
         msc.log("(Server) close");
         for (let k in this.channel_settings) {
             this.channel_settings[k].enable = false;
@@ -513,7 +517,7 @@ msc.Server = class {
 };
 
 // 初期化
-window.addListener("load", function () {
+window.addEventListener("load", function () {
     setTimeout(() => {
         msc.log("MSC is enabled");
         msc.ui = new msc.UiController();

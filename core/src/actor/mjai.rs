@@ -32,6 +32,7 @@ pub struct MjaiEndpoint {
     data: Arc<Mutex<SharedData>>,
     try_riichi: Option<Seat>,
     is_new_game: bool,
+    timeout_count: i32,
 }
 
 impl MjaiEndpoint {
@@ -43,6 +44,7 @@ impl MjaiEndpoint {
             data: data.clone(),
             try_riichi: None,
             is_new_game: false,
+            timeout_count: 0,
         };
 
         let addr = obj.config.args[0].value.as_string();
@@ -256,12 +258,18 @@ impl Actor for MjaiEndpoint {
             sleep_ms(100);
             let mut d = self.data.lock().unwrap();
             if d.selected_action.is_some() {
+                self.timeout_count = 0;
                 break;
             }
             c += 1;
             if c == 50 {
                 println!("[Error] possible_action timeout");
                 d.possible_actions = None;
+                self.timeout_count += 1;
+                if self.timeout_count == 5 {
+                    println!("[Error] timeout_count exceeded");
+                    std::process::exit(1);
+                }
                 return Action::nop();
             }
         }

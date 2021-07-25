@@ -36,7 +36,7 @@ impl StageController {
         match event {
             Event::GameStart(e) => {
                 for s in 0..SEAT {
-                    self.actors[s].set_seat(s);
+                    self.actors[s].init(s);
                 }
                 event_game_start(stg, e);
             }

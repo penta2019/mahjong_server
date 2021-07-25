@@ -183,7 +183,7 @@ impl Mahjongsoul {
             }
 
             // seatが確定し時点でactorを設定
-            self.actor.set_seat(self.seat);
+            self.actor.init(self.seat);
             self.ctrl.swap_actor(self.seat, &mut self.actor);
         }
 

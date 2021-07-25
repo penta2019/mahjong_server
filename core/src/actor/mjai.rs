@@ -233,7 +233,7 @@ impl MjaiEndpoint {
 }
 
 impl Actor for MjaiEndpoint {
-    fn set_seat(&mut self, seat: Seat) {
+    fn init(&mut self, seat: Seat) {
         self.seat = seat;
     }
 

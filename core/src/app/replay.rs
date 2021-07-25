@@ -1,19 +1,18 @@
 use std::path::{Path, PathBuf};
 
-use serde_json::json;
-
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::listener::StageStepPrinter;
+use crate::listener::{GuiServer, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::ws_server::*;
 
 #[derive(Debug)]
 pub struct ReplayApp {
     file_path: String,
     skip: String,
     gui_port: u32,
+    debug: bool,
+    names: [String; SEAT], // actor names
 }
 
 impl ReplayApp {
@@ -24,6 +23,13 @@ impl ReplayApp {
             file_path: String::new(),
             skip: String::new(),
             gui_port: super::GUI_PORT,
+            debug: false,
+            names: [
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+            ],
         };
 
         let mut it = args.iter();
@@ -32,6 +38,11 @@ impl ReplayApp {
                 "-f" => app.file_path = next_value(&mut it, "-f"),
                 "-s" => app.skip = next_value(&mut it, "-s"),
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
+                "-d" => app.debug = true,
+                "-0" => app.names[0] = next_value(&mut it, "-0"),
+                "-1" => app.names[1] = next_value(&mut it, "-1"),
+                "-2" => app.names[2] = next_value(&mut it, "-2"),
+                "-3" => app.names[3] = next_value(&mut it, "-3"),
                 opt => {
                     println!("Unknown option: {}", opt);
                     exit(0);
@@ -55,8 +66,10 @@ impl ReplayApp {
             nop.clone_box(),
             nop.clone_box(),
         ];
-        let mut ctrl = StageController::new(actors, vec![Box::new(StageStepPrinter {})]);
-        let send_recv = create_ws_server(self.gui_port);
+
+        let mut listeners: Vec<Box<dyn Listener>> = vec![];
+        listeners.push(Box::new(StageStepPrinter::new()));
+        listeners.push(Box::new(GuiServer::new(self.gui_port)));
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む
         let path = Path::new(&self.file_path);
@@ -89,8 +102,9 @@ impl ReplayApp {
         }
         let rkh = (skips[0], skips[1], skips[2]);
 
+        let mut game = Replay::new(actors, listeners);
         for p in paths {
-            let contents = std::fs::read_to_string(&p).unwrap_or_else(print_and_exit);
+            let contents = std::fs::read_to_string(p).unwrap_or_else(print_and_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
             if let Event::RoundNew(e) = &record[0] {
@@ -100,16 +114,29 @@ impl ReplayApp {
             }
 
             for r in &record {
-                ctrl.handle_event(&r);
-                if let Some((s, _)) = send_recv.lock().unwrap().as_ref() {
-                    let msg = json!({
-                        "type": "stage",
-                        "data": &json!(ctrl.get_stage()),
-                    });
-                    s.send(msg.to_string()).ok();
-                }
+                game.apply(r);
                 prompt();
             }
         }
+    }
+}
+
+#[derive(Debug)]
+struct Replay {
+    enabled_actors: [bool; SEAT],
+    ctrl: StageController,
+}
+
+impl Replay {
+    fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn Listener>>) -> Self {
+        Self {
+            enabled_actors: [false; SEAT], // TODO
+            ctrl: StageController::new(actors, listeners),
+        }
+    }
+
+    fn apply(&mut self, event: &Event) {
+        self.ctrl.handle_event(event);
+        // TODO
     }
 }

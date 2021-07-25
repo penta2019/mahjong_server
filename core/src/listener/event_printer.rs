@@ -6,6 +6,10 @@ use crate::util::common::vec_to_string;
 pub struct StagePrinter {}
 
 impl StagePrinter {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     fn print_score_change(&self, stage: &Stage, delta_scores: &[Score; SEAT]) {
         for s in 0..SEAT {
             let delta = delta_scores[s];
@@ -67,7 +71,11 @@ impl Listener for StagePrinter {
 // [StageStepPrinter]
 pub struct StageStepPrinter {}
 
-impl StageStepPrinter {}
+impl StageStepPrinter {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 impl Listener for StageStepPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
@@ -123,7 +131,11 @@ impl Listener for StageStepPrinter {
 // [StageDebugPrinter]
 pub struct StageDebugPrinter {}
 
-impl StageDebugPrinter {}
+impl StageDebugPrinter {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 impl Listener for StageDebugPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {

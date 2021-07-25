@@ -1,13 +1,11 @@
 use rand::prelude::*;
-use serde_json::json;
 
 use crate::actor::create_actor;
 use crate::controller::*;
 use crate::hand::*;
-use crate::listener::{EventWriter, StagePrinter};
+use crate::listener::*;
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::ws_server::*;
 
 use ActionType::*;
 use StageOperation::*;
@@ -97,48 +95,20 @@ impl EngineApp {
             create_actor(&self.names[3]),
         ];
 
-        let mut listeners: Vec<Box<dyn Listener>> = vec![Box::new(StagePrinter {})];
+        let mut listeners: Vec<Box<dyn Listener>> = vec![];
+        listeners.push(Box::new(StagePrinter::new()));
+        listeners.push(Box::new(GuiServer::new(self.gui_port)));
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
         }
+
         let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
-        let send_recv = create_ws_server(self.gui_port);
-
-        loop {
-            let stop = if let Deal = &game.next_op {
-                true
-            } else {
-                false
-            };
-
-            let end = game.next_step();
-            if let Some((s, r)) = send_recv.lock().unwrap().as_ref() {
-                // 送られてきたメッセージをすべて表示
-                loop {
-                    match r.try_recv() {
-                        Ok(msg) => {
-                            println!("[WS] message: {}", msg);
-                        }
-                        Err(_) => {
-                            break;
-                        }
-                    }
+        while game.next_step() {
+            // TODO 要検討
+            if let Deal = game.next_op {
+                if self.debug {
+                    prompt();
                 }
-
-                // stageの状態をjsonにエンコードして送信
-                let value = json!({
-                    "type": "stage",
-                    "data": game.get_stage(),
-                });
-                s.send(value.to_string()).ok();
-            }
-
-            if self.debug && stop {
-                prompt();
-            }
-
-            if end {
-                break;
             }
         }
     }

@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 use crate::actor::create_actor;
 use crate::controller::*;
 use crate::hand::{get_score_title, WinContext, Yaku};
-use crate::listener::EventWriter;
+use crate::listener::{EventWriter, GuiServer};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
@@ -56,16 +56,17 @@ impl MahjongsoulApp {
 
     pub fn run(&mut self) {
         let actor = create_actor(&self.actor_name);
+
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
+        listeners.push(Box::new(GuiServer::new(self.gui_port)));
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
             // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
+
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners);
         let mut server_msc = create_ws_server(self.msc_port);
-        let mut server_gui = create_ws_server(self.gui_port);
         let mut connected = false;
-
         loop {
             let msg = if let Some((s, r)) = server_msc.lock().unwrap().as_ref() {
                 if !connected {
@@ -90,8 +91,6 @@ impl MahjongsoulApp {
                     send_to_msc(&mut server_msc, "0", "eval", &event);
                 }
             }
-
-            send_to_gui(&mut server_gui, "stage", &json!(&game.get_stage()))
         }
     }
 }
@@ -538,16 +537,6 @@ fn send_to_msc(server: &mut SendRecv, id: &str, op: &str, data: &Value) {
         let msg = json!({
             "id": id,
             "op": op,
-            "data": data,
-        });
-        s.send(msg.to_string()).ok();
-    }
-}
-
-fn send_to_gui(server: &mut SendRecv, type_: &str, data: &Value) {
-    if let Some((s, _)) = server.lock().unwrap().as_ref() {
-        let msg = json!({
-            "type": type_,
             "data": data,
         });
         s.send(msg.to_string()).ok();

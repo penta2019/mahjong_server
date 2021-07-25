@@ -351,7 +351,7 @@ static YAKU_LIST: &'static [Yaku] = &[
     // 特殊な組み合わせ
     yaku!(42, "国士無双", is_kokushimusou, 13, 0),
     yaku!(49, "国士無双１３面", is_kokushimusoujuusanmenmachi, 14, 0),
-    yaku!(1007, "七対子", is_chiitoitsu, 2, 0),
+    yaku!(25, "七対子", is_chiitoitsu, 2, 0),
     // 特殊条件
     yaku!(1, "門前清自摸和", is_menzentsumo, 1, 0),
     yaku!(2, "立直", is_riichi, 1, 0),
@@ -360,7 +360,7 @@ static YAKU_LIST: &'static [Yaku] = &[
     yaku!(5, "海底摸月", is_haiteiraoyue, 1, 1),
     yaku!(6, "河底撈魚", is_houteiraoyui, 1, 1),
     yaku!(4, "嶺上開花", is_rinshankaihou, 1, 1),
-    yaku!(1004, "槍槓", is_chankan, 1, 1),
+    yaku!(3, "槍槓", is_chankan, 1, 1),
     yaku!(35, "天和", is_tenhou, 1, 1),
     yaku!(36, "地和", is_tiihou, 1, 1),
     yaku!(31, "ドラ", skip, 0, 0),

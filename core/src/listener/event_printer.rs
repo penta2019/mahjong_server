@@ -20,9 +20,11 @@ impl StagePrinter {
 impl Listener for StagePrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         match event {
-            Event::GameStart(_) => {}
+            Event::GameStart(_) => {
+                println!("[GameStart]");
+            }
             Event::RoundNew(_) => {
-                println!("[ROUNDNEW]");
+                println!("[RoundNew]");
                 println!("{}", stg);
             }
             Event::DealTile(_) => {}
@@ -31,7 +33,7 @@ impl Listener for StagePrinter {
             Event::Kita(_) => {}
             Event::Dora(_) => {}
             Event::RoundEndWin(e) => {
-                println!("[ROUNDEND]");
+                println!("[RoundEndWin]");
                 println!("ura_dora: {}", vec_to_string(&e.ura_doras));
                 println!("{:?}", e.contexts);
                 let mut deltas = [0; SEAT];
@@ -45,30 +47,20 @@ impl Listener for StagePrinter {
                 println!("{}", stg);
             }
             Event::RoundEndDraw(e) => {
-                println!("[ROUNDEND DRAW]");
+                println!("[RoundEndDraw]");
                 println!("{:?}", e.draw_type);
                 println!("{}", stg);
             }
             Event::RoundEndNoTile(e) => {
-                println!("[ROUNDEND NOTILE]");
+                println!("[RoundEndNoTile]");
                 println!("is_tenpai: {:?}", &e.tenpais);
                 self.print_score_change(&stg, &e.points);
                 println!("{}", stg);
             }
-            Event::GameOver(_) => {}
+            Event::GameOver(_) => {
+                println!("[GameOver]");
+            }
         }
-    }
-}
-
-// [StageDebugPrinter]
-pub struct StageDebugPrinter {}
-
-impl StageDebugPrinter {}
-
-impl Listener for StageDebugPrinter {
-    fn notify_event(&mut self, stg: &Stage, event: &Event) {
-        println!("step: {}", stg.step);
-        println!("{}", serde_json::to_string(event).unwrap());
     }
 }
 
@@ -85,7 +77,7 @@ impl Listener for StageStepPrinter {
                 println!("[GameStart]");
             }
             Event::RoundNew(_) => {
-                println!("[ROUNDNEW]");
+                println!("[RoundNew]");
                 println!("{}", stg);
             }
             Event::DealTile(e) => {
@@ -125,5 +117,17 @@ impl Listener for StageStepPrinter {
                 println!("{}", stg);
             }
         }
+    }
+}
+
+// [StageDebugPrinter]
+pub struct StageDebugPrinter {}
+
+impl StageDebugPrinter {}
+
+impl Listener for StageDebugPrinter {
+    fn notify_event(&mut self, stg: &Stage, event: &Event) {
+        println!("step: {}", stg.step);
+        println!("{}", serde_json::to_string(event).unwrap());
     }
 }

@@ -139,7 +139,6 @@ ActionLiqi              // 立直
 ActionLiuJu             // 流局
 ActionNewRound          // 局開始
 ActionNoTile            // 流局
-ActionOperation         // 'data'内に'operation'として含まれる 'operation'チャンネルでも配信
 ```
 
 ### タイプ定義 (window.mjcoreから抜粋)

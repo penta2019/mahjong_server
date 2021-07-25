@@ -21,7 +21,7 @@ pub struct EngineApp {
     write_to_file: bool,
     gui_port: u32,
     debug: bool,
-    names: [String; 4], // actor names
+    names: [String; SEAT], // actor names
 }
 
 impl EngineApp {
@@ -151,7 +151,7 @@ impl EngineApp {
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
-        let actors: [Box<dyn Actor>; 4] = [
+        let actors: [Box<dyn Actor>; SEAT] = [
             create_actor(&self.names[0]),
             create_actor(&self.names[1]),
             create_actor(&self.names[2]),
@@ -171,7 +171,7 @@ impl EngineApp {
                 let mut shuffle_table = [0, 1, 2, 3];
                 shuffle_table.shuffle(&mut rng);
                 let null = create_actor("Null");
-                let mut shuffled_actors: [Box<dyn Actor>; 4] = [
+                let mut shuffled_actors: [Box<dyn Actor>; SEAT] = [
                     null.clone_box(),
                     null.clone_box(),
                     null.clone_box(),

@@ -135,7 +135,7 @@ impl TenhouSerializer {
             Event::Meld(e) => match e.meld_type {
                 MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
                     let (seat, _, d) = stg.last_tile.unwrap();
-                    let pos = 3 - (seat + 4 - e.seat) % 4;
+                    let pos = 3 - (seat + SEAT - e.seat) % SEAT;
                     let marker = match e.meld_type {
                         MeldType::Chi => "c",
                         MeldType::Pon => "p",

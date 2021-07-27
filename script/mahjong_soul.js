@@ -473,8 +473,6 @@ msc.Server = class {
     }
 
     on_mjaction(action) {
-        msc.log_debug("(Server) mjaction:", action);
-
         if (this.retry_action) {
             clearTimeout(this.retry_action);
             this.retry_action = null;
@@ -496,6 +494,7 @@ msc.Server = class {
             data.data.mode = window.view.DesktopMgr.Inst.game_config.mode.mode;
         }
 
+        msc.log_debug("(Server) mjaction:", data);
         this.action_store.push(data);
         let s = this.channel_settings.mjaction;
         if (s.enable) {

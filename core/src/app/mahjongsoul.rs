@@ -86,9 +86,9 @@ impl MahjongsoulApp {
                 continue;
             };
 
-            if let Some(event) = game.apply(&serde_json::from_str(&msg).unwrap()) {
+            if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
                 if !self.read_only {
-                    send_to_msc(&mut server_msc, "0", "eval", &event);
+                    send_to_msc(&mut server_msc, "0", "eval", &act);
                 }
             }
         }
@@ -233,7 +233,7 @@ impl Mahjongsoul {
         let seat = as_usize(&data["seat"]);
 
         // 可能なactionのパースと選択
-        let (acts, idxs) = json_parse_action(data);
+        let (acts, idxs) = json_parse_possible_action(data, self.get_stage());
         let act = self.ctrl.select_action(seat, &acts);
         println!("possible: {:?}", acts);
         println!("selected: {:?}", act);
@@ -470,7 +470,7 @@ impl Mahjongsoul {
             for yaku in as_array(&win["fans"]) {
                 let id = as_usize(&yaku["id"]);
                 let val = as_usize(&yaku["val"]);
-                let stg = self.ctrl.get_stage();
+                let stg = self.get_stage();
                 let jp_wind = ["?", "東", "南", "西", "北"];
                 match id {
                     10 => {
@@ -607,7 +607,7 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
 }
 
 // Actionと元々のデータの各Action内のIndexを返す
-fn json_parse_action(v: &Value) -> (Vec<Action>, Vec<Index>) {
+fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
     let mut acts = vec![Action::nop()]; // Nop: ツモ切り or スキップ
     let mut idxs = vec![0];
     let mut push = |act: Action, idx: usize| {
@@ -654,8 +654,13 @@ fn json_parse_action(v: &Value) -> (Vec<Action>, Vec<Index>) {
             }
             6 => {
                 // 加槓
+                // 赤5を含む場合、ponした牌の組み合わせに関係なく combs = ["0p|5p|5p|5p"] となる
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
-                    push(Action::kakan(comb[0]), idx);
+                    let mut t = comb[3];
+                    if t.is_suit() && t.1 == 5 && stg.players[stg.turn].hand[t.0][0] > 0 {
+                        t = Tile(t.0, 0); // 手牌に赤5があれば通常5を赤5に変換
+                    }
+                    push(Action::kakan(t), idx);
                 }
             }
             7 => {

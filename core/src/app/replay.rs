@@ -60,12 +60,20 @@ impl ReplayApp {
 
     pub fn run(&mut self) {
         let nop = create_actor("Nop");
-        let actors: [Box<dyn Actor>; SEAT] = [
+        let mut actors: [Box<dyn Actor>; SEAT] = [
             nop.clone_box(),
             nop.clone_box(),
             nop.clone_box(),
             nop.clone_box(),
         ];
+        let mut enabled_actors = [false; SEAT];
+        for i in 0..SEAT {
+            let n = &self.names[i];
+            if n != "" {
+                actors[i] = create_actor(n);
+                enabled_actors[i] = true;
+            }
+        }
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StageStepPrinter::new()));
@@ -102,7 +110,7 @@ impl ReplayApp {
         }
         let rkh = (skips[0], skips[1], skips[2]);
 
-        let mut game = Replay::new(actors, listeners);
+        let mut game = Replay::new(actors, enabled_actors, listeners);
         for p in paths {
             let contents = std::fs::read_to_string(p).unwrap_or_else(print_and_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
@@ -128,15 +136,31 @@ struct Replay {
 }
 
 impl Replay {
-    fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn Listener>>) -> Self {
+    fn new(
+        actors: [Box<dyn Actor>; SEAT],
+        enabled_actors: [bool; SEAT],
+        listeners: Vec<Box<dyn Listener>>,
+    ) -> Self {
         Self {
-            enabled_actors: [false; SEAT], // TODO
+            enabled_actors: enabled_actors,
             ctrl: StageController::new(actors, listeners),
         }
     }
 
     fn apply(&mut self, event: &Event) {
         self.ctrl.handle_event(event);
-        // TODO
+        match event {
+            Event::GameStart(_) => {}
+            Event::RoundNew(_) => {}
+            Event::DealTile(_) => {}
+            Event::DiscardTile(_) => {}
+            Event::Meld(_) => {}
+            Event::Kita(_) => {}
+            Event::Dora(_) => {}
+            Event::RoundEndWin(_) => {}
+            Event::RoundEndDraw(_) => {}
+            Event::RoundEndNoTile(_) => {}
+            Event::GameOver(_) => {}
+        }
     }
 }

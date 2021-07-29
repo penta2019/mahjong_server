@@ -8,7 +8,6 @@ use crate::model::*;
 use crate::util::common::*;
 
 use ActionType::*;
-use StageOperation::*;
 
 // [App]
 pub struct EngineApp {
@@ -101,16 +100,12 @@ impl EngineApp {
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
         }
+        if self.debug {
+            listeners.push(Box::new(Prompt::new()));
+        }
 
         let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
-        while game.next_step() {
-            // TODO 要検討
-            if let Deal = game.next_op {
-                if self.debug {
-                    prompt();
-                }
-            }
-        }
+        game.run();
     }
 
     fn run_multiple_game(&mut self) {
@@ -155,12 +150,7 @@ impl EngineApp {
                 thread::spawn(move || {
                     let start = time::Instant::now();
                     let mut game = MahjongEngine::new(seed, mode, 25000, shuffled_actors, vec![]);
-                    loop {
-                        if game.next_step() {
-                            break;
-                        }
-                    }
-
+                    game.run();
                     tx2.send((shuffle_table, game, start.elapsed())).unwrap();
                 });
             }
@@ -205,17 +195,6 @@ impl EngineApp {
 
 // [Engine]
 #[derive(Debug)]
-enum StageOperation {
-    GameStart, // 対戦開始
-    New,       // 局開始 loop {
-    Turn,      //   ツモ番のプレイヤーの操作 (打牌, ツモなど)
-    Call,      //   ツモ番以外のプレイヤーの操作 (鳴き, ロンなど)
-    Deal,      //   ツモ(リンシャン牌を含む)
-    End,       // } 局終了
-    GameOver,  // 対戦終了
-}
-
-#[derive(Debug)]
 enum RoundResult {
     Tsumo,          // ツモ番のプレイヤーの和了
     Ron(Vec<Seat>), // ロン 和了ったプレイヤーの配列 (ロン|ダブロン|トリロン)
@@ -239,7 +218,6 @@ struct MahjongEngine {
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
     // ゲーム制御
     ctrl: StageController,
-    next_op: StageOperation,
     melding: Option<Action>, // 鳴き処理用
     kan_dora: Option<Tile>,  // 加槓・明槓の打牌後の槓ドラ更新用
     wall_count: usize,       // 牌山からツモを行った回数
@@ -280,7 +258,6 @@ impl MahjongEngine {
             initial_score: initial_score,
             rng: rng,
             ctrl: ctrl,
-            next_op: GameStart,
             melding: None,
             round_result: None,
             round_next: round_next,
@@ -307,45 +284,27 @@ impl MahjongEngine {
         self.ctrl.handle_event(&event);
     }
 
-    fn next_step(&mut self) -> bool {
-        if let Some(_) = self.round_result {
-            self.next_op = End;
-        }
-        if self.is_game_over {
-            self.next_op = GameOver;
-        }
-
-        match self.next_op {
-            GameStart => {
-                self.do_game_start();
-                self.next_op = New;
-            }
-            New => {
-                self.do_round_new();
-                self.next_op = Turn;
-            }
-            Turn => {
+    fn run(&mut self) {
+        self.do_game_start();
+        while !self.is_game_over {
+            self.do_round_new();
+            loop {
                 self.do_turn_operation();
-                self.next_op = Call;
-            }
-            Call => {
+                if let Some(_) = self.round_result {
+                    break;
+                }
                 self.do_call_operation();
-                self.next_op = Deal;
-            }
-            Deal => {
+                if let Some(_) = self.round_result {
+                    break;
+                }
                 self.do_deal_tile();
-                self.next_op = Turn;
+                if let Some(_) = self.round_result {
+                    break;
+                }
             }
-            End => {
-                self.do_round_end();
-                self.next_op = New;
-            }
-            GameOver => {
-                self.do_game_result();
-                return true;
-            }
+            self.do_round_end();
         }
-        false
+        self.do_game_result();
     }
 
     fn do_game_start(&mut self) {

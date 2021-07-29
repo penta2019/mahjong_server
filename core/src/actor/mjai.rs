@@ -283,19 +283,37 @@ impl Actor for MjaiEndpoint {
         }
 
         let d = &mut self.data.lock().unwrap();
-        let a = std::mem::replace(&mut d.selected_action, None).unwrap();
-        d.selected_action = None;
+        let mjai_act = std::mem::replace(&mut d.selected_action, None).unwrap();
 
         if d.is_riichi {
             d.is_riichi = false;
-            if let MjaiAction::Dahai { pai, .. } = a {
+            if let MjaiAction::Dahai { pai, .. } = mjai_act {
                 return Action::riichi(from_mjai_tile(&pai));
             } else {
                 panic!();
             }
         }
 
-        a.to_action(seat == stage.turn)
+        let act = mjai_act.to_action(seat == stage.turn);
+        // actがacts内に存在する有効な操作であるかをチェック
+        match act.0 {
+            ActionType::Discard => {
+                if self.seat != stage.turn {
+                    println!("[Error] Invalid discard action");
+                    return Action::nop();
+                }
+            }
+            _ => {
+                if !acts.contains(&act) {
+                    println!(
+                        "[Error] selected_action={:?} is not contained in possible_actions={:?}",
+                        act, acts
+                    );
+                    return Action::nop();
+                }
+            }
+        }
+        act
     }
 
     fn get_config(&self) -> &Config {

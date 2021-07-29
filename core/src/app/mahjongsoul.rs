@@ -56,6 +56,7 @@ impl MahjongsoulApp {
 
     pub fn run(&mut self) {
         let actor = create_actor(&self.actor_name);
+        println!("Actor: {:?}", actor);
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(GuiServer::new(self.gui_port)));

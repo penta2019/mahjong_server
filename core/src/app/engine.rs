@@ -74,11 +74,21 @@ impl EngineApp {
     }
 
     pub fn run(&mut self) {
+        let actors = [
+            create_actor(&self.names[0]),
+            create_actor(&self.names[1]),
+            create_actor(&self.names[2]),
+            create_actor(&self.names[3]),
+        ];
+        for s in 0..SEAT {
+            println!("Actor{}: {:?}", s, actors[s]);
+        }
+
         let start = std::time::Instant::now();
         if self.n_game == 0 {
-            self.run_single_game();
+            self.run_single_game(actors);
         } else {
-            self.run_multiple_game();
+            self.run_multiple_game(actors);
         }
         println!(
             "total elapsed time: {:8.3}sec",
@@ -86,14 +96,7 @@ impl EngineApp {
         );
     }
 
-    fn run_single_game(&mut self) {
-        let actors = [
-            create_actor(&self.names[0]),
-            create_actor(&self.names[1]),
-            create_actor(&self.names[2]),
-            create_actor(&self.names[3]),
-        ];
-
+    fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StagePrinter::new()));
         listeners.push(Box::new(GuiServer::new(self.gui_port)));
@@ -108,7 +111,7 @@ impl EngineApp {
         game.run();
     }
 
-    fn run_multiple_game(&mut self) {
+    fn run_multiple_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         use std::sync::mpsc;
         use std::{thread, time};
 
@@ -116,13 +119,6 @@ impl EngineApp {
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
-        let actors: [Box<dyn Actor>; SEAT] = [
-            create_actor(&self.names[0]),
-            create_actor(&self.names[1]),
-            create_actor(&self.names[2]),
-            create_actor(&self.names[3]),
-        ];
-
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
         let mut total_score_delta = [0; SEAT];

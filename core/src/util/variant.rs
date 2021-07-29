@@ -34,9 +34,9 @@ impl Variant {
     }
 
     #[allow(dead_code)]
-    pub fn as_string(&self) -> &str {
+    pub fn as_string(&self) -> String {
         if let Self::String(v) = self {
-            return v.as_str();
+            return v.clone();
         }
         panic!();
     }

@@ -26,7 +26,7 @@ impl fmt::Debug for dyn Actor {
             .map(|a| format!("{}={}", a.name, a.value))
             .collect::<Vec<String>>()
             .join(",");
-        write!(f, "Actor: {}({})", conf.name, arg_str)
+        write!(f, "{}({})", conf.name, arg_str)
     }
 }
 

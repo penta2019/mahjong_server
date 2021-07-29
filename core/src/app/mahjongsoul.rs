@@ -655,7 +655,7 @@ fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index
             }
             6 => {
                 // 加槓
-                // 赤5を含む場合、ponした牌の組み合わせに関係なく combs = ["0p|5p|5p|5p"] となる
+                // 赤5を含む場合,ponした牌の組み合わせに関係なく combs = ["0p|5p|5p|5p"] となる
                 for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
                     let mut t = comb[3];
                     if t.is_suit() && t.1 == 5 && stg.players[stg.turn].hand[t.0][0] > 0 {

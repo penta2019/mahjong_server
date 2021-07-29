@@ -155,6 +155,12 @@ cargo run J -r -0 MjaiEndpoint    # 本体側
 akochan mjai_client 11601         # akochan側
 ```
 
+* ポート(12345)とタイムアウト(30秒)を設定したい場合
+```
+cargo run J -r -0 'MjaiEndpoint(127.0.0.1:12345,30)'    # 本体側
+akochan mjai_client 12345                               # akochan側
+```
+
 ゲーム側から本体への接続  
 ブラウザにtampermonkeyなどのユーザースクリプト実行プラグインをインストールして/script/mahjong_soul.jsの中身を貼り付けます.  
 tampermonkeyの場合,行頭のコメントを自動で読み取って設定を反映します.  
@@ -182,9 +188,9 @@ E, J モードの-wオプションでファイルに書き出した牌譜(json)�
 ```
 -f
     再生する牌譜のファイルパス
-    ディレクトリを指定した場合、そのディレクトリ内に存在するすべてのjsonファイルを順番に読み込みます.
+    ディレクトリを指定した場合,そのディレクトリ内に存在するすべてのjsonファイルを順番に読み込みます.
 -s round[,kyoku[,honba]]
-    -fでディレクトリを指定した際に、-sで指定した局までスキップします.
+    -fでディレクトリを指定した際に,-sで指定した局までスキップします.
     例) -s 0,1,3 東2局3本場までスキップ
 -gui-port port
     GUI用のwsサーバのポート
@@ -201,20 +207,27 @@ npm run serve
 
 ### Actor
 Actorとはゲームの操作を行う主体(Bot)のことです.  
-現在実用的なAIは実装できていませんが,Mjaiプロトコルに対応した外部AIを使用することが出来ます.
-ソースコードは /core/src/actor/instanceの下に配置されています.
-* Manual (ManualActor)  
-手動により操作します.デバッグ用.
-* RandomDiscard (random.rs)  
+オプションを指定可能なActorの場合, Actor(arg1,arg2,...)のように順番に引数で指定します.  
+後側の引数は省略可能ですべての引数を省略する場合は()は不要です. 省略した引数はデフォルト値が使用されます.
+
+現在実用的なAIは実装できていませんが,Mjaiプロトコルに対応した外部AIを使用することが出来ます.  
+ソースコードは /core/src/actor の下に配置されています.
+
+* Manual  
+手動により操作します. 主にデバッグ用. 操作方法は後述.
+
+* RandomDiscard  
 手牌からランダムに牌を捨てます.
 鳴き等の操作は一切行ないません.
-* TiitoitsuBot (tiitoitsu.rs)  
-リーチなしの七対子しかしないBot.テスト用.
-* MjaiEndpoint (mjai.rs)  
+
+* TiitoitsuBot  
+リーチなしの七対子しかしないBot. テスト用.
+
+* MjaiEndpoint(addr=127.0.0.1:11601, timeout=10)  
 [mjai](https://github.com/gimite/mjai)プロトコルに対応した外部AIから接続して操作するためのエンドポイント.  
 [akochan](https://github.com/critter-mj/akochan)で動作確認済み.
-現在, portは11601で固定.
-* Nop (nop.rs)  
+
+* Nop  
 つねにNopを返すActor. (= 自分のツモ番ではツモ切り, 鳴き操作等一切なし)
 
 ### Manual Actorの操作方法

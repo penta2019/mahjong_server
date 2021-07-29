@@ -61,7 +61,7 @@ impl StageController {
     }
 
     pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>) -> Action {
-        self.actors[seat].select_action(&self.stage, seat, &acts)
+        self.actors[seat].select_action(&self.stage, &acts)
     }
 }
 

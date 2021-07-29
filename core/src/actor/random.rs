@@ -21,6 +21,7 @@ impl ActorBuilder for RandomDiscardBuilder {
 pub struct RandomDiscard {
     config: Config,
     rng: rand::rngs::StdRng,
+    seat: Seat,
 }
 
 impl RandomDiscard {
@@ -28,17 +29,22 @@ impl RandomDiscard {
         RandomDiscard {
             config: config,
             rng: rand::SeedableRng::seed_from_u64(0),
+            seat: NO_SEAT,
         }
     }
 }
 
 impl Actor for RandomDiscard {
-    fn select_action(&mut self, stage: &Stage, seat: Seat, _acts: &Vec<Action>) -> Action {
-        if stage.turn != seat {
+    fn init(&mut self, seat: Seat) {
+        self.seat = seat;
+    }
+
+    fn select_action(&mut self, stage: &Stage, _acts: &Vec<Action>) -> Action {
+        if stage.turn != self.seat {
             return Action::nop();
         }
 
-        let pl = &stage.players[seat];
+        let pl = &stage.players[self.seat];
         let mut n: usize = self.rng.gen_range(0..13);
         loop {
             for ti in 0..TYPE {

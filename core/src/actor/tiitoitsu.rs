@@ -18,20 +18,28 @@ impl ActorBuilder for TiitoitsuBotBuilder {
 #[derive(Clone)]
 pub struct TiitoitsuBot {
     config: Config,
+    seat: Seat,
 }
 
 // 七対子Bot 試作
 impl TiitoitsuBot {
     pub fn from_config(config: Config) -> Self {
-        Self { config: config }
+        Self {
+            config: config,
+            seat: NO_SEAT,
+        }
     }
 }
 
 impl Actor for TiitoitsuBot {
-    fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
-        let pl = &stage.players[seat];
+    fn init(&mut self, seat: Seat) {
+        self.seat = seat;
+    }
 
-        if stage.turn == seat {
+    fn select_action(&mut self, stage: &Stage, acts: &Vec<Action>) -> Action {
+        let pl = &stage.players[self.seat];
+
+        if stage.turn == self.seat {
             // turn
             if acts.contains(&Action::tsumo()) {
                 return Action::tsumo();
@@ -47,7 +55,7 @@ impl Actor for TiitoitsuBot {
                             return Action::discard(t);
                         }
                         1 => {
-                            ones.push((count_left_tile(stage, seat, t), t));
+                            ones.push((count_left_tile(stage, self.seat, t), t));
                         }
                         _ => panic!(),
                     }

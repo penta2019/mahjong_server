@@ -27,7 +27,7 @@ impl Null {
 }
 
 impl Actor for Null {
-    fn select_action(&mut self, _stage: &Stage, _seat: Seat, _operatons: &Vec<Action>) -> Action {
+    fn select_action(&mut self, _stage: &Stage, _operatons: &Vec<Action>) -> Action {
         panic!();
     }
 

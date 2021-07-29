@@ -19,19 +19,27 @@ impl ActorBuilder for ManualBuilder {
 #[derive(Clone)]
 pub struct Manual {
     config: Config,
+    seat: Seat,
 }
 
 impl Manual {
     pub fn from_config(config: Config) -> Self {
-        Self { config: config }
+        Self {
+            config: config,
+            seat: NO_SEAT,
+        }
     }
 }
 
 impl Actor for Manual {
-    fn select_action(&mut self, stage: &Stage, seat: Seat, acts: &Vec<Action>) -> Action {
-        println!("{}", &stage.players[seat]);
+    fn init(&mut self, seat: Seat) {
+        self.seat = seat;
+    }
+
+    fn select_action(&mut self, stage: &Stage, acts: &Vec<Action>) -> Action {
+        println!("{}", &stage.players[self.seat]);
         println!();
-        if stage.turn == seat {
+        if stage.turn == self.seat {
             println!("[Turn Action] select tile or action");
         } else {
             println!("[Call Action] select action");
@@ -51,7 +59,7 @@ impl Actor for Manual {
             };
             match c {
                 'm' | 'p' | 's' | 'z' => {
-                    if stage.turn != seat {
+                    if stage.turn != self.seat {
                         println!("[Error] discard not allowed");
                         continue;
                     }
@@ -71,7 +79,7 @@ impl Actor for Manual {
                         }
                     };
 
-                    let h = &stage.players[seat].hand;
+                    let h = &stage.players[self.seat].hand;
                     let t = Tile(ti, ni);
                     if t.0 > TZ || t.1 > 9 {
                         println!("[Error] invalid tile: {:?}", t);

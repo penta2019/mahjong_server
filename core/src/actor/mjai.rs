@@ -16,7 +16,10 @@ impl ActorBuilder for MjaiEndpointBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "MjaiEndpoint".to_string(),
-            args: vec![Arg::string("addr", "127.0.0.1:11601")],
+            args: vec![
+                Arg::string("addr", "127.0.0.1:11601"),
+                Arg::int("timeout", 10),
+            ],
         }
     }
 
@@ -32,11 +35,16 @@ pub struct MjaiEndpoint {
     data: Arc<Mutex<SharedData>>,
     try_riichi: Option<Seat>,
     is_new_game: bool,
+    timeout: i32, // selected_action の最大待機時間(秒)
     timeout_count: i32,
 }
 
 impl MjaiEndpoint {
     pub fn from_config(config: Config) -> Self {
+        let args = &config.args;
+        let addr = args[0].value.as_string();
+        let timeout = args[1].value.as_int();
+
         let data = Arc::new(Mutex::new(SharedData::new()));
         let obj = Self {
             config: config,
@@ -44,11 +52,11 @@ impl MjaiEndpoint {
             data: data.clone(),
             try_riichi: None,
             is_new_game: false,
+            timeout: timeout,
             timeout_count: 0,
         };
 
-        let addr = obj.config.args[0].value.as_string();
-        let listener = TcpListener::bind(addr).unwrap();
+        let listener = TcpListener::bind(&addr).unwrap();
         println!("MjaiEndpoint: Listening on {}", addr);
 
         thread::spawn(move || {
@@ -262,7 +270,7 @@ impl Actor for MjaiEndpoint {
                 break;
             }
             c += 1;
-            if c == 50 {
+            if c == self.timeout * 10 {
                 println!("[Error] possible_action timeout");
                 d.possible_actions = None;
                 self.timeout_count += 1;

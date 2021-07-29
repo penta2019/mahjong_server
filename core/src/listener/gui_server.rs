@@ -4,6 +4,8 @@ use crate::controller::Listener;
 use crate::model::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
+use crate::info;
+
 pub struct GuiServer {
     server: SendRecv,
 }
@@ -23,7 +25,7 @@ impl Listener for GuiServer {
             loop {
                 match r.try_recv() {
                     Ok(msg) => {
-                        println!("[WS] message: {}", msg);
+                        info!("ws message: {}", msg);
                     }
                     Err(_) => {
                         break;

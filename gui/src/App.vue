@@ -80,7 +80,7 @@ class Main {
         //   data.suji = msg.data;
         //   break;
         default:
-          console.log("Unhandled message:", msg);
+          console.log("unhandled message:", msg);
           break;
       }
     };

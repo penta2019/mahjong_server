@@ -7,6 +7,8 @@ use crate::listener::*;
 use crate::model::*;
 use crate::util::common::*;
 
+use crate::{error, warn};
+
 use ActionType::*;
 
 // [App]
@@ -56,7 +58,7 @@ impl EngineApp {
                 "-2" => app.names[2] = next_value(&mut it, "-2"),
                 "-3" => app.names[3] = next_value(&mut it, "-3"),
                 opt => {
-                    println!("Unknown option: {}", opt);
+                    error!("unknown option: {}", opt);
                     exit(0);
                 }
             }
@@ -64,7 +66,7 @@ impl EngineApp {
 
         if app.seed == 0 {
             app.seed = unixtime_now();
-            println!(
+            warn!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
                 app.seed
             );
@@ -74,6 +76,8 @@ impl EngineApp {
     }
 
     pub fn run(&mut self) {
+        println!("seed: {}", self.seed);
+
         let actors = [
             create_actor(&self.names[0]),
             create_actor(&self.names[1]),
@@ -81,7 +85,7 @@ impl EngineApp {
             create_actor(&self.names[3]),
         ];
         for s in 0..SEAT {
-            println!("Actor{}: {:?}", s, actors[s]);
+            println!("actor{}: {:?}", s, actors[s]);
         }
 
         let start = std::time::Instant::now();
@@ -433,7 +437,7 @@ impl MahjongEngine {
                 self.melding = Some(act);
                 self.handle_event(Event::kita(turn, false));
             }
-            _ => panic!("Action {:?} not found in {:?}", act, acts),
+            _ => panic!("action {:?} not found in {:?}", act, acts),
         };
 
         if let Some(kd) = self.kan_dora {
@@ -486,7 +490,7 @@ impl MahjongEngine {
                 Pon => pon = Some((s, act)),
                 Minkan => minkan = Some((s, act)),
                 Ron => rons.push(s),
-                _ => panic!("Action {:?} not found in {:?}", act, acts),
+                _ => panic!("action {:?} not found in {:?}", act, acts),
             }
         }
 

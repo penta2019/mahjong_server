@@ -6,6 +6,8 @@ use crate::listener::{GuiServer, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
 
+use crate::error;
+
 #[derive(Debug)]
 pub struct ReplayApp {
     file_path: String,
@@ -44,14 +46,14 @@ impl ReplayApp {
                 "-2" => app.names[2] = next_value(&mut it, "-2"),
                 "-3" => app.names[3] = next_value(&mut it, "-3"),
                 opt => {
-                    println!("Unknown option: {}", opt);
+                    error!("unknown option: {}", opt);
                     exit(0);
                 }
             }
         }
 
         if app.file_path == "" {
-            println!("file(-f) not specified");
+            error!("file(-f) not specified");
             exit(0);
         }
 
@@ -73,6 +75,9 @@ impl ReplayApp {
                 actors[i] = create_actor(n);
                 enabled_actors[i] = true;
             }
+        }
+        for s in 0..SEAT {
+            println!("actor{}: {:?}", s, actors[s]);
         }
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];

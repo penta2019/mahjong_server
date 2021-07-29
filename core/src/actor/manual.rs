@@ -1,6 +1,8 @@
 use super::*;
 use crate::util::common::prompt;
 
+use crate::error;
+
 pub struct ManualBuilder;
 
 impl ActorBuilder for ManualBuilder {
@@ -60,7 +62,7 @@ impl Actor for Manual {
             match c {
                 'm' | 'p' | 's' | 'z' => {
                     if stage.turn != self.seat {
-                        println!("[Error] discard not allowed");
+                        error!("discard not allowed");
                         continue;
                     }
 
@@ -74,7 +76,7 @@ impl Actor for Manual {
                     let ni: Tnum = match chars.next().unwrap().to_digit(10) {
                         Some(n) => n as usize,
                         _ => {
-                            println!("[Error] invalid tile symbol");
+                            error!("invalid tile symbol");
                             continue;
                         }
                     };
@@ -82,10 +84,10 @@ impl Actor for Manual {
                     let h = &stage.players[self.seat].hand;
                     let t = Tile(ti, ni);
                     if t.0 > TZ || t.1 > 9 {
-                        println!("[Error] invalid tile: {:?}", t);
+                        error!("invalid tile: {:?}", t);
                         continue;
                     } else if h[t.0][t.1] == 0 {
-                        println!("[Error] tile not found: {}", t);
+                        error!("tile not found: {}", t);
                         continue;
                     }
 
@@ -98,7 +100,7 @@ impl Actor for Manual {
                             println!("{}", stage);
                         }
                         _ => {
-                            println!("[Error] unknown command: {}", &buf[1..]);
+                            error!("unknown command: {}", &buf[1..]);
                         }
                     }
                     continue;
@@ -110,12 +112,12 @@ impl Actor for Manual {
                     let n: usize = match buf.trim().parse() {
                         Ok(n) => n,
                         Err(_) => {
-                            println!("[Error] input must be number");
+                            error!("input must be a number or tile symbol");
                             continue;
                         }
                     };
                     if n >= acts.len() {
-                        println!("[Error] invalid action index");
+                        error!("invalid action index");
                         continue;
                     }
 

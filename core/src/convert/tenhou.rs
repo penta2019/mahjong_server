@@ -209,7 +209,6 @@ impl TenhouSerializer {
                     } else {
                         detail.push(json!(format!("{}{}点", score_title, ctx.points.0)));
                     }
-                    println!("{:?}", ctx.yakus);
                     for y in &ctx.yakus {
                         detail.push(json!(format!("{}({}飜)", y.0, y.1)));
                     }

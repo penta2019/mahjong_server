@@ -15,7 +15,7 @@ impl StagePrinter {
             let delta = delta_scores[s];
             let new = stage.players[s].score;
             let old = new - delta;
-            println!("Player {}: {} -> {} ({:+})", s, old, new, delta);
+            println!("player {}: {} -> {} ({:+})", s, old, new, delta);
         }
         println!();
     }

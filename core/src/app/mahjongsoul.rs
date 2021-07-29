@@ -10,6 +10,8 @@ use crate::model::*;
 use crate::util::common::*;
 use crate::util::ws_server::{create_ws_server, SendRecv};
 
+use crate::error;
+
 use ActionType::*;
 
 // [App]
@@ -45,7 +47,7 @@ impl MahjongsoulApp {
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 "-0" => app.actor_name = next_value(&mut it, "-0"),
                 opt => {
-                    println!("Unknown option: {}", opt);
+                    error!("unknown option: {}", opt);
                     exit(0);
                 }
             }
@@ -56,7 +58,7 @@ impl MahjongsoulApp {
 
     pub fn run(&mut self) {
         let actor = create_actor(&self.actor_name);
-        println!("Actor: {:?}", actor);
+        println!("actor: {:?}", actor);
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(GuiServer::new(self.gui_port)));
@@ -78,7 +80,7 @@ impl MahjongsoulApp {
                 match r.recv() {
                     Ok(m) => m,
                     Err(e) => {
-                        println!("[Error] {}", e);
+                        error!("{}", e);
                         continue;
                     }
                 }
@@ -209,7 +211,7 @@ impl Mahjongsoul {
                 "ActionHule" => self.handler_hule(data),
                 "ActionLiuJu" => self.handler_liuju(data),
                 "ActionNoTile" => self.handler_notile(data),
-                s => panic!("Unknown event {}", s),
+                s => panic!("unknown event {}", s),
             };
             self.step += 1;
 
@@ -401,7 +403,7 @@ impl Mahjongsoul {
             0 => MeldType::Chi,
             1 => MeldType::Pon,
             2 => MeldType::Minkan,
-            _ => panic!("Unknown meld type"),
+            _ => panic!("unknown meld type"),
         };
 
         let mut tiles = vec![];
@@ -486,7 +488,7 @@ impl Mahjongsoul {
                         if let Some(y) = Yaku::get_from_id(id) {
                             yakus.push((y.name.to_string(), val));
                         } else {
-                            println!("[Error] yaku not found: id = {}", id);
+                            error!("yaku not found: id = {}", id);
                         }
                     }
                 };
@@ -601,7 +603,7 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
     }
 
     if !is_drawn {
-        println!("[Error] Tile {} not found", t);
+        error!("tile {} not found", t);
     }
 
     idx

@@ -2,6 +2,8 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+use crate::{error, info};
+
 pub type SendRecv = Arc<Mutex<Option<(mpsc::Sender<String>, mpsc::Receiver<String>)>>>;
 
 pub fn create_ws_server(port: u32) -> SendRecv {
@@ -52,9 +54,9 @@ struct WsHandler {
 impl ws::Handler for WsHandler {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
         if let Some(_) = &self.send_up {
-            println!("[WsHandler] open connection (port: {})", self.port);
+            info!("open connection (port: {})", self.port);
         } else {
-            println!("[WsHandler] invalid connection (port: {})", self.port);
+            error!("invalid connection (port: {})", self.port);
         }
         Ok(())
     }
@@ -70,9 +72,9 @@ impl ws::Handler for WsHandler {
         if let Some(_) = &self.send_up {
             self.send_up = None;
             *self.send_recv.lock().unwrap() = None;
-            println!("[WsHandler] close connection (port: {})", self.port);
+            info!("close connection (port: {})", self.port);
         } else {
-            println!("[WsHandler] close invalid connection (port: {})", self.port);
+            info!("close invalid connection (port: {})", self.port);
         }
     }
 }

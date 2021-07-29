@@ -9,6 +9,8 @@ use crate::controller::{Actor, Config, Listener};
 use crate::model::*;
 use crate::util::variant::*;
 
+use crate::error;
+
 trait ActorBuilder {
     fn get_default_config(&self) -> Config;
     fn create(&self, config: Config) -> Box<dyn Actor>;
@@ -32,7 +34,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
         let l = paren_left.unwrap();
         let r = paren_right.unwrap();
         if r < l {
-            println!("[Error] Invalid parent: {}", exp);
+            error!("invalid paren: {}", exp);
             std::process::exit(0);
         }
 
@@ -47,7 +49,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
         let mut conf = b.get_default_config();
         if name == conf.name {
             if conf.args.len() < args.len() {
-                println!(
+                error!(
                     "expected {} arguments for {}. but {} arguments are provided.",
                     conf.args.len(),
                     name,
@@ -61,7 +63,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
                     conf.args[i].value = match parse_as(&conf.args[i].value, a) {
                         Ok(v) => v,
                         Err(e) => {
-                            println!("[Error] {}: \"{}\"", e, a);
+                            error!("{}: {}", e, a);
                             std::process::exit(0);
                         }
                     };
@@ -72,7 +74,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
         }
     }
 
-    println!("Unknown actor name: {}", name);
+    error!("unknown actor name: {}", name);
     std::process::exit(0);
 }
 

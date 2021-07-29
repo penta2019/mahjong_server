@@ -10,6 +10,8 @@ use super::*;
 use crate::convert::mjai::*;
 use crate::util::common::{flush, sleep_ms, vec_remove};
 
+use crate::{error, info};
+
 pub struct MjaiEndpointBuilder;
 
 impl ActorBuilder for MjaiEndpointBuilder {
@@ -57,7 +59,7 @@ impl MjaiEndpoint {
         };
 
         let listener = TcpListener::bind(&addr).unwrap();
-        println!("MjaiEndpoint: Listening on {}", addr);
+        info!("listening on {}", addr);
 
         thread::spawn(move || {
             let is_connected = Arc::new(Mutex::new(false));
@@ -65,7 +67,7 @@ impl MjaiEndpoint {
                 match stream {
                     Ok(mut stream) => {
                         if *is_connected.lock().unwrap() {
-                            println!("[Error] MjaiEndpoint: Duplicated connection");
+                            error!("duplicated connection");
                             continue;
                         }
                         *is_connected.lock().unwrap() = true;
@@ -73,19 +75,19 @@ impl MjaiEndpoint {
                         let is_connected = is_connected.clone();
                         let data = data.clone();
                         thread::spawn(move || {
-                            println!("MjaiEndpoint: New connection {:?}", stream);
+                            info!("new connection {:?}", stream);
                             match stream_handler(&mut stream, data, true) {
                                 Ok(_) => {}
                                 Err(e) => {
-                                    println!("[Error]: {:?}", e);
+                                    error!("{:?}", e);
                                 }
                             }
-                            println!("MjaiEndpoint: Connection closed");
+                            info!("connection closed");
                             *is_connected.lock().unwrap() = false;
                         });
                     }
                     Err(e) => {
-                        println!("[Error] {}", e);
+                        error!("{}", e);
                     }
                 }
             }
@@ -271,11 +273,11 @@ impl Actor for MjaiEndpoint {
             }
             c += 1;
             if c == self.timeout * 10 {
-                println!("[Error] possible_action timeout");
+                error!("possible_action timeout");
                 d.possible_actions = None;
                 self.timeout_count += 1;
                 if self.timeout_count == 5 {
-                    println!("[Error] timeout_count exceeded");
+                    error!("timeout_count exceeded");
                     std::process::exit(1);
                 }
                 return Action::nop();
@@ -299,14 +301,14 @@ impl Actor for MjaiEndpoint {
         match act.0 {
             ActionType::Discard => {
                 if self.seat != stage.turn {
-                    println!("[Error] Invalid discard action");
+                    error!("invalid discard action");
                     return Action::nop();
                 }
             }
             _ => {
                 if !acts.contains(&act) {
-                    println!(
-                        "[Error] selected_action={:?} is not contained in possible_actions={:?}",
+                    error!(
+                        "selected_action={:?} is not contained in possible_actions={:?}",
                         act, acts
                     );
                     return Action::nop();
@@ -380,9 +382,9 @@ fn stream_handler(
     let v = serde_json::from_value(recv()?)?;
 
     if let MjaiAction::Join { name, .. } = v {
-        println!("Player joined. name: {}", name);
+        info!("player joined: {}", name);
     } else {
-        println!("[Error] First message type must be 'join'");
+        error!("first message type must be 'join'");
         return Ok(());
     }
 
@@ -401,7 +403,7 @@ fn stream_handler(
             let mut d = data.lock().unwrap();
             if cursor > d.record.len() {
                 // 新しく試合開始した場合はリセット
-                println!("mjai reset");
+                info!("mjai reset");
                 cursor = 0;
             }
             let send_start_game = d.send_start_game;

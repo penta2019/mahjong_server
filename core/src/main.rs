@@ -10,7 +10,7 @@ mod util;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
-        println!("[Error] Mode is not specified");
+        error!("mode not specified");
         return;
     }
 
@@ -29,7 +29,7 @@ fn main() {
             app::ReplayApp::new(args2).run();
         }
         m => {
-            println!("[Error] Unknown mode: {}", m)
+            error!("unknown mode: {}", m)
         }
     }
 }

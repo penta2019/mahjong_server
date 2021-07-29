@@ -5,6 +5,8 @@ use std::{fmt, fs, io};
 
 use serde_json::Value;
 
+use crate::error;
+
 pub fn next_value<T>(it: &mut std::slice::Iter<std::string::String>, opt: &str) -> T
 where
     T: FromStr,
@@ -44,7 +46,7 @@ pub fn flush() {
 }
 
 pub fn print_and_exit<T: fmt::Display, U>(t: T) -> U {
-    println!("[Error] {}", t);
+    error!("{}", t);
     exit(0);
 }
 

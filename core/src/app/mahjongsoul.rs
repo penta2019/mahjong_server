@@ -131,7 +131,7 @@ impl Mahjongsoul {
 
     #[inline]
     fn get_stage(&self) -> &Stage {
-        return self.ctrl.get_stage();
+        self.ctrl.get_stage()
     }
 
     #[inline]

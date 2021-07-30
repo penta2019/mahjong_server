@@ -15,9 +15,8 @@ where
     let n = it
         .next()
         .unwrap_or_else(|| print_and_exit(format!("{}: value missing", opt)));
-    return n
-        .parse()
-        .unwrap_or_else(|e| print_and_exit(format!("{}: {} '{}'", opt, e, n)));
+    n.parse()
+        .unwrap_or_else(|e| print_and_exit(format!("{}: {} '{}'", opt, e, n)))
 }
 
 pub fn sleep_ms(ms: u64) {

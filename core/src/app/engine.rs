@@ -107,6 +107,8 @@ impl EngineApp {
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
         }
+        // let log = crate::convert::tenhou::TenhouLog::new();
+        // listeners.push(Box::new(crate::listener::TenhouEventWriter::new(log)));
         if self.debug {
             listeners.push(Box::new(Prompt::new()));
         }
@@ -276,7 +278,7 @@ impl MahjongEngine {
 
     #[inline]
     fn get_stage(&self) -> &Stage {
-        return self.ctrl.get_stage();
+        self.ctrl.get_stage()
     }
 
     #[inline]
@@ -799,6 +801,5 @@ pub fn create_wall(seed: u64) -> Vec<Tile> {
 
     let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(seed);
     wall.shuffle(&mut rng);
-
-    return wall;
+    wall
 }

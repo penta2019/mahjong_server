@@ -466,15 +466,15 @@ pub fn to_mjai_tile(t: Tile) -> String {
     if t.is_hornor() {
         assert!(WE <= t.1 && t.1 <= DR);
         let hornor = ["", "E", "S", "W", "N", "P", "F", "C"];
-        return hornor[t.1].to_string();
+        hornor[t.1].to_string()
     } else {
         let tile_type = ["m", "p", "s"];
-        return format!(
+        format!(
             "{}{}{}",
             t.to_normal().1,
             tile_type[t.0],
             if t.1 == 0 { "r" } else { "" }
-        );
+        )
     }
 }
 

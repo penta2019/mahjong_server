@@ -40,7 +40,7 @@ pub fn is_sets(tr: &TileRow, ti: Type) -> bool {
         n0 = n1 - n;
         n1 = n2 - n;
     }
-    return n0 % 3 == 0 && n1 % 3 == 0;
+    n0 % 3 == 0 && n1 % 3 == 0
 }
 
 // 牌種が完成面子+雀頭の場合において雀頭候補となる牌を返す
@@ -56,8 +56,7 @@ pub fn calc_pair_candidate_index(tr: &TileRow) -> Vec<Tnum> {
     for i in 1..4 {
         pairs.push(3 * i - mod3);
     }
-
-    return pairs;
+    pairs
 }
 
 // 牌種が完成面子+雀頭のみで構成されている場合,雀頭のリストを返す.

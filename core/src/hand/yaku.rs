@@ -514,7 +514,7 @@ fn is_ikkitsuukan(ctx: &YakuContext) -> bool {
         }
     }
 
-    return f147[0] && f147[1] && f147[2];
+    f147[0] && f147[1] && f147[2]
 }
 
 // 三色同順

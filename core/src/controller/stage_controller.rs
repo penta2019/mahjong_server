@@ -27,7 +27,7 @@ impl StageController {
     }
 
     pub fn get_stage(&self) -> &Stage {
-        return &self.stage;
+        &self.stage
     }
 
     pub fn handle_event(&mut self, event: &Event) {

@@ -126,10 +126,7 @@ impl ReplayApp {
                 }
             }
 
-            for r in &record {
-                game.apply(r);
-                prompt();
-            }
+            game.run(record);
         }
     }
 }
@@ -138,34 +135,105 @@ impl ReplayApp {
 struct Replay {
     enabled_actors: [bool; SEAT],
     ctrl: StageController,
+    melding: Option<Action>,
+    is_round_end: bool,
+    events: Vec<Event>,
+    cursor: usize, // eventsのindex
 }
 
 impl Replay {
     fn new(
-        actors: [Box<dyn Actor>; SEAT],
+        mut actors: [Box<dyn Actor>; SEAT],
         enabled_actors: [bool; SEAT],
         listeners: Vec<Box<dyn Listener>>,
     ) -> Self {
+        for s in 0..SEAT {
+            actors[s].init(s);
+        }
+
         Self {
             enabled_actors: enabled_actors,
             ctrl: StageController::new(actors, listeners),
+            melding: None,
+            is_round_end: false,
+            events: vec![],
+            cursor: 0,
         }
     }
 
-    fn apply(&mut self, event: &Event) {
-        self.ctrl.handle_event(event);
-        match event {
-            Event::GameStart(_) => {}
-            Event::RoundNew(_) => {}
-            Event::DealTile(_) => {}
-            Event::DiscardTile(_) => {}
-            Event::Meld(_) => {}
-            Event::Kita(_) => {}
-            Event::Dora(_) => {}
-            Event::RoundEndWin(_) => {}
-            Event::RoundEndDraw(_) => {}
-            Event::RoundEndNoTile(_) => {}
-            Event::GameOver(_) => {}
+    fn run(&mut self, events: Vec<Event>) {
+        self.events = events;
+        self.cursor = 0;
+        self.is_round_end = false;
+
+        self.do_round_new();
+        loop {
+            self.do_turn_operation();
+            self.check_kan_dora(); // 明槓,加槓の槓ドラ
+            if self.is_round_end {
+                break;
+            }
+
+            self.do_call_operation();
+            if self.is_round_end {
+                break;
+            }
+
+            self.check_kan_dora(); // 暗槓の槓ドラ
+            self.do_deal_tile();
+            if self.is_round_end {
+                break;
+            }
         }
+        self.do_round_end();
+    }
+
+    fn get_event(&self) -> &Event {
+        &self.events[self.cursor]
+    }
+
+    fn handle_event(&mut self) {
+        self.ctrl.handle_event(&self.events[self.cursor]);
+        self.cursor += 1;
+    }
+
+    fn check_kan_dora(&mut self) {
+        let e = self.get_event();
+        match e {
+            Event::Dora(_) => {
+                self.handle_event();
+            }
+            _ => {}
+        }
+    }
+
+    fn do_round_new(&mut self) {
+        let e = self.get_event();
+        match e {
+            Event::RoundNew(_) => {
+                self.handle_event();
+            }
+            _ => panic!(),
+        }
+    }
+
+    fn do_turn_operation(&mut self) {
+        let e = self.get_event();
+        self.handle_event();
+    }
+
+    fn do_call_operation(&mut self) {
+        let e = self.get_event();
+        self.handle_event();
+    }
+
+    fn do_deal_tile(&mut self) {
+        let e = self.get_event();
+        self.handle_event();
+    }
+
+    fn do_round_end(&mut self) {
+        let e = self.get_event();
+        self.handle_event();
     }
 }

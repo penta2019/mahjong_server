@@ -1,11 +1,39 @@
 use crate::hand::*;
 use crate::model::*;
 
+use ActionType::*;
+
 // [Turn Action Check]
 // プレイヤーのツモ番に可能な操作をチェックする
 // fn(&Stage) -> Option<Action>
 
-pub fn check_riichi(stg: &Stage) -> Vec<Action> {
+pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<Action> {
+    let mut acts = vec![Action::nop()];
+    if !stg.players[stg.turn].is_riichi {
+        if let Some(act) = melding {
+            // 鳴き後に捨てられない牌を追加
+            acts.push(Action(Discard, calc_prohibited_discards(act)));
+        } else {
+            acts.push(Action(Discard, vec![]))
+        }
+    }
+
+    let can_op = match melding {
+        None => true,
+        Some(Action(tp, _)) => *tp != Chi && *tp != Pon,
+    };
+    if can_op {
+        acts.append(&mut check_ankan(stg));
+        acts.append(&mut check_kakan(stg));
+        acts.append(&mut check_riichi(stg));
+        acts.append(&mut check_tsumo(stg));
+        acts.append(&mut check_kyushukyuhai(stg));
+        acts.append(&mut check_kita(stg));
+    }
+    acts
+}
+
+fn check_riichi(stg: &Stage) -> Vec<Action> {
     if stg.left_tile_count < 4 {
         return vec![];
     }
@@ -32,7 +60,7 @@ pub fn check_riichi(stg: &Stage) -> Vec<Action> {
     acts
 }
 
-pub fn check_tsumo(stg: &Stage) -> Vec<Action> {
+fn check_tsumo(stg: &Stage) -> Vec<Action> {
     if let Some(_) = evaluate_hand_tsumo(&stg, &vec![]) {
         vec![Action::tsumo()]
     } else {
@@ -40,7 +68,7 @@ pub fn check_tsumo(stg: &Stage) -> Vec<Action> {
     }
 }
 
-pub fn check_ankan(stg: &Stage) -> Vec<Action> {
+fn check_ankan(stg: &Stage) -> Vec<Action> {
     if stg.left_tile_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
@@ -89,7 +117,7 @@ pub fn check_ankan(stg: &Stage) -> Vec<Action> {
     acts
 }
 
-pub fn check_kakan(stg: &Stage) -> Vec<Action> {
+fn check_kakan(stg: &Stage) -> Vec<Action> {
     if stg.left_tile_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
@@ -116,7 +144,7 @@ pub fn check_kakan(stg: &Stage) -> Vec<Action> {
     acts
 }
 
-pub fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
+fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
     let pl = &stg.players[stg.turn];
     if !pl.discards.is_empty() {
         return vec![];
@@ -149,7 +177,7 @@ pub fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
     vec![Action::kyushukyuhai()]
 }
 
-pub fn check_kita(stg: &Stage) -> Vec<Action> {
+fn check_kita(stg: &Stage) -> Vec<Action> {
     if !stg.is_3p {
         return vec![];
     }
@@ -172,7 +200,30 @@ pub fn check_kita(stg: &Stage) -> Vec<Action> {
 // fn(&Stage) -> Vec<(Seat, Action)>
 // ロン以外の返り値のリストは要素が2つ以上になることはないが一貫性のためVecを返却する
 
-pub fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
+pub fn calc_possible_call_actions(stg: &Stage, can_meld: bool) -> [Vec<Action>; SEAT] {
+    let mut acts_list: [Vec<Action>; SEAT] = Default::default();
+    for s in 0..SEAT {
+        acts_list[s].push(Action::nop());
+    }
+    // 暗槓,加槓,四槓散了に対して他家はロン以外の操作は行えない
+    if can_meld {
+        for (s, act) in check_chi(stg) {
+            acts_list[s].push(act);
+        }
+        for (s, act) in check_pon(stg) {
+            acts_list[s].push(act);
+        }
+        for (s, act) in check_minkan(stg) {
+            acts_list[s].push(act);
+        }
+    }
+    for (s, act) in check_ron(stg) {
+        acts_list[s].push(act);
+    }
+    acts_list
+}
+
+fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
     if stg.left_tile_count == 0 {
         return vec![];
     }
@@ -241,7 +292,7 @@ pub fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
     acts
 }
 
-pub fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
+fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
     if stg.left_tile_count == 0 {
         return vec![];
     }
@@ -274,7 +325,7 @@ pub fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
     acts
 }
 
-pub fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
+fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
     if stg.left_tile_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
@@ -298,7 +349,7 @@ pub fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
     acts
 }
 
-pub fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
+fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
     let mut acts = vec![];
     for s in 0..SEAT {
         if let Some(_) = evaluate_hand_ron(stg, &vec![], s) {
@@ -309,7 +360,7 @@ pub fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
 }
 
 // 鳴き後の組み換え禁止の牌
-pub fn calc_prohibited_discards(act: &Action) -> Vec<Tile> {
+fn calc_prohibited_discards(act: &Action) -> Vec<Tile> {
     let mut v = vec![];
     let Action(tp, cs) = act;
     match tp {

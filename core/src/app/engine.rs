@@ -371,38 +371,15 @@ impl MahjongEngine {
     fn do_turn_operation(&mut self) {
         // ツモ番のActionの要求
         // act: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
-        let stg = &self.get_stage();
+        let stg = self.get_stage();
         let turn = stg.turn;
-        let mut acts = vec![Action::nop()];
-
-        if !stg.players[turn].is_riichi {
-            if let Some(act) = &self.melding {
-                // 鳴き後に捨てられない牌を追加
-                acts.push(Action(Discard, calc_prohibited_discards(act)));
-            } else {
-                acts.push(Action(Discard, vec![]))
-            }
-        }
-
-        let can_op = match self.melding {
-            None => true,
-            Some(Action(tp, _)) => tp != Chi && tp != Pon,
-        };
-        if can_op {
-            acts.append(&mut check_ankan(stg));
-            acts.append(&mut check_kakan(stg));
-            acts.append(&mut check_riichi(stg));
-            acts.append(&mut check_tsumo(stg));
-            acts.append(&mut check_kyushukyuhai(stg));
-            acts.append(&mut check_kita(stg));
-        }
-
-        self.melding = None;
+        let acts = calc_possible_turn_actions(stg, &self.melding);
         let act = self.ctrl.select_action(turn, &acts);
         assert!(act.0 == Discard || acts.contains(&act));
         let Action(tp, cs) = act.clone();
+        self.melding = None;
 
-        let stg = &self.get_stage();
+        let stg = self.get_stage();
         match tp {
             Nop => {
                 // 打牌: ツモ切り
@@ -441,7 +418,7 @@ impl MahjongEngine {
         };
 
         if let Some(kd) = self.kan_dora {
-            self.handle_event(Event::Dora(EventDora { tile: kd }));
+            self.handle_event(Event::dora(kd));
             self.kan_dora = None;
         }
     }
@@ -449,27 +426,8 @@ impl MahjongEngine {
     fn do_call_operation(&mut self) {
         // 順番以外のプレイヤーにActionを要求
         // act: Nop, Chi, Pon, Minkan, Ron
-        let stg = self.get_stage();
-        let turn = stg.turn;
-        let mut acts_list: [Vec<Action>; SEAT] = Default::default();
-        for s in 0..SEAT {
-            acts_list[s].push(Action::nop());
-        }
-        // 暗槓,加槓,四槓散了に対して他家はロン以外の操作は行えない
-        if self.melding == None && !self.is_suukansanra {
-            for (s, act) in check_chi(stg) {
-                acts_list[s].push(act);
-            }
-            for (s, act) in check_pon(stg) {
-                acts_list[s].push(act);
-            }
-            for (s, act) in check_minkan(stg) {
-                acts_list[s].push(act);
-            }
-        }
-        for (s, act) in check_ron(stg) {
-            acts_list[s].push(act);
-        }
+        let can_meld = self.melding == None && !self.is_suukansanra;
+        let acts_list = calc_possible_call_actions(self.get_stage(), can_meld);
 
         // query action
         type Meld = Option<(Seat, Action)>;
@@ -479,7 +437,8 @@ impl MahjongEngine {
         let mut chi: Meld = None;
         for s in 0..SEAT {
             let acts = &acts_list[s];
-            if s == turn || acts.len() == 1 {
+            if acts.len() == 1 {
+                // Nop
                 continue;
             }
             let act = self.ctrl.select_action(s, acts);

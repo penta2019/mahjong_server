@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::hand::WinContext;
 use crate::model::*;
 
-use ActionType::*;
-
 // [MjaiEvent]
 // サーバ側から送信する情報
 // id: 自分の座席
@@ -355,13 +353,13 @@ impl MjaiAction {
     pub fn from_action(stage: &Stage, seat: Seat, act: &Action) -> Option<Self> {
         let Action(tp, cs) = act;
         Some(match tp {
-            Nop => return None,
-            Discard => return None,
-            Ankan => Self::Ankan {
+            ActionType::Nop => return None,
+            ActionType::Discard => return None,
+            ActionType::Ankan => Self::Ankan {
                 actor: seat,
                 consumed: vec_to_mjai_tile(cs),
             },
-            Kakan => {
+            ActionType::Kakan => {
                 let t = act.1[0];
                 let comsumed = if t.1 == 0 {
                     // 赤5
@@ -383,18 +381,18 @@ impl MjaiAction {
                     consumed: comsumed,
                 }
             }
-            Riichi => return None,
-            Tsumo => Self::Hora {
+            ActionType::Riichi => return None,
+            ActionType::Tsumo => Self::Hora {
                 actor: seat,
                 target: seat,
                 pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
             },
-            Kyushukyuhai => Self::Ryukyoku {
+            ActionType::Kyushukyuhai => Self::Ryukyoku {
                 actor: seat,
                 reason: "kyushukyuhai".to_string(),
             },
-            Kita => panic!(),
-            Chi => {
+            ActionType::Kita => panic!(),
+            ActionType::Chi => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 Self::Chi {
                     actor: seat,
@@ -403,7 +401,7 @@ impl MjaiAction {
                     consumed: vec_to_mjai_tile(cs),
                 }
             }
-            Pon => {
+            ActionType::Pon => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 Self::Pon {
                     actor: seat,
@@ -412,7 +410,7 @@ impl MjaiAction {
                     consumed: vec_to_mjai_tile(cs),
                 }
             }
-            Minkan => {
+            ActionType::Minkan => {
                 let (target_seat, _, target_tile) = stage.last_tile.unwrap();
                 Self::Daiminkan {
                     actor: seat,
@@ -421,7 +419,7 @@ impl MjaiAction {
                     consumed: vec_to_mjai_tile(cs),
                 }
             }
-            Ron => {
+            ActionType::Ron => {
                 let lt = stage.last_tile.unwrap();
                 Self::Hora {
                     actor: seat,

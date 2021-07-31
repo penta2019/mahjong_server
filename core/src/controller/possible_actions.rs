@@ -1,8 +1,6 @@
 use crate::hand::*;
 use crate::model::*;
 
-use ActionType::*;
-
 // [Turn Action Check]
 // プレイヤーのツモ番に可能な操作をチェックする
 // fn(&Stage) -> Option<Action>
@@ -12,15 +10,15 @@ pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<
     if !stg.players[stg.turn].is_riichi {
         if let Some(act) = melding {
             // 鳴き後に捨てられない牌を追加
-            acts.push(Action(Discard, calc_prohibited_discards(act)));
+            acts.push(Action(ActionType::Discard, calc_prohibited_discards(act)));
         } else {
-            acts.push(Action(Discard, vec![]))
+            acts.push(Action(ActionType::Discard, vec![]))
         }
     }
 
     let can_op = match melding {
         None => true,
-        Some(Action(tp, _)) => *tp != Chi && *tp != Pon,
+        Some(Action(tp, _)) => *tp != ActionType::Chi && *tp != ActionType::Pon,
     };
     if can_op {
         acts.append(&mut check_ankan(stg));

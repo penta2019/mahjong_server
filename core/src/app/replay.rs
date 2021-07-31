@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::listener::{GuiServer, StageStepPrinter};
+use crate::listener::{GuiServer, Prompt, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
 
@@ -79,10 +79,12 @@ impl ReplayApp {
         for s in 0..SEAT {
             println!("actor{}: {:?}", s, actors[s]);
         }
+        println!();
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StageStepPrinter::new()));
         listeners.push(Box::new(GuiServer::new(self.gui_port)));
+        listeners.push(Box::new(Prompt::new()));
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む
         let path = Path::new(&self.file_path);
@@ -168,12 +170,13 @@ impl Replay {
 
         self.do_round_new();
         loop {
+            self.check_kan_dora(); // 暗槓の槓ドラ(不要だが念の為)
             self.do_turn_operation();
-            self.check_kan_dora(); // 明槓,加槓の槓ドラ
             if self.is_round_end {
                 break;
             }
 
+            self.check_kan_dora(); // 明槓,加槓の槓ドラ
             self.do_call_operation();
             if self.is_round_end {
                 break;
@@ -186,6 +189,10 @@ impl Replay {
             }
         }
         self.do_round_end();
+    }
+
+    fn get_stage(&self) -> &Stage {
+        self.ctrl.get_stage()
     }
 
     fn get_event(&self) -> &Event {
@@ -218,22 +225,84 @@ impl Replay {
     }
 
     fn do_turn_operation(&mut self) {
+        let stg = self.get_stage();
+        let turn = stg.turn;
+        let acts = calc_possible_turn_actions(stg, &self.melding);
+        let act = self.ctrl.select_action(turn, &acts);
+
         let e = self.get_event();
+        let act2 = match e {
+            Event::DiscardTile(e) => {
+                if e.is_riichi {
+                    if e.is_drawn {
+                        Action::riichi(e.tile) // TODO
+                    } else {
+                        Action::riichi(e.tile)
+                    }
+                } else {
+                    if e.is_drawn {
+                        Action::nop()
+                    } else {
+                        Action::discard(e.tile)
+                    }
+                }
+            }
+            Event::Meld(e) => {
+                let a = match e.meld_type {
+                    MeldType::Ankan => Action::ankan(e.consumed.clone()),
+                    MeldType::Kakan => Action::kakan(e.consumed.clone()[0]),
+                    _ => panic!(),
+                };
+                self.melding = Some(a.clone());
+                a
+            }
+            Event::RoundEndWin(_) => {
+                self.is_round_end = true;
+                Action::tsumo()
+            }
+            Event::RoundEndDraw(_) => Action::kyushukyuhai(),
+            Event::Kita(_) => Action::kita(),
+            _ => panic!(),
+        };
+
+        println!("selected: {:?}, actual: {:?}", act, act2);
         self.handle_event();
     }
 
     fn do_call_operation(&mut self) {
         let e = self.get_event();
+        match e {
+            Event::RoundEndWin(_) => {
+                self.is_round_end = true;
+            }
+            Event::Meld(e) => {
+                // self.melding =
+                match e.meld_type {
+                    MeldType::Chi => {}
+                    MeldType::Pon => {}
+                    MeldType::Minkan => {}
+                    _ => panic!(),
+                }
+            }
+            _ => return,
+        }
+
         self.handle_event();
     }
 
     fn do_deal_tile(&mut self) {
         let e = self.get_event();
+
+        match e {
+            Event::DealTile(_) => {}
+            Event::RoundEndNoTile(_) => {
+                self.is_round_end = true;
+            }
+            Event::Meld(_) => return, // Chi, pon
+            _ => panic!(),
+        }
         self.handle_event();
     }
 
-    fn do_round_end(&mut self) {
-        let e = self.get_event();
-        self.handle_event();
-    }
+    fn do_round_end(&mut self) {}
 }

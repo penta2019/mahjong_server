@@ -79,52 +79,23 @@ impl StageStepPrinter {
 
 impl Listener for StageStepPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
-        println!("step: {}", stg.step);
+        use Event::*;
+        let ev_str = format!("{:?}", event);
+        print!("[{}] ", ev_str.split('(').next().unwrap().to_string());
+        println!("(step: {})", stg.step);
         match event {
-            Event::GameStart(_) => {
-                println!("[GameStart]");
+            GameStart(_) => {}
+            DealTile(_) | DiscardTile(_) | Meld(_) | Kita(_) => {
+                println!("{}", stg.players[stg.turn]);
             }
-            Event::RoundNew(_) => {
-                println!("[RoundNew]");
-                println!("{}", stg);
-            }
-            Event::DealTile(e) => {
-                println!("[DealTile]");
-                println!("{}", stg.players[e.seat]);
-            }
-            Event::DiscardTile(e) => {
-                println!("[DiscardTile]");
-                println!("{}", stg.players[e.seat]);
-            }
-            Event::Meld(e) => {
-                println!("[Meld]");
-                println!("{}", stg.players[e.seat]);
-            }
-            Event::Kita(e) => {
-                println!("[Kita]");
-                println!("{}", stg.players[e.seat]);
-            }
-            Event::Dora(_) => {
-                println!("[Dora]");
+            Dora(_) => {
                 println!("{:?}", stg.doras);
             }
-            Event::RoundEndWin(_) => {
-                println!("[RoundEndWin]");
-                println!("{}", stg);
-            }
-            Event::RoundEndDraw(_) => {
-                println!("[RoundEndDraw]");
-                println!("{}", stg);
-            }
-            Event::RoundEndNoTile(_) => {
-                println!("[RoundEndNoTile]");
-                println!("{}", stg);
-            }
-            Event::GameOver(_) => {
-                println!("[GameOver]");
+            RoundNew(_) | RoundEndWin(_) | RoundEndDraw(_) | RoundEndNoTile(_) | GameOver(_) => {
                 println!("{}", stg);
             }
         }
+        println!();
     }
 }
 

@@ -109,12 +109,12 @@ impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(
             f,
-            "round: {}, kyoku: {}, honba: {}, kyoutaku: {}\n\
-            turn: {}, left_tile_count: {}, doras: {}, last_tile: {:?}",
-            self.round,
-            self.kyoku,
-            self.honba,
-            self.kyoutaku,
+            "round: {}, kyoku: {}, honba: {}, kyoutaku: {}",
+            self.round, self.kyoku, self.honba, self.kyoutaku,
+        )?;
+        writeln!(
+            f,
+            "turn: {}, left_tile_count: {}, doras: {}, last_tile: {:?}",
             self.turn,
             self.left_tile_count,
             vec_to_string(&self.doras),
@@ -122,26 +122,28 @@ impl fmt::Display for Stage {
         )?;
         writeln!(f)?;
 
-        writeln!(f, "--------------------------------------------------")?;
+        let boader = "-".to_string().repeat(80);
+        write!(f, "{}", boader)?;
         for p in &self.players {
+            writeln!(f)?;
             writeln!(f, "{}", p)?;
-            writeln!(f, "--------------------------------------------------")?;
+            write!(f, "{}", boader)?;
         }
-        writeln!(f, "")?;
 
         for ti in 0..TYPE {
+            writeln!(f)?;
+            writeln!(f)?;
             for i in 1..TNUM {
                 write!(f, "{}{} ", ['m', 'p', 's', 'z'][ti], i)?;
             }
-            writeln!(f, "")?;
-            writeln!(f, "--------------------------")?;
+            writeln!(f)?;
+            write!(f, "--------------------------")?;
             for pi in 0..TILE {
+                writeln!(f)?;
                 for i in 1..TNUM {
                     write!(f, "{} ", self.tile_states[ti][i][pi])?;
                 }
-                writeln!(f, "")?;
             }
-            writeln!(f, "")?;
         }
 
         Ok(())

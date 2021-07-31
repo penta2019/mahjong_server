@@ -61,26 +61,22 @@ impl fmt::Display for Player {
         let hand = vec_to_string(&hand);
         let discards = vec_to_string(&self.discards);
         let melds = vec_to_string(&self.melds);
-        write!(
+        writeln!(
             f,
-            "seat: {}, score: {}, riichi: {:?}, kita: {}, drawn: {}\n",
+            "seat: {}, score: {}, riichi: {:?}, kita: {}, drawn: {}",
             self.seat,
             self.score,
             self.riichi,
             self.kitas.len(),
             drawn,
         )?;
-        write!(
+        writeln!(
             f,
-            "furiten: {}, furiten_other: {}, rinshan: {}, win_tiles: {:?}\n",
+            "furiten: {}, furiten_other: {}, rinshan: {}, win_tiles: {:?}",
             self.is_furiten, self.is_furiten_other, self.is_rinshan, self.win_tiles,
         )?;
-        write!(
-            f,
-            "hand:  {}\n\
-            melds: {}\n\
-            discards:  {}",
-            hand, melds, discards
-        )
+        writeln!(f, "hand: {}", hand)?;
+        writeln!(f, "melds: {}", melds)?;
+        write!(f, "discards: {}", discards)
     }
 }

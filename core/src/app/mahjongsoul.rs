@@ -8,7 +8,7 @@ use crate::hand::{get_score_title, WinContext, Yaku};
 use crate::listener::{EventWriter, GuiServer};
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::ws_server::{create_ws_server, SendRecv};
+use crate::util::server::Server;
 
 use crate::error;
 
@@ -68,30 +68,22 @@ impl MahjongsoulApp {
         };
 
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners);
-        let mut server_msc = create_ws_server(self.msc_port);
-        let mut connected = false;
+        let mut server_msc = Server::new_ws_server(&format!("localhost:{}", self.msc_port));
         loop {
-            let msg = if let Some((s, r)) = server_msc.lock().unwrap().as_ref() {
-                if !connected {
-                    connected = true;
-                    let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
-                    s.send(msg.to_string()).ok();
-                }
-                match r.recv() {
-                    Ok(m) => m,
-                    Err(e) => {
-                        error!("{}", e);
-                        continue;
+            if server_msc.is_new() {
+                let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
+                server_msc.send(msg.to_string());
+            }
+            if let Some(msg) = server_msc.recv_timeout(1000) {
+                if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
+                    if !self.read_only {
+                        let msg = json!({
+                            "id": "0",
+                            "op": "eval",
+                            "data": act,
+                        });
+                        server_msc.send(msg.to_string());
                     }
-                }
-            } else {
-                connected = false;
-                continue;
-            };
-
-            if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
-                if !self.read_only {
-                    send_to_msc(&mut server_msc, "0", "eval", &act);
                 }
             }
         }
@@ -532,17 +524,6 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::round_end_no_tile(tenpais, points));
-    }
-}
-
-fn send_to_msc(server: &mut SendRecv, id: &str, op: &str, data: &Value) {
-    if let Some((s, _)) = server.lock().unwrap().as_ref() {
-        let msg = json!({
-            "id": id,
-            "op": op,
-            "data": data,
-        });
-        s.send(msg.to_string()).ok();
     }
 }
 

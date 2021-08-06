@@ -58,18 +58,42 @@ impl Server {
         self.reciever.recv().unwrap()
     }
 
-    pub fn try_recv(&mut self) -> Option<String> {
-        match self.reciever.try_recv() {
-            Ok(m) => Some(m),
-            Err(_) => None,
-        }
+    pub fn recv_try(&mut self) -> Option<String> {
+        self.reciever.try_recv().ok()
     }
 
-    pub fn try_timeout(&mut self, millis: u64) -> Option<String> {
-        let d = std::time::Duration::from_millis(millis);
-        match self.reciever.recv_timeout(d) {
-            Ok(m) => Some(m),
-            Err(_) => None,
+    // バグでクラッシュする https://github.com/rust-lang/rust/issues/39364
+    // pub fn recv_timeout(&mut self, millis: u64) -> Option<String> {
+    //     let d = std::time::Duration::from_millis(millis);
+    //     self.reciever.recv_timeout(d).ok()
+    // }
+    //
+    // Minimal Reproducer
+    //     fn main() {
+    //         use std::thread;
+    //         use std::time::Duration;
+    //         let (s, r) = std::sync::mpsc::channel::<String>();
+    //         thread::spawn(move || {
+    //             let _ = s.clone();
+    //             thread::sleep(Duration::from_millis(1000));
+    //         });
+    //         r.recv_timeout(Duration::from_millis(1)).ok();
+    //         r.recv().ok();
+    //      }
+
+    pub fn recv_timeout(&mut self, millis: u64) -> Option<String> {
+        let mut ellapsed = 0;
+        loop {
+            match self.reciever.try_recv() {
+                Ok(m) => return Some(m),
+                Err(_) => {
+                    if ellapsed > millis {
+                        return None;
+                    }
+                    crate::util::common::sleep_ms(100);
+                    ellapsed += 100;
+                }
+            }
         }
     }
 
@@ -273,18 +297,21 @@ fn create_tcp_server(addr: &str) -> Server {
 }
 
 fn run_server(mut srv: Server) {
-    println!("wait");
-    srv.wait_connected();
-    println!("connected");
-    srv.wait_connected();
-    println!("connected2");
     loop {
-        println!("is_new: {}", srv.is_new());
-        println!("is_connected: {}", srv.is_connected());
-        let text = srv.recv();
-        println!("Text: {}", text);
-        srv.send(text);
+        if let Some(text) = srv.recv_timeout(1000) {
+            println!("Text: {}", text);
+            srv.send(text);
+        } else {
+            println!("Timeout");
+        }
     }
+    // loop {
+    //     if let Some(text) = srv.recv_try() {
+    //         println!("Text: {}", text);
+    //         srv.send(text);
+    //     }
+    //     crate::util::common::sleep_ms(100);
+    // }
 }
 
 #[allow(dead_code)]
@@ -301,5 +328,5 @@ fn run_tcp_server() {
 
 #[test]
 fn test_server() {
-    run_ws_server();
+    run_tcp_server();
 }

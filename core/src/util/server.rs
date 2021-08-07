@@ -9,6 +9,7 @@ use crate::{error, info, warn};
 // * 同時接続クライアントは1つのみ
 // * 接続していない状態で送信されたメッセージはすべて破棄
 // * 接続状態は把握できない
+#[derive(Debug)]
 pub struct Server {
     sender: mpsc::Sender<String>,
     reciever: mpsc::Receiver<String>,

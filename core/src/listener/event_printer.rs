@@ -3,6 +3,7 @@ use crate::model::*;
 use crate::util::common::vec_to_string;
 
 // [StagePrinter]
+#[derive(Debug)]
 pub struct StagePrinter {}
 
 impl StagePrinter {
@@ -69,6 +70,7 @@ impl Listener for StagePrinter {
 }
 
 // [StageStepPrinter]
+#[derive(Debug)]
 pub struct StageStepPrinter {}
 
 impl StageStepPrinter {

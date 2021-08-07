@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 use crate::actor::create_actor;
 use crate::controller::*;
 use crate::hand::{get_score_title, WinContext, Yaku};
-use crate::listener::{EventWriter, GuiServer};
+use crate::listener::{EventWriter, StageSender};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::server::Server;
@@ -61,7 +61,8 @@ impl MahjongsoulApp {
         println!("actor: {:?}", actor);
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-        listeners.push(Box::new(GuiServer::new(self.gui_port)));
+        let server = Server::new_ws_server(&format!("localhost:{}", self.gui_port));
+        listeners.push(Box::new(StageSender::new(server)));
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
             // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));

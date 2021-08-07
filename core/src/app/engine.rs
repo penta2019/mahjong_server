@@ -6,6 +6,7 @@ use crate::hand::*;
 use crate::listener::*;
 use crate::model::*;
 use crate::util::common::*;
+use crate::util::server::Server;
 
 use crate::{error, warn};
 
@@ -103,7 +104,12 @@ impl EngineApp {
     fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StagePrinter::new()));
-        listeners.push(Box::new(GuiServer::new(self.gui_port)));
+        let server = Server::new_ws_server(&format!("localhost:{}", self.gui_port));
+        listeners.push(Box::new(StageSender::new(server)));
+        ///////////////////////////////////////////////////////////////////////
+        // let server = Server::new_tcp_server("localhost:12345");
+        // listeners.push(Box::new(EventSender::new(server)));
+        ///////////////////////////////////////////////////////////////////////
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));
         }

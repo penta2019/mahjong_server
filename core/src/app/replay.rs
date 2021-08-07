@@ -2,9 +2,10 @@ use std::path::{Path, PathBuf};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::listener::{GuiServer, Prompt, StageStepPrinter};
+use crate::listener::{Prompt, StageSender, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
+use crate::util::server::Server;
 
 use crate::error;
 
@@ -83,7 +84,8 @@ impl ReplayApp {
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StageStepPrinter::new()));
-        listeners.push(Box::new(GuiServer::new(self.gui_port)));
+        let server = Server::new_ws_server(&format!("localhost:{}", self.gui_port));
+        listeners.push(Box::new(StageSender::new(server)));
         listeners.push(Box::new(Prompt::new()));
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む

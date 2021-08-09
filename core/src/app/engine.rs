@@ -107,8 +107,8 @@ impl EngineApp {
         let server = Server::new_ws_server(&format!("localhost:{}", self.gui_port));
         listeners.push(Box::new(StageSender::new(server)));
         ///////////////////////////////////////////////////////////////////////
-        // let server = Server::new_tcp_server("localhost:12345");
-        // listeners.push(Box::new(EventSender::new(server)));
+        let server = Server::new_tcp_server("localhost:12345");
+        listeners.push(Box::new(EventSender::new(server)));
         ///////////////////////////////////////////////////////////////////////
         if self.write_to_file {
             listeners.push(Box::new(EventWriter::new()));

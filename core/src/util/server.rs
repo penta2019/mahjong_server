@@ -297,7 +297,9 @@ fn create_tcp_server(addr: &str) -> Server {
     }
 }
 
-fn run_server(mut srv: Server) {
+#[test]
+fn test_server() {
+    let mut srv = Server::new_ws_server("127.0.0.1:12345");
     loop {
         if let Some(text) = srv.recv_timeout(1000) {
             println!("Text: {}", text);
@@ -306,28 +308,4 @@ fn run_server(mut srv: Server) {
             println!("Timeout");
         }
     }
-    // loop {
-    //     if let Some(text) = srv.recv_try() {
-    //         println!("Text: {}", text);
-    //         srv.send(text);
-    //     }
-    //     crate::util::common::sleep_ms(100);
-    // }
-}
-
-#[allow(dead_code)]
-fn run_ws_server() {
-    let srv = Server::new_ws_server("127.0.0.1:12345");
-    run_server(srv);
-}
-
-#[allow(dead_code)]
-fn run_tcp_server() {
-    let srv = Server::new_tcp_server("127.0.0.1:12345");
-    run_server(srv);
-}
-
-#[test]
-fn test_server() {
-    run_tcp_server();
 }

@@ -228,9 +228,9 @@ struct MahjongEngine {
     ctrl: StageController,
     melding: Option<Action>, // 鳴き処理用
     kan_dora: Option<Tile>,  // 加槓・明槓の打牌後の槓ドラ更新用
-    wall_count: usize,       // 牌山からツモを行った回数
-    kan_count: usize,        // 槓した回数
-    kita_count: usize,       // 北抜きの回数
+    n_deal: usize,           // 牌山(嶺上牌を除く)からツモを行った回数
+    n_kan: usize,            // 槓した回数
+    n_kita: usize,           // 北抜きの回数
     is_suukansanra: bool,    // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
     round_next: NextRoundInfo,
@@ -271,9 +271,9 @@ impl MahjongEngine {
             round_next: round_next,
             is_game_over: false,
             kan_dora: None,
-            wall_count: 0,
-            kan_count: 0,
-            kita_count: 0,
+            n_deal: 0,
+            n_kan: 0,
+            n_kita: 0,
             is_suukansanra: false,
             wall: vec![],
             dora_wall: vec![],
@@ -325,9 +325,9 @@ impl MahjongEngine {
         self.melding = None;
         self.kan_dora = None;
         // count
-        self.kan_count = 0;
-        self.wall_count = 0;
-        self.kita_count = 0;
+        self.n_kan = 0;
+        self.n_deal = 0;
+        self.n_kita = 0;
         // round end
         self.is_suukansanra = false;
         self.round_result = None;
@@ -515,9 +515,7 @@ impl MahjongEngine {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }
         }
-        assert!(
-            self.get_stage().left_tile_count + self.wall_count + self.kan_count == self.wall.len()
-        );
+        assert!(self.get_stage().left_tile_count + self.n_deal + self.n_kan == self.wall.len());
     }
 
     fn do_round_end(&mut self) {
@@ -694,26 +692,26 @@ impl MahjongEngine {
     }
 
     fn draw_tile(&mut self) -> Tile {
-        let c = self.wall_count;
-        self.wall_count += 1;
+        let c = self.n_deal;
+        self.n_deal += 1;
         self.wall[c]
     }
 
     fn draw_tiles(&mut self, count: usize) -> Vec<Tile> {
-        let c = self.wall_count;
-        self.wall_count += count;
-        self.wall[c..self.wall_count].to_vec()
+        let c = self.n_deal;
+        self.n_deal += count;
+        self.wall[c..self.n_deal].to_vec()
     }
 
     fn draw_kan_tile(&mut self) -> (Tile, Tile) {
-        let (c, k) = (self.kan_count, self.kita_count);
-        self.kan_count += 1;
+        let (c, k) = (self.n_kan, self.n_kita);
+        self.n_kan += 1;
         (self.replacement_wall[c + k], self.dora_wall[c + 1]) // (replacement_tile, dora_tile)
     }
 
     fn draw_kita_tile(&mut self) -> Tile {
-        let (c, k) = (self.kan_count, self.kita_count);
-        self.kita_count += 1;
+        let (c, k) = (self.n_kan, self.n_kita);
+        self.n_kita += 1;
         self.replacement_wall[c + k]
     }
 
@@ -765,7 +763,7 @@ impl MahjongEngine {
     }
 
     fn check_suukansanra_needed(&mut self) {
-        if self.kan_count != 4 {
+        if self.n_kan != 4 {
             return;
         }
 

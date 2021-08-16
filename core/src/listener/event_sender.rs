@@ -1,45 +1,55 @@
+use std::sync::mpsc;
+use std::thread;
+
 use serde_json::{json, Value};
 
 use crate::controller::Listener;
 use crate::model::*;
+use crate::util::common::sleep_ms;
 use crate::util::server::Server;
 
 // [EventSender]
 #[derive(Debug)]
 pub struct EventSender {
-    server: Server,
-    record: Vec<Value>,
+    sender: mpsc::Sender<Value>,
 }
 
 impl EventSender {
-    pub fn new(server: Server) -> Self {
-        Self {
-            server: server,
-            record: vec![],
-        }
+    pub fn new(mut server: Server) -> Self {
+        let (s, r) = mpsc::channel::<Value>();
+        thread::spawn(move || {
+            let mut messages: Vec<Value> = vec![];
+            let mut cursor = 0;
+            loop {
+                while let Ok(msg) = r.try_recv() {
+                    if msg["type"].as_str().unwrap() == "RoundNew" {
+                        messages.clear();
+                        cursor = 0;
+                    }
+                    messages.push(msg);
+                }
+
+                if server.is_new() {
+                    cursor = 0;
+                }
+
+                if server.is_connected() {
+                    while cursor < messages.len() {
+                        server.send(messages[cursor].to_string());
+                        cursor += 1;
+                    }
+                }
+
+                sleep_ms(100);
+            }
+        });
+        Self { sender: s }
     }
 }
 
 impl Listener for EventSender {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        match event {
-            Event::GameStart(_) => {
-                self.record.clear();
-            }
-            Event::RoundNew(_) => {
-                self.record.clear();
-            }
-            Event::RoundEndWin(_) | Event::RoundEndDraw(_) | Event::RoundEndNoTile(_) => {}
-            Event::GameOver(_) => {}
-            _ => {}
-        }
-
-        self.record.push(json!(event));
-
-        if self.server.is_connected() {
-            let msg = self.record[self.record.len() - 1].to_string();
-            self.server.send(msg);
-        }
+        self.sender.send(json!(event)).ok();
     }
 }
 

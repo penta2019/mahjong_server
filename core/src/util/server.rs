@@ -144,7 +144,11 @@ fn create_ws_server(addr: &str) -> Server {
 
     let sender2 = sender.clone();
     thread::spawn(move || loop {
-        ws_send(&sender2, &OwnedMessage::Text(rd.recv().unwrap()));
+        if let Ok(m) = rd.recv() {
+            ws_send(&sender2, &OwnedMessage::Text(m));
+        } else {
+            break;
+        }
     });
 
     thread::spawn(move || {

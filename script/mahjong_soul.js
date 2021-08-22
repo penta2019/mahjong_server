@@ -245,7 +245,9 @@ msc.UiController = class {
     // rank: 0 => 胴の間, 1 => 銀の間, 2 => 金の間, 3 => 玉の間
     // round: 0 => 四人東, 1 => 四人南
     async check_and_start_rank_match(rank, round) {
-        if (!window.uiscript.UI_Lobby.Inst.page0.me.visible || !msc.is_connected) {
+        if (!window.uiscript.UI_Lobby.Inst.enable
+            || !window.uiscript.UI_Lobby.Inst.page0.me.visible
+            || !msc.is_connected) {
             return;
         }
         await msc.sleep(1000);

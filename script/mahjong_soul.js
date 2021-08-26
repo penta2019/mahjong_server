@@ -290,7 +290,6 @@ msc.UiController = class {
         }
         this.timer = setInterval(() => {
             this.check_and_start_rank_match(rank, round);
-            this.check_and_click_ok_button();
         }, 2000);
     }
 
@@ -308,7 +307,7 @@ msc.Server = class {
     constructor() {
         this.endpoint = null;
         this.ws = null;
-        this.timer = null;
+        this.is_running = false;
         this.action_store = [];
         this.retry_action = null;
 
@@ -337,10 +336,10 @@ msc.Server = class {
     }
 
     run_forever(port, interval = 5000) {
-        if (this.timer) {
-            clearInterval(this.timer);
+        if (this.is_running) {
+            return;
         }
-        this.timer = setInterval(() => {
+        setInterval(() => {
             if (!this.ws) {
                 try {
                     this.connect(port);
@@ -349,6 +348,10 @@ msc.Server = class {
                 }
             }
         }, interval);
+        setInterval(() => {
+            msc.ui.check_and_click_ok_button();
+        }, 1000);
+        this.is_running = true;
     }
 
     connect(port) {

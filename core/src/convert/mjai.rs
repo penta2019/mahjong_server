@@ -248,12 +248,11 @@ impl MjaiEvent {
         deltas: &[Point; SEAT],
         scores: &[Score; SEAT],
     ) -> Self {
-        let ura: Vec<String> = ura_doras.iter().map(|&t| to_mjai_tile(t)).collect();
         Self::Hora {
             actor: seat,
             target: target,
             pai: to_mjai_tile(tile),
-            uradora_markers: ura,
+            uradora_markers: vec_to_mjai_tile(ura_doras),
             hora_tehais: vec![], // TODO
             yakus: vec![],       // TODO
             fu: context.fu,
@@ -361,7 +360,7 @@ impl MjaiAction {
             },
             ActionType::Kakan => {
                 let t = act.1[0];
-                let comsumed = if t.1 == 0 {
+                let comsumed = vec_to_mjai_tile(&if t.1 == 0 {
                     // 赤5
                     let t2 = Tile(t.0, 5);
                     vec![t2, t2, t2]
@@ -370,10 +369,7 @@ impl MjaiAction {
                     vec![Tile(t.0, 0), t, t]
                 } else {
                     vec![t, t, t]
-                }
-                .iter()
-                .map(|&t| to_mjai_tile(t))
-                .collect();
+                });
 
                 Self::Kakan {
                     actor: seat,

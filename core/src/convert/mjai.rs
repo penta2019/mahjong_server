@@ -93,8 +93,8 @@ pub enum MjaiEvent {
         scores: [Score; SEAT],
     },
     Ryukyoku {
-        reason: String,      // TODO
-        tehais: Vec<String>, // TODO
+        reason: String,           // TODO
+        tehais: Vec<Vec<String>>, // TODO
         tenpais: [bool; SEAT],
         deltas: [Point; SEAT],
         scores: [Score; SEAT],

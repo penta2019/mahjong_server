@@ -13,7 +13,6 @@ pub enum Event {
     Dora(EventDora),
     RoundEndWin(EventRoundEndWin),
     RoundEndDraw(EventRoundEndDraw),
-    RoundEndNoTile(EventRoundEndNoTile),
     GameOver(EventGameOver),
 }
 
@@ -83,12 +82,18 @@ impl Event {
         })
     }
 
-    pub fn round_end_draw(draw_type: DrawType) -> Self {
-        Self::RoundEndDraw(EventRoundEndDraw { draw_type })
-    }
-
-    pub fn round_end_no_tile(tenpais: [bool; SEAT], points: [Point; SEAT]) -> Self {
-        Self::RoundEndNoTile(EventRoundEndNoTile { tenpais, points })
+    pub fn round_end_draw(
+        draw_type: DrawType,
+        hands: [Vec<Tile>; SEAT],
+        tenpais: [bool; SEAT],
+        points: [Point; SEAT],
+    ) -> Self {
+        Self::RoundEndDraw(EventRoundEndDraw {
+            draw_type,
+            hands,
+            tenpais,
+            points,
+        })
     }
 
     pub fn game_over() -> Self {
@@ -152,10 +157,7 @@ pub struct EventRoundEndWin {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventRoundEndDraw {
     pub draw_type: DrawType,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EventRoundEndNoTile {
+    pub hands: [Vec<Tile>; SEAT],
     pub tenpais: [bool; SEAT],
     pub points: [Point; SEAT],
 }

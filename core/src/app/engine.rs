@@ -640,11 +640,20 @@ impl MahjongEngine {
                             d_scores[s] = if tenpais[s] { recv } else { -pay };
                         }
 
-                        self.handle_event(Event::round_end_no_tile(tenpais, d_scores));
+                        let hands = [vec![], vec![], vec![], vec![]]; // TODO
+                        let event = Event::round_end_draw(
+                            DrawType::Kouhaiheikyoku,
+                            hands,
+                            tenpais,
+                            d_scores,
+                        );
+                        self.handle_event(event);
                         need_leader_change = !tenpais[kyoku];
                     }
                     _ => {
-                        let event = Event::round_end_draw(*draw_type);
+                        let hands = [vec![], vec![], vec![], vec![]]; // TODO
+                        let event =
+                            Event::round_end_draw(*draw_type, hands, [false; SEAT], [0; SEAT]);
                         self.handle_event(event);
                     }
                 }

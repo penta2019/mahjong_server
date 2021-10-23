@@ -54,10 +54,6 @@ impl Listener for StagePrinter {
             Event::RoundEndDraw(e) => {
                 println!("[RoundEndDraw]");
                 println!("{:?}", e.draw_type);
-                println!("{}", stg);
-            }
-            Event::RoundEndNoTile(e) => {
-                println!("[RoundEndNoTile]");
                 println!("is_tenpai: {:?}", &e.tenpais);
                 self.print_score_change(&stg, &e.points);
                 println!("{}", stg);
@@ -93,7 +89,7 @@ impl Listener for StageStepPrinter {
             Dora(_) => {
                 println!("{:?}", stg.doras);
             }
-            RoundNew(_) | RoundEndWin(_) | RoundEndDraw(_) | RoundEndNoTile(_) | GameOver(_) => {
+            RoundNew(_) | RoundEndWin(_) | RoundEndDraw(_) | GameOver(_) => {
                 println!("{}", stg);
             }
         }

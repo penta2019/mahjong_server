@@ -216,9 +216,7 @@ impl TenhouSerializer {
                 }
             }
             Event::RoundEndDraw(e) => {
-                k.result = e.draw_type.to_string();
-            }
-            Event::RoundEndNoTile(e) => {
+                // TODO
                 k.result = "流局".to_string();
                 k.result_detail
                     .push(e.points.iter().map(|&p| json!(p)).collect());

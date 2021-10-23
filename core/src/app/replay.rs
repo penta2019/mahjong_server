@@ -297,7 +297,7 @@ impl Replay {
 
         match e {
             Event::DealTile(_) => {}
-            Event::RoundEndNoTile(_) => {
+            Event::RoundEndDraw(_) => {
                 self.is_round_end = true;
             }
             Event::Meld(_) => return, // Chi, pon

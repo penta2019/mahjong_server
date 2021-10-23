@@ -228,15 +228,6 @@ impl MjaiEndpoint {
         ));
     }
 
-    fn notify_round_end_no_tile(&mut self, stg: &Stage, event: &EventRoundEndNoTile) {
-        self.add_record(MjaiEvent::ryukyoku(
-            DrawType::Kouhaiheikyoku,
-            &event.tenpais,
-            &event.points,
-            &stg.get_scores(),
-        ))
-    }
-
     fn notify_game_over(&mut self, stg: &Stage, _event: &EventGameOver) {
         self.add_record(MjaiEvent::end_game(&stg.get_scores()));
     }
@@ -335,7 +326,6 @@ impl Listener for MjaiEndpoint {
             Event::Dora(e) => self.notify_dora(stg, e),
             Event::RoundEndWin(e) => self.notify_round_end_win(stg, e),
             Event::RoundEndDraw(e) => self.notify_round_end_draw(stg, e),
-            Event::RoundEndNoTile(e) => self.notify_round_end_no_tile(stg, e),
             Event::GameOver(e) => self.notify_game_over(stg, e),
         }
     }

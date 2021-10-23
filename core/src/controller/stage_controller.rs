@@ -48,7 +48,6 @@ impl StageController {
             Event::Dora(e) => event_dora(stg, e),
             Event::RoundEndWin(e) => event_round_end_win(stg, e),
             Event::RoundEndDraw(e) => event_round_end_draw(stg, e),
-            Event::RoundEndNoTile(e) => event_round_end_no_tile(stg, e),
             Event::GameOver(e) => event_game_over(stg, e),
         }
 
@@ -349,9 +348,7 @@ fn event_round_end_win(stg: &mut Stage, event: &EventRoundEndWin) {
     }
 }
 
-fn event_round_end_draw(_stg: &mut Stage, _event: &EventRoundEndDraw) {}
-
-fn event_round_end_no_tile(stg: &mut Stage, event: &EventRoundEndNoTile) {
+fn event_round_end_draw(stg: &mut Stage, event: &EventRoundEndDraw) {
     update_scores(stg, &event.points);
 }
 

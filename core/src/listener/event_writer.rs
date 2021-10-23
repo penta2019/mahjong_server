@@ -35,7 +35,7 @@ impl Listener for EventWriter {
             Event::RoundNew(_) => {
                 self.record.clear();
             }
-            Event::RoundEndWin(_) | Event::RoundEndDraw(_) | Event::RoundEndNoTile(_) => {
+            Event::RoundEndWin(_) | Event::RoundEndDraw(_) => {
                 write = true;
             }
             Event::GameOver(_) => {}
@@ -80,7 +80,7 @@ impl Listener for TenhouEventWriter {
                 self.start_time = unixtime_now();
                 self.round_index = 0;
             }
-            Event::RoundEndWin(_) | Event::RoundEndDraw(_) | Event::RoundEndNoTile(_) => {
+            Event::RoundEndWin(_) | Event::RoundEndDraw(_) => {
                 write = true;
             }
             Event::GameOver(_) => {}

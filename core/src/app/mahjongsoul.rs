@@ -211,7 +211,7 @@ impl Mahjongsoul {
             if !is_cache {
                 let a = &data["operation"];
                 if a != &json!(null) {
-                    // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がる
+                    // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がある
                     act = self.select_action(a);
                 }
             }
@@ -508,7 +508,12 @@ impl Mahjongsoul {
 
     fn handler_liuju(&mut self, _data: &Value) {
         // TODO
-        self.handle_event(Event::round_end_draw(DrawType::Kyushukyuhai));
+        self.handle_event(Event::round_end_draw(
+            DrawType::Kyushukyuhai,
+            [vec![], vec![], vec![], vec![]],
+            [false; 4],
+            [0; 4],
+        ));
     }
 
     fn handler_notile(&mut self, data: &Value) {
@@ -524,7 +529,13 @@ impl Mahjongsoul {
             tenpais[s] = as_bool(&player["tingpai"]);
         }
 
-        self.handle_event(Event::round_end_no_tile(tenpais, points));
+        // TODO
+        self.handle_event(Event::round_end_draw(
+            DrawType::Kouhaiheikyoku,
+            [vec![], vec![], vec![], vec![]],
+            tenpais,
+            points,
+        ));
     }
 }
 

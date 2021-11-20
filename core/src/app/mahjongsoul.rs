@@ -18,7 +18,8 @@ use ActionType::*;
 pub struct MahjongsoulApp {
     read_only: bool,
     sleep: bool,
-    write_to_file: bool,
+    write: bool,
+    write_raw: bool, // mahjongsoul format
     msc_port: u32,
     gui_port: u32,
     actor_name: String,
@@ -31,7 +32,8 @@ impl MahjongsoulApp {
         let mut app = Self {
             read_only: false,
             sleep: false,
-            write_to_file: false,
+            write: false,
+            write_raw: false,
             msc_port: super::MSC_PORT,
             gui_port: super::GUI_PORT,
             actor_name: "".to_string(),
@@ -42,7 +44,8 @@ impl MahjongsoulApp {
             match s.as_str() {
                 "-r" => app.read_only = true,
                 "-s" => app.sleep = true,
-                "-w" => app.write_to_file = true,
+                "-w" => app.write = true,
+                "-wr" => app.write_raw = true,
                 "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 "-0" => app.actor_name = next_value(&mut it, "-0"),
@@ -63,12 +66,12 @@ impl MahjongsoulApp {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         let server = Server::new_ws_server(&format!("localhost:{}", self.gui_port));
         listeners.push(Box::new(StageSender::new(server)));
-        if self.write_to_file {
+        if self.write {
             listeners.push(Box::new(EventWriter::new()));
             // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
 
-        let mut game = Mahjongsoul::new(self.sleep, actor, listeners);
+        let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
         let mut server_msc = Server::new_ws_server(&format!("localhost:{}", self.msc_port));
         loop {
             if server_msc.is_new() {
@@ -100,10 +103,18 @@ struct Mahjongsoul {
     events: Vec<Value>,
     random_sleep: bool,
     actor: Box<dyn Actor>,
+    write_raw: bool, // 雀魂フォーマットでeventを出力
+    start_time: u64,
+    round_index: i32,
 }
 
 impl Mahjongsoul {
-    fn new(random_sleep: bool, actor: Box<dyn Actor>, listeners: Vec<Box<dyn Listener>>) -> Self {
+    fn new(
+        random_sleep: bool,
+        actor: Box<dyn Actor>,
+        listeners: Vec<Box<dyn Listener>>,
+        write_raw: bool,
+    ) -> Self {
         // 新しい局が開始されて座席が判明した際にスワップする
         let nop = create_actor("Nop");
         let actors: [Box<dyn Actor>; SEAT] = [
@@ -119,6 +130,9 @@ impl Mahjongsoul {
             events: vec![],
             random_sleep: random_sleep,
             actor: actor,
+            write_raw: write_raw,
+            start_time: unixtime_now(),
+            round_index: 0,
         }
     }
 
@@ -130,6 +144,27 @@ impl Mahjongsoul {
     #[inline]
     fn handle_event(&mut self, event: Event) {
         self.ctrl.handle_event(&event);
+
+        let mut write = false;
+        match event {
+            Event::GameStart(_) => {
+                self.start_time = unixtime_now();
+                self.round_index = 0;
+            }
+            Event::RoundEndWin(_) | Event::RoundEndDraw(_) => {
+                write = true;
+            }
+            Event::GameOver(_) => {}
+            _ => {}
+        }
+
+        if self.write_raw && write {
+            write_to_file(
+                &format!("data_raw/{}/{:2}.json", self.start_time, self.round_index),
+                &serde_json::to_string_pretty(&json!(self.events)).unwrap(),
+            );
+            self.round_index += 1;
+        }
     }
 
     fn apply(&mut self, msg: &Value) -> Option<Value> {

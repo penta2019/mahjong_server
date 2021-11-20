@@ -128,7 +128,9 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
 -s
     操作(ロン,ツモ,キャンセルを除く)を行う前にランダム時間スリープします.最大4秒
 -w
-    局終了時にイベントデータ(MJAction)を/core/data/[unixtime].jsonに保存します.  
+    局終了時にイベントデータを/core/data/[unixtime].jsonに保存します.  
+-wr
+    局終了時に生のイベントデータを/core/data_raw/[unixtime].jsonに保存します.  
 -msc-port port (デフォルト値:52000)
     雀魂側のスクリプトから接続するためのwsサーバのポート
 -gui-port port (デフォルト値:52001)
@@ -138,7 +140,7 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
 ```
 
 実行例
-* 局情報を読み込んでファイルに保存  
+* 局情報をファイルに保存  
 ```
 cargo run J -w -r
 ```

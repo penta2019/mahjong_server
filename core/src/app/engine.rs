@@ -18,7 +18,7 @@ pub struct EngineApp {
     mode: usize,
     n_game: u32,
     n_thread: u32,
-    write_to_file: bool,
+    write: bool,
     gui_port: u32,
     debug: bool,
     names: [String; SEAT], // actor names
@@ -33,7 +33,7 @@ impl EngineApp {
             mode: 1,
             n_game: 0,
             n_thread: 16,
-            write_to_file: false,
+            write: false,
             gui_port: super::GUI_PORT,
             debug: false,
             names: [
@@ -51,7 +51,7 @@ impl EngineApp {
                 "-m" => app.mode = next_value(&mut it, "-m"),
                 "-g" => app.n_game = next_value(&mut it, "-g"),
                 "-t" => app.n_thread = next_value(&mut it, "-t"),
-                "-w" => app.write_to_file = true,
+                "-w" => app.write = true,
                 "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 "-d" => app.debug = true,
                 "-0" => app.names[0] = next_value(&mut it, "-0"),
@@ -110,7 +110,7 @@ impl EngineApp {
         let server = Server::new_tcp_server("localhost:12345");
         listeners.push(Box::new(EventSender::new(server)));
         ///////////////////////////////////////////////////////////////////////
-        if self.write_to_file {
+        if self.write {
             listeners.push(Box::new(EventWriter::new()));
         }
         // let log = crate::convert::tenhou::TenhouLog::new();

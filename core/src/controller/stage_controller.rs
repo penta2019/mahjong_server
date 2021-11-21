@@ -124,6 +124,7 @@ fn event_deal_tile(stg: &mut Stage, event: &EventDealTile) {
     let t = event.tile; // tileはplayer.is_shown = falseの場合,Z8になることに注意
 
     update_after_discard_completed(stg);
+
     if stg.players[s].is_rinshan {
         // 槍槓リーチ一発を考慮して加槓の成立が確定したタイミングで一発フラグをリセット
         disable_ippatsu(stg);
@@ -131,8 +132,14 @@ fn event_deal_tile(stg: &mut Stage, event: &EventDealTile) {
 
     stg.turn = s;
     stg.left_tile_count -= 1;
-    stg.players[s].drawn = Some(t);
-    player_inc_tile(&mut stg.players[s], t);
+
+    let pl = &mut stg.players[s];
+    pl.drawn = Some(t);
+    player_inc_tile(pl, t);
+    if !pl.is_riichi {
+        pl.is_furiten_other = false; // リーチ中でなければ見逃しフリテンを解除
+    }
+
     if t != Z8 {
         table_edit(stg, t, U, H(s));
     }
@@ -146,7 +153,6 @@ fn event_discard_tile(stg: &mut Stage, event: &EventDiscardTile) {
     stg.turn = s;
     let pl = &mut stg.players[s];
     pl.is_rinshan = false;
-    pl.is_furiten_other = false;
 
     if pl.is_shown {
         assert!(pl.count_tile(t) > 0, "{} not found in hand", t);
@@ -284,7 +290,6 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             }
         }
         MeldType::Kakan => {
-            // disable_ippatsu(stg); // 槍槓リーチ一発があるのでここではフラグをリセットしない
             pl.is_rinshan = true;
             idx = 0;
             let t = event.consumed[0];

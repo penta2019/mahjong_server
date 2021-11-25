@@ -261,11 +261,11 @@ impl Mahjongsoul {
         }
 
         let start = time::Instant::now();
-        let seat = as_usize(&data["seat"]);
+        let s = as_usize(&data["seat"]);
 
         // 可能なactionのパースと選択
         let (acts, idxs) = json_parse_possible_action(data, self.get_stage());
-        let act = self.ctrl.select_action(seat, &acts);
+        let act = self.ctrl.select_action(s, &acts);
         println!("possible: {:?}", acts);
         println!("selected: {:?}", act);
         println!("");
@@ -283,7 +283,7 @@ impl Mahjongsoul {
         let stg = self.get_stage();
         let ellapsed = start.elapsed().as_millis();
         let mut sleep = 1000;
-        if self.random_sleep && seat == stg.turn && tp != Tsumo {
+        if self.random_sleep && s == stg.turn && tp != Tsumo {
             // ツモ・ロン・鳴きのキャンセル以外の操作の場合,ランダムにsleep時間(1 ~ 4秒)を取る
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
@@ -302,15 +302,15 @@ impl Mahjongsoul {
 
         let action = match tp {
             Nop => {
-                if stg.turn == seat {
-                    let idx = 13 - stg.players[seat].melds.len() * 3;
+                if stg.turn == s {
+                    let idx = 13 - stg.players[s].melds.len() * 3;
                     format!("action_dapai({})", idx)
                 } else {
                     format!("action_cancel()")
                 }
             }
             Discard => {
-                let idx = calc_dapai_index(stg, seat, cs[0], false);
+                let idx = calc_dapai_index(stg, s, cs[0], false);
                 format!("action_dapai({})", idx)
             }
             Ankan => {
@@ -320,7 +320,7 @@ impl Mahjongsoul {
                 format!("action_gang({})", arg_idx)
             }
             Riichi => {
-                let idx = calc_dapai_index(stg, seat, cs[0], false);
+                let idx = calc_dapai_index(stg, s, cs[0], false);
                 format!("action_lizhi({})", idx)
             }
             Tsumo => {
@@ -491,7 +491,7 @@ impl Mahjongsoul {
 
         let mut wins = vec![];
         for win in as_array(&data["hules"]) {
-            let seat = as_usize(&win["seat"]);
+            let s = as_usize(&win["seat"]);
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
             let fu = as_usize(&win["fu"]);
@@ -506,7 +506,7 @@ impl Mahjongsoul {
                 match id {
                     10 => {
                         // 自風
-                        yakus.push((format!("自風 {}", jp_wind[stg.get_seat_wind(seat)]), 1));
+                        yakus.push((format!("自風 {}", jp_wind[stg.get_seat_wind(s)]), 1));
                     }
                     11 => {
                         // 場風
@@ -534,21 +534,43 @@ impl Mahjongsoul {
                     win["point_zimo_qin"].as_i64().unwrap_or(0) as Point,
                 ),
             };
-            wins.push((seat, delta_scores.clone(), ctx));
+            wins.push((s, delta_scores.clone(), ctx));
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
 
         self.handle_event(Event::round_end_win(vec![], wins));
     }
 
-    fn handler_liuju(&mut self, _data: &Value) {
-        // TODO
-        self.handle_event(Event::round_end_draw(
-            DrawType::Kyushukyuhai,
-            [vec![], vec![], vec![], vec![]],
-            [false; 4],
-            [0; 4],
-        ));
+    fn handler_liuju(&mut self, data: &Value) {
+        let mut draw_type = DrawType::Unknown;
+        let mut hands = [vec![], vec![], vec![], vec![]];
+        let mut tenpais = [false; 4];
+        let mut points = [0; 4];
+        match as_usize(&data["type"]) {
+            1 => {
+                // 九種九牌
+                draw_type = DrawType::Kyushukyuhai;
+            }
+            2 => {
+                // 四風連打
+                draw_type = DrawType::Suufuurenda;
+            }
+            3 => {
+                // 四槓散了
+                draw_type = DrawType::Suukansanra;
+            }
+            4 => {
+                // 四家立直
+                draw_type = DrawType::Suuchariichi;
+            }
+            5 => {
+                // 三家和
+                draw_type = DrawType::Sanchaho;
+            }
+            _ => {}
+        }
+
+        self.handle_event(Event::round_end_draw(draw_type, hands, tenpais, points));
     }
 
     fn handler_notile(&mut self, data: &Value) {
@@ -648,7 +670,7 @@ fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index
 
     for act in as_array(&v["operation_list"]) {
         let combs = &act["combination"];
-        match as_i32(&act["type"]) {
+        match as_usize(&act["type"]) {
             0 => panic!(),
             1 => {
                 // 打牌

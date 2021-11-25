@@ -168,10 +168,12 @@ pub struct EventGameOver {}
 // [DrawType]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DrawType {
+    Unknown,        // 不明
     Kyushukyuhai,   // 九種九牌
     Suufuurenda,    // 四風連打
     Suukansanra,    // 四槓散了
     Suuchariichi,   // 四家立直
+    Sanchaho,       // 三家和
     Kouhaiheikyoku, // 荒廃平局
 }
 
@@ -181,10 +183,12 @@ impl fmt::Display for DrawType {
             f,
             "{}",
             match self {
+                DrawType::Unknown => "不明",
                 DrawType::Kyushukyuhai => "九種九牌",
                 DrawType::Suufuurenda => "四風連打",
                 DrawType::Suukansanra => "四槓散了",
                 DrawType::Suuchariichi => "四家立直",
+                DrawType::Sanchaho => "三家和",
                 DrawType::Kouhaiheikyoku => "荒廃平局",
             }
         )

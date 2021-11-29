@@ -106,24 +106,24 @@ impl TenhouSerializer {
                 k.kyoku = e.round * 4 + e.kyoku;
                 k.honba = e.honba;
                 k.kyoutaku = e.kyoutaku;
-                k.doras = vec_to_tenhou_tile(&e.doras);
+                k.doras = tile_vec_to_tenhou(&e.doras);
                 k.scores = e.scores;
                 for s in 0..SEAT {
                     let h = &e.hands[s];
-                    k.players[s].hand = vec_to_tenhou_tile(&h[..13]);
+                    k.players[s].hand = tile_vec_to_tenhou(&h[..13]);
                     if h.len() == 14 {
-                        k.players[s].drawns.push(json!(to_tenhou_tile(h[13])));
+                        k.players[s].drawns.push(json!(tile_to_tenhou(h[13])));
                     }
                 }
             }
             Event::DealTile(e) => {
-                k.players[e.seat].drawns.push(json!(to_tenhou_tile(e.tile)));
+                k.players[e.seat].drawns.push(json!(tile_to_tenhou(e.tile)));
             }
             Event::DiscardTile(e) => {
                 let d = if e.is_drawn {
                     60
                 } else {
-                    to_tenhou_tile(e.tile)
+                    tile_to_tenhou(e.tile)
                 };
                 let d = if e.is_riichi {
                     json!(format!("r{}", d))
@@ -145,9 +145,9 @@ impl TenhouSerializer {
                     let mut meld: Vec<String> = e
                         .consumed
                         .iter()
-                        .map(|&t| to_tenhou_tile(t).to_string())
+                        .map(|&t| tile_to_tenhou(t).to_string())
                         .collect();
-                    meld.insert(pos, format!("{}{}", marker, to_tenhou_tile(d)));
+                    meld.insert(pos, format!("{}{}", marker, tile_to_tenhou(d)));
                     k.players[e.seat].drawns.push(json!(meld.concat()));
                 }
                 MeldType::Kakan => {
@@ -159,9 +159,9 @@ impl TenhouSerializer {
                             for i in 0..3 {
                                 if m.froms[i] != e.seat {
                                     meld += "k";
-                                    meld += &to_tenhou_tile(t).to_string();
+                                    meld += &tile_to_tenhou(t).to_string();
                                 }
-                                meld += &to_tenhou_tile(m.tiles[i]).to_string();
+                                meld += &tile_to_tenhou(m.tiles[i]).to_string();
                             }
                             k.players[e.seat].discards.push(json!(meld));
                         }
@@ -171,7 +171,7 @@ impl TenhouSerializer {
                     let mut meld: Vec<String> = e
                         .consumed
                         .iter()
-                        .map(|&t| to_tenhou_tile(t).to_string())
+                        .map(|&t| tile_to_tenhou(t).to_string())
                         .collect();
                     meld.insert(3, "a".to_string());
                     k.players[e.seat].discards.push(json!(meld.concat()));
@@ -179,12 +179,12 @@ impl TenhouSerializer {
             },
             Event::Kita(_) => panic!(),
             Event::Dora(e) => {
-                k.doras.push(to_tenhou_tile(e.tile));
+                k.doras.push(tile_to_tenhou(e.tile));
             }
             Event::RoundEndWin(e) => {
                 let target_seat = stg.turn;
                 k.result = "和了".to_string();
-                k.ura_doras = vec_to_tenhou_tile(&e.ura_doras);
+                k.ura_doras = tile_vec_to_tenhou(&e.ura_doras);
                 for (seat, points, ctx) in &e.contexts {
                     k.result_detail
                         .push(points.iter().map(|&p| json!(p)).collect());
@@ -234,7 +234,7 @@ impl TenhouSerializer {
 // [TenhouDeserializer]
 // struct TenhouDeserializer {}
 
-fn to_tenhou_tile(t: Tile) -> i64 {
+fn tile_to_tenhou(t: Tile) -> i64 {
     (match t {
         Z8 => 0,                            // Unknown
         Tile(ti, 0) => 50 + ti + 1,         // 赤ドラ
@@ -242,7 +242,7 @@ fn to_tenhou_tile(t: Tile) -> i64 {
     }) as i64
 }
 
-// fn from_tenhou_tile(t: i64) -> Tile {
+// fn tile_from_tenhou(t: i64) -> Tile {
 //     let t = t as usize;
 //     match t {
 //         0 => Z8,
@@ -252,10 +252,10 @@ fn to_tenhou_tile(t: Tile) -> i64 {
 //     }
 // }
 
-fn vec_to_tenhou_tile(v: &[Tile]) -> Vec<i64> {
-    v.iter().map(|&t| to_tenhou_tile(t)).collect()
+fn tile_vec_to_tenhou(v: &[Tile]) -> Vec<i64> {
+    v.iter().map(|&t| tile_to_tenhou(t)).collect()
 }
 
-// fn vec_from_tenhou_tile(v: &[i64]) -> Vec<Tile> {
-//     v.iter().map(|&t| from_tenhou_tile(t)).collect()
+// fn tile_vec_from_tenhou(v: &[i64]) -> Vec<Tile> {
+//     v.iter().map(|&t| tile_from_tenhou(t)).collect()
 // }

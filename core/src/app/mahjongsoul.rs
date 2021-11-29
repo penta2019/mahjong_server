@@ -352,7 +352,7 @@ impl Mahjongsoul {
         let stg = self.get_stage();
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
-                let t = tile_from_symbol(as_str(doras.last().unwrap()));
+                let t = tile_from_mjsoul(as_str(doras.last().unwrap()));
                 self.handle_event(Event::dora(t));
             }
         }
@@ -371,7 +371,7 @@ impl Mahjongsoul {
 
         let mut doras: Vec<Tile> = Vec::new();
         for ps in as_array(&data["doras"]) {
-            doras.push(tile_from_symbol(as_str(ps)));
+            doras.push(tile_from_mjsoul(as_str(ps)));
         }
 
         let mut scores = [0; SEAT];
@@ -384,7 +384,7 @@ impl Mahjongsoul {
             let hand = &mut hands[s];
             if s == self.seat {
                 for ps in as_array(&data["tiles"]) {
-                    hand.push(tile_from_symbol(as_str(ps)));
+                    hand.push(tile_from_mjsoul(as_str(ps)));
                 }
             } else {
                 if s == kyoku {
@@ -409,7 +409,7 @@ impl Mahjongsoul {
         let s = as_usize(&data["seat"]);
 
         if let Value::String(ps) = &data["tile"] {
-            let t = tile_from_symbol(&ps);
+            let t = tile_from_mjsoul(&ps);
             self.handle_event(Event::deal_tile(s, t));
         } else {
             self.handle_event(Event::deal_tile(s, Z8));
@@ -418,7 +418,7 @@ impl Mahjongsoul {
 
     fn handler_discardtile(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
-        let t = tile_from_symbol(as_str(&data["tile"]));
+        let t = tile_from_mjsoul(as_str(&data["tile"]));
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
         self.handle_event(Event::discard_tile(s, t, m, r));
@@ -437,7 +437,7 @@ impl Mahjongsoul {
         let mut tiles = vec![];
         let mut froms = vec![];
         for ps in as_array(&data["tiles"]) {
-            tiles.push(tile_from_symbol(as_str(ps)));
+            tiles.push(tile_from_mjsoul(as_str(ps)));
         }
         for f in as_array(&data["froms"]) {
             froms.push(as_usize(f));
@@ -461,7 +461,7 @@ impl Mahjongsoul {
             _ => panic!("invalid gang type"),
         };
 
-        let mut t = tile_from_symbol(as_str(&data["tiles"]));
+        let mut t = tile_from_mjsoul(as_str(&data["tiles"]));
         let consumed = if tp == MeldType::Ankan {
             t = t.to_normal();
             let t0 = if t.is_suit() && t.1 == 5 {
@@ -596,7 +596,7 @@ impl Mahjongsoul {
     }
 }
 
-fn tile_from_symbol(s: &str) -> Tile {
+fn tile_from_mjsoul(s: &str) -> Tile {
     let b = s.as_bytes();
     let n = b[0] - b'0';
     let t = match b[1] as char {
@@ -760,7 +760,7 @@ fn json_parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
                 .as_str()
                 .unwrap()
                 .split('|')
-                .map(|sym| tile_from_symbol(sym))
+                .map(|sym| tile_from_mjsoul(sym))
                 .collect();
             c.sort();
             c

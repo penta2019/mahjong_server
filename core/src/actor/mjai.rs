@@ -281,7 +281,7 @@ impl Actor for MjaiEndpoint {
         if d.is_riichi {
             d.is_riichi = false;
             if let MjaiAction::Dahai { pai, .. } = mjai_act {
-                return Action::riichi(from_mjai_tile(&pai));
+                return Action::riichi(tile_from_mjai(&pai));
             } else {
                 panic!();
             }

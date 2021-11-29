@@ -151,7 +151,7 @@ impl MjaiEvent {
             honba: honba,
             kyotaku: kyotaku,
             oya: kyoku,
-            dora_marker: to_mjai_tile(doras[0]),
+            dora_marker: tile_to_mjai(doras[0]),
             tehais: create_tehais(hands, id),
             scores: scores.clone(),
         }
@@ -159,7 +159,7 @@ impl MjaiEvent {
 
     pub fn tsumo(id: Seat, seat: Seat, tile: Tile) -> Self {
         let t = if id == seat {
-            to_mjai_tile(tile)
+            tile_to_mjai(tile)
         } else {
             "?".to_string()
         };
@@ -172,7 +172,7 @@ impl MjaiEvent {
     pub fn dahai(seat: Seat, tile: Tile, is_drawn: bool) -> Self {
         Self::Dahai {
             actor: seat,
-            pai: to_mjai_tile(tile),
+            pai: tile_to_mjai(tile),
             tsumogiri: is_drawn,
         }
     }
@@ -194,8 +194,8 @@ impl MjaiEvent {
     pub fn chi(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
         Self::Chi {
             actor: seat,
-            pai: to_mjai_tile(tile),
-            consumed: vec_to_mjai_tile(consumed),
+            pai: tile_to_mjai(tile),
+            consumed: tile_vec_to_mjai(consumed),
             target: target,
         }
     }
@@ -203,8 +203,8 @@ impl MjaiEvent {
     pub fn pon(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
         Self::Pon {
             actor: seat,
-            pai: to_mjai_tile(tile),
-            consumed: vec_to_mjai_tile(consumed),
+            pai: tile_to_mjai(tile),
+            consumed: tile_vec_to_mjai(consumed),
             target: target,
         }
     }
@@ -212,8 +212,8 @@ impl MjaiEvent {
     pub fn daiminkan(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
         Self::Daiminkan {
             actor: seat,
-            pai: to_mjai_tile(tile),
-            consumed: vec_to_mjai_tile(consumed),
+            pai: tile_to_mjai(tile),
+            consumed: tile_vec_to_mjai(consumed),
             target: target,
         }
     }
@@ -221,21 +221,21 @@ impl MjaiEvent {
     pub fn ankan(seat: Seat, consumed: &Vec<Tile>) -> Self {
         Self::Ankan {
             actor: seat,
-            consumed: vec_to_mjai_tile(consumed),
+            consumed: tile_vec_to_mjai(consumed),
         }
     }
 
     pub fn kakan(seat: Seat, consumed: &Vec<Tile>, pon_tiles: &Vec<Tile>) -> Self {
         Self::Kakan {
             actor: seat,
-            pai: to_mjai_tile(consumed[0]),
-            consumed: vec_to_mjai_tile(pon_tiles),
+            pai: tile_to_mjai(consumed[0]),
+            consumed: tile_vec_to_mjai(pon_tiles),
         }
     }
 
     pub fn dora(tile: Tile) -> Self {
         Self::Dora {
-            dora_marker: to_mjai_tile(tile),
+            dora_marker: tile_to_mjai(tile),
         }
     }
 
@@ -251,8 +251,8 @@ impl MjaiEvent {
         Self::Hora {
             actor: seat,
             target: target,
-            pai: to_mjai_tile(tile),
-            uradora_markers: vec_to_mjai_tile(ura_doras),
+            pai: tile_to_mjai(tile),
+            uradora_markers: tile_vec_to_mjai(ura_doras),
             hora_tehais: vec![], // TODO
             yakus: vec![],       // TODO
             fu: context.fu,
@@ -356,11 +356,11 @@ impl MjaiAction {
             ActionType::Discard => return None,
             ActionType::Ankan => Self::Ankan {
                 actor: seat,
-                consumed: vec_to_mjai_tile(cs),
+                consumed: tile_vec_to_mjai(cs),
             },
             ActionType::Kakan => {
                 let t = act.1[0];
-                let comsumed = vec_to_mjai_tile(&if t.1 == 0 {
+                let comsumed = tile_vec_to_mjai(&if t.1 == 0 {
                     // 赤5
                     let t2 = Tile(t.0, 5);
                     vec![t2, t2, t2]
@@ -373,7 +373,7 @@ impl MjaiAction {
 
                 Self::Kakan {
                     actor: seat,
-                    pai: to_mjai_tile(t),
+                    pai: tile_to_mjai(t),
                     consumed: comsumed,
                 }
             }
@@ -381,7 +381,7 @@ impl MjaiAction {
             ActionType::Tsumo => Self::Hora {
                 actor: seat,
                 target: seat,
-                pai: to_mjai_tile(stage.players[seat].drawn.unwrap()),
+                pai: tile_to_mjai(stage.players[seat].drawn.unwrap()),
             },
             ActionType::Kyushukyuhai => Self::Ryukyoku {
                 actor: seat,
@@ -393,8 +393,8 @@ impl MjaiAction {
                 Self::Chi {
                     actor: seat,
                     target: target_seat,
-                    pai: to_mjai_tile(target_tile),
-                    consumed: vec_to_mjai_tile(cs),
+                    pai: tile_to_mjai(target_tile),
+                    consumed: tile_vec_to_mjai(cs),
                 }
             }
             ActionType::Pon => {
@@ -402,8 +402,8 @@ impl MjaiAction {
                 Self::Pon {
                     actor: seat,
                     target: target_seat,
-                    pai: to_mjai_tile(target_tile),
-                    consumed: vec_to_mjai_tile(cs),
+                    pai: tile_to_mjai(target_tile),
+                    consumed: tile_vec_to_mjai(cs),
                 }
             }
             ActionType::Minkan => {
@@ -411,8 +411,8 @@ impl MjaiAction {
                 Self::Daiminkan {
                     actor: seat,
                     target: target_seat,
-                    pai: to_mjai_tile(target_tile),
-                    consumed: vec_to_mjai_tile(cs),
+                    pai: tile_to_mjai(target_tile),
+                    consumed: tile_vec_to_mjai(cs),
                 }
             }
             ActionType::Ron => {
@@ -420,7 +420,7 @@ impl MjaiAction {
                 Self::Hora {
                     actor: seat,
                     target: lt.0,
-                    pai: to_mjai_tile(lt.2),
+                    pai: tile_to_mjai(lt.2),
                 }
             }
         })
@@ -433,14 +433,14 @@ impl MjaiAction {
                 if *tsumogiri {
                     Action::nop()
                 } else {
-                    Action::discard(from_mjai_tile(pai))
+                    Action::discard(tile_from_mjai(pai))
                 }
             }
-            Self::Chi { consumed, .. } => Action::chi(vec_from_mjai_tile(consumed)),
-            Self::Pon { consumed, .. } => Action::pon(vec_from_mjai_tile(consumed)),
-            Self::Kakan { pai, .. } => Action::kakan(from_mjai_tile(pai)),
-            Self::Daiminkan { consumed, .. } => Action::minkan(vec_from_mjai_tile(consumed)),
-            Self::Ankan { consumed, .. } => Action::ankan(vec_from_mjai_tile(consumed)),
+            Self::Chi { consumed, .. } => Action::chi(tile_vec_from_mjai(consumed)),
+            Self::Pon { consumed, .. } => Action::pon(tile_vec_from_mjai(consumed)),
+            Self::Kakan { pai, .. } => Action::kakan(tile_from_mjai(pai)),
+            Self::Daiminkan { consumed, .. } => Action::minkan(tile_vec_from_mjai(consumed)),
+            Self::Ankan { consumed, .. } => Action::ankan(tile_vec_from_mjai(consumed)),
             Self::Reach { .. } => panic!(),
             Self::Hora { .. } => {
                 if is_turn {
@@ -456,7 +456,7 @@ impl MjaiAction {
 }
 
 // [Utility]
-pub fn to_mjai_tile(t: Tile) -> String {
+pub fn tile_to_mjai(t: Tile) -> String {
     if t.is_hornor() {
         assert!(WE <= t.1 && t.1 <= DR);
         let hornor = ["", "E", "S", "W", "N", "P", "F", "C"];
@@ -472,7 +472,7 @@ pub fn to_mjai_tile(t: Tile) -> String {
     }
 }
 
-pub fn from_mjai_tile(sym: &str) -> Tile {
+pub fn tile_from_mjai(sym: &str) -> Tile {
     match sym {
         "?" => Z8,
         "E" => Tile(TZ, WE),
@@ -500,12 +500,12 @@ pub fn from_mjai_tile(sym: &str) -> Tile {
     }
 }
 
-fn vec_to_mjai_tile(v: &Vec<Tile>) -> Vec<String> {
-    v.iter().map(|&t| to_mjai_tile(t)).collect()
+fn tile_vec_to_mjai(v: &Vec<Tile>) -> Vec<String> {
+    v.iter().map(|&t| tile_to_mjai(t)).collect()
 }
 
-fn vec_from_mjai_tile(v: &Vec<String>) -> Vec<Tile> {
-    let mut v2: Vec<Tile> = v.iter().map(|t| from_mjai_tile(t)).collect();
+fn tile_vec_from_mjai(v: &Vec<String>) -> Vec<Tile> {
+    let mut v2: Vec<Tile> = v.iter().map(|t| tile_from_mjai(t)).collect();
     v2.sort();
     v2
 }
@@ -516,7 +516,7 @@ fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> [Vec<String>; SEAT] 
         let mut mjai_hand = vec![];
         for &t in hand {
             if seat == seat2 {
-                mjai_hand.push(to_mjai_tile(t));
+                mjai_hand.push(tile_to_mjai(t));
             } else {
                 mjai_hand.push("?".to_string());
             }

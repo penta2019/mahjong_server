@@ -352,7 +352,7 @@ impl Mahjongsoul {
         let stg = self.get_stage();
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
-                let t = tile_from_mjsoul(as_str(doras.last().unwrap()));
+                let t = tile_from_mjsoul2(doras.last().unwrap());
                 self.handle_event(Event::dora(t));
             }
         }
@@ -368,11 +368,7 @@ impl Mahjongsoul {
         let honba = as_usize(&data["ben"]);
         let kyoutaku = as_usize(&data["liqibang"]);
         let mode = as_usize(&data["mode"]);
-
-        let mut doras: Vec<Tile> = Vec::new();
-        for ps in as_array(&data["doras"]) {
-            doras.push(tile_from_mjsoul(as_str(ps)));
-        }
+        let doras = as_vec(tile_from_mjsoul2, &data["doras"]);
 
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["scores"]) {
@@ -381,13 +377,12 @@ impl Mahjongsoul {
 
         let mut hands = [vec![], vec![], vec![], vec![]];
         for s in 0..SEAT {
-            let hand = &mut hands[s];
             if s == self.seat {
-                for ps in as_array(&data["tiles"]) {
-                    hand.push(tile_from_mjsoul(as_str(ps)));
-                }
+                hands[s] = as_vec(tile_from_mjsoul2, &data["tiles"]);
             } else {
+                let hand = &mut hands[s];
                 if s == kyoku {
+                    // 親番は手牌14枚から開始
                     for _ in 0..14 {
                         hand.push(Z8);
                     }
@@ -418,7 +413,7 @@ impl Mahjongsoul {
 
     fn handler_discardtile(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
-        let t = tile_from_mjsoul(as_str(&data["tile"]));
+        let t = tile_from_mjsoul2(&data["tile"]);
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
         self.handle_event(Event::discard_tile(s, t, m, r));
@@ -434,14 +429,8 @@ impl Mahjongsoul {
             _ => panic!("unknown meld type"),
         };
 
-        let mut tiles = vec![];
-        let mut froms = vec![];
-        for ps in as_array(&data["tiles"]) {
-            tiles.push(tile_from_mjsoul(as_str(ps)));
-        }
-        for f in as_array(&data["froms"]) {
-            froms.push(as_usize(f));
-        }
+        let tiles = as_vec(tile_from_mjsoul2, &data["tiles"]);
+        let froms = as_vec(as_usize, &data["froms"]);
 
         let mut consumed = vec![];
         for (&t, &f) in tiles.iter().zip(froms.iter()) {
@@ -461,7 +450,7 @@ impl Mahjongsoul {
             _ => panic!("invalid gang type"),
         };
 
-        let mut t = tile_from_mjsoul(as_str(&data["tiles"]));
+        let mut t = tile_from_mjsoul2(&data["tiles"]);
         let consumed = if tp == MeldType::Ankan {
             t = t.to_normal();
             let t0 = if t.is_suit() && t.1 == 5 {
@@ -607,6 +596,10 @@ fn tile_from_mjsoul(s: &str) -> Tile {
         _ => panic!("invalid Tile type"),
     };
     Tile(t, n as usize)
+}
+
+fn tile_from_mjsoul2(v: &Value) -> Tile {
+    tile_from_mjsoul(as_str(v))
 }
 
 fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {

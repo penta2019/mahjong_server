@@ -150,3 +150,14 @@ pub fn as_array(v: &Value) -> &Vec<serde_json::Value> {
 pub fn as_enumerate(v: &Value) -> std::iter::Enumerate<std::slice::Iter<'_, serde_json::Value>> {
     v.as_array().unwrap().iter().enumerate()
 }
+
+pub fn as_vec<F, T>(f: F, v: &Value) -> Vec<T>
+where
+    F: Fn(&Value) -> T,
+{
+    let mut vec: Vec<T> = Vec::new();
+    for e in as_array(&v) {
+        vec.push(f(e));
+    }
+    vec
+}

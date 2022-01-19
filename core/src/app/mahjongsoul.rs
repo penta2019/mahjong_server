@@ -533,12 +533,14 @@ impl Mahjongsoul {
     fn handler_liuju(&mut self, data: &Value) {
         let mut draw_type = DrawType::Unknown;
         let mut hands = [vec![], vec![], vec![], vec![]];
-        let mut tenpais = [false; 4];
-        let mut points = [0; 4];
+        let tenpais = [false; 4];
+        let points = [0; 4];
         match as_usize(&data["type"]) {
             1 => {
                 // 九種九牌
                 draw_type = DrawType::Kyushukyuhai;
+                let s = as_usize(&data["seat"]);
+                hands[s] = as_vec(tile_from_mjsoul2, &data["tiles"]);
             }
             2 => {
                 // 四風連打

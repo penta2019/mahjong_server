@@ -51,11 +51,11 @@ impl StageController {
             Event::GameOver(e) => event_game_over(stg, e),
         }
 
-        for l in &mut self.actors {
-            l.notify_event(stg, &event);
+        for a in &mut self.actors {
+            a.notify_event(stg, &event);
         }
-        for l in &mut self.listeners {
-            l.notify_event(stg, &event);
+        for a in &mut self.listeners {
+            a.notify_event(stg, &event);
         }
     }
 

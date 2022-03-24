@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::hand::WinContext;
 use crate::model::*;
 
 // [MjaiEvent]
@@ -282,7 +281,9 @@ impl MjaiEvent {
         }
     }
 
-    // pub fn end_kyoku(deltas: &[Score; SEAT]) {}
+    pub fn end_kyoku() -> Self {
+        Self::EndKyoku {}
+    }
 
     pub fn end_game(scores: &[Score; SEAT]) -> Self {
         Self::EndGame {

@@ -7,6 +7,7 @@ mod meld;
 mod player;
 mod stage;
 mod tile;
+mod win_context;
 
 use std::fmt;
 
@@ -21,3 +22,4 @@ pub use meld::*;
 pub use player::*;
 pub use stage::*;
 pub use tile::*;
+pub use win_context::*;

@@ -4,7 +4,7 @@ mod point;
 mod win;
 mod yaku;
 
-pub use evaluate::{evaluate_hand_ron, evaluate_hand_tsumo, WinContext};
+pub use evaluate::{evaluate_hand_ron, evaluate_hand_tsumo};
 pub use point::get_score_title;
 pub use win::{
     calc_discards_to_chiitoitsu_tenpai, calc_discards_to_kokushimusou_tenpai,

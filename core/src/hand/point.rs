@@ -1,6 +1,4 @@
-use crate::model::Point;
-
-pub type Points = (Point, Point, Point); // (ロンの支払い, ツモ・子の支払い, ツモ・親の支払い)
+use crate::model::{Point, Points};
 
 // 親が他家を直撃した場合の点数表 (役満未満)
 const POINT_LEADER: [[Point; 11]; 13] = [

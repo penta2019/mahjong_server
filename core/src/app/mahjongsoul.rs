@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::hand::{get_score_title, WinContext, Yaku};
+use crate::hand::{get_score_title, Yaku};
 use crate::listener::{EventWriter, StageSender};
 use crate::model::*;
 use crate::util::common::*;

@@ -117,6 +117,16 @@ impl MjaiEndpoint {
 
     fn notify_round_new(&mut self, stg: &Stage, event: &EventRoundNew) {
         assert!(self.seat != NO_SEAT);
+
+        // 前の局のデータがすべて送信されていない場合は待機
+        let wait = {
+            let d = self.data.lock().unwrap();
+            d.cursor < d.record.len()
+        };
+        if wait {
+            sleep_ms(1000);
+        }
+
         let mut data = SharedData::new();
         if self.is_new_game {
             data.send_start_game = true;
@@ -217,6 +227,7 @@ impl MjaiEndpoint {
                 &stg.get_scores(),
             ));
         }
+        self.add_record(MjaiEvent::end_kyoku());
     }
 
     fn notify_round_end_draw(&mut self, stg: &Stage, event: &EventRoundEndDraw) {
@@ -226,6 +237,7 @@ impl MjaiEndpoint {
             &[0; SEAT],
             &stg.get_scores(),
         ));
+        self.add_record(MjaiEvent::end_kyoku());
     }
 
     fn notify_game_over(&mut self, stg: &Stage, _event: &EventGameOver) {
@@ -336,6 +348,7 @@ struct SharedData {
     send_start_game: bool,
     seat: Seat,
     record: Vec<MjaiEvent>,
+    cursor: usize,
     selected_action: Option<MjaiAction>,
     possible_actions: Option<Vec<MjaiAction>>,
     is_riichi: bool,
@@ -348,6 +361,7 @@ impl SharedData {
             send_start_game: false,
             seat: NO_SEAT,
             record: vec![],
+            cursor: 0,
             selected_action: None,
             possible_actions: None,
             is_riichi: false,
@@ -505,6 +519,8 @@ fn stream_handler(
         } else {
             data.lock().unwrap().selected_action = Some(v);
         }
+
+        data.lock().unwrap().cursor = cursor;
     }
 }
 

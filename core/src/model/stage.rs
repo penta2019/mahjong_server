@@ -120,7 +120,27 @@ impl fmt::Display for Stage {
                 }
             }
         }
+        writeln!(f)?;
 
         Ok(())
     }
+}
+
+pub fn hand_vec_from_tile_table(tt: &TileTable) -> Vec<Tile> {
+    let mut hand = vec![];
+    for ti in 0..TYPE {
+        for ni in 1..TNUM {
+            // 赤5
+            if ni == 5 {
+                for _ in 0..tt[ti][0] {
+                    hand.push(Tile(ti, 0));
+                }
+            }
+
+            for _ in 0..tt[ti][ni] {
+                hand.push(Tile(ti, ni));
+            }
+        }
+    }
+    hand
 }

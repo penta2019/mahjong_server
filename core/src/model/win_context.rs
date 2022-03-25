@@ -4,6 +4,7 @@ pub type Points = (Point, Point, Point); // (ロンの支払い, ツモ・子の
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct WinContext {
+    pub hand: Vec<Tile>,             // 和了手牌(鳴きは含まない)
     pub yakus: Vec<(String, usize)>, // 役一覧(ドラを含む), Vec<(name, fan)>
     pub is_tsumo: bool,              // true: ツモ, false: ロン
     pub score_title: String,         // 倍満, 跳満, ...

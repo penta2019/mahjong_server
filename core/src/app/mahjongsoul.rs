@@ -511,6 +511,7 @@ impl Mahjongsoul {
                 };
             }
             let ctx = WinContext {
+                hand: vec![], // TODO
                 yakus: yakus,
                 is_tsumo: as_bool(&win["zimo"]),
                 score_title: get_score_title(fu, fan, yakuman_times),

@@ -206,6 +206,7 @@ fn evaluate_hand(
 
     let mut results = vec![];
     for ctx in wins {
+        let hand = hand_vec_from_tile_table(hand);
         let fu = ctx.calc_fu();
         let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
         if yakus.is_empty() {
@@ -237,6 +238,7 @@ fn evaluate_hand(
         let points = get_points(is_leader, fu, fan, yakuman_times);
         let score_title = get_score_title(fu, fan, yakuman_times);
         results.push(WinContext {
+            hand,
             yakus,
             is_tsumo,
             score_title,

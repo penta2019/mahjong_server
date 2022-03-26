@@ -18,7 +18,7 @@ pub enum MjaiEvent {
     StartGame {
         id: Seat,
         names: [String; SEAT],
-        kyoku_first: usize, // 0: 4人南, 4: 4人東 (EventRoundNew.modeとは割当が異なることに注意)
+        kyoku_first: usize, // 0: 4人南, 4: 4人東 (EventNew.modeとは割当が異なることに注意)
         aka_flag: bool,     // true: 赤ドラあり
     },
     StartKyoku {

@@ -3,24 +3,24 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {
-    GameStart(EventGameStart),
-    RoundNew(EventRoundNew),
-    DealTile(EventDealTile),
-    DiscardTile(EventDiscardTile),
-    Meld(EventMeld),
-    Kita(EventKita),
-    Dora(EventDora),
-    RoundEndWin(EventRoundEndWin),
-    RoundEndDraw(EventRoundEndDraw),
-    GameOver(EventGameOver),
+    Begin(EventBegin),     // ゲーム開始
+    New(EventNew),         // 局開始
+    Deal(EventDeal),       // ツモ
+    Discard(EventDiscard), // 打牌
+    Meld(EventMeld),       // 鳴き
+    Kita(EventKita),       // 北抜き
+    Dora(EventDora),       // 新ドラ
+    Win(EventWin),         // 局終了 (和了)
+    Draw(EventDraw),       // 局終了 (流局)
+    End(EventEnd),         // ゲーム終了
 }
 
 impl Event {
-    pub fn game_start() -> Self {
-        Self::GameStart(EventGameStart {})
+    pub fn begin() -> Self {
+        Self::Begin(EventBegin {})
     }
 
-    pub fn round_new(
+    pub fn new(
         round: usize,
         kyoku: usize,
         honba: usize,
@@ -30,7 +30,7 @@ impl Event {
         hands: [Vec<Tile>; SEAT],
         mode: usize,
     ) -> Self {
-        Self::RoundNew(EventRoundNew {
+        Self::New(EventNew {
             round,
             kyoku,
             honba,
@@ -42,12 +42,12 @@ impl Event {
         })
     }
 
-    pub fn deal_tile(seat: Seat, tile: Tile) -> Self {
-        Self::DealTile(EventDealTile { seat, tile })
+    pub fn deal(seat: Seat, tile: Tile) -> Self {
+        Self::Deal(EventDeal { seat, tile })
     }
 
-    pub fn discard_tile(seat: Seat, tile: Tile, is_drawn: bool, is_riichi: bool) -> Self {
-        Self::DiscardTile(EventDiscardTile {
+    pub fn discard(seat: Seat, tile: Tile, is_drawn: bool, is_riichi: bool) -> Self {
+        Self::Discard(EventDiscard {
             seat,
             tile,
             is_drawn,
@@ -71,23 +71,20 @@ impl Event {
         Self::Dora(EventDora { tile })
     }
 
-    pub fn round_end_win(
-        ura_doras: Vec<Tile>,
-        contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
-    ) -> Self {
-        Self::RoundEndWin(EventRoundEndWin {
+    pub fn win(ura_doras: Vec<Tile>, contexts: Vec<(Seat, [Point; SEAT], WinContext)>) -> Self {
+        Self::Win(EventWin {
             ura_doras,
             contexts,
         })
     }
 
-    pub fn round_end_draw(
+    pub fn draw(
         draw_type: DrawType,
         hands: [Vec<Tile>; SEAT],
         tenpais: [bool; SEAT],
         points: [Point; SEAT],
     ) -> Self {
-        Self::RoundEndDraw(EventRoundEndDraw {
+        Self::Draw(EventDraw {
             draw_type,
             hands,
             tenpais,
@@ -95,16 +92,16 @@ impl Event {
         })
     }
 
-    pub fn game_over() -> Self {
-        Self::GameOver(EventGameOver {})
+    pub fn end() -> Self {
+        Self::End(EventEnd {})
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventGameStart {}
+pub struct EventBegin {}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventRoundNew {
+pub struct EventNew {
     pub round: usize,
     pub kyoku: usize,
     pub honba: usize,
@@ -116,13 +113,13 @@ pub struct EventRoundNew {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventDealTile {
+pub struct EventDeal {
     pub seat: Seat,
     pub tile: Tile,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventDiscardTile {
+pub struct EventDiscard {
     pub seat: Seat,
     pub tile: Tile,
     pub is_drawn: bool,
@@ -148,13 +145,13 @@ pub struct EventDora {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventRoundEndWin {
+pub struct EventWin {
     pub ura_doras: Vec<Tile>,
     pub contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventRoundEndDraw {
+pub struct EventDraw {
     pub draw_type: DrawType,
     pub hands: [Vec<Tile>; SEAT],
     pub tenpais: [bool; SEAT],
@@ -162,7 +159,7 @@ pub struct EventRoundEndDraw {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventGameOver {}
+pub struct EventEnd {}
 
 // [DrawType]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -316,7 +316,7 @@ impl MahjongEngine {
     }
 
     fn do_game_start(&mut self) {
-        self.handle_event(Event::GameStart(EventGameStart {}));
+        self.handle_event(Event::Begin(EventBegin {}));
     }
 
     fn do_round_new(&mut self) {
@@ -363,7 +363,7 @@ impl MahjongEngine {
         let doras = vec![self.dora_wall[0]];
 
         let rn = &self.round_next;
-        let event = Event::round_new(
+        let event = Event::new(
             rn.round,
             rn.kyoku,
             rn.honba,
@@ -392,11 +392,11 @@ impl MahjongEngine {
             Nop => {
                 // 打牌: ツモ切り
                 let drawn = stg.players[turn].drawn.unwrap();
-                self.handle_event(Event::discard_tile(turn, drawn, true, false));
+                self.handle_event(Event::discard(turn, drawn, true, false));
             }
             Discard => {
                 // 打牌: ツモ切り以外
-                self.handle_event(Event::discard_tile(turn, cs[0], false, false))
+                self.handle_event(Event::discard(turn, cs[0], false, false))
             }
             Ankan => {
                 self.melding = Some(act);
@@ -410,7 +410,7 @@ impl MahjongEngine {
                 let t = cs[0];
                 let pl = &stg.players[turn];
                 let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
-                self.handle_event(Event::discard_tile(turn, t, m, true));
+                self.handle_event(Event::discard(turn, t, m, true));
             }
             Tsumo => {
                 self.round_result = Some(RoundResult::Tsumo);
@@ -493,16 +493,16 @@ impl MahjongEngine {
                     let (r, kd) = self.draw_kan_tile();
                     if meld_type == Ankan {
                         self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
-                        self.handle_event(Event::deal_tile(turn, r));
+                        self.handle_event(Event::deal(turn, r));
                     } else {
-                        self.handle_event(Event::deal_tile(turn, r));
+                        self.handle_event(Event::deal(turn, r));
                         self.kan_dora = Some(kd); // 明槓,加槓の槓ドラは打牌後
                     }
                     self.check_suukansanra_needed();
                 }
                 Kita => {
                     let k = self.draw_kita_tile();
-                    self.handle_event(Event::deal_tile(turn, k));
+                    self.handle_event(Event::deal(turn, k));
                 }
                 _ => panic!(),
             }
@@ -510,7 +510,7 @@ impl MahjongEngine {
             if stg.left_tile_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
-                self.handle_event(Event::deal_tile(s, t));
+                self.handle_event(Event::deal(s, t));
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }
@@ -564,7 +564,7 @@ impl MahjongEngine {
 
                 let contexts = vec![(turn, d_scores, ctx)];
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.handle_event(Event::round_end_win(ura_doras, contexts));
+                self.handle_event(Event::win(ura_doras, contexts));
             }
             RoundResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
@@ -606,7 +606,7 @@ impl MahjongEngine {
                 need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.handle_event(Event::round_end_win(ura_doras, contexts));
+                self.handle_event(Event::win(ura_doras, contexts));
             }
             RoundResult::Draw(draw_type) => {
                 match draw_type {
@@ -641,19 +641,13 @@ impl MahjongEngine {
                         }
 
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
-                        let event = Event::round_end_draw(
-                            DrawType::Kouhaiheikyoku,
-                            hands,
-                            tenpais,
-                            d_scores,
-                        );
+                        let event = Event::draw(DrawType::Kouhaiheikyoku, hands, tenpais, d_scores);
                         self.handle_event(event);
                         need_leader_change = !tenpais[kyoku];
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
-                        let event =
-                            Event::round_end_draw(*draw_type, hands, [false; SEAT], [0; SEAT]);
+                        let event = Event::draw(*draw_type, hands, [false; SEAT], [0; SEAT]);
                         self.handle_event(event);
                     }
                 }
@@ -697,7 +691,7 @@ impl MahjongEngine {
     }
 
     fn do_game_result(&mut self) {
-        self.handle_event(Event::game_over());
+        self.handle_event(Event::end());
     }
 
     fn draw_tile(&mut self) -> Tile {

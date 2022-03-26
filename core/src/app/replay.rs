@@ -124,7 +124,7 @@ impl ReplayApp {
             let contents = std::fs::read_to_string(p).unwrap_or_else(print_and_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
-            if let Event::RoundNew(e) = &record[0] {
+            if let Event::New(e) = &record[0] {
                 if (e.round, e.kyoku, e.honba) < rkh {
                     continue;
                 }
@@ -219,7 +219,7 @@ impl Replay {
     fn do_round_new(&mut self) {
         let e = self.get_event();
         match e {
-            Event::RoundNew(_) => {
+            Event::New(_) => {
                 self.handle_event();
             }
             _ => panic!(),
@@ -234,7 +234,7 @@ impl Replay {
 
         let e = self.get_event();
         let act2 = match e {
-            Event::DiscardTile(e) => {
+            Event::Discard(e) => {
                 if e.is_riichi {
                     if e.is_drawn {
                         Action::riichi(e.tile) // TODO
@@ -258,11 +258,11 @@ impl Replay {
                 self.melding = Some(a.clone());
                 a
             }
-            Event::RoundEndWin(_) => {
+            Event::Win(_) => {
                 self.is_round_end = true;
                 Action::tsumo()
             }
-            Event::RoundEndDraw(_) => Action::kyushukyuhai(),
+            Event::Draw(_) => Action::kyushukyuhai(),
             Event::Kita(_) => Action::kita(),
             _ => panic!(),
         };
@@ -274,7 +274,7 @@ impl Replay {
     fn do_call_operation(&mut self) {
         let e = self.get_event();
         match e {
-            Event::RoundEndWin(_) => {
+            Event::Win(_) => {
                 self.is_round_end = true;
             }
             Event::Meld(e) => {
@@ -296,8 +296,8 @@ impl Replay {
         let e = self.get_event();
 
         match e {
-            Event::DealTile(_) => {}
-            Event::RoundEndDraw(_) => {
+            Event::Deal(_) => {}
+            Event::Draw(_) => {
                 self.is_round_end = true;
             }
             Event::Meld(_) => return, // Chi, pon

@@ -12,7 +12,7 @@ impl Prompt {
 
 impl Listener for Prompt {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        if let Event::DealTile(_) = event {
+        if let Event::Deal(_) = event {
         } else {
             prompt();
         }

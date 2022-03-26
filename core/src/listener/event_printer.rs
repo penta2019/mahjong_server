@@ -25,20 +25,20 @@ impl StagePrinter {
 impl Listener for StagePrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         match event {
-            Event::GameStart(_) => {
-                println!("[GameStart]");
+            Event::Begin(_) => {
+                println!("[Begin]");
             }
-            Event::RoundNew(_) => {
-                println!("[RoundNew]");
+            Event::New(_) => {
+                println!("[New]");
                 println!("{}", stg);
             }
-            Event::DealTile(_) => {}
-            Event::DiscardTile(_) => {}
+            Event::Deal(_) => {}
+            Event::Discard(_) => {}
             Event::Meld(_) => {}
             Event::Kita(_) => {}
             Event::Dora(_) => {}
-            Event::RoundEndWin(e) => {
-                println!("[RoundEndWin]");
+            Event::Win(e) => {
+                println!("[Win]");
                 println!("ura_dora: {}", vec_to_string(&e.ura_doras));
                 println!("{:?}", e.contexts);
                 let mut deltas = [0; SEAT];
@@ -51,15 +51,15 @@ impl Listener for StagePrinter {
                 self.print_score_change(&stg, &deltas);
                 println!("{}", stg);
             }
-            Event::RoundEndDraw(e) => {
-                println!("[RoundEndDraw]");
+            Event::Draw(e) => {
+                println!("[Draw]");
                 println!("{:?}", e.draw_type);
                 println!("is_tenpai: {:?}", &e.tenpais);
                 self.print_score_change(&stg, &e.points);
                 println!("{}", stg);
             }
-            Event::GameOver(_) => {
-                println!("[GameOver]");
+            Event::End(_) => {
+                println!("[End]");
             }
         }
     }
@@ -82,14 +82,14 @@ impl Listener for StageStepPrinter {
         print!("[{}] ", ev_str.split('(').next().unwrap().to_string());
         println!("(step: {})", stg.step);
         match event {
-            GameStart(_) => {}
-            DealTile(_) | DiscardTile(_) | Meld(_) | Kita(_) => {
+            Begin(_) => {}
+            Deal(_) | Discard(_) | Meld(_) | Kita(_) => {
                 println!("{}", stg.players[stg.turn]);
             }
             Dora(_) => {
                 println!("{:?}", stg.doras);
             }
-            RoundNew(_) | RoundEndWin(_) | RoundEndDraw(_) | GameOver(_) => {
+            New(_) | Win(_) | Draw(_) | End(_) => {
                 println!("{}", stg);
             }
         }

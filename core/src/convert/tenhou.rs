@@ -99,8 +99,8 @@ impl TenhouSerializer {
     pub fn push_event(&mut self, stg: &Stage, event: &Event) {
         let k = &mut self.kyoku;
         match event {
-            Event::GameStart(_) => {}
-            Event::RoundNew(e) => {
+            Event::Begin(_) => {}
+            Event::New(e) => {
                 self.kyoku = TenhouKyoku::default();
                 let k = &mut self.kyoku;
                 k.kyoku = e.round * 4 + e.kyoku;
@@ -116,10 +116,10 @@ impl TenhouSerializer {
                     }
                 }
             }
-            Event::DealTile(e) => {
+            Event::Deal(e) => {
                 k.players[e.seat].drawns.push(json!(tile_to_tenhou(e.tile)));
             }
-            Event::DiscardTile(e) => {
+            Event::Discard(e) => {
                 let d = if e.is_drawn {
                     60
                 } else {
@@ -181,7 +181,7 @@ impl TenhouSerializer {
             Event::Dora(e) => {
                 k.doras.push(tile_to_tenhou(e.tile));
             }
-            Event::RoundEndWin(e) => {
+            Event::Win(e) => {
                 let target_seat = stg.turn;
                 k.result = "和了".to_string();
                 k.ura_doras = tile_vec_to_tenhou(&e.ura_doras);
@@ -215,13 +215,13 @@ impl TenhouSerializer {
                     k.result_detail.push(detail);
                 }
             }
-            Event::RoundEndDraw(e) => {
+            Event::Draw(e) => {
                 // TODO
                 k.result = "流局".to_string();
                 k.result_detail
                     .push(e.points.iter().map(|&p| json!(p)).collect());
             }
-            Event::GameOver(_) => {}
+            Event::End(_) => {}
         }
     }
 

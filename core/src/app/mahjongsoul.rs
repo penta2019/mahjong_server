@@ -147,14 +147,14 @@ impl Mahjongsoul {
 
         let mut write = false;
         match event {
-            Event::GameStart(_) => {
+            Event::Begin(_) => {
                 self.start_time = unixtime_now();
                 self.round_index = 0;
             }
-            Event::RoundEndWin(_) | Event::RoundEndDraw(_) => {
+            Event::Win(_) | Event::Draw(_) => {
                 write = true;
             }
-            Event::GameOver(_) => {}
+            Event::End(_) => {}
             _ => {}
         }
 
@@ -359,7 +359,7 @@ impl Mahjongsoul {
     }
 
     fn handler_mjstart(&mut self, _data: &Value) {
-        self.handle_event(Event::game_start());
+        self.handle_event(Event::begin());
     }
 
     fn handler_newround(&mut self, data: &Value) {
@@ -394,7 +394,7 @@ impl Mahjongsoul {
             }
         }
 
-        self.handle_event(Event::round_new(
+        self.handle_event(Event::new(
             round, kyoku, honba, kyoutaku, doras, scores, hands, mode,
         ));
     }
@@ -405,9 +405,9 @@ impl Mahjongsoul {
 
         if let Value::String(ps) = &data["tile"] {
             let t = tile_from_mjsoul(&ps);
-            self.handle_event(Event::deal_tile(s, t));
+            self.handle_event(Event::deal(s, t));
         } else {
-            self.handle_event(Event::deal_tile(s, Z8));
+            self.handle_event(Event::deal(s, Z8));
         }
     }
 
@@ -416,7 +416,7 @@ impl Mahjongsoul {
         let t = tile_from_mjsoul2(&data["tile"]);
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
-        self.handle_event(Event::discard_tile(s, t, m, r));
+        self.handle_event(Event::discard(s, t, m, r));
         self.update_doras(data);
     }
 
@@ -528,7 +528,7 @@ impl Mahjongsoul {
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
 
-        self.handle_event(Event::round_end_win(vec![], wins));
+        self.handle_event(Event::win(vec![], wins));
     }
 
     fn handler_liuju(&mut self, data: &Value) {
@@ -562,7 +562,7 @@ impl Mahjongsoul {
             _ => {}
         }
 
-        self.handle_event(Event::round_end_draw(draw_type, hands, tenpais, points));
+        self.handle_event(Event::draw(draw_type, hands, tenpais, points));
     }
 
     fn handler_notile(&mut self, data: &Value) {
@@ -579,7 +579,7 @@ impl Mahjongsoul {
         }
 
         // TODO
-        self.handle_event(Event::round_end_draw(
+        self.handle_event(Event::draw(
             DrawType::Kouhaiheikyoku,
             [vec![], vec![], vec![], vec![]],
             tenpais,

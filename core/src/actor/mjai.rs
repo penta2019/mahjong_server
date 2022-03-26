@@ -110,12 +110,12 @@ impl MjaiEndpoint {
         }
     }
 
-    fn notify_game_start(&mut self, _stg: &Stage, _event: &EventGameStart) {
+    fn notify_game_start(&mut self, _stg: &Stage, _event: &EventBegin) {
         assert!(self.seat != NO_SEAT);
         self.is_new_game = true;
     }
 
-    fn notify_round_new(&mut self, stg: &Stage, event: &EventRoundNew) {
+    fn notify_round_new(&mut self, stg: &Stage, event: &EventNew) {
         assert!(self.seat != NO_SEAT);
 
         // 前の局のデータがすべて送信されていない場合は待機
@@ -153,19 +153,19 @@ impl MjaiEndpoint {
             &stg.get_scores(),
         ));
 
-        let event2 = EventDealTile {
+        let event2 = EventDeal {
             seat: event.kyoku,
             tile: stg.players[event.kyoku].drawn.unwrap(),
         };
         self.notify_deal_tile(&stg, &event2);
     }
 
-    fn notify_deal_tile(&mut self, stg: &Stage, event: &EventDealTile) {
+    fn notify_deal_tile(&mut self, stg: &Stage, event: &EventDeal) {
         self.confirm_riichi_accepted(stg);
         self.add_record(MjaiEvent::tsumo(self.seat, event.seat, event.tile));
     }
 
-    fn notify_discard_tile(&mut self, _stg: &Stage, event: &EventDiscardTile) {
+    fn notify_discard_tile(&mut self, _stg: &Stage, event: &EventDiscard) {
         if event.is_riichi {
             self.add_record(MjaiEvent::reach(event.seat));
         }
@@ -215,7 +215,7 @@ impl MjaiEndpoint {
         self.add_record(MjaiEvent::dora(event.tile));
     }
 
-    fn notify_round_end_win(&mut self, stg: &Stage, event: &EventRoundEndWin) {
+    fn notify_round_end_win(&mut self, stg: &Stage, event: &EventWin) {
         for (seat, deltas, ctx) in &event.contexts {
             self.add_record(MjaiEvent::hora(
                 *seat,
@@ -230,7 +230,7 @@ impl MjaiEndpoint {
         self.add_record(MjaiEvent::end_kyoku());
     }
 
-    fn notify_round_end_draw(&mut self, stg: &Stage, event: &EventRoundEndDraw) {
+    fn notify_round_end_draw(&mut self, stg: &Stage, event: &EventDraw) {
         self.add_record(MjaiEvent::ryukyoku(
             event.draw_type,
             &[false; SEAT],
@@ -240,7 +240,7 @@ impl MjaiEndpoint {
         self.add_record(MjaiEvent::end_kyoku());
     }
 
-    fn notify_game_over(&mut self, stg: &Stage, _event: &EventGameOver) {
+    fn notify_game_over(&mut self, stg: &Stage, _event: &EventEnd) {
         self.add_record(MjaiEvent::end_game(&stg.get_scores()));
     }
 }
@@ -329,16 +329,16 @@ impl Actor for MjaiEndpoint {
 impl Listener for MjaiEndpoint {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         match event {
-            Event::GameStart(e) => self.notify_game_start(stg, e),
-            Event::RoundNew(e) => self.notify_round_new(stg, e),
-            Event::DealTile(e) => self.notify_deal_tile(stg, e),
-            Event::DiscardTile(e) => self.notify_discard_tile(stg, e),
+            Event::Begin(e) => self.notify_game_start(stg, e),
+            Event::New(e) => self.notify_round_new(stg, e),
+            Event::Deal(e) => self.notify_deal_tile(stg, e),
+            Event::Discard(e) => self.notify_discard_tile(stg, e),
             Event::Meld(e) => self.notify_meld(stg, e),
             Event::Kita(e) => self.notify_kita(stg, e),
             Event::Dora(e) => self.notify_dora(stg, e),
-            Event::RoundEndWin(e) => self.notify_round_end_win(stg, e),
-            Event::RoundEndDraw(e) => self.notify_round_end_draw(stg, e),
-            Event::GameOver(e) => self.notify_game_over(stg, e),
+            Event::Win(e) => self.notify_round_end_win(stg, e),
+            Event::Draw(e) => self.notify_round_end_draw(stg, e),
+            Event::End(e) => self.notify_game_over(stg, e),
         }
     }
 }
@@ -352,7 +352,7 @@ struct SharedData {
     selected_action: Option<MjaiAction>,
     possible_actions: Option<Vec<MjaiAction>>,
     is_riichi: bool,
-    mode: usize, // (= EventRoundNew.mode)
+    mode: usize, // (= EventNew.mode)
 }
 
 impl SharedData {

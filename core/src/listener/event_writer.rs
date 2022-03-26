@@ -27,18 +27,18 @@ impl Listener for EventWriter {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         let mut write = false;
         match event {
-            Event::GameStart(_) => {
+            Event::Begin(_) => {
                 self.record.clear();
                 self.start_time = unixtime_now();
                 self.round_index = 0;
             }
-            Event::RoundNew(_) => {
+            Event::New(_) => {
                 self.record.clear();
             }
-            Event::RoundEndWin(_) | Event::RoundEndDraw(_) => {
+            Event::Win(_) | Event::Draw(_) => {
                 write = true;
             }
-            Event::GameOver(_) => {}
+            Event::End(_) => {}
             _ => {}
         }
 
@@ -76,14 +76,14 @@ impl Listener for TenhouEventWriter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         let mut write = false;
         match event {
-            Event::GameStart(_) => {
+            Event::Begin(_) => {
                 self.start_time = unixtime_now();
                 self.round_index = 0;
             }
-            Event::RoundEndWin(_) | Event::RoundEndDraw(_) => {
+            Event::Win(_) | Event::Draw(_) => {
                 write = true;
             }
-            Event::GameOver(_) => {}
+            Event::End(_) => {}
             _ => {}
         }
 

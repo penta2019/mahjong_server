@@ -22,7 +22,7 @@ impl EventSender {
             let mut cursor = 0;
             loop {
                 while let Ok(msg) = r.try_recv() {
-                    if msg["type"].as_str().unwrap() == "RoundNew" {
+                    if msg["type"].as_str().unwrap() == "New" {
                         messages.clear();
                         cursor = 0;
                     }

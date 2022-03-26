@@ -34,21 +34,21 @@ impl StageController {
         let stg = &mut self.stage;
         stg.step += 1;
         match event {
-            Event::GameStart(e) => {
+            Event::Begin(e) => {
                 for s in 0..SEAT {
                     self.actors[s].init(s);
                 }
                 event_game_start(stg, e);
             }
-            Event::RoundNew(e) => event_round_new(stg, e),
-            Event::DealTile(e) => event_deal_tile(stg, e),
-            Event::DiscardTile(e) => event_discard_tile(stg, e),
+            Event::New(e) => event_round_new(stg, e),
+            Event::Deal(e) => event_deal_tile(stg, e),
+            Event::Discard(e) => event_discard_tile(stg, e),
             Event::Meld(e) => event_meld(stg, e),
             Event::Kita(e) => event_kita(stg, e),
             Event::Dora(e) => event_dora(stg, e),
-            Event::RoundEndWin(e) => event_round_end_win(stg, e),
-            Event::RoundEndDraw(e) => event_round_end_draw(stg, e),
-            Event::GameOver(e) => event_game_over(stg, e),
+            Event::Win(e) => event_round_end_win(stg, e),
+            Event::Draw(e) => event_round_end_draw(stg, e),
+            Event::End(e) => event_game_over(stg, e),
         }
 
         for a in &mut self.actors {
@@ -65,9 +65,9 @@ impl StageController {
 }
 
 // [Event]
-fn event_game_start(_stg: &mut Stage, _event: &EventGameStart) {}
+fn event_game_start(_stg: &mut Stage, _event: &EventBegin) {}
 
-fn event_round_new(stg: &mut Stage, event: &EventRoundNew) {
+fn event_round_new(stg: &mut Stage, event: &EventNew) {
     *stg = Stage::default();
     stg.round = event.round;
     stg.kyoku = event.kyoku;
@@ -119,7 +119,7 @@ fn event_round_new(stg: &mut Stage, event: &EventRoundNew) {
     }
 }
 
-fn event_deal_tile(stg: &mut Stage, event: &EventDealTile) {
+fn event_deal_tile(stg: &mut Stage, event: &EventDeal) {
     let s = event.seat;
     let t = event.tile; // tileはplayer.is_shown = falseの場合,Z8になることに注意
 
@@ -145,7 +145,7 @@ fn event_deal_tile(stg: &mut Stage, event: &EventDealTile) {
     }
 }
 
-fn event_discard_tile(stg: &mut Stage, event: &EventDiscardTile) {
+fn event_discard_tile(stg: &mut Stage, event: &EventDiscard) {
     let s = event.seat;
     let t = event.tile;
     let no_meld = stg.players.iter().all(|pl| pl.melds.is_empty());
@@ -347,17 +347,17 @@ fn event_dora(stg: &mut Stage, event: &EventDora) {
     stg.doras.push(event.tile);
 }
 
-fn event_round_end_win(stg: &mut Stage, event: &EventRoundEndWin) {
+fn event_round_end_win(stg: &mut Stage, event: &EventWin) {
     for ctx in &event.contexts {
         update_scores(stg, &ctx.1);
     }
 }
 
-fn event_round_end_draw(stg: &mut Stage, event: &EventRoundEndDraw) {
+fn event_round_end_draw(stg: &mut Stage, event: &EventDraw) {
     update_scores(stg, &event.points);
 }
 
-fn event_game_over(_stg: &mut Stage, _event: &EventGameOver) {}
+fn event_game_over(_stg: &mut Stage, _event: &EventEnd) {}
 
 // [Utility]
 fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateType) {

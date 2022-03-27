@@ -103,7 +103,7 @@ impl TenhouSerializer {
             Event::New(e) => {
                 self.kyoku = TenhouKyoku::default();
                 let k = &mut self.kyoku;
-                k.kyoku = e.round * 4 + e.kyoku;
+                k.kyoku = e.bakaze * 4 + e.kyoku;
                 k.honba = e.honba;
                 k.kyoutaku = e.kyoutaku;
                 k.doras = tile_vec_to_tenhou(&e.doras);

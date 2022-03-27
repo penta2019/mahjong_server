@@ -134,7 +134,7 @@ impl MjaiEvent {
 
     pub fn start_kyoku(
         id: Seat,
-        round: usize,
+        bakaze: usize,
         kyoku: usize,
         honba: usize,
         kyotaku: usize,
@@ -145,7 +145,7 @@ impl MjaiEvent {
         assert!(doras.len() == 1);
         let wind = ["E", "S", "W", "N"];
         Self::StartKyoku {
-            bakaze: wind[round].to_string(),
+            bakaze: wind[bakaze].to_string(),
             kyoku: kyoku + 1,
             honba: honba,
             kyotaku: kyotaku,

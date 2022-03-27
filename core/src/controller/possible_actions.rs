@@ -46,8 +46,8 @@ fn check_riichi(stg: &Stage) -> Vec<Action> {
     let ds1 = calc_discards_to_normal_tenpai(&pl.hand);
     let ds2 = calc_discards_to_chiitoitsu_tenpai(&pl.hand);
     let ds3 = calc_discards_to_kokushimusou_tenpai(&pl.hand);
-    for ds in &[ds1, ds2, ds3] {
-        for &(d, _) in ds {
+    for ds in [ds1, ds2, ds3] {
+        for (d, _) in ds {
             if f[d.0][d.1] == 0 {
                 f[d.0][d.1] += 1;
                 acts.push(Action::riichi(d));

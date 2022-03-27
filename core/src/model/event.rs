@@ -21,7 +21,7 @@ impl Event {
     }
 
     pub fn new(
-        round: usize,
+        bakaze: usize,
         kyoku: usize,
         honba: usize,
         kyoutaku: usize,
@@ -31,7 +31,7 @@ impl Event {
         mode: usize,
     ) -> Self {
         Self::New(EventNew {
-            round,
+            bakaze,
             kyoku,
             honba,
             kyoutaku,
@@ -102,7 +102,7 @@ pub struct EventBegin {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventNew {
-    pub round: usize,
+    pub bakaze: usize,
     pub kyoku: usize,
     pub honba: usize,
     pub kyoutaku: usize,

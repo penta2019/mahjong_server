@@ -39,7 +39,7 @@ impl fmt::Display for TileStateType {
 
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
-    pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
+    pub bakaze: usize,                               // 場 (東:0, 南:1, 西:2, 北:3)
     pub kyoku: usize,                                // 局 (0~3 = 親のseat)
     pub honba: usize,                                // 本場
     pub kyoutaku: usize,                             // リーチ棒の供託
@@ -63,7 +63,7 @@ impl Stage {
 
     #[inline]
     pub fn get_prevalent_wind(&self) -> Tnum {
-        self.round % SEAT + 1 // WE | WS | WW | WN
+        self.bakaze % SEAT + 1 // WE | WS | WW | WN
     }
 
     #[inline]
@@ -84,8 +84,8 @@ impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(
             f,
-            "round: {}, kyoku: {}, honba: {}, kyoutaku: {}",
-            self.round, self.kyoku, self.honba, self.kyoutaku,
+            "bakaze: {}, kyoku: {}, honba: {}, kyoutaku: {}",
+            self.bakaze, self.kyoku, self.honba, self.kyoutaku,
         )?;
         writeln!(
             f,

@@ -125,7 +125,7 @@ impl ReplayApp {
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
             if let Event::New(e) = &record[0] {
-                if (e.round, e.kyoku, e.honba) < rkh {
+                if (e.bakaze, e.kyoku, e.honba) < rkh {
                     continue;
                 }
             }
@@ -140,7 +140,7 @@ struct Replay {
     enabled_actors: [bool; SEAT],
     ctrl: StageController,
     melding: Option<Action>,
-    is_round_end: bool,
+    is_kyoku_end: bool,
     events: Vec<Event>,
     cursor: usize, // eventsのindex
 }
@@ -159,7 +159,7 @@ impl Replay {
             enabled_actors: enabled_actors,
             ctrl: StageController::new(actors, listeners),
             melding: None,
-            is_round_end: false,
+            is_kyoku_end: false,
             events: vec![],
             cursor: 0,
         }
@@ -168,29 +168,29 @@ impl Replay {
     fn run(&mut self, events: Vec<Event>) {
         self.events = events;
         self.cursor = 0;
-        self.is_round_end = false;
+        self.is_kyoku_end = false;
 
-        self.do_round_new();
+        self.do_event_new();
         loop {
             self.check_kan_dora(); // 暗槓の槓ドラ(不要だが念の為)
             self.do_turn_operation();
-            if self.is_round_end {
+            if self.is_kyoku_end {
                 break;
             }
 
             self.check_kan_dora(); // 明槓,加槓の槓ドラ
             self.do_call_operation();
-            if self.is_round_end {
+            if self.is_kyoku_end {
                 break;
             }
 
             self.check_kan_dora(); // 暗槓の槓ドラ
-            self.do_deal_tile();
-            if self.is_round_end {
+            self.do_event_deal();
+            if self.is_kyoku_end {
                 break;
             }
         }
-        self.do_round_end();
+        self.do_event_end();
     }
 
     fn get_stage(&self) -> &Stage {
@@ -216,7 +216,7 @@ impl Replay {
         }
     }
 
-    fn do_round_new(&mut self) {
+    fn do_event_new(&mut self) {
         let e = self.get_event();
         match e {
             Event::New(_) => {
@@ -259,7 +259,7 @@ impl Replay {
                 a
             }
             Event::Win(_) => {
-                self.is_round_end = true;
+                self.is_kyoku_end = true;
                 Action::tsumo()
             }
             Event::Draw(_) => Action::kyushukyuhai(),
@@ -275,7 +275,7 @@ impl Replay {
         let e = self.get_event();
         match e {
             Event::Win(_) => {
-                self.is_round_end = true;
+                self.is_kyoku_end = true;
             }
             Event::Meld(e) => {
                 // self.melding =
@@ -292,13 +292,13 @@ impl Replay {
         self.handle_event();
     }
 
-    fn do_deal_tile(&mut self) {
+    fn do_event_deal(&mut self) {
         let e = self.get_event();
 
         match e {
             Event::Deal(_) => {}
             Event::Draw(_) => {
-                self.is_round_end = true;
+                self.is_kyoku_end = true;
             }
             Event::Meld(_) => return, // Chi, pon
             _ => panic!(),
@@ -306,5 +306,5 @@ impl Replay {
         self.handle_event();
     }
 
-    fn do_round_end(&mut self) {}
+    fn do_event_end(&mut self) {}
 }

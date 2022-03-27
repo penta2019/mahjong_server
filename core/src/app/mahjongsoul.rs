@@ -105,7 +105,7 @@ struct Mahjongsoul {
     actor: Box<dyn Actor>,
     write_raw: bool, // 雀魂フォーマットでeventを出力
     start_time: u64,
-    round_index: i32,
+    kyoku_index: i32,
 }
 
 impl Mahjongsoul {
@@ -132,7 +132,7 @@ impl Mahjongsoul {
             actor: actor,
             write_raw: write_raw,
             start_time: unixtime_now(),
-            round_index: 0,
+            kyoku_index: 0,
         }
     }
 
@@ -149,7 +149,7 @@ impl Mahjongsoul {
         match event {
             Event::Begin(_) => {
                 self.start_time = unixtime_now();
-                self.round_index = 0;
+                self.kyoku_index = 0;
             }
             Event::Win(_) | Event::Draw(_) => {
                 write = true;
@@ -160,10 +160,10 @@ impl Mahjongsoul {
 
         if self.write_raw && write {
             write_to_file(
-                &format!("data_raw/{}/{:2}.json", self.start_time, self.round_index),
+                &format!("data_raw/{}/{:2}.json", self.start_time, self.kyoku_index),
                 &serde_json::to_string_pretty(&json!(self.events)).unwrap(),
             );
-            self.round_index += 1;
+            self.kyoku_index += 1;
         }
     }
 
@@ -264,7 +264,7 @@ impl Mahjongsoul {
         let s = as_usize(&data["seat"]);
 
         // 可能なactionのパースと選択
-        let (acts, idxs) = json_parse_possible_action(data, self.get_stage());
+        let (acts, idxs) = parse_possible_action(data, self.get_stage());
         let act = self.ctrl.select_action(s, &acts);
         println!("possible: {:?}", acts);
         println!("selected: {:?}", act);
@@ -363,7 +363,7 @@ impl Mahjongsoul {
     }
 
     fn handler_newround(&mut self, data: &Value) {
-        let round = as_usize(&data["chang"]);
+        let bakaze = as_usize(&data["chang"]);
         let kyoku = as_usize(&data["ju"]);
         let honba = as_usize(&data["ben"]);
         let kyoutaku = as_usize(&data["liqibang"]);
@@ -395,7 +395,7 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::new(
-            round, kyoku, honba, kyoutaku, doras, scores, hands, mode,
+            bakaze, kyoku, honba, kyoutaku, doras, scores, hands, mode,
         ));
     }
 
@@ -663,7 +663,7 @@ fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> us
 }
 
 // Actionと元々のデータの各Action内のIndexを返す
-fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
+fn parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
     let mut acts = vec![Action::nop()]; // Nop: ツモ切り or スキップ
     let mut idxs = vec![0];
     let mut push = |act: Action, idx: usize| {
@@ -678,7 +678,7 @@ fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index
             1 => {
                 // 打牌
                 let combs = if act["combination"] != json!(null) {
-                    json_parse_combination(combs)
+                    parse_combination(combs)
                 } else {
                     vec![vec![]]
                 };
@@ -686,32 +686,32 @@ fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index
             }
             2 => {
                 // チー
-                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                for (idx, comb) in parse_combination(combs).iter().enumerate() {
                     push(Action::chi(comb.clone()), idx);
                 }
             }
             3 => {
                 // ポン
-                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                for (idx, comb) in parse_combination(combs).iter().enumerate() {
                     push(Action::pon(comb.clone()), idx);
                 }
             }
             4 => {
                 // 暗槓
-                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                for (idx, comb) in parse_combination(combs).iter().enumerate() {
                     push(Action::ankan(comb.clone()), idx);
                 }
             }
             5 => {
                 // 明槓
-                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                for (idx, comb) in parse_combination(combs).iter().enumerate() {
                     push(Action::minkan(comb.clone()), idx);
                 }
             }
             6 => {
                 // 加槓
                 // 赤5を含む場合,ponした牌の組み合わせに関係なく combs = ["0p|5p|5p|5p"] となる
-                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                for (idx, comb) in parse_combination(combs).iter().enumerate() {
                     let mut t = comb[3];
                     if t.is_suit() && t.1 == 5 && stg.players[stg.turn].hand[t.0][0] > 0 {
                         t = Tile(t.0, 0); // 手牌に赤5があれば通常5を赤5に変換
@@ -721,7 +721,7 @@ fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index
             }
             7 => {
                 // リーチ
-                for (idx, comb) in json_parse_combination(combs).iter().enumerate() {
+                for (idx, comb) in parse_combination(combs).iter().enumerate() {
                     push(Action::riichi(comb[0]), idx);
                 }
             }
@@ -748,7 +748,7 @@ fn json_parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index
     (acts, idxs)
 }
 
-fn json_parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
+fn parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
     // combsは以下のようなjson list
     // [
     //     "4s|6s",

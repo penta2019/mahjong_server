@@ -203,15 +203,15 @@ impl EngineApp {
 
 // [Engine]
 #[derive(Debug)]
-enum RoundResult {
+enum KyokuResult {
     Tsumo,          // ツモ番のプレイヤーの和了
     Ron(Vec<Seat>), // ロン 和了ったプレイヤーの配列 (ロン|ダブロン|トリロン)
     Draw(DrawType),
 }
 
 #[derive(Debug)]
-struct NextRoundInfo {
-    round: usize,
+struct NextKyokuInfo {
+    bakaze: usize,
     kyoku: usize,
     honba: usize,
     kyoutaku: usize,
@@ -221,7 +221,7 @@ struct NextRoundInfo {
 #[derive(Debug)]
 struct MahjongEngine {
     seed: u64,               // 牌山生成用の乱数のシード値
-    n_round: usize,          // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
+    mode: usize,             // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
     initial_score: Score,    // 初期得点
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
     // ゲーム制御
@@ -232,9 +232,9 @@ struct MahjongEngine {
     n_kan: usize,            // 槓した回数
     n_kita: usize,           // 北抜きの回数
     is_suukansanra: bool,    // 四槓散了の処理フラグ
-    round_result: Option<RoundResult>,
-    round_next: NextRoundInfo,
-    is_game_over: bool,
+    kyoku_result: Option<KyokuResult>,
+    kyoku_next: NextKyokuInfo,
+    is_end: bool,
     // 牌山
     wall: Vec<Tile>,             // 牌山全体
     dora_wall: Vec<Tile>,        // ドラ表示牌
@@ -245,15 +245,15 @@ struct MahjongEngine {
 impl MahjongEngine {
     fn new(
         seed: u64,
-        n_round: usize,
+        mode: usize,
         initial_score: Score,
         actors: [Box<dyn Actor>; SEAT],
         listeners: Vec<Box<dyn Listener>>,
     ) -> Self {
         let ctrl = StageController::new(actors, listeners);
         let rng = rand::SeedableRng::seed_from_u64(seed);
-        let round_next = NextRoundInfo {
-            round: 0,
+        let kyoku_next = NextKyokuInfo {
+            bakaze: 0,
             kyoku: 0,
             honba: 0,
             kyoutaku: 0,
@@ -262,14 +262,14 @@ impl MahjongEngine {
 
         Self {
             seed: seed,
-            n_round: n_round,
+            mode: mode,
             initial_score: initial_score,
             rng: rng,
             ctrl: ctrl,
             melding: None,
-            round_result: None,
-            round_next: round_next,
-            is_game_over: false,
+            kyoku_result: None,
+            kyoku_next: kyoku_next,
+            is_end: false,
             kan_dora: None,
             n_deal: 0,
             n_kan: 0,
@@ -293,33 +293,33 @@ impl MahjongEngine {
     }
 
     fn run(&mut self) {
-        self.do_game_start();
-        while !self.is_game_over {
-            self.do_round_new();
+        self.do_event_begin();
+        while !self.is_end {
+            self.do_event_new();
             loop {
                 self.do_turn_operation();
-                if let Some(_) = self.round_result {
+                if let Some(_) = self.kyoku_result {
                     break;
                 }
                 self.do_call_operation();
-                if let Some(_) = self.round_result {
+                if let Some(_) = self.kyoku_result {
                     break;
                 }
-                self.do_deal_tile();
-                if let Some(_) = self.round_result {
+                self.do_event_deal();
+                if let Some(_) = self.kyoku_result {
                     break;
                 }
             }
-            self.do_round_end();
+            self.do_event_win_draw();
         }
-        self.do_game_result();
+        self.do_event_end();
     }
 
-    fn do_game_start(&mut self) {
+    fn do_event_begin(&mut self) {
         self.handle_event(Event::Begin(EventBegin {}));
     }
 
-    fn do_round_new(&mut self) {
+    fn do_event_new(&mut self) {
         // 卓情報初期化
         // control
         self.melding = None;
@@ -328,9 +328,9 @@ impl MahjongEngine {
         self.n_kan = 0;
         self.n_deal = 0;
         self.n_kita = 0;
-        // round end
+        // game end
         self.is_suukansanra = false;
-        self.round_result = None;
+        self.kyoku_result = None;
         // wall
         self.wall = vec![];
         self.dora_wall = vec![];
@@ -354,7 +354,7 @@ impl MahjongEngine {
         }
         // 親の14枚目
         let t = self.draw_tile();
-        ph[self.round_next.kyoku].push(t);
+        ph[self.kyoku_next.kyoku].push(t);
         for s in 0..SEAT {
             ph[s].sort();
         }
@@ -362,16 +362,16 @@ impl MahjongEngine {
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
-        let rn = &self.round_next;
+        let rn = &self.kyoku_next;
         let event = Event::new(
-            rn.round,
+            rn.bakaze,
             rn.kyoku,
             rn.honba,
             rn.kyoutaku,
             doras,
             rn.scores,
             ph,
-            self.n_round,
+            self.mode,
         );
         self.handle_event(event);
     }
@@ -413,10 +413,10 @@ impl MahjongEngine {
                 self.handle_event(Event::discard(turn, t, m, true));
             }
             Tsumo => {
-                self.round_result = Some(RoundResult::Tsumo);
+                self.kyoku_result = Some(KyokuResult::Tsumo);
             }
             Kyushukyuhai => {
-                self.round_result = Some(RoundResult::Draw(DrawType::Kyushukyuhai));
+                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Kyushukyuhai));
             }
             Kita => {
                 self.melding = Some(act);
@@ -463,7 +463,7 @@ impl MahjongEngine {
 
         // dispatch action
         if !rons.is_empty() {
-            self.round_result = Some(RoundResult::Ron(rons));
+            self.kyoku_result = Some(KyokuResult::Ron(rons));
             return;
         } else if let Some((s, act)) = minkan {
             self.handle_event(Event::meld(s, MeldType::Minkan, act.1.clone()));
@@ -483,7 +483,7 @@ impl MahjongEngine {
         self.check_suuchariichi();
     }
 
-    fn do_deal_tile(&mut self) {
+    fn do_event_deal(&mut self) {
         let stg = self.get_stage();
         let turn = stg.turn;
         if let Some(Action(meld_type, _)) = self.melding {
@@ -512,22 +512,22 @@ impl MahjongEngine {
                 let t = self.draw_tile();
                 self.handle_event(Event::deal(s, t));
             } else {
-                self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
+                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Kouhaiheikyoku));
             }
         }
         assert!(self.get_stage().left_tile_count + self.n_deal + self.n_kan == self.wall.len());
     }
 
-    fn do_round_end(&mut self) {
+    fn do_event_win_draw(&mut self) {
         let stg = self.get_stage();
-        let mut round = stg.round;
+        let mut bakaze = stg.bakaze;
         let mut kyoku = stg.kyoku;
         let mut honba = stg.honba;
         let mut kyoutaku = stg.kyoutaku;
         let turn = stg.turn;
         let mut need_leader_change = false; // 親の交代
-        match self.round_result.as_ref().unwrap() {
-            RoundResult::Tsumo => {
+        match self.kyoku_result.as_ref().unwrap() {
+            KyokuResult::Tsumo => {
                 let mut d_scores = [0; SEAT]; // 得点変動
 
                 let ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
@@ -566,7 +566,7 @@ impl MahjongEngine {
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(ura_doras, contexts));
             }
-            RoundResult::Ron(seats) => {
+            KyokuResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
                 let mut s0 = SEAT;
                 for s1 in turn + 1..turn + SEAT {
@@ -608,7 +608,7 @@ impl MahjongEngine {
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(ura_doras, contexts));
             }
-            RoundResult::Draw(draw_type) => {
+            KyokuResult::Draw(draw_type) => {
                 match draw_type {
                     DrawType::Kouhaiheikyoku => {
                         // 聴牌集計
@@ -660,15 +660,15 @@ impl MahjongEngine {
             kyoku += 1;
             if kyoku == SEAT {
                 kyoku = 0;
-                round += 1;
+                bakaze += 1;
             }
         }
 
         let stg = self.ctrl.get_stage();
 
         // stage情報更新
-        self.round_next = NextRoundInfo {
-            round,
+        self.kyoku_next = NextKyokuInfo {
+            bakaze,
             kyoku,
             honba,
             kyoutaku,
@@ -676,21 +676,21 @@ impl MahjongEngine {
         };
 
         // 対戦終了判定
-        if round == self.n_round {
-            self.is_game_over = true;
+        if bakaze == self.mode {
+            self.is_end = true;
         }
 
         // 飛びによる対戦終了
         for s in 0..SEAT {
             if stg.players[s].score < 0 {
-                self.is_game_over = true;
+                self.is_end = true;
             }
         }
 
-        self.round_result = None;
+        self.kyoku_result = None;
     }
 
-    fn do_game_result(&mut self) {
+    fn do_event_end(&mut self) {
         self.handle_event(Event::end());
     }
 
@@ -744,23 +744,23 @@ impl MahjongEngine {
             }
         }
 
-        if let None = self.round_result {
-            self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
+        if let None = self.kyoku_result {
+            self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suufuurenda));
         }
     }
 
     fn check_suukansanra(&mut self) {
         if self.is_suukansanra && self.melding == None {
-            if let None = self.round_result {
-                self.round_result = Some(RoundResult::Draw(DrawType::Suukansanra));
+            if let None = self.kyoku_result {
+                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suukansanra));
             }
         }
     }
 
     fn check_suuchariichi(&mut self) {
         if self.get_stage().players.iter().all(|pl| pl.is_riichi) {
-            if let None = self.round_result {
-                self.round_result = Some(RoundResult::Draw(DrawType::Suuchariichi));
+            if let None = self.kyoku_result {
+                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suuchariichi));
             }
         }
     }

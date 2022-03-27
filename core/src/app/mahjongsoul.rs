@@ -483,9 +483,18 @@ impl Mahjongsoul {
             let s = as_usize(&win["seat"]);
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
+            let hand = as_vec(tile_from_mjsoul2, &win["hand"]);
+            let is_tsumo = as_bool(&win["zimo"]);
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let yakuman_times = if is_yakuman { count } else { 0 };
+            let score_title = get_score_title(fu, fan, yakuman_times);
+            let points = (
+                as_i32(&win["point_rong"]),
+                as_i32(&win["point_zimo_xian"]),
+                win["point_zimo_qin"].as_i64().unwrap_or(0) as Point,
+            );
+
             let mut yakus = vec![];
             for yaku in as_array(&win["fans"]) {
                 let id = as_usize(&yaku["id"]);
@@ -510,21 +519,19 @@ impl Mahjongsoul {
                     }
                 };
             }
+
             let ctx = WinContext {
-                hand: vec![], // TODO
-                yakus: yakus,
-                is_tsumo: as_bool(&win["zimo"]),
-                score_title: get_score_title(fu, fan, yakuman_times),
-                fu: fu,
-                fan: fan,
-                yakuman_times: yakuman_times,
-                points: (
-                    as_i32(&win["point_rong"]),
-                    as_i32(&win["point_zimo_xian"]),
-                    win["point_zimo_qin"].as_i64().unwrap_or(0) as Point,
-                ),
+                hand,
+                yakus,
+                is_tsumo,
+                fu,
+                fan,
+                yakuman_times,
+                score_title,
+                points,
             };
             wins.push((s, delta_scores.clone(), ctx));
+
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
         }
 

@@ -241,10 +241,10 @@ fn evaluate_hand(
             hand,
             yakus,
             is_tsumo,
-            score_title,
             fu,
             fan,
             yakuman_times,
+            score_title,
             points,
         });
     }

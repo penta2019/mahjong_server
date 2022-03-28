@@ -194,7 +194,7 @@ impl MjaiEvent {
         Self::Chi {
             actor: seat,
             pai: tile_to_mjai(tile),
-            consumed: tile_vec_to_mjai(consumed),
+            consumed: tiles_to_mjai(consumed),
             target: target,
         }
     }
@@ -203,7 +203,7 @@ impl MjaiEvent {
         Self::Pon {
             actor: seat,
             pai: tile_to_mjai(tile),
-            consumed: tile_vec_to_mjai(consumed),
+            consumed: tiles_to_mjai(consumed),
             target: target,
         }
     }
@@ -212,7 +212,7 @@ impl MjaiEvent {
         Self::Daiminkan {
             actor: seat,
             pai: tile_to_mjai(tile),
-            consumed: tile_vec_to_mjai(consumed),
+            consumed: tiles_to_mjai(consumed),
             target: target,
         }
     }
@@ -220,7 +220,7 @@ impl MjaiEvent {
     pub fn ankan(seat: Seat, consumed: &Vec<Tile>) -> Self {
         Self::Ankan {
             actor: seat,
-            consumed: tile_vec_to_mjai(consumed),
+            consumed: tiles_to_mjai(consumed),
         }
     }
 
@@ -228,7 +228,7 @@ impl MjaiEvent {
         Self::Kakan {
             actor: seat,
             pai: tile_to_mjai(consumed[0]),
-            consumed: tile_vec_to_mjai(pon_tiles),
+            consumed: tiles_to_mjai(pon_tiles),
         }
     }
 
@@ -251,7 +251,7 @@ impl MjaiEvent {
             actor: seat,
             target: target,
             pai: tile_to_mjai(tile),
-            uradora_markers: tile_vec_to_mjai(ura_doras),
+            uradora_markers: tiles_to_mjai(ura_doras),
             hora_tehais: vec![], // TODO
             yakus: vec![],       // TODO
             fu: context.fu,
@@ -357,11 +357,11 @@ impl MjaiAction {
             ActionType::Discard => return None,
             ActionType::Ankan => Self::Ankan {
                 actor: seat,
-                consumed: tile_vec_to_mjai(cs),
+                consumed: tiles_to_mjai(cs),
             },
             ActionType::Kakan => {
                 let t = act.1[0];
-                let comsumed = tile_vec_to_mjai(&if t.1 == 0 {
+                let comsumed = tiles_to_mjai(&if t.1 == 0 {
                     // 赤5
                     let t2 = Tile(t.0, 5);
                     vec![t2, t2, t2]
@@ -395,7 +395,7 @@ impl MjaiAction {
                     actor: seat,
                     target: target_seat,
                     pai: tile_to_mjai(target_tile),
-                    consumed: tile_vec_to_mjai(cs),
+                    consumed: tiles_to_mjai(cs),
                 }
             }
             ActionType::Pon => {
@@ -404,7 +404,7 @@ impl MjaiAction {
                     actor: seat,
                     target: target_seat,
                     pai: tile_to_mjai(target_tile),
-                    consumed: tile_vec_to_mjai(cs),
+                    consumed: tiles_to_mjai(cs),
                 }
             }
             ActionType::Minkan => {
@@ -413,7 +413,7 @@ impl MjaiAction {
                     actor: seat,
                     target: target_seat,
                     pai: tile_to_mjai(target_tile),
-                    consumed: tile_vec_to_mjai(cs),
+                    consumed: tiles_to_mjai(cs),
                 }
             }
             ActionType::Ron => {
@@ -437,11 +437,11 @@ impl MjaiAction {
                     Action::discard(tile_from_mjai(pai))
                 }
             }
-            Self::Chi { consumed, .. } => Action::chi(tile_vec_from_mjai(consumed)),
-            Self::Pon { consumed, .. } => Action::pon(tile_vec_from_mjai(consumed)),
+            Self::Chi { consumed, .. } => Action::chi(tiles_from_mjai(consumed)),
+            Self::Pon { consumed, .. } => Action::pon(tiles_from_mjai(consumed)),
             Self::Kakan { pai, .. } => Action::kakan(tile_from_mjai(pai)),
-            Self::Daiminkan { consumed, .. } => Action::minkan(tile_vec_from_mjai(consumed)),
-            Self::Ankan { consumed, .. } => Action::ankan(tile_vec_from_mjai(consumed)),
+            Self::Daiminkan { consumed, .. } => Action::minkan(tiles_from_mjai(consumed)),
+            Self::Ankan { consumed, .. } => Action::ankan(tiles_from_mjai(consumed)),
             Self::Reach { .. } => panic!(),
             Self::Hora { .. } => {
                 if is_turn {
@@ -501,11 +501,11 @@ pub fn tile_from_mjai(sym: &str) -> Tile {
     }
 }
 
-fn tile_vec_to_mjai(v: &Vec<Tile>) -> Vec<String> {
+fn tiles_to_mjai(v: &Vec<Tile>) -> Vec<String> {
     v.iter().map(|&t| tile_to_mjai(t)).collect()
 }
 
-fn tile_vec_from_mjai(v: &Vec<String>) -> Vec<Tile> {
+fn tiles_from_mjai(v: &Vec<String>) -> Vec<Tile> {
     let mut v2: Vec<Tile> = v.iter().map(|t| tile_from_mjai(t)).collect();
     v2.sort();
     v2

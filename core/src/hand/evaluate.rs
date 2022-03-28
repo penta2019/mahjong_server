@@ -133,7 +133,7 @@ fn evaluate_hand(
     doras: &Vec<Tile>,     // ドラ表示牌 (注:ドラそのものではない)
     ura_doras: &Vec<Tile>, // 裏ドラ表示牌 リーチしていない場合は空
     win_tile: Tile,        // 上がり牌
-    is_tsumo: bool,        // ツモ和了
+    is_drawn: bool,        // ツモ和了
     is_leader: bool,       // 親番
     prevalent_wind: Tnum,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Tnum,       // 自風 (同上)
@@ -151,7 +151,7 @@ fn evaluate_hand(
             win_tile,
             prevalent_wind,
             seat_wind,
-            is_tsumo,
+            is_drawn,
             yaku_flags.clone(),
         );
         wins.push(ctx);
@@ -165,7 +165,7 @@ fn evaluate_hand(
             win_tile,
             prevalent_wind,
             seat_wind,
-            is_tsumo,
+            is_drawn,
             yaku_flags.clone(),
         );
         wins.push(ctx);
@@ -179,7 +179,7 @@ fn evaluate_hand(
             win_tile,
             prevalent_wind,
             seat_wind,
-            is_tsumo,
+            is_drawn,
             yaku_flags.clone(),
         );
         wins.push(ctx);
@@ -206,7 +206,7 @@ fn evaluate_hand(
 
     let mut results = vec![];
     for ctx in wins {
-        let hand = hand_vec_from_tile_table(hand);
+        let hand = hand_from_tile_table(hand);
         let fu = ctx.calc_fu();
         let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
         if yakus.is_empty() {
@@ -240,7 +240,7 @@ fn evaluate_hand(
         results.push(WinContext {
             hand,
             yakus,
-            is_tsumo,
+            is_drawn,
             fu,
             fan,
             yakuman_times,

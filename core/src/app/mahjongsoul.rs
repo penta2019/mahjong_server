@@ -71,6 +71,11 @@ impl MahjongsoulApp {
             // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
 
+        ///////////////////////////////////////////////////////////////////////
+        let server = Server::new_tcp_server("localhost:12345");
+        listeners.push(Box::new(crate::listener::EventSender::new(server)));
+        ///////////////////////////////////////////////////////////////////////
+
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
         let mut server_msc = Server::new_ws_server(&format!("localhost:{}", self.msc_port));
         loop {
@@ -352,7 +357,7 @@ impl Mahjongsoul {
         let stg = self.get_stage();
         if let Value::Array(doras) = &data["doras"] {
             if doras.len() > stg.doras.len() {
-                let t = tile_from_mjsoul2(doras.last().unwrap());
+                let t = tile_from_mjsoul(doras.last().unwrap());
                 self.handle_event(Event::dora(t));
             }
         }
@@ -368,7 +373,7 @@ impl Mahjongsoul {
         let honba = as_usize(&data["ben"]);
         let kyoutaku = as_usize(&data["liqibang"]);
         let mode = as_usize(&data["mode"]);
-        let doras = as_vec(tile_from_mjsoul2, &data["doras"]);
+        let doras = tiles_from_mjsoul(&data["doras"]);
 
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["scores"]) {
@@ -378,7 +383,7 @@ impl Mahjongsoul {
         let mut hands = [vec![], vec![], vec![], vec![]];
         for s in 0..SEAT {
             if s == self.seat {
-                hands[s] = as_vec(tile_from_mjsoul2, &data["tiles"]);
+                hands[s] = tiles_from_mjsoul(&data["tiles"]);
             } else {
                 let hand = &mut hands[s];
                 if s == kyoku {
@@ -403,17 +408,17 @@ impl Mahjongsoul {
         self.update_doras(data);
         let s = as_usize(&data["seat"]);
 
-        if let Value::String(ps) = &data["tile"] {
-            let t = tile_from_mjsoul(&ps);
-            self.handle_event(Event::deal(s, t));
-        } else {
+        if let Value::Null = &data["tile"] {
             self.handle_event(Event::deal(s, Z8));
+        } else {
+            let t = tile_from_mjsoul(&data["tile"]);
+            self.handle_event(Event::deal(s, t));
         }
     }
 
     fn handler_discardtile(&mut self, data: &Value) {
         let s = as_usize(&data["seat"]);
-        let t = tile_from_mjsoul2(&data["tile"]);
+        let t = tile_from_mjsoul(&data["tile"]);
         let m = as_bool(&data["moqie"]);
         let r = as_bool(&data["is_liqi"]);
         self.handle_event(Event::discard(s, t, m, r));
@@ -429,7 +434,7 @@ impl Mahjongsoul {
             _ => panic!("unknown meld type"),
         };
 
-        let tiles = as_vec(tile_from_mjsoul2, &data["tiles"]);
+        let tiles = tiles_from_mjsoul(&data["tiles"]);
         let froms = as_vec(as_usize, &data["froms"]);
 
         let mut consumed = vec![];
@@ -450,7 +455,7 @@ impl Mahjongsoul {
             _ => panic!("invalid gang type"),
         };
 
-        let mut t = tile_from_mjsoul2(&data["tiles"]);
+        let mut t = tile_from_mjsoul(&data["tiles"]);
         let consumed = if tp == MeldType::Ankan {
             t = t.to_normal();
             let t0 = if t.is_suit() && t.1 == 5 {
@@ -483,8 +488,8 @@ impl Mahjongsoul {
             let s = as_usize(&win["seat"]);
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
-            let hand = as_vec(tile_from_mjsoul2, &win["hand"]);
-            let is_tsumo = as_bool(&win["zimo"]);
+            let hand = tiles_from_mjsoul(&win["hand"]);
+            let is_drawn = as_bool(&win["zimo"]);
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let yakuman_times = if is_yakuman { count } else { 0 };
@@ -523,7 +528,7 @@ impl Mahjongsoul {
             let ctx = WinContext {
                 hand,
                 yakus,
-                is_tsumo,
+                is_drawn,
                 fu,
                 fan,
                 yakuman_times,
@@ -548,7 +553,7 @@ impl Mahjongsoul {
                 // 九種九牌
                 draw_type = DrawType::Kyushukyuhai;
                 let s = as_usize(&data["seat"]);
-                hands[s] = as_vec(tile_from_mjsoul2, &data["tiles"]);
+                hands[s] = tiles_from_mjsoul(&data["tiles"]);
             }
             2 => {
                 // 四風連打
@@ -581,21 +586,24 @@ impl Mahjongsoul {
         }
 
         let mut tenpais = [false; SEAT];
+        let mut hands = [vec![], vec![], vec![], vec![]];
         for (s, player) in as_enumerate(&data["players"]) {
             tenpais[s] = as_bool(&player["tingpai"]);
+            if tenpais[s] {
+                hands[s] = tiles_from_mjsoul(&player["hand"]);
+            }
         }
 
-        // TODO
         self.handle_event(Event::draw(
             DrawType::Kouhaiheikyoku,
-            [vec![], vec![], vec![], vec![]],
+            hands,
             tenpais,
             points,
         ));
     }
 }
 
-fn tile_from_mjsoul(s: &str) -> Tile {
+fn tile_from_mjsoul2(s: &str) -> Tile {
     let b = s.as_bytes();
     let n = b[0] - b'0';
     let t = match b[1] as char {
@@ -608,8 +616,12 @@ fn tile_from_mjsoul(s: &str) -> Tile {
     Tile(t, n as usize)
 }
 
-fn tile_from_mjsoul2(v: &Value) -> Tile {
-    tile_from_mjsoul(as_str(v))
+fn tile_from_mjsoul(v: &Value) -> Tile {
+    tile_from_mjsoul2(as_str(v))
+}
+
+fn tiles_from_mjsoul(v: &Value) -> Vec<Tile> {
+    as_vec(tile_from_mjsoul, v)
 }
 
 fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {
@@ -763,7 +775,7 @@ fn parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
                 .as_str()
                 .unwrap()
                 .split('|')
-                .map(|sym| tile_from_mjsoul(sym))
+                .map(|sym| tile_from_mjsoul2(sym))
                 .collect();
             c.sort();
             c

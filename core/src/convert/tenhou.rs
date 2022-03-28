@@ -106,11 +106,11 @@ impl TenhouSerializer {
                 k.kyoku = e.bakaze * 4 + e.kyoku;
                 k.honba = e.honba;
                 k.kyoutaku = e.kyoutaku;
-                k.doras = tile_vec_to_tenhou(&e.doras);
+                k.doras = tiles_to_tenhou(&e.doras);
                 k.scores = e.scores;
                 for s in 0..SEAT {
                     let h = &e.hands[s];
-                    k.players[s].hand = tile_vec_to_tenhou(&h[..13]);
+                    k.players[s].hand = tiles_to_tenhou(&h[..13]);
                     if h.len() == 14 {
                         k.players[s].drawns.push(json!(tile_to_tenhou(h[13])));
                     }
@@ -184,7 +184,7 @@ impl TenhouSerializer {
             Event::Win(e) => {
                 let target_seat = stg.turn;
                 k.result = "和了".to_string();
-                k.ura_doras = tile_vec_to_tenhou(&e.ura_doras);
+                k.ura_doras = tiles_to_tenhou(&e.ura_doras);
                 for (seat, points, ctx) in &e.contexts {
                     k.result_detail
                         .push(points.iter().map(|&p| json!(p)).collect());
@@ -197,7 +197,7 @@ impl TenhouSerializer {
                             _ => ctx.score_title.clone(),
                         }
                     };
-                    if ctx.is_tsumo {
+                    if ctx.is_drawn {
                         if ctx.points.2 == 0 {
                             detail.push(json!(format!("{}{}点∀", score_title, ctx.points.1)));
                         } else {
@@ -252,10 +252,10 @@ fn tile_to_tenhou(t: Tile) -> i64 {
 //     }
 // }
 
-fn tile_vec_to_tenhou(v: &[Tile]) -> Vec<i64> {
+fn tiles_to_tenhou(v: &[Tile]) -> Vec<i64> {
     v.iter().map(|&t| tile_to_tenhou(t)).collect()
 }
 
-// fn tile_vec_from_tenhou(v: &[i64]) -> Vec<Tile> {
+// fn tiles_from_tenhou(v: &[i64]) -> Vec<Tile> {
 //     v.iter().map(|&t| tile_from_tenhou(t)).collect()
 // }

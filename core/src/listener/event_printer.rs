@@ -53,7 +53,7 @@ impl Listener for StagePrinter {
             }
             Event::Draw(e) => {
                 println!("[Draw]");
-                println!("{:?}", e.draw_type);
+                println!("{:?}", e.type_);
                 println!("is_tenpai: {:?}", &e.tenpais);
                 self.print_score_change(&stg, &e.points);
                 println!("{}", stg);

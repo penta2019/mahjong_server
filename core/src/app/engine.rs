@@ -608,8 +608,8 @@ impl MahjongEngine {
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(ura_doras, contexts));
             }
-            KyokuResult::Draw(draw_type) => {
-                match draw_type {
+            KyokuResult::Draw(type_) => {
+                match type_ {
                     DrawType::Kouhaiheikyoku => {
                         // 聴牌集計
                         let mut tenpais = [false; SEAT];
@@ -650,7 +650,7 @@ impl MahjongEngine {
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
-                        let event = Event::draw(*draw_type, hands, [false; SEAT], [0; SEAT]);
+                        let event = Event::draw(*type_, hands, [false; SEAT], [0; SEAT]);
                         self.handle_event(event);
                     }
                 }

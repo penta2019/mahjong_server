@@ -79,13 +79,13 @@ impl Event {
     }
 
     pub fn draw(
-        draw_type: DrawType,
+        type_: DrawType,
         hands: [Vec<Tile>; SEAT],
         tenpais: [bool; SEAT],
         points: [Point; SEAT],
     ) -> Self {
         Self::Draw(EventDraw {
-            draw_type,
+            type_,
             hands,
             tenpais,
             points,
@@ -152,7 +152,7 @@ pub struct EventWin {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventDraw {
-    pub draw_type: DrawType,
+    pub type_: DrawType,
     pub hands: [Vec<Tile>; SEAT],
     pub tenpais: [bool; SEAT],
     pub points: [Point; SEAT],

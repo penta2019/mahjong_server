@@ -263,12 +263,12 @@ impl MjaiEvent {
     }
 
     pub fn ryukyoku(
-        draw_type: DrawType,
+        type_: DrawType,
         is_tenpai: &[bool; SEAT],
         deltas: &[Point; SEAT],
         scores: &[Score; SEAT],
     ) -> Self {
-        let reason = match draw_type {
+        let reason = match type_ {
             DrawType::Kouhaiheikyoku => "fanpai",
             _ => "",
         };

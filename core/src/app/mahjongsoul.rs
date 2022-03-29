@@ -549,37 +549,37 @@ impl Mahjongsoul {
     }
 
     fn handler_liuju(&mut self, data: &Value) {
-        let mut draw_type = DrawType::Unknown;
+        let mut type_ = DrawType::Unknown;
         let mut hands = [vec![], vec![], vec![], vec![]];
         let tenpais = [false; 4];
         let points = [0; 4];
         match as_usize(&data["type"]) {
             1 => {
                 // 九種九牌
-                draw_type = DrawType::Kyushukyuhai;
+                type_ = DrawType::Kyushukyuhai;
                 let s = as_usize(&data["seat"]);
                 hands[s] = tiles_from_mjsoul(&data["tiles"]);
             }
             2 => {
                 // 四風連打
-                draw_type = DrawType::Suufuurenda;
+                type_ = DrawType::Suufuurenda;
             }
             3 => {
                 // 四槓散了
-                draw_type = DrawType::Suukansanra;
+                type_ = DrawType::Suukansanra;
             }
             4 => {
                 // 四家立直
-                draw_type = DrawType::Suuchariichi;
+                type_ = DrawType::Suuchariichi;
             }
             5 => {
                 // 三家和
-                draw_type = DrawType::Sanchaho;
+                type_ = DrawType::Sanchaho;
             }
             _ => {}
         }
 
-        self.handle_event(Event::draw(draw_type, hands, tenpais, points));
+        self.handle_event(Event::draw(type_, hands, tenpais, points));
     }
 
     fn handler_notile(&mut self, data: &Value) {

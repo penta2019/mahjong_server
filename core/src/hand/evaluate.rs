@@ -206,7 +206,7 @@ fn evaluate_hand(
 
     let mut results = vec![];
     for ctx in wins {
-        let hand = hand_from_tile_table(hand);
+        let hand = tiles_from_tile_table(hand);
         let fu = ctx.calc_fu();
         let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
         if yakus.is_empty() {

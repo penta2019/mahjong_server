@@ -126,7 +126,7 @@ impl fmt::Display for Stage {
     }
 }
 
-pub fn hand_from_tile_table(tt: &TileTable) -> Vec<Tile> {
+pub fn tiles_from_tile_table(tt: &TileTable) -> Vec<Tile> {
     let mut hand = vec![];
     for ti in 0..TYPE {
         for ni in 1..TNUM {

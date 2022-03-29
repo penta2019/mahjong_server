@@ -615,10 +615,7 @@ impl MahjongEngine {
                         let mut tenpais = [false; SEAT];
                         let mut n_tenpai = 0;
                         for s in 0..SEAT {
-                            let h = &stg.players[s].hand;
-                            tenpais[s] = !calc_tiles_to_normal_win(h).is_empty()
-                                || !calc_tiles_to_chiitoitsu_win(h).is_empty()
-                                || !calc_tiles_to_kokushimusou_win(h).is_empty();
+                            tenpais[s] = !stg.players[s].win_tiles.is_empty();
                             if tenpais[s] {
                                 n_tenpai += 1;
                             }
@@ -640,7 +637,13 @@ impl MahjongEngine {
                             d_scores[s] = if tenpais[s] { recv } else { -pay };
                         }
 
-                        let hands = [vec![], vec![], vec![], vec![]]; // TODO
+                        let mut hands = [vec![], vec![], vec![], vec![]];
+                        for s in 0..SEAT {
+                            if tenpais[s] {
+                                hands[s] = tiles_from_tile_table(&stg.players[s].hand);
+                            }
+                        }
+
                         let event = Event::draw(DrawType::Kouhaiheikyoku, hands, tenpais, d_scores);
                         self.handle_event(event);
                         need_leader_change = !tenpais[kyoku];

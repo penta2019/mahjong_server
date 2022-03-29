@@ -483,6 +483,7 @@ impl Mahjongsoul {
             delta_scores[s] = as_i32(score);
         }
 
+        let mut ura_doras = vec![];
         let mut wins = vec![];
         for win in as_array(&data["hules"]) {
             let s = as_usize(&win["seat"]);
@@ -538,9 +539,13 @@ impl Mahjongsoul {
             wins.push((s, delta_scores.clone(), ctx));
 
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
+
+            if let Value::Array(_) = win["li_doras"] {
+                ura_doras = tiles_from_mjsoul(&win["li_doras"]);
+            }
         }
 
-        self.handle_event(Event::win(vec![], wins));
+        self.handle_event(Event::win(ura_doras, wins));
     }
 
     fn handler_liuju(&mut self, data: &Value) {

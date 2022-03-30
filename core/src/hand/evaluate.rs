@@ -36,7 +36,7 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
         &ura_doras,
         pl.drawn.unwrap(),
         true,
-        stage.is_leader(pl.seat),
+        stage.is_dealer(pl.seat),
         stage.get_prevalent_wind(),
         stage.get_seat_wind(pl.seat),
         yf,
@@ -111,7 +111,7 @@ pub fn evaluate_hand_ron(
         &ura_doras,
         t,
         false,
-        stage.is_leader(pl.seat),
+        stage.is_dealer(pl.seat),
         stage.get_prevalent_wind(),
         stage.get_seat_wind(pl.seat),
         yf,
@@ -134,7 +134,7 @@ fn evaluate_hand(
     ura_doras: &Vec<Tile>, // 裏ドラ表示牌 リーチしていない場合は空
     win_tile: Tile,        // 上がり牌
     is_drawn: bool,        // ツモ和了
-    is_leader: bool,       // 親番
+    is_dealer: bool,       // 親番
     prevalent_wind: Tnum,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Tnum,       // 自風 (同上)
     yaku_flags: YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
@@ -235,7 +235,7 @@ fn evaluate_hand(
                 yakus.push(("裏ドラ".to_string(), n_ura_dora));
             }
         }
-        let points = get_points(is_leader, fu, fan, yakuman_times);
+        let points = get_points(is_dealer, fu, fan, yakuman_times);
         let score_title = get_score_title(fu, fan, yakuman_times);
         results.push(WinContext {
             hand,

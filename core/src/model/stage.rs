@@ -57,7 +57,7 @@ pub struct Stage {
 
 impl Stage {
     #[inline]
-    pub fn is_leader(&self, seat: Seat) -> bool {
+    pub fn is_dealer(&self, seat: Seat) -> bool {
         seat == self.kyoku
     }
 

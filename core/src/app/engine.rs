@@ -525,28 +525,28 @@ impl MahjongEngine {
         let mut honba = stg.honba;
         let mut kyoutaku = stg.kyoutaku;
         let turn = stg.turn;
-        let mut need_leader_change = false; // 親の交代
+        let mut need_dealer_change = false; // 親の交代
         match self.kyoku_result.as_ref().unwrap() {
             KyokuResult::Tsumo => {
                 let mut d_scores = [0; SEAT]; // 得点変動
 
                 let ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
-                let (_, mut non_leader, mut leader) = ctx.points;
+                let (_, mut non_dealer, mut dealer) = ctx.points;
 
                 // 積み棒
-                non_leader += honba as i32 * 100;
-                leader += honba as i32 * 100;
+                non_dealer += honba as i32 * 100;
+                dealer += honba as i32 * 100;
 
                 for s in 0..SEAT {
                     if s != turn {
-                        if !stg.is_leader(s) {
+                        if !stg.is_dealer(s) {
                             // 子の支払い
-                            d_scores[s] -= non_leader;
-                            d_scores[turn] += non_leader;
+                            d_scores[s] -= non_dealer;
+                            d_scores[turn] += non_dealer;
                         } else {
                             // 親の支払い
-                            d_scores[s] -= leader;
-                            d_scores[turn] += leader;
+                            d_scores[s] -= dealer;
+                            d_scores[turn] += dealer;
                         }
                     };
                 }
@@ -557,9 +557,9 @@ impl MahjongEngine {
                 // stage情報
                 kyoutaku = 0;
                 // 和了が子の場合　積み棒をリセットして親交代
-                if !stg.is_leader(turn) {
+                if !stg.is_dealer(turn) {
                     honba = 0;
-                    need_leader_change = true;
+                    need_dealer_change = true;
                 }
 
                 let contexts = vec![(turn, d_scores, ctx)];
@@ -599,11 +599,11 @@ impl MahjongEngine {
                 // stage情報
                 kyoutaku = 0;
                 // 子の和了がある場合は積み棒をリセット
-                if seats.iter().any(|&s| !stg.is_leader(s)) {
+                if seats.iter().any(|&s| !stg.is_dealer(s)) {
                     honba = 0;
                 }
                 // 和了が子しかいない場合は親交代
-                need_leader_change = seats.iter().all(|&s| !stg.is_leader(s));
+                need_dealer_change = seats.iter().all(|&s| !stg.is_dealer(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(ura_doras, contexts));
@@ -646,7 +646,7 @@ impl MahjongEngine {
 
                         let event = Event::draw(DrawType::Kouhaiheikyoku, hands, tenpais, d_scores);
                         self.handle_event(event);
-                        need_leader_change = !tenpais[kyoku];
+                        need_dealer_change = !tenpais[kyoku];
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
@@ -659,7 +659,7 @@ impl MahjongEngine {
         }
 
         // 親交代
-        if need_leader_change {
+        if need_dealer_change {
             kyoku += 1;
             if kyoku == SEAT {
                 kyoku = 0;

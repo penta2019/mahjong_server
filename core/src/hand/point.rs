@@ -1,7 +1,7 @@
 use crate::model::{Point, Points};
 
 // 親が他家を直撃した場合の点数表 (役満未満)
-const POINT_LEADER: [[Point; 11]; 13] = [
+const POINT_DEALER: [[Point; 11]; 13] = [
     [0; 11],                                                      // 0飜
     [0, 0, 1500, 2000, 2400, 2900, 3400, 3900, 4400, 4800, 5300], // 1飜
     [
@@ -24,7 +24,7 @@ const POINT_LEADER: [[Point; 11]; 13] = [
 ];
 
 // 子が他家を直撃した場合の点数表 (役満未満)
-const POINT_NON_LEADER: [[Point; 11]; 13] = [
+const POINT_NON_DEALER: [[Point; 11]; 13] = [
     [0; 11],                                                      // 0飜
     [0, 0, 1000, 1300, 1600, 2000, 2300, 2600, 2900, 3200, 3600], // 1飜
     [
@@ -46,8 +46,8 @@ const POINT_NON_LEADER: [[Point; 11]; 13] = [
     [24000; 11],                                                  // 12飜
 ];
 
-const POINT_YAKUMAN_LEADER: Point = 48000;
-const POINT_YAKUMAN_NON_LEADER: Point = 32000;
+const POINT_YAKUMAN_DEALER: Point = 48000;
+const POINT_YAKUMAN_NON_DEALER: Point = 32000;
 
 fn calc_fu_index(fu: usize) -> usize {
     match fu {
@@ -71,51 +71,51 @@ fn ceil100(n: Point) -> Point {
 }
 
 // 親の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-fn get_points_leader(fu: usize, fan: usize) -> Points {
+fn get_points_dealer(fu: usize, fan: usize) -> Points {
     let fu_index = calc_fu_index(fu);
     let point = if fan < 13 {
-        POINT_LEADER[fan][fu_index]
+        POINT_DEALER[fan][fu_index]
     } else {
-        POINT_YAKUMAN_LEADER
+        POINT_YAKUMAN_DEALER
     };
     (point, ceil100(point / 3), 0)
 }
 
 // 子の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-fn get_points_non_leader(fu: usize, fan: usize) -> Points {
+fn get_points_non_dealer(fu: usize, fan: usize) -> Points {
     let fu_index = calc_fu_index(fu);
     let point = if fan < 13 {
-        POINT_NON_LEADER[fan][fu_index]
+        POINT_NON_DEALER[fan][fu_index]
     } else {
-        POINT_YAKUMAN_NON_LEADER
+        POINT_YAKUMAN_NON_DEALER
     };
     (point, ceil100(point / 4), ceil100(point / 2))
 }
 
 // 親の役満 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-fn get_points_leader_yakuman(mag: usize) -> Points {
-    let s = POINT_YAKUMAN_LEADER * mag as i32;
+fn get_points_dealer_yakuman(mag: usize) -> Points {
+    let s = POINT_YAKUMAN_DEALER * mag as i32;
     (s, s / 3, 0)
 }
 
 // 子の役満 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却
-fn get_points_non_leader_yakuman(mag: usize) -> Points {
-    let s = POINT_YAKUMAN_NON_LEADER * mag as i32;
+fn get_points_non_dealer_yakuman(mag: usize) -> Points {
+    let s = POINT_YAKUMAN_NON_DEALER * mag as i32;
     (s, s / 4, s / 2)
 }
 
-pub fn get_points(is_leader: bool, fu: usize, fan: usize, yakuman_times: usize) -> Points {
-    if is_leader {
+pub fn get_points(is_dealer: bool, fu: usize, fan: usize, yakuman_times: usize) -> Points {
+    if is_dealer {
         if yakuman_times > 0 {
-            get_points_leader_yakuman(yakuman_times)
+            get_points_dealer_yakuman(yakuman_times)
         } else {
-            get_points_leader(fu, fan)
+            get_points_dealer(fu, fan)
         }
     } else {
         if yakuman_times > 0 {
-            get_points_non_leader_yakuman(yakuman_times)
+            get_points_non_dealer_yakuman(yakuman_times)
         } else {
-            get_points_non_leader(fu, fan)
+            get_points_non_dealer(fu, fan)
         }
     }
 }
@@ -127,7 +127,7 @@ pub fn get_score_title(fu: usize, fan: usize, yakuman_times: usize) -> String {
             if fan >= 13 {
                 "数え役満"
             } else {
-                match POINT_NON_LEADER[fan][fu_index] {
+                match POINT_NON_DEALER[fan][fu_index] {
                     8000 => "満貫",
                     12000 => "跳満",
                     16000 => "倍満",

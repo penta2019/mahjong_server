@@ -10,7 +10,7 @@ use crate::error;
 pub fn next_value<T>(it: &mut std::slice::Iter<std::string::String>, opt: &str) -> T
 where
     T: FromStr,
-    <T as FromStr>::Err: fmt::Display,
+    T::Err: fmt::Display,
 {
     let n = it
         .next()
@@ -143,18 +143,15 @@ pub fn as_bool(v: &Value) -> bool {
     v.as_bool().unwrap()
 }
 
-pub fn as_array(v: &Value) -> &Vec<serde_json::Value> {
+pub fn as_array(v: &Value) -> &Vec<Value> {
     v.as_array().unwrap()
 }
 
-pub fn as_enumerate(v: &Value) -> std::iter::Enumerate<std::slice::Iter<'_, serde_json::Value>> {
+pub fn as_enumerate(v: &Value) -> impl Iterator<Item = (usize, &Value)> {
     v.as_array().unwrap().iter().enumerate()
 }
 
-pub fn as_vec<F, T>(f: F, v: &Value) -> Vec<T>
-where
-    F: Fn(&Value) -> T,
-{
+pub fn as_vec<T>(f: impl Fn(&Value) -> T, v: &Value) -> Vec<T> {
     let mut vec: Vec<T> = Vec::new();
     for e in as_array(&v) {
         vec.push(f(e));

@@ -27,8 +27,6 @@ pub struct EngineApp {
 
 impl EngineApp {
     pub fn new(args: Vec<String>) -> Self {
-        use std::process::exit;
-
         let mut app = Self {
             seed: 0,
             mode: 1,
@@ -61,7 +59,7 @@ impl EngineApp {
                 "-3" => app.names[3] = next_value(&mut it, "-3"),
                 opt => {
                     error!("unknown option: {}", opt);
-                    exit(0);
+                    std::process::exit(0);
                 }
             }
         }

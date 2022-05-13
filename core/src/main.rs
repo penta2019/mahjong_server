@@ -16,6 +16,10 @@ fn main() {
 
     let args2 = args[2..].to_vec();
     match args[1].as_str() {
+        "C" => {
+            // Calculator (役計算モード)
+            app::CalculatorApp::new(args2).run();
+        }
         "E" => {
             // Engine (bot対戦シミュレーションモード)
             app::EngineApp::new(args2).run();

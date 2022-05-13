@@ -15,6 +15,7 @@ use crate::error;
 use ActionType::*;
 
 // [App]
+#[derive(Debug)]
 pub struct MahjongsoulApp {
     read_only: bool,
     sleep: bool,

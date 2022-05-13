@@ -13,6 +13,7 @@ use crate::{error, warn};
 use ActionType::*;
 
 // [App]
+#[derive(Debug)]
 pub struct EngineApp {
     seed: u64,
     mode: usize,

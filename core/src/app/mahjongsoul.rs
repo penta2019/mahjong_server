@@ -491,7 +491,6 @@ impl Mahjongsoul {
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
             let hand = tiles_from_mjsoul(&win["hand"]);
-            let is_drawn = as_bool(&win["zimo"]);
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let yakuman_times = if is_yakuman { count } else { 0 };
@@ -530,7 +529,6 @@ impl Mahjongsoul {
             let ctx = WinContext {
                 hand,
                 yakus,
-                is_drawn,
                 fu,
                 fan,
                 yakuman_times,

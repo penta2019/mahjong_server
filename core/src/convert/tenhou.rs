@@ -197,7 +197,7 @@ impl TenhouSerializer {
                             _ => ctx.score_title.clone(),
                         }
                     };
-                    if ctx.is_drawn {
+                    if *seat == stg.turn {
                         if ctx.points.2 == 0 {
                             detail.push(json!(format!("{}{}点∀", score_title, ctx.points.1)));
                         } else {

@@ -240,7 +240,6 @@ pub fn evaluate_hand(
         results.push(WinContext {
             hand,
             yakus,
-            is_drawn,
             fu,
             fan,
             yakuman_times,

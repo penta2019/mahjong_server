@@ -92,7 +92,7 @@ impl ReplayApp {
         let path = Path::new(&self.file_path);
         let paths: Vec<std::path::PathBuf> = if path.is_dir() {
             get_paths(path)
-                .unwrap_or_else(print_and_exit)
+                .unwrap_or_else(error_exit)
                 .into_iter()
                 .filter(|p| match p.extension() {
                     Some(ext) => ext == "json",
@@ -111,7 +111,7 @@ impl ReplayApp {
         } else {
             self.skip
                 .split(',')
-                .map(|s| s.parse().unwrap_or_else(print_and_exit))
+                .map(|s| s.parse().unwrap_or_else(error_exit))
                 .collect()
         };
         while skips.len() < 3 {
@@ -121,7 +121,7 @@ impl ReplayApp {
 
         let mut game = Replay::new(actors, enabled_actors, listeners);
         for p in paths {
-            let contents = std::fs::read_to_string(p).unwrap_or_else(print_and_exit);
+            let contents = std::fs::read_to_string(p).unwrap_or_else(error_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
             if let Event::New(e) = &record[0] {

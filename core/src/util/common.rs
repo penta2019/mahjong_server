@@ -14,9 +14,9 @@ where
 {
     let n = it
         .next()
-        .unwrap_or_else(|| print_and_exit(format!("{}: value missing", opt)));
+        .unwrap_or_else(|| error_exit(format!("{}: value missing", opt)));
     n.parse()
-        .unwrap_or_else(|e| print_and_exit(format!("{}: {} '{}'", opt, e, n)))
+        .unwrap_or_else(|e| error_exit(format!("{}: {} '{}'", opt, e, n)))
 }
 
 pub fn sleep_ms(ms: u64) {
@@ -44,9 +44,9 @@ pub fn flush() {
     stdout().flush().unwrap();
 }
 
-pub fn print_and_exit<T: fmt::Display, U>(t: T) -> U {
+pub fn error_exit<T: fmt::Display, U>(t: T) -> U {
     error!("{}", t);
-    exit(0);
+    exit(1);
 }
 
 pub fn get_paths(dir: &Path) -> io::Result<Vec<PathBuf>> {

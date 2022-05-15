@@ -70,6 +70,10 @@ pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
     v.remove(v.iter().position(|x| x == e).unwrap());
 }
 
+pub fn vec_count<T: PartialEq>(v: &Vec<T>, e: &T) -> usize {
+    v.iter().filter(|&n| n == e).count()
+}
+
 pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
     let vs: Vec<String> = v.iter().map(|x| format!("{}", x)).collect();
     vs.join(" ")

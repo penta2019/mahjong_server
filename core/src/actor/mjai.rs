@@ -430,7 +430,7 @@ fn stream_handler(
                 // スリープ中にrecordがリセットされている場合
                 continue;
             }
-            if event["possible_actions"] != Value::Null && cursor + 1 == record.len() {
+            if event["possible_actions"] != json!(null) && cursor + 1 == record.len() {
                 wait_act = true;
             }
             send(&event)?;

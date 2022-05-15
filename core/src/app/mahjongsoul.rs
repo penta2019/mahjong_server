@@ -253,7 +253,7 @@ impl Mahjongsoul {
             self.step += 1;
 
             let a = &data["operation"];
-            if a != &json!(null) {
+            if *a != json!(null) {
                 // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がある
                 act = self.select_action(a);
             }
@@ -410,7 +410,7 @@ impl Mahjongsoul {
         self.update_doras(data);
         let s = as_usize(&data["seat"]);
 
-        if let Value::Null = &data["tile"] {
+        if let json!(null) = &data["tile"] {
             self.handle_event(Event::deal(s, Z8));
         } else {
             let t = tile_from_mjsoul(&data["tile"]);

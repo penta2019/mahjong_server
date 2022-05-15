@@ -79,21 +79,23 @@ impl MahjongsoulApp {
 
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
         let mut server_msc = Server::new_ws_server(&format!("localhost:{}", self.msc_port));
+        let mut act = None;
         loop {
             if server_msc.is_new() {
                 let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
                 server_msc.send(msg.to_string());
             }
-            if let Some(msg) = server_msc.recv_timeout(1000) {
-                if let Some(act) = game.apply(&serde_json::from_str(&msg).unwrap()) {
-                    if !self.read_only {
-                        let msg = json!({
-                            "id": "0",
-                            "op": "eval",
-                            "data": act,
-                        });
-                        server_msc.send(msg.to_string());
-                    }
+            if let Some(msg) = server_msc.recv_timeout(100) {
+                act = game.apply(&serde_json::from_str(&msg).unwrap());
+            } else if act != None {
+                // recv_timeoutがタイムアウトした場合のみ直前のmsgに対するアクションを実行
+                if !self.read_only {
+                    let msg = json!({
+                        "id": "0",
+                        "op": "eval",
+                        "data": act,
+                    });
+                    server_msc.send(msg.to_string());
                 }
             }
         }
@@ -223,6 +225,7 @@ impl Mahjongsoul {
             self.ctrl.swap_actor(self.seat, &mut self.actor);
         }
 
+        // seatが確定するまでは実行されないので溜まったeventをまとめて処理
         let mut act = None;
         while self.step < self.events.len() {
             let event = self.events[self.step].clone();
@@ -249,12 +252,10 @@ impl Mahjongsoul {
             };
             self.step += 1;
 
-            if !is_cache {
-                let a = &data["operation"];
-                if a != &json!(null) {
-                    // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がある
-                    act = self.select_action(a);
-                }
+            let a = &data["operation"];
+            if a != &json!(null) {
+                // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がある
+                act = self.select_action(a);
             }
         }
 

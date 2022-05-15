@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use serde_json::{json, Value};
+use serde_json::{json, to_value, Value};
 
 use super::*;
 use crate::convert::mjai::*;
@@ -99,8 +99,7 @@ impl MjaiEndpoint {
     fn add_record(&mut self, event: MjaiEvent) {
         let mut d = self.data.lock().unwrap();
         d.selected_action = None;
-        d.possible_actions = None;
-        d.record.push(event);
+        d.record.push(to_value(event).unwrap());
     }
 
     fn confirm_riichi_accepted(&mut self, stg: &Stage) {
@@ -260,7 +259,7 @@ impl Actor for MjaiEndpoint {
                     mjai_acts.push(v);
                 }
             }
-            d.possible_actions = Some(mjai_acts);
+            d.record.last_mut().unwrap()["possible_actions"] = to_value(mjai_acts).unwrap();
             d.selected_action = None;
             d.is_riichi = false;
         }
@@ -269,15 +268,13 @@ impl Actor for MjaiEndpoint {
         let mut c = 0;
         loop {
             sleep_ms(100);
-            let mut d = self.data.lock().unwrap();
-            if d.selected_action.is_some() {
+            if self.data.lock().unwrap().selected_action.is_some() {
                 self.timeout_count = 0;
                 break;
             }
             c += 1;
             if c == self.timeout * 10 {
                 error!("possible_action timeout");
-                d.possible_actions = None;
                 self.timeout_count += 1;
                 if self.timeout_count == 5 {
                     error!("timeout_count exceeded");
@@ -347,10 +344,9 @@ impl Listener for MjaiEndpoint {
 struct SharedData {
     send_start_game: bool,
     seat: Seat,
-    record: Vec<MjaiEvent>,
+    record: Vec<Value>,
     cursor: usize,
     selected_action: Option<MjaiAction>,
-    possible_actions: Option<Vec<MjaiAction>>,
     is_riichi: bool,
     mode: usize, // (= EventNew.mode)
 }
@@ -363,7 +359,6 @@ impl SharedData {
             record: vec![],
             cursor: 0,
             selected_action: None,
-            possible_actions: None,
             is_riichi: false,
             mode: 1,
         }
@@ -423,30 +418,22 @@ fn stream_handler(
         let len = data.lock().unwrap().record.len();
         let mut wait_act = false;
         if cursor + 1 < len {
-            send(&json!(data.lock().unwrap().record[cursor]))?;
+            send(&data.lock().unwrap().record[cursor])?;
         } else if cursor + 1 == len {
-            if data.lock().unwrap().possible_actions.is_none() {
-                // select_actionがpossible_actionsを追加する可能性があるので待機
-                // data.lock()が開放されている必要があることに注意
-                sleep_ms(100);
-            }
+            // select_actionがpossible_actionsを追加する可能性があるので待機
+            // data.lock()が開放されている必要があることに注意
+            sleep_ms(100);
 
-            let mut d = data.lock().unwrap();
-            if cursor > d.record.len() {
+            let record = &data.lock().unwrap().record;
+            let event = &record[cursor];
+            if cursor > record.len() {
                 // スリープ中にrecordがリセットされている場合
                 continue;
             }
-            if d.possible_actions.is_some() && cursor + 1 == d.record.len() {
-                // possible_actionsが存在する場合,送信用のjsonオブジェクトを生成して追加
-                let a = std::mem::replace(&mut d.possible_actions, None).unwrap();
-                let mut record = json!(d.record[cursor]);
-                record["possible_actions"] = serde_json::to_value(a).unwrap();
-                d.possible_actions = None;
+            if event["possible_actions"] != Value::Null && cursor + 1 == record.len() {
                 wait_act = true;
-                send(&record)?;
-            } else {
-                send(&json!(d.record[cursor]))?;
             }
+            send(&event)?;
         } else {
             sleep_ms(10);
             is_alive()?;
@@ -488,27 +475,27 @@ fn stream_handler(
                     // recordが別スレッドから初期化される可能性がある
                     continue;
                 }
-                let rec = &d.record[cursor];
+                let event = &d.record[cursor];
                 cursor += 1;
-                match rec {
-                    MjaiEvent::Reach { .. } => {
+                match event["type"].as_str().unwrap() {
+                    "reach" => {
                         assert!(step == 0);
                         step = 1;
                     }
-                    MjaiEvent::Dahai { .. } => {
+                    "dahai" => {
                         if step == 0 {
                             // 手動でリーチ判断を無視した場合
                             break;
                         }
                         step = 2;
                     }
-                    MjaiEvent::ReachAccepted { .. } => {
+                    "reach_accepted" => {
                         assert!(step == 2);
-                        send(&json!(rec))?; // send reach_accepted
+                        send(event)?; // send reach_accepted
                         recv()?; // recv none
                         break;
                     }
-                    MjaiEvent::Hora { .. } => {
+                    "hora" => {
                         assert!(step == 2);
                         cursor -= 1; // horaはここでは処理しない
                         break;

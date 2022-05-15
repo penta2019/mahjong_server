@@ -151,12 +151,6 @@ cargo run J -s -0 MjaiEndpoint    # 本体側
 akochan mjai_client 11601      # akochan側
 ```
 
-* akochanに判断を聞くが,打牌は自分でやる
-```
-cargo run J -r -0 MjaiEndpoint    # 本体側
-akochan mjai_client 11601         # akochan側
-```
-
 * ポート(12345)とタイムアウト(30秒)を設定したい場合
 ```
 cargo run J -s -0 'MjaiEndpoint(127.0.0.1:12345,30)'    # 本体側

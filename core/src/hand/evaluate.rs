@@ -14,7 +14,7 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
     }
 
     let mut yf = YakuFlags::default();
-    yf.menzentsumo = pl.melds.is_empty();
+    yf.menzentsumo = true;
     yf.riichi = pl.is_riichi && !pl.is_daburii;
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
@@ -22,6 +22,12 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
     yf.rinshankaihou = pl.is_rinshan;
     yf.tenhou = false;
     yf.tiihou = false;
+
+    for m in &pl.melds {
+        if m.type_ != MeldType::Ankan {
+            yf.menzentsumo = false;
+        }
+    }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
         ura_dora_wall[0..stage.doras.len()].to_vec()

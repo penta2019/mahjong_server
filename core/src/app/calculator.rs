@@ -1,10 +1,8 @@
-use std::process::exit;
-
 use crate::hand::{evaluate_hand, YakuFlags};
 use crate::model::*;
 use crate::util::common::*;
 
-use crate::error;
+use crate::error_exit;
 
 #[derive(Debug)]
 pub struct CalculatorApp {
@@ -27,8 +25,7 @@ impl CalculatorApp {
                 }
                 exp => {
                     if exp.starts_with("-") {
-                        error!("unknown option: {}", exp);
-                        exit(1);
+                        error_exit!("unknown option: {}", exp);
                     }
                     app.exp = s.clone();
                 }
@@ -39,179 +36,228 @@ impl CalculatorApp {
     }
 
     pub fn run(&self) {
-        let calculator = Calculator::new(&self.exp);
+        let mut calculator = Calculator::new();
+        calculator.parse(&self.exp);
         calculator.run();
     }
 }
 
 #[derive(Debug)]
 struct Calculator {
-    exp: String,
+    seat: Seat,
+    // evaluate_hand params
+    hand: TileTable,
+    melds: Vec<Meld>,
+    doras: Vec<Tile>,
+    ura_doras: Vec<Tile>,
+    win_tile: Tile,
+    is_drawn: bool,
+    is_dealer: bool,
+    prevalent_wind: Index,
+    seat_wind: Index,
+    yaku_flags: YakuFlags,
 }
 
 impl Calculator {
-    fn new(exp: &str) -> Self {
+    fn new() -> Self {
         Self {
-            exp: exp.to_string(),
+            seat: 0,
+            hand: TileTable::default(),
+            melds: vec![],
+            doras: vec![],
+            ura_doras: vec![],
+            win_tile: Z8,
+            is_drawn: true,
+            is_dealer: true,
+            prevalent_wind: 1,
+            seat_wind: 1,
+            yaku_flags: YakuFlags::default(),
         }
     }
 
+    fn parse(&mut self, input: &str) {
+        let input = input.replace(" ", "");
+        let exps: Vec<&str> = input.split("/").collect();
+
+        if exps.len() == 0 {
+            error_exit!("input is empty");
+        }
+
+        if let Some(exp) = exps.get(1) {
+            self.parse_stage_info(exp); // 副露のパースに座席情報が必要なので最初に実行
+        };
+        if let Some(exp) = exps.get(0) {
+            self.parse_hand_meld(exp);
+        };
+        if let Some(exp) = exps.get(2) {
+            self.parse_yaku_flags(exp);
+        };
+        if let Some(exp) = exps.get(3) {
+            self.parse_score_verify(exp);
+        }
+
+        println!("hand: {:?}", self.hand);
+        println!("melds: {:?}", self.melds);
+        println!("wintile: {:?}", self.win_tile);
+    }
+
     fn run(&self) {
-        let seat = 0;
+        let res = evaluate_hand(
+            &self.hand,
+            &self.melds,
+            &self.doras,
+            &self.ura_doras,
+            self.win_tile,
+            self.is_drawn,
+            self.is_dealer,
+            self.prevalent_wind,
+            self.seat_wind,
+            &self.yaku_flags,
+        );
 
-        // evaluate_hand params
-        let mut hand = TileTable::default();
-        let mut melds = vec![];
-        let mut doras = vec![];
-        let mut ura_doras = vec![];
-        let mut win_tile = Z8;
-        let mut is_drawn = true;
-        let mut is_dealer = false;
-        let mut prevalent_wind = 1;
-        let mut seat_wind = 1;
-        let mut yaku_flags = YakuFlags::default();
+        println!("res: {:?}", res);
+    }
 
-        let mut hand_raw = "".to_string();
-        let mut melds_raw = vec![];
-        for exp in self.exp.split(',') {
-            if hand_raw == "" {
-                hand_raw = exp.to_string();
+    fn parse_stage_info(&mut self, exp: &str) {
+        todo!();
+    }
+
+    fn parse_hand_meld(&mut self, exp: &str) {
+        let mut exp_hand = "".to_string();
+        let mut exp_melds = vec![];
+        for e in exp.split(',') {
+            if exp_hand == "" {
+                if e.chars().last().unwrap() == '+' {
+                    self.is_drawn = false;
+                }
+                exp_hand = e.replace("+", "");
             } else {
-                melds_raw.push(exp.to_string());
+                exp_melds.push(e.to_string());
             }
         }
 
         // parse hands
-        {
-            let undef: usize = 255;
-            let mut ti = undef;
-            for c in hand_raw.chars() {
-                match c {
-                    'm' => ti = 0,
-                    'p' => ti = 1,
-                    's' => ti = 2,
-                    'z' => ti = 3,
-                    '+' => is_drawn = false,
-                    '0'..='9' => {
-                        if ti == undef {
-                            error!("tile number befor tile type");
-                            exit(1);
-                        }
-                        let ni = c.to_digit(10).unwrap() as usize;
-                        hand[ti][ni] += 1;
-                        if ni == 0 {
-                            hand[ti][5] += 1;
-                        }
-                        win_tile = Tile(ti, ni);
-                    }
-                    _ => {
-                        error!("invalid char: '{}'", c);
-                        exit(1);
-                    }
-                }
+        for t in tiles_from_string(&exp_hand) {
+            self.hand[t.0][t.1] += 1;
+            if t.1 == 0 {
+                self.hand[t.0][5] += 1;
             }
+            self.win_tile = t;
         }
 
         // parse melds
-        for meld_raw in &melds_raw {
-            let undef: usize = 255;
-            let mut ti = undef;
-            let mut nis = vec![];
-            let mut from = 0;
-            let mut tiles = vec![];
-            let mut froms = vec![];
-            for c in meld_raw.chars() {
-                match c {
-                    'm' => ti = 0,
-                    'p' => ti = 1,
-                    's' => ti = 2,
-                    'z' => ti = 3,
-                    '+' => {
-                        if froms.is_empty() {
-                            error!("invalid '+' suffix");
-                            exit(1);
-                        }
-                        let last = froms.len() - 1;
-                        froms[last] = from % SEAT;
-                    }
-                    '0'..='9' => {
-                        if ti == undef {
-                            error!("tile number befor tile type");
-                            exit(1);
-                        }
-
-                        from += 1;
-                        let ni = c.to_digit(10).unwrap() as usize;
-                        nis.push(if ni == 0 { 5 } else { ni });
-                        tiles.push(Tile(ti, ni));
-                        froms.push(seat);
-                    }
-                    _ => {
-                        error!("invalid char: '{}'", c);
-                        exit(1);
-                    }
-                }
-            }
-
-            nis.sort();
-            let mut diffs = vec![];
-            let mut ni0 = nis[0];
-            for ni in &nis[1..] {
-                diffs.push(ni - ni0);
-                ni0 = *ni;
-            }
-            println!("diffs: {:?}", diffs);
-            let meld_type = if diffs.len() == 2 && vec_count(&diffs, &1) == 2 {
-                MeldType::Chi
-            } else if diffs.len() == 2 && vec_count(&diffs, &0) == 2 {
-                MeldType::Pon
-            } else if diffs.len() == 3 && vec_count(&diffs, &0) == 3 {
-                if vec_count(&froms, &seat) == 4 {
-                    MeldType::Ankan
-                } else {
-                    MeldType::Minkan
-                }
-            } else {
-                error!("invalid meld: '{}'", meld_raw);
-                exit(1);
-            };
-
-            melds.push(Meld {
-                step: 0,
-                seat: seat,
-                type_: meld_type,
-                tiles: tiles,
-                froms: froms,
-            });
+        for exp_meld in &exp_melds {
+            self.melds.push(meld_from_string(exp_meld, self.seat));
         }
 
-        println!("hand: {:?}", hand);
-        println!("melds: {:?}", melds);
-        println!("wintile: {:?}", win_tile);
-
-        if is_drawn {
-            yaku_flags.menzentsumo = true;
-            for m in &melds {
+        if self.is_drawn {
+            self.yaku_flags.menzentsumo = true;
+            for m in &self.melds {
                 if m.type_ != MeldType::Ankan {
-                    yaku_flags.menzentsumo = false;
+                    self.yaku_flags.menzentsumo = false;
                 }
             }
         }
-        seat_wind = seat + 1;
+    }
 
-        let res = evaluate_hand(
-            &hand,
-            &melds,
-            &doras,
-            &ura_doras,
-            win_tile,
-            is_drawn,
-            is_dealer,
-            prevalent_wind,
-            seat_wind,
-            yaku_flags,
-        );
+    fn parse_yaku_flags(&mut self, exp: &str) {
+        todo!();
+    }
 
-        println!("res: {:?}", res);
+    fn parse_score_verify(&mut self, exp: &str) {
+        todo!();
+    }
+}
+
+fn tiles_from_string(exp: &str) -> Vec<Tile> {
+    let mut tiles = vec![];
+    let undef: usize = 255;
+    let mut ti = undef;
+    for c in exp.chars() {
+        match c {
+            'm' => ti = 0,
+            'p' => ti = 1,
+            's' => ti = 2,
+            'z' => ti = 3,
+            '0'..='9' => {
+                if ti == undef {
+                    error_exit!("tile number befor tile type");
+                }
+                let ni = c.to_digit(10).unwrap() as usize;
+                tiles.push(Tile(ti, ni));
+            }
+            _ => {
+                error_exit!("invalid char: '{}'", c);
+            }
+        }
+    }
+    tiles
+}
+
+fn meld_from_string(exp: &str, seat: Seat) -> Meld {
+    let undef: usize = 255;
+    let mut ti = undef;
+    let mut nis = vec![];
+    let mut from = 0;
+    let mut tiles = vec![];
+    let mut froms = vec![];
+    for c in exp.chars() {
+        match c {
+            'm' => ti = 0,
+            'p' => ti = 1,
+            's' => ti = 2,
+            'z' => ti = 3,
+            '+' => {
+                if froms.is_empty() {
+                    error_exit!("invalid '+' suffix");
+                }
+                let last = froms.len() - 1;
+                froms[last] = from % SEAT;
+            }
+            '0'..='9' => {
+                if ti == undef {
+                    error_exit!("tile number befor tile type");
+                }
+
+                from += 1;
+                let ni = c.to_digit(10).unwrap() as usize;
+                nis.push(if ni == 0 { 5 } else { ni });
+                tiles.push(Tile(ti, ni));
+                froms.push(seat);
+            }
+            _ => {
+                error_exit!("invalid char: '{}'", c);
+            }
+        }
+    }
+
+    nis.sort();
+    let mut diffs = vec![];
+    let mut ni0 = nis[0];
+    for ni in &nis[1..] {
+        diffs.push(ni - ni0);
+        ni0 = *ni;
+    }
+    println!("diffs: {:?}", diffs);
+    let meld_type = if diffs.len() == 2 && vec_count(&diffs, &1) == 2 {
+        MeldType::Chi
+    } else if diffs.len() == 2 && vec_count(&diffs, &0) == 2 {
+        MeldType::Pon
+    } else if diffs.len() == 3 && vec_count(&diffs, &0) == 3 {
+        if vec_count(&froms, &seat) == 4 {
+            MeldType::Ankan
+        } else {
+            MeldType::Minkan
+        }
+    } else {
+        error_exit!("invalid meld: '{}'", exp);
+    };
+
+    Meld {
+        step: 0,
+        seat: seat,
+        type_: meld_type,
+        tiles: tiles,
+        froms: froms,
     }
 }

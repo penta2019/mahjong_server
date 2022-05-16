@@ -45,3 +45,16 @@ macro_rules! debug {
         )
     };
 }
+
+#[macro_export]
+macro_rules! error_exit {
+    ($($arg:tt)*) => {{
+        eprintln!(
+            "[ERROR]({}:{}) {}",
+            file!(),
+            line!(),
+            format_args!($($arg)*)
+        );
+        std::process::exit(1);
+    }};
+}

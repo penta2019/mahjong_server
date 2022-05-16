@@ -45,7 +45,7 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
         stage.is_dealer(pl.seat),
         stage.get_prevalent_wind(),
         stage.get_seat_wind(pl.seat),
-        yf,
+        &yf,
     ) {
         if !res.yakus.is_empty() {
             return Some(res);
@@ -120,7 +120,7 @@ pub fn evaluate_hand_ron(
         stage.is_dealer(pl.seat),
         stage.get_prevalent_wind(),
         stage.get_seat_wind(pl.seat),
-        yf,
+        &yf,
     ) {
         if !res.yakus.is_empty() {
             return Some(res);
@@ -134,16 +134,16 @@ pub fn evaluate_hand_ron(
 // 和了形でない場合,Noneを返却
 // 和了形でも無役の場合はResultの中身がyaku: [], points(0, 0, 0)となる.
 pub fn evaluate_hand(
-    hand: &TileTable,      // 手牌(鳴き以外)
-    melds: &Vec<Meld>,     // 鳴き
-    doras: &Vec<Tile>,     // ドラ表示牌 (注:ドラそのものではない)
-    ura_doras: &Vec<Tile>, // 裏ドラ表示牌 リーチしていない場合は空
-    win_tile: Tile,        // 上がり牌
-    is_drawn: bool,        // ツモ和了
-    is_dealer: bool,       // 親番
-    prevalent_wind: Tnum,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
-    seat_wind: Tnum,       // 自風 (同上)
-    yaku_flags: YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
+    hand: &TileTable,       // 手牌(鳴き以外)
+    melds: &Vec<Meld>,      // 鳴き
+    doras: &Vec<Tile>,      // ドラ表示牌 (注:ドラそのものではない)
+    ura_doras: &Vec<Tile>,  // 裏ドラ表示牌 リーチしていない場合は空
+    win_tile: Tile,         // 上がり牌
+    is_drawn: bool,         // ツモ和了
+    is_dealer: bool,        // 親番
+    prevalent_wind: Index,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
+    seat_wind: Index,       // 自風 (同上)
+    yaku_flags: &YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
 ) -> Option<WinContext> {
     let mut wins = vec![]; // 和了形のリスト (無役を含む)
 

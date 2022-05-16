@@ -45,6 +45,8 @@ impl CalculatorApp {
 #[derive(Debug)]
 struct Calculator {
     seat: Seat,
+    kyoku: usize,
+    honba: usize,
     // evaluate_hand params
     hand: TileTable,
     melds: Vec<Meld>,
@@ -56,12 +58,18 @@ struct Calculator {
     prevalent_wind: Index,
     seat_wind: Index,
     yaku_flags: YakuFlags,
+    // score verify
+    fu: usize,
+    fan: usize,
+    score: i32,
 }
 
 impl Calculator {
     fn new() -> Self {
         Self {
             seat: 0,
+            kyoku: 0,
+            honba: 0,
             hand: TileTable::default(),
             melds: vec![],
             doras: vec![],
@@ -72,6 +80,9 @@ impl Calculator {
             prevalent_wind: 1,
             seat_wind: 1,
             yaku_flags: YakuFlags::default(),
+            fu: 0,
+            fan: 0,
+            score: 0,
         }
     }
 
@@ -96,9 +107,7 @@ impl Calculator {
             self.parse_score_verify(exp);
         }
 
-        println!("hand: {:?}", self.hand);
-        println!("melds: {:?}", self.melds);
-        println!("wintile: {:?}", self.win_tile);
+        println!("{:?}", self);
     }
 
     fn run(&self) {
@@ -118,21 +127,45 @@ impl Calculator {
         println!("res: {:?}", res);
     }
 
-    fn parse_stage_info(&mut self, exp: &str) {
-        todo!();
+    fn parse_stage_info(&mut self, input: &str) {
+        let exps: Vec<&str> = input.split(",").collect();
+        if let Some(exp) = exps.get(0) {
+            let chars: Vec<char> = exp.chars().collect();
+            if chars.len() != 4 {
+                error_exit!("stage info len is not 4: {}", input);
+            }
+            self.prevalent_wind = wind_from_char(chars[0]);
+            let kyoku = chars[1].to_digit(10).unwrap() as usize;
+            let honba = chars[2].to_digit(10).unwrap() as usize;
+            self.seat_wind = wind_from_char(chars[3]);
+
+            if !(1 <= kyoku && kyoku <= 4) {
+                error_exit!("kyoku is not 1, 2, 3 or 4: {}", kyoku);
+            }
+
+            self.seat = (self.seat_wind + self.kyoku - 2) % SEAT;
+            self.kyoku = kyoku - 1;
+            self.honba = honba;
+        }
+        if let Some(exp) = exps.get(1) {
+            self.doras = tiles_from_string(exp);
+        }
+        if let Some(exp) = exps.get(2) {
+            self.ura_doras = tiles_from_string(exp);
+        }
     }
 
-    fn parse_hand_meld(&mut self, exp: &str) {
+    fn parse_hand_meld(&mut self, input: &str) {
         let mut exp_hand = "".to_string();
         let mut exp_melds = vec![];
-        for e in exp.split(',') {
+        for exp in input.split(',') {
             if exp_hand == "" {
-                if e.chars().last().unwrap() == '+' {
+                if exp.chars().last().unwrap() == '+' {
                     self.is_drawn = false;
                 }
-                exp_hand = e.replace("+", "");
+                exp_hand = exp.replace("+", "");
             } else {
-                exp_melds.push(e.to_string());
+                exp_melds.push(exp.to_string());
             }
         }
 
@@ -160,12 +193,31 @@ impl Calculator {
         }
     }
 
-    fn parse_yaku_flags(&mut self, exp: &str) {
-        todo!();
+    fn parse_yaku_flags(&mut self, input: &str) {
+        for y in input.split(",") {
+            match y {
+                "立直" => self.yaku_flags.riichi = true,
+                "両立直" => self.yaku_flags.dabururiichi = true,
+                "一発" => self.yaku_flags.ippatsu = true,
+                "海底摸月" => self.yaku_flags.haiteiraoyue = true,
+                "河底撈魚" => self.yaku_flags.houteiraoyui = true,
+                "嶺上開花" => self.yaku_flags.rinshankaihou = true,
+                "槍槓" => self.yaku_flags.chankan = true,
+                "天和" => self.yaku_flags.tenhou = true,
+                "地和" => self.yaku_flags.tiihou = true,
+                _ => error_exit!("invalid conditional yaku: {}", y),
+            }
+        }
     }
 
-    fn parse_score_verify(&mut self, exp: &str) {
-        todo!();
+    fn parse_score_verify(&mut self, input: &str) {
+        let exps: Vec<&str> = input.split(",").collect();
+        if exps.len() != 3 {
+            error_exit!("invalid score verify info: {}", input);
+        }
+        self.fu = exps[0].parse().unwrap_or_else(error_exit);
+        self.fan = exps[1].parse().unwrap_or_else(error_exit);
+        self.score = exps[2].parse().unwrap_or_else(error_exit);
     }
 }
 
@@ -259,5 +311,15 @@ fn meld_from_string(exp: &str, seat: Seat) -> Meld {
         type_: meld_type,
         tiles: tiles,
         froms: froms,
+    }
+}
+
+fn wind_from_char(c: char) -> Index {
+    match c {
+        'E' => 1,
+        'S' => 2,
+        'W' => 3,
+        'N' => 4,
+        _ => error_exit!("invalid wind symbol: {}", c),
     }
 }

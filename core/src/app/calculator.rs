@@ -174,20 +174,27 @@ impl Calculator {
                 yakus += &format!("{}: {}, ", y.0, y.1);
             }
             println!("yakus: {}", yakus);
+
+            let score = if self.is_drawn {
+                ctx.points.1 * 2 + ctx.points.2
+            } else {
+                ctx.points.0
+            };
             println!(
                 "fu: {}, fan: {}, score: {}, {}",
-                ctx.fu, ctx.fan, ctx.points.0, ctx.score_title
+                ctx.fu, ctx.fan, score, ctx.score_title
             );
+
             if self.score != 0 {
                 let verify = if ctx.yakuman_times > 0 {
                     // 役満以上は得点のみをチェック
-                    if ctx.points.0 == self.score {
+                    if score == self.score {
                         "ok"
                     } else {
                         "error"
                     }
                 } else {
-                    if ctx.fu == self.fu && ctx.fan == self.fan && ctx.points.0 == self.score {
+                    if ctx.fu == self.fu && ctx.fan == self.fan && score == self.score {
                         "ok"
                     } else {
                         "error"

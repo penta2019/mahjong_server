@@ -471,7 +471,10 @@ fn is_pinfu(ctx: &YakuContext) -> bool {
         match tp {
             Shuntsu => {
                 if t.0 == wt.0 {
-                    if t.1 == wt.1 || (wt.1 > 2 && t.1 == wt.1 - 2) {
+                    if t.1 == wt.1 && wt.1 != 7 {
+                        return true;
+                    }
+                    if t.1 + 2 == wt.1 && wt.1 != 3 {
                         return true;
                     }
                 }

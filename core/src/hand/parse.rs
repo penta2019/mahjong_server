@@ -26,7 +26,7 @@ pub fn parse_melds(melds: &Vec<Meld>) -> ParsedHand {
     let mut res = vec![];
 
     for m in melds {
-        let mut t = m.tiles[0];
+        let mut t = m.tiles.iter().min().unwrap().clone();
         if t.1 == 0 {
             t.1 = 5;
         }

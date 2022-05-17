@@ -6,6 +6,7 @@ use crate::error_exit;
 
 #[derive(Debug)]
 pub struct CalculatorApp {
+    detail: bool,
     file_path: String,
     exp: String,
 }
@@ -13,6 +14,7 @@ pub struct CalculatorApp {
 impl CalculatorApp {
     pub fn new(args: Vec<String>) -> Self {
         let mut app = Self {
+            detail: false,
             file_path: "".to_string(),
             exp: "".to_string(),
         };
@@ -20,12 +22,14 @@ impl CalculatorApp {
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-f" => {
-                    app.file_path = next_value(&mut it, "-f");
-                }
+                "-d" => app.detail = true,
+                "-f" => app.file_path = next_value(&mut it, "-f"),
                 exp => {
                     if exp.starts_with("-") {
                         error_exit!("unknown option: {}", exp);
+                    }
+                    if app.exp != "" {
+                        error_exit!("multiple expression not allowed");
                     }
                     app.exp = s.clone();
                 }
@@ -46,7 +50,6 @@ impl CalculatorApp {
 struct Calculator {
     seat: Seat,
     kyoku: usize,
-    honba: usize,
     // evaluate_hand params
     hand: TileTable,
     melds: Vec<Meld>,
@@ -69,7 +72,6 @@ impl Calculator {
         Self {
             seat: 0,
             kyoku: 0,
-            honba: 0,
             hand: TileTable::default(),
             melds: vec![],
             doras: vec![],
@@ -90,10 +92,6 @@ impl Calculator {
         let input = input.replace(" ", "");
         let exps: Vec<&str> = input.split("/").collect();
 
-        if exps.len() == 0 {
-            error_exit!("input is empty");
-        }
-
         if let Some(exp) = exps.get(1) {
             self.parse_stage_info(exp); // 副露のパースに座席情報が必要なので最初に実行
         };
@@ -107,11 +105,11 @@ impl Calculator {
             self.parse_score_verify(exp);
         }
 
-        println!("{:?}", self);
+        // println!("{:?}", self);
     }
 
     fn run(&self) {
-        let res = evaluate_hand(
+        if let Some(ctx) = evaluate_hand(
             &self.hand,
             &self.melds,
             &self.doras,
@@ -122,30 +120,63 @@ impl Calculator {
             self.prevalent_wind,
             self.seat_wind,
             &self.yaku_flags,
-        );
-
-        println!("res: {:?}", res);
+        ) {
+            // println!("{:?}", ctx);
+            let mut yakus = "".to_string();
+            for y in ctx.yakus {
+                yakus += &format!("{}: {}, ", y.0, y.1);
+            }
+            println!("yakus: {}", yakus);
+            println!(
+                "fu: {}, fan: {}, score: {}, {}",
+                ctx.fu, ctx.fan, ctx.points.0, ctx.score_title
+            );
+            if self.score != 0 {
+                let verify = if ctx.fan >= 13 {
+                    // 役満以上は得点のみをチェック
+                    if ctx.points.0 == self.score {
+                        "ok"
+                    } else {
+                        "error"
+                    }
+                } else {
+                    if ctx.fu == self.fu && ctx.fan == self.fan && ctx.points.0 == self.score {
+                        "ok"
+                    } else {
+                        "error"
+                    }
+                };
+                println!("verify: {}", verify);
+            }
+        } else {
+            println!("yakus:");
+            println!("fu: 0, fan: 0, score: 0");
+            if self.score != 0 {
+                println!("verify: error");
+            }
+        }
     }
 
     fn parse_stage_info(&mut self, input: &str) {
         let exps: Vec<&str> = input.split(",").collect();
         if let Some(exp) = exps.get(0) {
             let chars: Vec<char> = exp.chars().collect();
-            if chars.len() != 4 {
-                error_exit!("stage info len is not 4: {}", input);
+            if chars.len() != 3 {
+                error_exit!("stage info len is not 3: {}", exp);
             }
-            self.prevalent_wind = wind_from_char(chars[0]);
+            let prevalent_wind = wind_from_char(chars[0]);
             let kyoku = chars[1].to_digit(10).unwrap() as usize;
-            let honba = chars[2].to_digit(10).unwrap() as usize;
-            self.seat_wind = wind_from_char(chars[3]);
+            let seat_wind = wind_from_char(chars[2]);
 
             if !(1 <= kyoku && kyoku <= 4) {
                 error_exit!("kyoku is not 1, 2, 3 or 4: {}", kyoku);
             }
 
-            self.seat = (self.seat_wind + self.kyoku - 2) % SEAT;
+            self.prevalent_wind = prevalent_wind;
+            self.seat_wind = seat_wind;
             self.kyoku = kyoku - 1;
-            self.honba = honba;
+            self.is_dealer = seat_wind == 1;
+            self.seat = (seat_wind + kyoku - 2) % SEAT;
         }
         if let Some(exp) = exps.get(1) {
             self.doras = tiles_from_string(exp);

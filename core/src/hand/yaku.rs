@@ -139,31 +139,32 @@ impl YakuContext {
         }
 
         // 待ちの形
-        let mut is_fu2 = true;
         let wt = &self.win_tile;
         for SetPair(tp, t) in &self.parsed_hand {
+            if t.0 != wt.0 {
+                continue;
+            }
             match tp {
                 Shuntsu => {
-                    if t.0 == wt.0 {
-                        if t.1 == wt.1 || (wt.1 > 2 && t.1 == wt.1 - 2) {
-                            // 両面待ち
-                            is_fu2 = false;
-                            break;
-                        }
+                    // カンチャン待ち,ペンチャン7待ち,ペンチャン3待ち
+                    if t.1 + 1 == wt.1
+                        || (t.1 == wt.1 && wt.1 == 7)
+                        || (t.1 + 2 == wt.1 && wt.1 == 3)
+                    {
+                        fu += 2;
+                        break;
                     }
                 }
-                Koutsu => {
-                    if t == wt {
-                        // シャンポン待ち
-                        is_fu2 = false;
+                Koutsu => {} // シャンポン待ち
+                Pair => {
+                    // タンキ待ち, ノベタン待ち
+                    if t.1 == wt.1 {
+                        fu += 2;
                         break;
                     }
                 }
                 _ => {}
             }
-        }
-        if is_fu2 {
-            fu += 2;
         }
 
         (fu + 9) / 10 * 10 // １の位は切り上げ

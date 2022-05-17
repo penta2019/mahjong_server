@@ -176,7 +176,11 @@ impl Calculator {
             println!("yakus: {}", yakus);
 
             let score = if self.is_drawn {
-                ctx.points.1 * 2 + ctx.points.2
+                if self.is_dealer {
+                    ctx.points.1 * 3
+                } else {
+                    ctx.points.1 * 2 + ctx.points.2
+                }
             } else {
                 ctx.points.0
             };

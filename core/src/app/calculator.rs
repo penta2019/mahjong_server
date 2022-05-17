@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::{self, BufRead};
+
 use crate::hand::{evaluate_hand, YakuFlags};
 use crate::model::*;
 use crate::util::common::*;
@@ -29,25 +32,61 @@ impl CalculatorApp {
                         error_exit!("unknown option: {}", exp);
                     }
                     if app.exp != "" {
-                        error_exit!("multiple expression not allowed");
+                        error_exit!("multiple expression is not allowed");
                     }
                     app.exp = s.clone();
                 }
             }
         }
 
+        if app.file_path == "" && app.exp == "" {
+            print_usage();
+        }
+        if app.file_path != "" && app.exp != "" {
+            print_usage();
+        }
+
         app
     }
 
     pub fn run(&self) {
-        let mut calculator = Calculator::new();
-        calculator.parse(&self.exp);
+        if self.exp != "" {
+            self.process_expression(&self.exp);
+        }
+        if self.file_path != "" {
+            if let Err(e) = self.run_from_file() {
+                error_exit!("{}", e);
+            }
+        }
+    }
+
+    fn run_from_file(&self) -> std::io::Result<()> {
+        let file = File::open(&self.file_path)?;
+        let lines = io::BufReader::new(file).lines();
+        for line in lines {
+            if let Ok(exp) = line {
+                let e = exp.replace(" ", "");
+                if e == "" || e.chars().next().unwrap() == '#' {
+                    // 空行とコメント行はスキップ
+                    continue;
+                }
+                self.process_expression(&exp);
+            }
+            println!();
+        }
+        Ok(())
+    }
+
+    fn process_expression(&self, exp: &str) {
+        let mut calculator = Calculator::new(self.detail);
+        calculator.parse(exp);
         calculator.run();
     }
 }
 
 #[derive(Debug)]
 struct Calculator {
+    detail: bool,
     seat: Seat,
     kyoku: usize,
     // evaluate_hand params
@@ -68,8 +107,9 @@ struct Calculator {
 }
 
 impl Calculator {
-    fn new() -> Self {
+    fn new(detail: bool) -> Self {
         Self {
+            detail: detail,
             seat: 0,
             kyoku: 0,
             hand: TileTable::default(),
@@ -89,6 +129,8 @@ impl Calculator {
     }
 
     fn parse(&mut self, input: &str) {
+        println!("input: {}", input);
+
         let input = input.replace(" ", "");
         let exps: Vec<&str> = input.split("/").collect();
 
@@ -105,7 +147,9 @@ impl Calculator {
             self.parse_score_verify(exp);
         }
 
-        // println!("{:?}", self);
+        if self.detail {
+            println!("{:?}", self);
+        }
     }
 
     fn run(&self) {
@@ -121,7 +165,10 @@ impl Calculator {
             self.seat_wind,
             &self.yaku_flags,
         ) {
-            // println!("{:?}", ctx);
+            if self.detail {
+                println!("{:?}", ctx);
+            }
+
             let mut yakus = "".to_string();
             for y in ctx.yakus {
                 yakus += &format!("{}: {}, ", y.0, y.1);
@@ -132,7 +179,7 @@ impl Calculator {
                 ctx.fu, ctx.fan, ctx.points.0, ctx.score_title
             );
             if self.score != 0 {
-                let verify = if ctx.fan >= 13 {
+                let verify = if ctx.yakuman_times > 0 {
                     // 役満以上は得点のみをチェック
                     if ctx.points.0 == self.score {
                         "ok"
@@ -147,12 +194,16 @@ impl Calculator {
                     }
                 };
                 println!("verify: {}", verify);
+            } else {
+                println!("verify: skip");
             }
         } else {
             println!("yakus:");
             println!("fu: 0, fan: 0, score: 0");
             if self.score != 0 {
                 println!("verify: error");
+            } else {
+                println!("verify: skip");
             }
         }
     }
@@ -236,6 +287,7 @@ impl Calculator {
                 "槍槓" => self.yaku_flags.chankan = true,
                 "天和" => self.yaku_flags.tenhou = true,
                 "地和" => self.yaku_flags.tiihou = true,
+                "" => {}
                 _ => error_exit!("invalid conditional yaku: {}", y),
             }
         }
@@ -321,7 +373,7 @@ fn meld_from_string(exp: &str, seat: Seat) -> Meld {
         diffs.push(ni - ni0);
         ni0 = *ni;
     }
-    println!("diffs: {:?}", diffs);
+
     let meld_type = if diffs.len() == 2 && vec_count(&diffs, &1) == 2 {
         MeldType::Chi
     } else if diffs.len() == 2 && vec_count(&diffs, &0) == 2 {
@@ -353,4 +405,17 @@ fn wind_from_char(c: char) -> Index {
         'N' => 4,
         _ => error_exit!("invalid wind symbol: {}", c),
     }
+}
+
+fn print_usage() {
+    error_exit!(
+        r"invalid input
+Usage
+    $ cargo run C EXPRESSION [-d]
+    $ cargo run C -f FILE [-d]
+Options
+    -d: print debug info
+    -f: read expresisons from file instead of a commandline expression
+"
+    );
 }

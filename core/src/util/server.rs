@@ -300,16 +300,3 @@ fn create_tcp_server(addr: &str) -> Server {
         is_connected: false,
     }
 }
-
-#[test]
-fn test_server() {
-    let mut srv = Server::new_ws_server("127.0.0.1:12345");
-    loop {
-        if let Some(text) = srv.recv_timeout(1000) {
-            println!("Text: {}", text);
-            srv.send(text);
-        } else {
-            println!("Timeout");
-        }
-    }
-}

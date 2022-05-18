@@ -118,7 +118,7 @@ impl YakuContext {
         for SetPair(tp, t) in &self.parsed_hand {
             match tp {
                 Pair => {
-                    fu += if t.is_terminal() || t.is_doragon() {
+                    fu += if t.is_doragon() {
                         2
                     } else if t.is_hornor() {
                         if t.1 == self.prevalent_wind || t.1 == self.seat_wind {

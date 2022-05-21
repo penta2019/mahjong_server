@@ -5,82 +5,88 @@ use crate::hand::{evaluate_hand, YakuFlags};
 use crate::model::*;
 use crate::util::common::*;
 
-use crate::error_exit;
+use crate::error;
 
 #[derive(Debug)]
 pub struct CalculatorApp {
+    args: Vec<String>,
     detail: bool,
-    file_path: String,
-    exp: String,
 }
 
 impl CalculatorApp {
     pub fn new(args: Vec<String>) -> Self {
-        let mut app = Self {
+        Self {
+            args,
             detail: false,
-            file_path: "".to_string(),
-            exp: "".to_string(),
-        };
+        }
+    }
 
-        let mut it = args.iter();
+    pub fn run(&mut self) {
+        let mut file_path = "".to_string();
+        let mut exp = "".to_string();
+        let mut it = self.args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-d" => app.detail = true,
-                "-f" => app.file_path = next_value(&mut it, "-f"),
-                exp => {
+                "-d" => self.detail = true,
+                "-f" => file_path = next_value(&mut it, "-f"),
+                _ => {
                     if exp.starts_with("-") {
-                        error_exit!("unknown option: {}", exp);
+                        error!("unknown option: {}", s);
+                        return;
                     }
-                    if app.exp != "" {
-                        error_exit!("multiple expression is not allowed");
+                    if exp != "" {
+                        error!("multiple expression is not allowed");
+                        return;
                     }
-                    app.exp = s.clone();
+                    exp = s.clone();
                 }
             }
         }
 
-        if app.file_path == "" && app.exp == "" {
+        if (file_path == "" && exp == "") || (file_path != "" && exp != "") {
             print_usage();
-        }
-        if app.file_path != "" && app.exp != "" {
-            print_usage();
+            return;
         }
 
-        app
-    }
-
-    pub fn run(&self) {
-        if self.exp != "" {
-            self.process_expression(&self.exp);
+        if exp != "" {
+            if let Err(e) = self.process_expression(&exp) {
+                error!("{}", e);
+                return;
+            }
         }
-        if self.file_path != "" {
-            if let Err(e) = self.run_from_file() {
-                error_exit!("{}", e);
+
+        if file_path != "" {
+            if let Err(e) = self.run_from_file(&file_path) {
+                error!("{}", e);
+                return;
             }
         }
     }
 
-    fn run_from_file(&self) -> std::io::Result<()> {
-        let file = File::open(&self.file_path)?;
+    fn run_from_file(&self, file_path: &str) -> std::io::Result<()> {
+        let file = File::open(file_path)?;
         let lines = io::BufReader::new(file).lines();
         for line in lines {
             if let Ok(exp) = line {
                 let e = exp.replace(" ", "");
                 if e == "" || e.chars().next().unwrap() == '#' {
                     // 空行とコメント行はスキップ
+                    println!("> {}", exp);
                     continue;
                 }
-                self.process_expression(&exp);
+                if let Err(e) = self.process_expression(&exp) {
+                    error!("{}", e);
+                }
             }
-            println!();
         }
         Ok(())
     }
 
-    fn process_expression(&self, exp: &str) {
+    fn process_expression(&self, exp: &str) -> Result<(), String> {
         let mut calculator = Calculator::new(self.detail);
-        calculator.parse(exp);
-        calculator.run();
+        calculator.parse(exp)?;
+        calculator.run()?;
+        Ok(())
     }
 }
 
@@ -128,31 +134,34 @@ impl Calculator {
         }
     }
 
-    fn parse(&mut self, input: &str) {
-        println!("input: {}", input);
+    fn parse(&mut self, input: &str) -> Result<(), String> {
+        println!("> {}", input);
 
         let input = input.replace(" ", "");
+        let input = input.split("#").collect::<Vec<&str>>()[0]; // コメント削除
         let exps: Vec<&str> = input.split("/").collect();
 
         if let Some(exp) = exps.get(1) {
-            self.parse_stage_info(exp); // 副露のパースに座席情報が必要なので最初に実行
+            self.parse_stage_info(exp)?; // 副露のパースに座席情報が必要なので最初に実行
         };
         if let Some(exp) = exps.get(0) {
-            self.parse_hand_meld(exp);
+            self.parse_hand_meld(exp)?;
         };
         if let Some(exp) = exps.get(2) {
-            self.parse_yaku_flags(exp);
+            self.parse_yaku_flags(exp)?;
         };
         if let Some(exp) = exps.get(3) {
-            self.parse_score_verify(exp);
+            self.parse_score_verify(exp)?;
         }
 
         if self.detail {
             println!("{:?}", self);
         }
+
+        Ok(())
     }
 
-    fn run(&self) {
+    fn run(&self) -> Result<(), String> {
         if let Some(ctx) = evaluate_hand(
             &self.hand,
             &self.melds,
@@ -173,7 +182,7 @@ impl Calculator {
             for y in ctx.yakus {
                 yakus += &format!("{}: {}, ", y.0, y.1);
             }
-            println!("yakus: {}", yakus);
+            println!("    yakus: {}", yakus);
 
             let score = if self.is_drawn {
                 if self.is_dealer {
@@ -185,12 +194,12 @@ impl Calculator {
                 ctx.points.0
             };
             println!(
-                "fu: {}, fan: {}, score: {}, {}",
+                "    fu: {}, fan: {}, score: {}, {}",
                 ctx.fu, ctx.fan, score, ctx.score_title
             );
 
-            if self.score != 0 {
-                let verify = if ctx.yakuman_times > 0 {
+            let verify = if self.score != 0 {
+                if ctx.yakuman_times > 0 {
                     // 役満以上は得点のみをチェック
                     if score == self.score {
                         "ok"
@@ -203,35 +212,31 @@ impl Calculator {
                     } else {
                         "error"
                     }
-                };
-                println!("verify: {}", verify);
+                }
             } else {
-                println!("verify: skip");
-            }
+                "skip"
+            };
+            println!("    verify: {}", verify);
         } else {
-            println!("yakus:");
-            println!("fu: 0, fan: 0, score: 0");
-            if self.score != 0 {
-                println!("verify: error");
-            } else {
-                println!("verify: skip");
-            }
+            error!("not win hand");
         }
+
+        Ok(())
     }
 
-    fn parse_stage_info(&mut self, input: &str) {
+    fn parse_stage_info(&mut self, input: &str) -> Result<(), String> {
         let exps: Vec<&str> = input.split(",").collect();
         if let Some(exp) = exps.get(0) {
             let chars: Vec<char> = exp.chars().collect();
             if chars.len() != 3 {
-                error_exit!("stage info len is not 3: {}", exp);
+                return Err(format!("stage info len is not 3: {}", exp));
             }
-            let prevalent_wind = wind_from_char(chars[0]);
+            let prevalent_wind = wind_from_char(chars[0])?;
             let kyoku = chars[1].to_digit(10).unwrap() as usize;
-            let seat_wind = wind_from_char(chars[2]);
+            let seat_wind = wind_from_char(chars[2])?;
 
             if !(1 <= kyoku && kyoku <= 4) {
-                error_exit!("kyoku is not 1, 2, 3 or 4: {}", kyoku);
+                return Err(format!("kyoku is not 1, 2, 3 or 4: {}", kyoku));
             }
 
             self.prevalent_wind = prevalent_wind;
@@ -241,14 +246,15 @@ impl Calculator {
             self.seat = (seat_wind + kyoku - 2) % SEAT;
         }
         if let Some(exp) = exps.get(1) {
-            self.doras = tiles_from_string(exp);
+            self.doras = tiles_from_string(exp)?;
         }
         if let Some(exp) = exps.get(2) {
-            self.ura_doras = tiles_from_string(exp);
+            self.ura_doras = tiles_from_string(exp)?;
         }
+        Ok(())
     }
 
-    fn parse_hand_meld(&mut self, input: &str) {
+    fn parse_hand_meld(&mut self, input: &str) -> Result<(), String> {
         let mut exp_hand = "".to_string();
         let mut exp_melds = vec![];
         for exp in input.split(',') {
@@ -263,7 +269,7 @@ impl Calculator {
         }
 
         // parse hands
-        for t in tiles_from_string(&exp_hand) {
+        for t in tiles_from_string(&exp_hand)? {
             self.hand[t.0][t.1] += 1;
             if t.1 == 0 {
                 self.hand[t.0][5] += 1;
@@ -273,7 +279,7 @@ impl Calculator {
 
         // parse melds
         for exp_meld in &exp_melds {
-            self.melds.push(meld_from_string(exp_meld, self.seat));
+            self.melds.push(meld_from_string(exp_meld, self.seat)?);
         }
 
         if self.is_drawn {
@@ -284,9 +290,11 @@ impl Calculator {
                 }
             }
         }
+
+        Ok(())
     }
 
-    fn parse_yaku_flags(&mut self, input: &str) {
+    fn parse_yaku_flags(&mut self, input: &str) -> Result<(), String> {
         for y in input.split(",") {
             match y {
                 "立直" => self.yaku_flags.riichi = true,
@@ -299,23 +307,25 @@ impl Calculator {
                 "天和" => self.yaku_flags.tenhou = true,
                 "地和" => self.yaku_flags.tiihou = true,
                 "" => {}
-                _ => error_exit!("invalid conditional yaku: {}", y),
+                _ => return Err(format!("invalid conditional yaku: {}", y)),
             }
         }
+        Ok(())
     }
 
-    fn parse_score_verify(&mut self, input: &str) {
+    fn parse_score_verify(&mut self, input: &str) -> Result<(), String> {
         let exps: Vec<&str> = input.split(",").collect();
         if exps.len() != 3 {
-            error_exit!("invalid score verify info: {}", input);
+            return Err(format!("invalid score verify info: {}", input));
         }
-        self.fu = exps[0].parse().unwrap_or_else(error_exit);
-        self.fan = exps[1].parse().unwrap_or_else(error_exit);
-        self.score = exps[2].parse().unwrap_or_else(error_exit);
+        self.fu = exps[0].parse::<usize>().map_err(|e| e.to_string())?;
+        self.fan = exps[1].parse::<usize>().map_err(|e| e.to_string())?;
+        self.score = exps[2].parse::<i32>().map_err(|e| e.to_string())?;
+        Ok(())
     }
 }
 
-fn tiles_from_string(exp: &str) -> Vec<Tile> {
+fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
     let mut tiles = vec![];
     let undef: usize = 255;
     let mut ti = undef;
@@ -327,20 +337,20 @@ fn tiles_from_string(exp: &str) -> Vec<Tile> {
             'z' => ti = 3,
             '0'..='9' => {
                 if ti == undef {
-                    error_exit!("tile number befor tile type");
+                    return Err(format!("tile number befor tile type"));
                 }
                 let ni = c.to_digit(10).unwrap() as usize;
                 tiles.push(Tile(ti, ni));
             }
             _ => {
-                error_exit!("invalid char: '{}'", c);
+                return Err(format!("invalid char: '{}'", c));
             }
         }
     }
-    tiles
+    Ok(tiles)
 }
 
-fn meld_from_string(exp: &str, seat: Seat) -> Meld {
+fn meld_from_string(exp: &str, seat: Seat) -> Result<Meld, String> {
     let undef: usize = 255;
     let mut ti = undef;
     let mut nis = vec![];
@@ -355,14 +365,14 @@ fn meld_from_string(exp: &str, seat: Seat) -> Meld {
             'z' => ti = 3,
             '+' => {
                 if froms.is_empty() {
-                    error_exit!("invalid '+' suffix");
+                    return Err("invalid '+' suffix".into());
                 }
                 let last = froms.len() - 1;
                 froms[last] = from % SEAT;
             }
             '0'..='9' => {
                 if ti == undef {
-                    error_exit!("tile number befor tile type");
+                    return Err("tile number befor tile type".into());
                 }
 
                 from += 1;
@@ -372,7 +382,7 @@ fn meld_from_string(exp: &str, seat: Seat) -> Meld {
                 froms.push(seat);
             }
             _ => {
-                error_exit!("invalid char: '{}'", c);
+                return Err(format!("invalid char: '{}'", c));
             }
         }
     }
@@ -396,30 +406,30 @@ fn meld_from_string(exp: &str, seat: Seat) -> Meld {
             MeldType::Minkan
         }
     } else {
-        error_exit!("invalid meld: '{}'", exp);
+        return Err(format!("invalid meld: '{}'", exp));
     };
 
-    Meld {
+    Ok(Meld {
         step: 0,
         seat: seat,
         type_: meld_type,
         tiles: tiles,
         froms: froms,
-    }
+    })
 }
 
-fn wind_from_char(c: char) -> Index {
-    match c {
+fn wind_from_char(c: char) -> Result<Index, String> {
+    Ok(match c {
         'E' => 1,
         'S' => 2,
         'W' => 3,
         'N' => 4,
-        _ => error_exit!("invalid wind symbol: {}", c),
-    }
+        _ => return Err(format!("invalid wind symbol: {}", c)),
+    })
 }
 
 fn print_usage() {
-    error_exit!(
+    error!(
         r"invalid input
 Usage
     $ cargo run C EXPRESSION [-d]

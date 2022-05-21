@@ -72,11 +72,10 @@ impl CalculatorApp {
                 if e == "" || e.chars().next().unwrap() == '#' {
                     // 空行とコメント行はスキップ
                     println!("> {}", exp);
-                    continue;
-                }
-                if let Err(e) = self.process_expression(&exp) {
+                } else if let Err(e) = self.process_expression(&exp) {
                     error!("{}", e);
                 }
+                println!();
             }
         }
         Ok(())
@@ -182,7 +181,7 @@ impl Calculator {
             for y in ctx.yakus {
                 yakus += &format!("{}: {}, ", y.0, y.1);
             }
-            println!("    yakus: {}", yakus);
+            println!("yakus: {}", yakus);
 
             let score = if self.is_drawn {
                 if self.is_dealer {
@@ -194,7 +193,7 @@ impl Calculator {
                 ctx.points.0
             };
             println!(
-                "    fu: {}, fan: {}, score: {}, {}",
+                "fu: {}, fan: {}, score: {}, {}",
                 ctx.fu, ctx.fan, score, ctx.score_title
             );
 
@@ -216,7 +215,7 @@ impl Calculator {
             } else {
                 "skip"
             };
-            println!("    verify: {}", verify);
+            println!("verify: {}", verify);
         } else {
             error!("not win hand");
         }

@@ -38,10 +38,10 @@ impl Actor for Manual {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stage: &Stage, acts: &Vec<Action>) -> Action {
-        println!("{}", &stage.players[self.seat]);
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action {
+        println!("{}", &stg.players[self.seat]);
         println!();
-        if stage.turn == self.seat {
+        if stg.turn == self.seat {
             println!("[Turn Action] select tile or action");
         } else {
             println!("[Call Action] select action");
@@ -61,7 +61,7 @@ impl Actor for Manual {
             };
             match c {
                 'm' | 'p' | 's' | 'z' => {
-                    if stage.turn != self.seat {
+                    if stg.turn != self.seat {
                         error!("discard not allowed");
                         continue;
                     }
@@ -81,7 +81,7 @@ impl Actor for Manual {
                         }
                     };
 
-                    let h = &stage.players[self.seat].hand;
+                    let h = &stg.players[self.seat].hand;
                     let t = Tile(ti, ni);
                     if t.0 > TZ || t.1 > 9 {
                         error!("invalid tile: {:?}", t);
@@ -97,7 +97,7 @@ impl Actor for Manual {
                 '!' => {
                     match &buf[1..] {
                         "print\n" => {
-                            println!("{}", stage);
+                            println!("{}", stg);
                         }
                         _ => {
                             error!("unknown command: {}", &buf[1..]);

@@ -350,7 +350,7 @@ pub enum MjaiAction {
 }
 
 impl MjaiAction {
-    pub fn from_action(stage: &Stage, seat: Seat, act: &Action) -> Option<Self> {
+    pub fn from_action(stg: &Stage, seat: Seat, act: &Action) -> Option<Self> {
         let Action(tp, cs) = act;
         Some(match tp {
             ActionType::Nop => return None,
@@ -382,7 +382,7 @@ impl MjaiAction {
             ActionType::Tsumo => Self::Hora {
                 actor: seat,
                 target: seat,
-                pai: tile_to_mjai(stage.players[seat].drawn.unwrap()),
+                pai: tile_to_mjai(stg.players[seat].drawn.unwrap()),
             },
             ActionType::Kyushukyuhai => Self::Ryukyoku {
                 actor: seat,
@@ -390,7 +390,7 @@ impl MjaiAction {
             },
             ActionType::Kita => panic!(),
             ActionType::Chi => {
-                let (target_seat, _, target_tile) = stage.last_tile.unwrap();
+                let (target_seat, _, target_tile) = stg.last_tile.unwrap();
                 Self::Chi {
                     actor: seat,
                     target: target_seat,
@@ -399,7 +399,7 @@ impl MjaiAction {
                 }
             }
             ActionType::Pon => {
-                let (target_seat, _, target_tile) = stage.last_tile.unwrap();
+                let (target_seat, _, target_tile) = stg.last_tile.unwrap();
                 Self::Pon {
                     actor: seat,
                     target: target_seat,
@@ -408,7 +408,7 @@ impl MjaiAction {
                 }
             }
             ActionType::Minkan => {
-                let (target_seat, _, target_tile) = stage.last_tile.unwrap();
+                let (target_seat, _, target_tile) = stg.last_tile.unwrap();
                 Self::Daiminkan {
                     actor: seat,
                     target: target_seat,
@@ -417,7 +417,7 @@ impl MjaiAction {
                 }
             }
             ActionType::Ron => {
-                let lt = stage.last_tile.unwrap();
+                let lt = stg.last_tile.unwrap();
                 Self::Hora {
                     actor: seat,
                     target: lt.0,

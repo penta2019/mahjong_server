@@ -39,12 +39,12 @@ impl Actor for RandomDiscard {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stage: &Stage, _acts: &Vec<Action>) -> Action {
-        if stage.turn != self.seat {
+    fn select_action(&mut self, stg: &Stage, _acts: &Vec<Action>) -> Action {
+        if stg.turn != self.seat {
             return Action::nop();
         }
 
-        let pl = &stage.players[self.seat];
+        let pl = &stg.players[self.seat];
         let mut n: usize = self.rng.gen_range(0..13);
         loop {
             for ti in 0..TYPE {

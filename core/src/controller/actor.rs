@@ -13,7 +13,7 @@ pub struct Config {
 // Actor trait
 pub trait Actor: Listener + ActorClone + Send {
     fn init(&mut self, _seat: Seat) {}
-    fn select_action(&mut self, stage: &Stage, actions: &Vec<Action>) -> Action;
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action;
     fn get_config(&self) -> &Config;
 }
 

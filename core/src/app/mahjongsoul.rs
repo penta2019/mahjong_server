@@ -629,8 +629,8 @@ fn tiles_from_mjsoul(v: &Value) -> Vec<Tile> {
     as_vec(tile_from_mjsoul, v)
 }
 
-fn calc_dapai_index(stage: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {
-    let pl = &stage.players[seat];
+fn calc_dapai_index(stg: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {
+    let pl = &stg.players[seat];
     let h = &pl.hand;
     let t = tile;
     let d = if let Some(d) = pl.drawn { d } else { Z8 };

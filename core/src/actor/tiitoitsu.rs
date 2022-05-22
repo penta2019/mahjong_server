@@ -36,10 +36,10 @@ impl Actor for TiitoitsuBot {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stage: &Stage, acts: &Vec<Action>) -> Action {
-        let pl = &stage.players[self.seat];
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action {
+        let pl = &stg.players[self.seat];
 
-        if stage.turn == self.seat {
+        if stg.turn == self.seat {
             // turn
             if acts.contains(&Action::tsumo()) {
                 return Action::tsumo();
@@ -55,7 +55,7 @@ impl Actor for TiitoitsuBot {
                             return Action::discard(t);
                         }
                         1 => {
-                            ones.push((count_left_tile(stage, self.seat, t), t));
+                            ones.push((count_left_tile(stg, self.seat, t), t));
                         }
                         _ => panic!(),
                     }
@@ -84,10 +84,10 @@ impl Actor for TiitoitsuBot {
 
 impl Listener for TiitoitsuBot {}
 
-pub fn count_left_tile(stage: &Stage, seat: Seat, tile: Tile) -> usize {
+pub fn count_left_tile(stg: &Stage, seat: Seat, tile: Tile) -> usize {
     use TileStateType::*;
     let mut n = 0;
-    for &st in &stage.tile_states[tile.0][tile.1] {
+    for &st in &stg.tile_states[tile.0][tile.1] {
         match st {
             U => {
                 n += 1;

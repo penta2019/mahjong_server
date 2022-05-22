@@ -3,8 +3,8 @@ use super::point::*;
 use super::yaku::*;
 use crate::model::*;
 
-pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
-    let pl = &stage.players[stage.turn];
+pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
+    let pl = &stg.players[stg.turn];
     if !pl.is_shown {
         return None;
     }
@@ -18,7 +18,7 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
     yf.riichi = pl.is_riichi && !pl.is_daburii;
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
-    yf.haiteiraoyue = stage.left_tile_count == 0;
+    yf.haiteiraoyue = stg.left_tile_count == 0;
     yf.rinshankaihou = pl.is_rinshan;
     yf.tenhou = false;
     yf.tiihou = false;
@@ -30,7 +30,7 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
     }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
-        ura_dora_wall[0..stage.doras.len()].to_vec()
+        ura_dora_wall[0..stg.doras.len()].to_vec()
     } else {
         vec![]
     };
@@ -38,13 +38,13 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
     if let Some(res) = evaluate_hand(
         &pl.hand,
         &pl.melds,
-        &stage.doras,
+        &stg.doras,
         &ura_doras,
         pl.drawn.unwrap(),
         true,
-        stage.is_dealer(pl.seat),
-        stage.get_prevalent_wind(),
-        stage.get_seat_wind(pl.seat),
+        stg.is_dealer(pl.seat),
+        stg.get_prevalent_wind(),
+        stg.get_seat_wind(pl.seat),
         &yf,
     ) {
         if !res.yakus.is_empty() {
@@ -55,17 +55,13 @@ pub fn evaluate_hand_tsumo(stage: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<W
     None
 }
 
-pub fn evaluate_hand_ron(
-    stage: &Stage,
-    ura_dora_wall: &Vec<Tile>,
-    seat: Seat,
-) -> Option<WinContext> {
-    if seat == stage.turn {
+pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> Option<WinContext> {
+    if seat == stg.turn {
         return None;
     }
 
-    let pl = &stage.players[seat];
-    if let Some((_, _, t)) = stage.last_tile {
+    let pl = &stg.players[seat];
+    if let Some((_, _, t)) = stg.last_tile {
         if !pl.win_tiles.contains(&t.to_normal()) {
             return None;
         }
@@ -74,7 +70,7 @@ pub fn evaluate_hand_ron(
         return None;
     }
 
-    let (tp, t) = if let Some((_, tp, t)) = stage.last_tile {
+    let (tp, t) = if let Some((_, tp, t)) = stg.last_tile {
         (tp, t)
     } else {
         return None;
@@ -94,7 +90,7 @@ pub fn evaluate_hand_ron(
     yf.dabururiichi = pl.is_daburii;
     yf.ippatsu = pl.is_ippatsu;
     match tp {
-        ActionType::Discard => yf.houteiraoyui = stage.left_tile_count == 0,
+        ActionType::Discard => yf.houteiraoyui = stg.left_tile_count == 0,
         ActionType::Kakan => yf.chankan = true,
         ActionType::Ankan => {
             if parse_into_kokusimusou_win(&hand).is_empty() {
@@ -105,7 +101,7 @@ pub fn evaluate_hand_ron(
     }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
-        ura_dora_wall[0..stage.doras.len()].to_vec()
+        ura_dora_wall[0..stg.doras.len()].to_vec()
     } else {
         vec![]
     };
@@ -113,13 +109,13 @@ pub fn evaluate_hand_ron(
     if let Some(res) = evaluate_hand(
         &hand,
         &pl.melds,
-        &stage.doras,
+        &stg.doras,
         &ura_doras,
         t,
         false,
-        stage.is_dealer(pl.seat),
-        stage.get_prevalent_wind(),
-        stage.get_seat_wind(pl.seat),
+        stg.is_dealer(pl.seat),
+        stg.get_prevalent_wind(),
+        stg.get_seat_wind(pl.seat),
         &yf,
     ) {
         if !res.yakus.is_empty() {

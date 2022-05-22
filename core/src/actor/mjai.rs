@@ -249,13 +249,13 @@ impl Actor for MjaiEndpoint {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stage: &Stage, acts: &Vec<Action>) -> Action {
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action {
         // possible_actionを追加
         {
             let mut d = self.data.lock().unwrap();
             let mut mjai_acts = vec![];
             for act in acts {
-                if let Some(v) = MjaiAction::from_action(stage, self.seat, act) {
+                if let Some(v) = MjaiAction::from_action(stg, self.seat, act) {
                     mjai_acts.push(v);
                 }
             }
@@ -296,11 +296,11 @@ impl Actor for MjaiEndpoint {
             }
         }
 
-        let act = mjai_act.to_action(self.seat == stage.turn);
+        let act = mjai_act.to_action(self.seat == stg.turn);
         // actがacts内に存在する有効な操作であるかをチェック
         match act.0 {
             ActionType::Discard => {
-                if self.seat != stage.turn {
+                if self.seat != stg.turn {
                     error!("invalid discard action");
                     return Action::nop();
                 }

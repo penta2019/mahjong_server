@@ -11,10 +11,10 @@ impl StagePrinter {
         Self {}
     }
 
-    fn print_score_change(&self, stage: &Stage, delta_scores: &[Score; SEAT]) {
+    fn print_score_change(&self, stg: &Stage, delta_scores: &[Score; SEAT]) {
         for s in 0..SEAT {
             let delta = delta_scores[s];
-            let new = stage.players[s].score;
+            let new = stg.players[s].score;
             let old = new - delta;
             println!("player {}: {} -> {} ({:+})", s, old, new, delta);
         }

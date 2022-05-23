@@ -249,7 +249,9 @@ impl Actor for MjaiEndpoint {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action {
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, repeat: i32) -> Option<Action> {
+        assert!(repeat == 0);
+
         // possible_actionを追加
         {
             let mut d = self.data.lock().unwrap();
@@ -280,7 +282,7 @@ impl Actor for MjaiEndpoint {
                     error!("timeout_count exceeded");
                     std::process::exit(1);
                 }
-                return Action::nop();
+                return Some(Action::nop());
             }
         }
 
@@ -290,7 +292,7 @@ impl Actor for MjaiEndpoint {
         if d.is_riichi {
             d.is_riichi = false;
             if let MjaiAction::Dahai { pai, .. } = mjai_act {
-                return Action::riichi(tile_from_mjai(&pai));
+                return Some(Action::riichi(tile_from_mjai(&pai)));
             } else {
                 panic!();
             }
@@ -302,7 +304,7 @@ impl Actor for MjaiEndpoint {
             ActionType::Discard => {
                 if self.seat != stg.turn {
                     error!("invalid discard action");
-                    return Action::nop();
+                    return Some(Action::nop());
                 }
             }
             _ => {
@@ -311,11 +313,11 @@ impl Actor for MjaiEndpoint {
                         "selected_action={:?} is not contained in possible_actions={:?}",
                         act, acts
                     );
-                    return Action::nop();
+                    return Some(Action::nop());
                 }
             }
         }
-        act
+        Some(act)
     }
 
     fn get_config(&self) -> &Config {

@@ -38,7 +38,9 @@ impl Actor for Manual {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action {
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, repeat: i32) -> Option<Action> {
+        assert!(repeat == 0);
+
         println!("{}", &stg.players[self.seat]);
         println!();
         if stg.turn == self.seat {
@@ -92,7 +94,7 @@ impl Actor for Manual {
                     }
 
                     println!();
-                    return Action::discard(Tile(ti, ni));
+                    return Some(Action::discard(Tile(ti, ni)));
                 }
                 '!' => {
                     match &buf[1..] {
@@ -122,7 +124,7 @@ impl Actor for Manual {
                     }
 
                     println!();
-                    return acts[n].clone();
+                    return Some(acts[n].clone());
                 }
             };
         }

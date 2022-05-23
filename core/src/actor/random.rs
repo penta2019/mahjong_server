@@ -39,9 +39,11 @@ impl Actor for RandomDiscard {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stg: &Stage, _acts: &Vec<Action>) -> Action {
+    fn select_action(&mut self, stg: &Stage, _acts: &Vec<Action>, repeat: i32) -> Option<Action> {
+        assert!(repeat == 0);
+
         if stg.turn != self.seat {
-            return Action::nop();
+            return Some(Action::nop());
         }
 
         let pl = &stg.players[self.seat];
@@ -52,7 +54,7 @@ impl Actor for RandomDiscard {
                     let t = Tile(ti, ni);
                     let c = pl.count_tile(t);
                     if c > n {
-                        return Action::discard(Tile(ti, ni));
+                        return Some(Action::discard(Tile(ti, ni)));
                     } else {
                         n -= c;
                     }

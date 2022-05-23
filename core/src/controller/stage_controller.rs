@@ -31,15 +31,16 @@ impl StageController {
     }
 
     pub fn handle_event(&mut self, event: &Event) {
+        if let Event::Begin(_) = event {
+            for s in 0..SEAT {
+                self.actors[s].init(s);
+            }
+        }
+
         let stg = &mut self.stage;
         stg.step += 1;
         match event {
-            Event::Begin(e) => {
-                for s in 0..SEAT {
-                    self.actors[s].init(s);
-                }
-                event_begin(stg, e);
-            }
+            Event::Begin(e) => event_begin(stg, e),
             Event::New(e) => event_new(stg, e),
             Event::Deal(e) => event_deal(stg, e),
             Event::Discard(e) => event_discard(stg, e),
@@ -60,7 +61,9 @@ impl StageController {
     }
 
     pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>) -> Action {
-        self.actors[seat].select_action(&self.stage, &acts)
+        self.actors[seat]
+            .select_action(&self.stage, &acts, 0)
+            .unwrap()
     }
 }
 

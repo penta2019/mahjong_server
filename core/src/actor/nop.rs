@@ -27,8 +27,8 @@ impl Nop {
 }
 
 impl Actor for Nop {
-    fn select_action(&mut self, _stg: &Stage, _acts: &Vec<Action>) -> Action {
-        Action::nop()
+    fn select_action(&mut self, _stg: &Stage, _acts: &Vec<Action>, _repeat: i32) -> Option<Action> {
+        Some(Action::nop())
     }
 
     fn get_config(&self) -> &Config {

@@ -36,13 +36,15 @@ impl Actor for TiitoitsuBot {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>) -> Action {
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, repeat: i32) -> Option<Action> {
+        assert!(repeat == 0);
+
         let pl = &stg.players[self.seat];
 
         if stg.turn == self.seat {
             // turn
             if acts.contains(&Action::tsumo()) {
-                return Action::tsumo();
+                return Some(Action::tsumo());
             }
 
             let mut ones = vec![]; // 手牌に1枚のみある牌(left_count, Tile)
@@ -52,7 +54,7 @@ impl Actor for TiitoitsuBot {
                     match pl.count_tile(t) {
                         0 | 2 => {}
                         3 | 4 => {
-                            return Action::discard(t);
+                            return Some(Action::discard(t));
                         }
                         1 => {
                             ones.push((count_left_tile(stg, self.seat, t), t));
@@ -65,16 +67,16 @@ impl Actor for TiitoitsuBot {
             // 1枚の牌で最も残り枚数が少ない牌から切る
             ones.sort();
             if !ones.is_empty() {
-                return Action::discard(ones[0].1);
+                return Some(Action::discard(ones[0].1));
             }
         } else {
             // call
             if acts.contains(&Action::ron()) {
-                return Action::ron();
+                return Some(Action::ron());
             }
         }
 
-        Action::nop()
+        Some(Action::nop())
     }
 
     fn get_config(&self) -> &Config {

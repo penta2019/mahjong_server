@@ -98,8 +98,8 @@ impl Server {
         }
     }
 
-    pub fn send(&mut self, message: String) {
-        self.sender.send(message).ok();
+    pub fn send(&mut self, msg: String) {
+        self.sender.send(msg).ok();
     }
 
     fn update_flags(&mut self, event: ServerEvent) {
@@ -126,10 +126,10 @@ fn create_ws_server(addr: &str) -> Server {
 
     fn ws_send(
         sender: &Arc<Mutex<Option<websocket::sender::Writer<std::net::TcpStream>>>>,
-        message: &OwnedMessage,
+        msg: &OwnedMessage,
     ) {
         match sender.lock().unwrap().as_mut() {
-            Some(s) => s.send_message(message).unwrap(),
+            Some(s) => s.send_message(msg).unwrap(),
             None => error!("ws failed to send message: no connection"),
         }
     }
@@ -171,16 +171,16 @@ fn create_ws_server(addr: &str) -> Server {
                 *sender.lock().unwrap() = Some(s);
                 se.send(ServerEvent::Open).ok();
 
-                for message in r.incoming_messages() {
-                    match message {
+                for msg in r.incoming_messages() {
+                    match msg {
                         Ok(om) => match om {
                             OwnedMessage::Close(_) => {
-                                let message = OwnedMessage::Close(None);
-                                ws_send(&sender, &message);
+                                let msg = OwnedMessage::Close(None);
+                                ws_send(&sender, &msg);
                             }
                             OwnedMessage::Ping(ping) => {
-                                let message = OwnedMessage::Pong(ping);
-                                ws_send(&sender, &message);
+                                let msg = OwnedMessage::Pong(ping);
+                                ws_send(&sender, &msg);
                             }
                             OwnedMessage::Text(text) => {
                                 su.send(text).ok();
@@ -218,10 +218,10 @@ fn create_tcp_server(addr: &str) -> Server {
     use std::io::BufReader;
     use std::net::{TcpListener, TcpStream};
 
-    fn tcp_send(sender: &Arc<Mutex<Option<TcpStream>>>, message: &String) {
+    fn tcp_send(sender: &Arc<Mutex<Option<TcpStream>>>, msg: &String) {
         match sender.lock().unwrap().as_mut() {
             Some(s) => {
-                s.write(format!("{}\n", message).as_bytes()).ok();
+                s.write(format!("{}\n", msg).as_bytes()).ok();
             }
             None => {
                 error!("ws failed to send message: no connection");
@@ -261,8 +261,8 @@ fn create_tcp_server(addr: &str) -> Server {
             let su = su.clone();
             let se = se.clone();
             thread::spawn(move || {
-                info!("tcp connection from: {:?}", request);
                 let mut client = request.unwrap();
+                info!("ws connection from: {}", client.peer_addr().unwrap());
                 let client2 = client.try_clone().unwrap();
                 *sender.lock().unwrap() = Some(client2);
                 se.send(ServerEvent::Open).ok();

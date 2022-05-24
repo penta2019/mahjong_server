@@ -18,15 +18,15 @@ impl EventSender {
     pub fn new(mut server: Server) -> Self {
         let (s, r) = mpsc::channel::<Value>();
         thread::spawn(move || {
-            let mut messages: Vec<Value> = vec![];
+            let mut msgs: Vec<Value> = vec![];
             let mut cursor = 0;
             loop {
                 while let Ok(msg) = r.try_recv() {
                     if msg["type"].as_str().unwrap() == "New" {
-                        messages.clear();
+                        msgs.clear();
                         cursor = 0;
                     }
-                    messages.push(msg);
+                    msgs.push(msg);
                 }
 
                 if server.is_new() {
@@ -34,8 +34,8 @@ impl EventSender {
                 }
 
                 if server.is_connected() {
-                    while cursor < messages.len() {
-                        server.send(messages[cursor].to_string());
+                    while cursor < msgs.len() {
+                        server.send(msgs[cursor].to_string());
                         cursor += 1;
                     }
                 }

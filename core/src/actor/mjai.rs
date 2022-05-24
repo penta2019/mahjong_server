@@ -376,7 +376,7 @@ fn stream_handler(
     let stream3 = &mut stream.try_clone().unwrap();
     let mut send = |m: &Value| send_json(stream, m, debug);
     let mut recv = || recv_json(stream2, debug);
-    let mut is_alive = || is_alive(stream3);
+    let mut check_alive = || check_alive(stream3);
 
     // hello
     send(&json!(MjaiEvent::hello()))?;
@@ -391,7 +391,7 @@ fn stream_handler(
 
     while data.lock().unwrap().seat == NO_SEAT {
         sleep_ms(100);
-        is_alive()?;
+        check_alive()?;
     }
 
     // TODO: 座席が確定する前に,一度も自身の順番, 鳴き操作が発生せずに
@@ -438,7 +438,7 @@ fn stream_handler(
             send(&event)?;
         } else {
             sleep_ms(10);
-            is_alive()?;
+            check_alive()?;
             continue;
         }
 
@@ -467,7 +467,7 @@ fn stream_handler(
             let mut step = 0;
             loop {
                 sleep_ms(10);
-                is_alive()?;
+                check_alive()?;
                 if data.lock().unwrap().record.len() == cursor {
                     continue;
                 }
@@ -537,7 +537,7 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
     serde_json::from_str(&buf[..buf.len() - 1]).or_else(|e| Err(e.into()))
 }
 
-fn is_alive(stream: &mut TcpStream) -> io::Result<()> {
+fn check_alive(stream: &mut TcpStream) -> io::Result<()> {
     stream.set_nonblocking(true).ok();
     let res = stream.peek(&mut [0; 1024]);
     stream.set_nonblocking(false).ok();

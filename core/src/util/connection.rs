@@ -10,9 +10,8 @@ use crate::{error, info, warn};
 pub enum Message {
     Open,
     Text(String),
-    Close,
     NoMessage,
-    NoConnection,
+    Close,
 }
 
 pub trait Connection: Send {
@@ -79,7 +78,7 @@ impl Connection for TcpConnection {
         }
 
         if let None = self.stream {
-            return Message::NoConnection;
+            return Message::Close;
         }
 
         let stream = self.stream.as_mut().unwrap();
@@ -159,7 +158,7 @@ impl Connection for WsConnection {
         }
 
         if let None = self.stream {
-            return Message::NoConnection;
+            return Message::Close;
         }
 
         let stream = self.stream.as_mut().unwrap();
@@ -201,18 +200,16 @@ impl Connection for WsConnection {
     }
 }
 
-#[test]
-fn conn() {
-    use crate::util::common::*;
-    let mut conn = WsConnection::new("127.0.0.1:12345");
-    loop {
-        // println!("loop");
-        let msg = conn.recv();
-        println!("{:?}", msg);
-        if let Message::Text(t) = msg {
-            conn.send(&t);
-        }
-        sleep_ms(100);
-    }
-    // prompt();
-}
+// #[test]
+// fn conn() {
+//     use crate::util::common::*;
+//     let mut conn = WsConnection::new("127.0.0.1:12345");
+//     loop {
+//         let msg = conn.recv();
+//         println!("{:?}", msg);
+//         if let Message::Text(t) = msg {
+//             conn.send(&t);
+//         }
+//         sleep_ms(100);
+//     }
+// }

@@ -8,7 +8,7 @@ use crate::hand::{get_score_title, Yaku};
 use crate::listener::{EventWriter, StageSender};
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::server::Server;
+use crate::util::connection::*;
 
 use crate::error;
 
@@ -65,39 +65,46 @@ impl MahjongsoulApp {
         println!("actor: {:?}", actor);
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-        let server = Server::new_ws_server(&format!("localhost:{}", self.gui_port));
-        listeners.push(Box::new(StageSender::new(server)));
+        let conn = WsConnection::new(&format!("localhost:{}", self.gui_port));
+        listeners.push(Box::new(StageSender::new(Box::new(conn))));
         if self.write {
             listeners.push(Box::new(EventWriter::new()));
             // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
 
         ///////////////////////////////////////////////////////////////////////
-        let server = Server::new_tcp_server("localhost:12345");
-        listeners.push(Box::new(crate::listener::EventSender::new(server)));
+        let conn = TcpConnection::new("localhost:52999");
+        listeners.push(Box::new(crate::listener::EventSender::new(Box::new(conn))));
         ///////////////////////////////////////////////////////////////////////
 
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
-        let mut server_msc = Server::new_ws_server(&format!("localhost:{}", self.msc_port));
+        let mut conn_msc = WsConnection::new(&format!("localhost:{}", self.msc_port));
         let mut act = None;
         loop {
-            if server_msc.is_new() {
-                let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
-                server_msc.send(msg.to_string());
-            }
-            if let Some(msg) = server_msc.recv_timeout(100) {
-                act = game.apply(&serde_json::from_str(&msg).unwrap());
-            } else if act != None {
-                // recv_timeoutがタイムアウトした場合のみ直前のmsgに対するアクションを実行
-                if !self.read_only {
-                    let msg = json!({
-                        "id": "0",
-                        "op": "eval",
-                        "data": act,
-                    });
-                    server_msc.send(msg.to_string());
+            match conn_msc.recv() {
+                Message::Open => {
+                    let msg = r#"{"id": "id_mjaction", "op": "subscribe", "data": "mjaction"}"#;
+                    conn_msc.send(msg);
                 }
+                Message::Text(t) => {
+                    act = game.apply(&serde_json::from_str(&t).unwrap());
+                }
+                Message::NoMessage => {
+                    if act != None {
+                        if !self.read_only {
+                            let msg = json!({
+                                "id": "0",
+                                "op": "eval",
+                                "data": act,
+                            });
+                            conn_msc.send(&msg.to_string());
+                        }
+                    }
+                    act = None;
+                }
+                _ => {}
             }
+            sleep_ms(10);
         }
     }
 }

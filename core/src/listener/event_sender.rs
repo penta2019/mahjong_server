@@ -1,78 +1,65 @@
-use std::sync::mpsc;
-use std::thread;
-
 use serde_json::{json, Value};
 
 use crate::controller::Listener;
 use crate::model::*;
-use crate::util::common::sleep_ms;
-use crate::util::server::Server;
+use crate::util::connection::{Connection, Message};
 
 // [EventSender]
 #[derive(Debug)]
 pub struct EventSender {
-    sender: mpsc::Sender<Value>,
+    conn: Box<dyn Connection>,
+    msgs: Vec<Value>,
 }
 
 impl EventSender {
-    pub fn new(mut server: Server) -> Self {
-        let (s, r) = mpsc::channel::<Value>();
-        thread::spawn(move || {
-            let mut msgs: Vec<Value> = vec![];
-            let mut cursor = 0;
-            loop {
-                while let Ok(msg) = r.try_recv() {
-                    if msg["type"].as_str().unwrap() == "New" {
-                        msgs.clear();
-                        cursor = 0;
-                    }
-                    msgs.push(msg);
-                }
-
-                if server.is_new() {
-                    cursor = 0;
-                }
-
-                if server.is_connected() {
-                    while cursor < msgs.len() {
-                        server.send(msgs[cursor].to_string());
-                        cursor += 1;
-                    }
-                }
-
-                sleep_ms(100);
-            }
-        });
-        Self { sender: s }
+    pub fn new(conn: Box<dyn Connection>) -> Self {
+        Self {
+            conn: conn,
+            msgs: vec![],
+        }
     }
 }
 
 impl Listener for EventSender {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        self.sender.send(json!(event)).ok();
+        if let Event::New(_) = event {
+            self.msgs.clear();
+        }
+        self.msgs.push(json!(event));
+
+        match self.conn.recv() {
+            Message::Open => {
+                for m in &self.msgs {
+                    self.conn.send(&m.to_string());
+                }
+            }
+            Message::Close => {}
+            _ => {
+                if let Some(m) = self.msgs.iter().last() {
+                    self.conn.send(&m.to_string());
+                }
+            }
+        }
     }
 }
 
 // [StageSender]
 #[derive(Debug)]
 pub struct StageSender {
-    server: Server,
+    conn: Box<dyn Connection>,
 }
 
 impl StageSender {
-    pub fn new(server: Server) -> Self {
-        Self { server: server }
+    pub fn new(conn: Box<dyn Connection>) -> Self {
+        Self { conn: conn }
     }
 }
 
 impl Listener for StageSender {
     fn notify_event(&mut self, stg: &Stage, _event: &Event) {
-        if self.server.is_connected() {
-            let value = json!({
-                "type": "stage",
-                "data": stg,
-            });
-            self.server.send(value.to_string());
+        match self.conn.recv() {
+            Message::Close => {}
+            _ => self.conn.send(&json!(stg).to_string()),
         }
     }
 }

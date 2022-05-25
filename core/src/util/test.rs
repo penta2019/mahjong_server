@@ -9,8 +9,4 @@ fn silence_unused_warning() {
 
     let _ = crate::listener::TenhouEventWriter::new;
     let _ = crate::listener::StageDebugPrinter::new;
-
-    let _ = crate::util::server::Server::wait_connected;
-    let _ = crate::util::server::Server::recv;
-    let _ = crate::util::server::Server::recv_try;
 }

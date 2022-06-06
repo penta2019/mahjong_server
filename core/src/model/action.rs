@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionType {
     Nop, // Actor用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
 
@@ -22,7 +22,7 @@ pub enum ActionType {
 
 // Vec<Tile>は操作により手牌からなくなる牌
 // Chi, Ponなどの標的の牌はstage.last_tileを参照する
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Action(pub ActionType, pub Vec<Tile>);
 
 impl Action {

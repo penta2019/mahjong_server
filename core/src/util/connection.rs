@@ -12,6 +12,7 @@ pub enum Message {
     Text(String),
     NoMessage,
     Close,
+    NoConnection,
 }
 
 pub trait Connection: Send {
@@ -158,7 +159,7 @@ impl Connection for WsConnection {
         }
 
         if let None = self.stream {
-            return Message::Close;
+            return Message::NoConnection;
         }
 
         let stream = self.stream.as_mut().unwrap();

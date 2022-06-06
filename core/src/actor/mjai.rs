@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use serde_json::{json, to_value, Value};
+use serde_json::{json, Value};
 
 use super::*;
 use crate::convert::mjai::*;
@@ -98,7 +98,7 @@ impl MjaiEndpoint {
     fn add_record(&mut self, event: MjaiEvent) {
         let mut d = self.data.lock().unwrap();
         d.selected_action = None;
-        d.record.push(to_value(event).unwrap());
+        d.record.push(serde_json::to_value(event).unwrap());
     }
 
     fn confirm_riichi_accepted(&mut self, stg: &Stage) {
@@ -266,7 +266,8 @@ impl Actor for MjaiEndpoint {
                     mjai_acts.push(v);
                 }
             }
-            d.record.last_mut().unwrap()["possible_actions"] = to_value(mjai_acts).unwrap();
+            d.record.last_mut().unwrap()["possible_actions"] =
+                serde_json::to_value(mjai_acts).unwrap();
             d.selected_action = None;
             d.is_riichi = false;
         }

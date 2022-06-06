@@ -1,3 +1,4 @@
+mod endpoint;
 mod manual;
 mod mjai;
 mod nop;

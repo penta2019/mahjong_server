@@ -30,7 +30,6 @@ impl ActorBuilder for MjaiEndpointBuilder {
     }
 }
 
-#[derive(Clone)]
 pub struct MjaiEndpoint {
     config: Config,
     seat: usize,
@@ -241,6 +240,12 @@ impl MjaiEndpoint {
 
     fn notify_end(&mut self, stg: &Stage, _event: &EventEnd) {
         self.add_record(MjaiEvent::end_game(&stg.get_scores()));
+    }
+}
+
+impl Clone for MjaiEndpoint {
+    fn clone(&self) -> Self {
+        panic!("Actor 'MjaiEndpoint' can't be cloned");
     }
 }
 

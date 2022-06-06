@@ -1,4 +1,5 @@
 use super::*;
+use crate::util::connection::{Connection, Message, WsConnection};
 
 pub struct EndpointBuilder;
 
@@ -15,16 +16,26 @@ impl ActorBuilder for EndpointBuilder {
     }
 }
 
-#[derive(Clone)]
 pub struct Endpoint {
     config: Config,
+    conn: Box<dyn Connection>,
 }
 
 impl Endpoint {
     pub fn from_config(config: Config) -> Self {
         let args = &config.args;
         let addr = args[0].value.as_string();
-        Endpoint { config: config }
+        let conn = Box::new(WsConnection::new(&addr));
+        Self {
+            config: config,
+            conn: conn,
+        }
+    }
+}
+
+impl Clone for Endpoint {
+    fn clone(&self) -> Self {
+        panic!("Actor 'Endpoint' can't be cloned");
     }
 }
 

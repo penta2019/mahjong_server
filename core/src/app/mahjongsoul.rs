@@ -279,7 +279,15 @@ impl Mahjongsoul {
 
         // 可能なactionのパースと選択
         let (acts, idxs) = parse_possible_action(data, self.get_stage());
-        let act = self.ctrl.select_action(s, &acts);
+        let mut retry = 0;
+        let act = loop {
+            if let Some(act) = self.ctrl.select_action(s, &acts, retry) {
+                break act;
+            }
+            retry += 1;
+            sleep_ms(10);
+        };
+
         println!("possible: {:?}", acts);
         println!("selected: {:?}", act);
         println!("");

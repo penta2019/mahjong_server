@@ -36,8 +36,8 @@ impl Actor for TiitoitsuBot {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, repeat: i32) -> Option<Action> {
-        assert!(repeat == 0);
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, retry: i32) -> Option<Action> {
+        assert!(retry == 0);
 
         let pl = &stg.players[self.seat];
 

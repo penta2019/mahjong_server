@@ -230,7 +230,9 @@ impl Replay {
         let stg = self.get_stage();
         let turn = stg.turn;
         let acts = calc_possible_turn_actions(stg, &self.melding);
-        let act = self.ctrl.select_action(turn, &acts);
+
+        todo!();
+        let act = 0; // let act = self.ctrl.select_action(turn, &acts);
 
         let e = self.get_event();
         let act2 = match e {

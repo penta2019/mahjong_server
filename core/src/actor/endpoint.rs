@@ -20,6 +20,7 @@ impl ActorBuilder for EndpointBuilder {
 
 pub struct Endpoint {
     config: Config,
+    seat: Seat,
     conn: Box<dyn Connection>,
     is_conn: bool,
     record: Vec<Value>,
@@ -34,6 +35,7 @@ impl Endpoint {
         let conn = Box::new(WsConnection::new(&addr));
         Self {
             config: config,
+            seat: NO_SEAT,
             conn: conn,
             is_conn: false,
             record: vec![],
@@ -48,6 +50,7 @@ impl Endpoint {
             match self.conn.recv() {
                 Message::Open => {
                     self.is_conn = true;
+                    self.is_selecting = false;
                     self.cursor = 0;
                 }
                 Message::Text(t) => {
@@ -66,14 +69,17 @@ impl Endpoint {
         }
     }
 
-    fn flush_record(&mut self) {
+    fn flush_record(&mut self) -> bool {
+        let mut change = false;
         if self.is_conn {
             while self.cursor < self.record.len() {
                 self.conn.send(&self.record[self.cursor].to_string());
                 self.cursor += 1;
                 self.is_selecting = false;
+                change = true;
             }
         }
+        change
     }
 }
 
@@ -84,22 +90,27 @@ impl Clone for Endpoint {
 }
 
 impl Actor for Endpoint {
-    fn init(&mut self, _seat: Seat) {
+    fn init(&mut self, seat: Seat) {
         self.record.clear();
+        self.seat = seat;
         self.cursor = 0;
     }
 
-    fn select_action(&mut self, _stg: &Stage, acts: &Vec<Action>, _repeat: i32) -> Option<Action> {
-        println!("{}", serde_json::to_value(acts).unwrap().to_string());
-        self.handle_conn();
+    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, _repeat: i32) -> Option<Action> {
+        let act = self.handle_conn();
+        if self.is_selecting {
+            return act;
+        }
+
         self.flush_record(); // select_action中に再接続した場合
         if self.is_conn && !self.is_selecting {
+            println!("{}", &stg.players[self.seat]);
             self.conn
                 .send(&serde_json::to_value(acts).unwrap().to_string());
             self.is_selecting = true;
         }
 
-        self.handle_conn()
+        None
     }
 
     fn get_config(&self) -> &Config {

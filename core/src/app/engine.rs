@@ -381,7 +381,16 @@ impl MahjongEngine {
         let stg = self.get_stage();
         let turn = stg.turn;
         let acts = calc_possible_turn_actions(stg, &self.melding);
-        let act = self.ctrl.select_action(turn, &acts);
+
+        let mut retry = 0;
+        let act = loop {
+            if let Some(act) = self.ctrl.select_action(turn, &acts, retry) {
+                break act;
+            }
+            retry += 1;
+            sleep_ms(10);
+        };
+
         assert!(act.0 == Discard || acts.contains(&act));
         let Action(tp, cs) = act.clone();
         self.melding = None;
@@ -434,7 +443,25 @@ impl MahjongEngine {
         // 順番以外のプレイヤーにActionを要求
         // act: Nop, Chi, Pon, Minkan, Ron
         let can_meld = self.melding == None && !self.is_suukansanra;
-        let acts_list = calc_possible_call_actions(self.get_stage(), can_meld);
+        let mut acts_list = calc_possible_call_actions(self.get_stage(), can_meld);
+
+        // プレイヤー全体でのアクション数をカウント
+        let mut n_rons = 0;
+        let mut n_minkan = 0;
+        let mut n_pon = 0;
+        let mut n_chi = 0;
+        for s in 0..SEAT {
+            for act in &acts_list[s] {
+                match act.0 {
+                    Nop => {}
+                    Chi => n_chi += 1,
+                    Pon => n_pon += 1,
+                    Minkan => n_minkan += 1,
+                    Ron => n_rons += 1,
+                    _ => panic!(),
+                }
+            }
+        }
 
         // query action
         type Meld = Option<(Seat, Action)>;
@@ -442,39 +469,70 @@ impl MahjongEngine {
         let mut minkan: Meld = None;
         let mut pon: Meld = None;
         let mut chi: Meld = None;
-        for s in 0..SEAT {
-            let acts = &acts_list[s];
-            if acts.len() == 1 {
-                // Nop
-                continue;
+        let mut retry = 0;
+        loop {
+            for s in 0..SEAT {
+                let acts = &acts_list[s];
+                if acts.len() <= 1 {
+                    // すでにactionを選択済み または Nopのみ
+                    continue;
+                }
+                if let Some(act) = self.ctrl.select_action(s, acts, retry) {
+                    for act in acts {
+                        match act.0 {
+                            Nop => {}
+                            Chi => n_chi -= 1,
+                            Pon => n_pon -= 1,
+                            Minkan => n_minkan -= 1,
+                            Ron => n_rons -= 1,
+                            _ => panic!(),
+                        }
+                    }
+                    match act.0 {
+                        Nop => {}
+                        Chi => chi = Some((s, act)),
+                        Pon => pon = Some((s, act)),
+                        Minkan => minkan = Some((s, act)),
+                        Ron => rons.push(s),
+                        _ => panic!("action {:?} not found in {:?}", act, acts),
+                    }
+                    acts_list[s] = vec![];
+                }
             }
-            let act = self.ctrl.select_action(s, acts);
-            // calc_action_index(&acts, &act); // opがacts内に存在することを確認
-            match act.0 {
-                Nop => {}
-                Chi => chi = Some((s, act)),
-                Pon => pon = Some((s, act)),
-                Minkan => minkan = Some((s, act)),
-                Ron => rons.push(s),
-                _ => panic!("action {:?} not found in {:?}", act, acts),
-            }
-        }
 
-        // dispatch action
-        if !rons.is_empty() {
-            self.kyoku_result = Some(KyokuResult::Ron(rons));
-            return;
-        } else if let Some((s, act)) = minkan {
-            self.handle_event(Event::meld(s, MeldType::Minkan, act.1.clone()));
-            self.melding = Some(act);
-        } else if let Some((s, act)) = pon {
-            // PonをChiより優先して処理
-            self.handle_event(Event::meld(s, MeldType::Pon, act.1.clone()));
-            self.melding = Some(act);
-        } else if let Some((s, act)) = chi {
-            self.handle_event(Event::meld(s, MeldType::Chi, act.1.clone()));
-            self.melding = Some(act);
-        };
+            let mut n_priority = n_rons;
+            if n_priority == 0 && rons.len() != 0 {
+                self.kyoku_result = Some(KyokuResult::Ron(rons));
+                return;
+            }
+            n_priority += n_minkan;
+            if n_priority == 0 && minkan != None {
+                let (s, act) = minkan.unwrap();
+                self.handle_event(Event::meld(s, MeldType::Minkan, act.1.clone()));
+                self.melding = Some(act);
+                break;
+            }
+            n_priority += n_pon;
+            if n_priority == 0 && pon != None {
+                let (s, act) = pon.unwrap();
+                self.handle_event(Event::meld(s, MeldType::Pon, act.1.clone()));
+                self.melding = Some(act);
+                break;
+            }
+            n_priority += n_chi;
+            if n_priority == 0 && chi != None {
+                let (s, act) = chi.unwrap();
+                self.handle_event(Event::meld(s, MeldType::Chi, act.1.clone()));
+                self.melding = Some(act);
+                break;
+            }
+
+            if n_priority == 0 {
+                break;
+            }
+            retry += 1;
+            sleep_ms(10);
+        }
 
         // 途中流局の確認
         self.check_suufuurenda();

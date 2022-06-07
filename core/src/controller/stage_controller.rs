@@ -60,10 +60,8 @@ impl StageController {
         }
     }
 
-    pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>) -> Action {
-        self.actors[seat]
-            .select_action(&self.stage, &acts, 0)
-            .unwrap()
+    pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>, retry: i32) -> Option<Action> {
+        self.actors[seat].select_action(&self.stage, &acts, retry)
     }
 }
 

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::path::{Path, PathBuf};
 
 use crate::actor::create_actor;
@@ -227,22 +229,24 @@ impl Replay {
     }
 
     fn do_turn_operation(&mut self) {
-        let stg = self.get_stage();
-        let turn = stg.turn;
-        let acts = calc_possible_turn_actions(stg, &self.melding);
+        // let stg = self.get_stage();
+        // let turn = stg.turn;
+        // let acts = calc_possible_turn_actions(stg, &self.melding);
 
-        todo!();
+        // TODO
         let act = 0; // let act = self.ctrl.select_action(turn, &acts);
 
         let e = self.get_event();
         let act2 = match e {
             Event::Discard(e) => {
                 if e.is_riichi {
-                    if e.is_drawn {
-                        Action::riichi(e.tile) // TODO
-                    } else {
-                        Action::riichi(e.tile)
-                    }
+                    Action::riichi(e.tile)
+                    // TODO
+                    // if e.is_drawn {
+                    //     Action::riichi(e.tile)
+                    // } else {
+                    //     Action::riichi(e.tile)
+                    // }
                 } else {
                     if e.is_drawn {
                         Action::nop()

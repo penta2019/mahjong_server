@@ -520,7 +520,7 @@ fn stream_handler(
 }
 
 fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<()> {
-    stream.write((value.to_string() + "\n").as_bytes())?;
+    stream.write_all((value.to_string() + "\n").as_bytes())?;
     if debug {
         println!("-> {}", value.to_string());
         flush();

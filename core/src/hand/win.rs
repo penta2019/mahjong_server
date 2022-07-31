@@ -32,9 +32,7 @@ pub fn is_sets(tr: &TileRow, ti: Type) -> bool {
     for i in 1..8 {
         n2 = tr[i + 2];
         let n = n0 % 3;
-        if ti == TZ && n != 0 {
-            return false;
-        } else if n1 < n || n2 < n {
+        if (ti == TZ && n != 0) || (n1 < n || n2 < n) {
             return false;
         }
         n0 = n1 - n;

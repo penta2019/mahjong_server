@@ -119,10 +119,10 @@ impl Actor for Endpoint {
 }
 
 impl Listener for Endpoint {
-    fn notify_event(&mut self, stg: &Stage, event: &Event) {
+    fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         match event {
-            Event::New(e) => {}
-            Event::Deal(e) => {}
+            Event::New(_) => {}
+            Event::Deal(_) => {}
             _ => {}
         }
         self.record.push(serde_json::to_value(event).unwrap());

@@ -1,3 +1,11 @@
+// 構造的な意味合いや一貫性を保つために以下の警告は無効化
+#![allow(clippy::useless_format)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::single_match)]
+#![allow(clippy::vec_init_then_push)]
+#![allow(clippy::ptr_arg)]
+
 mod actor;
 mod app;
 mod controller;

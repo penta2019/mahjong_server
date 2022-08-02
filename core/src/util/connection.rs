@@ -36,10 +36,7 @@ pub struct TcpConnection {
 impl TcpConnection {
     pub fn new(addr: &str) -> Self {
         let (tx, rx) = mpsc::channel();
-        let conn = Self {
-            stream: None,
-            rx,
-        };
+        let conn = Self { stream: None, rx };
 
         let listener = TcpListener::bind(&addr).unwrap();
         thread::spawn(move || {
@@ -64,7 +61,7 @@ impl Connection for TcpConnection {
 
     fn recv(&mut self) -> Message {
         if let Ok(stream) = self.rx.try_recv() {
-            if let None = self.stream {
+            if self.stream.is_none() {
                 stream.set_nonblocking(true).unwrap();
                 info!(
                     "tcp connection opened from: {}",
@@ -120,10 +117,7 @@ pub struct WsConnection {
 impl WsConnection {
     pub fn new(addr: &str) -> Self {
         let (tx, rx) = mpsc::channel();
-        let conn = Self {
-            stream: None,
-            rx,
-        };
+        let conn = Self { stream: None, rx };
 
         let listener = websocket::sync::Server::bind(addr).unwrap();
         thread::spawn(move || {
@@ -147,7 +141,7 @@ impl Connection for WsConnection {
 
     fn recv(&mut self) -> Message {
         if let Ok(stream) = self.rx.try_recv() {
-            if let None = self.stream {
+            if self.stream.is_none() {
                 stream.set_nonblocking(true).unwrap();
                 info!("ws connection opened from: {}", stream.peer_addr().unwrap());
                 self.stream = Some(stream);

@@ -209,18 +209,13 @@ impl Replay {
     }
 
     fn check_kan_dora(&mut self) {
-        let e = self.get_event();
-        match e {
-            Event::Dora(_) => {
-                self.handle_event();
-            }
-            _ => {}
+        if let Event::Dora(_) = self.get_event() {
+            self.handle_event();
         }
     }
 
     fn do_event_new(&mut self) {
-        let e = self.get_event();
-        match e {
+        match self.get_event() {
             Event::New(_) => {
                 self.handle_event();
             }
@@ -236,8 +231,7 @@ impl Replay {
         // TODO
         let act = 0; // let act = self.ctrl.select_action(turn, &acts);
 
-        let e = self.get_event();
-        let act2 = match e {
+        let act2 = match self.get_event() {
             Event::Discard(e) => {
                 if e.is_riichi {
                     Action::riichi(e.tile)
@@ -278,8 +272,7 @@ impl Replay {
     }
 
     fn do_call_operation(&mut self) {
-        let e = self.get_event();
-        match e {
+        match self.get_event() {
             Event::Win(_) => {
                 self.is_kyoku_end = true;
             }
@@ -299,9 +292,7 @@ impl Replay {
     }
 
     fn do_event_deal(&mut self) {
-        let e = self.get_event();
-
-        match e {
+        match self.get_event() {
             Event::Deal(_) => {}
             Event::Draw(_) => {
                 self.is_kyoku_end = true;

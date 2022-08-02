@@ -13,16 +13,17 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
         return None;
     }
 
-    let mut yf = YakuFlags::default();
-    yf.menzentsumo = true;
-    yf.riichi = pl.is_riichi && !pl.is_daburii;
-    yf.dabururiichi = pl.is_daburii;
-    yf.ippatsu = pl.is_ippatsu;
-    yf.haiteiraoyue = stg.left_tile_count == 0;
-    yf.rinshankaihou = pl.is_rinshan;
-    yf.tenhou = false;
-    yf.tiihou = false;
-
+    let mut yf = YakuFlags {
+        menzentsumo: true,
+        riichi: pl.is_riichi && !pl.is_daburii,
+        dabururiichi: pl.is_daburii,
+        ippatsu: pl.is_ippatsu,
+        haiteiraoyue: stg.left_tile_count == 0,
+        rinshankaihou: pl.is_rinshan,
+        tenhou: false, // TODO
+        tiihou: false, // TODO
+        ..Default::default()
+    };
     for m in &pl.melds {
         if m.type_ != MeldType::Ankan {
             yf.menzentsumo = false;
@@ -85,10 +86,12 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
         hand[t.0][t.1] += 1;
     }
 
-    let mut yf = YakuFlags::default();
-    yf.riichi = pl.is_riichi && !pl.is_daburii;
-    yf.dabururiichi = pl.is_daburii;
-    yf.ippatsu = pl.is_ippatsu;
+    let mut yf = YakuFlags {
+        riichi: pl.is_riichi && !pl.is_daburii,
+        dabururiichi: pl.is_daburii,
+        ippatsu: pl.is_ippatsu,
+        ..Default::default()
+    };
     match tp {
         ActionType::Discard => yf.houteiraoyui = stg.left_tile_count == 0,
         ActionType::Kakan => yf.chankan = true,

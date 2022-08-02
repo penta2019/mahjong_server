@@ -32,9 +32,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
     let args: Vec<&str>;
     let paren_left = exp.find('(');
     let paren_right = exp.rfind(')');
-    if paren_left.is_some() && paren_right.is_some() {
-        let l = paren_left.unwrap();
-        let r = paren_right.unwrap();
+    if let (Some(l), Some(r)) = (paren_left, paren_right) {
         if r < l {
             error!("invalid paren: {}", exp);
             std::process::exit(0);

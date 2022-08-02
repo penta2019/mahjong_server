@@ -8,11 +8,11 @@ pub struct Tile(pub Type, pub Tnum); // (type index, number index)
 impl Tile {
     // 赤5の場合,通常の5を返却. それ以外の場合はコピーをそのまま返却.
     #[inline]
-    pub fn to_normal(&self) -> Self {
+    pub fn to_normal(self) -> Self {
         if self.1 == 0 {
             Self(self.0, 5)
         } else {
-            *self
+            self
         }
     }
 

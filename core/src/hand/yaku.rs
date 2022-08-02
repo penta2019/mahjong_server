@@ -462,10 +462,8 @@ fn is_pinfu(ctx: &YakuContext) -> bool {
     }
 
     let pt = &ctx.pair_tile;
-    if pt.is_hornor() {
-        if pt.is_doragon() || pt.1 == ctx.prevalent_wind || pt.1 == ctx.seat_wind {
-            return false;
-        }
+    if pt.is_hornor() && (pt.is_doragon() || pt.1 == ctx.prevalent_wind || pt.1 == ctx.seat_wind) {
+        return false;
     }
 
     // 上がり牌の両面待ち判定

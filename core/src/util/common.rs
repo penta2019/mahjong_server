@@ -79,7 +79,7 @@ pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
     vs.join(" ")
 }
 
-pub fn cartesian_product<'a, T>(vv: &'a Vec<Vec<T>>) -> Vec<Vec<&'a T>> {
+pub fn cartesian_product<T>(vv: &Vec<Vec<T>>) -> Vec<Vec<&T>> {
     let lens: Vec<usize> = vv.iter().map(|l| l.len()).collect();
     let mut idxs = vec![0; vv.len()];
     let mut i = idxs.len() - 1;

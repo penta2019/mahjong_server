@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::fs::File;
 use std::io::{self, BufRead};
 
@@ -58,7 +59,6 @@ impl CalculatorApp {
         if !file_path.is_empty() {
             if let Err(e) = self.run_from_file(&file_path) {
                 error!("{}", e);
-                
             }
         }
     }
@@ -66,17 +66,15 @@ impl CalculatorApp {
     fn run_from_file(&self, file_path: &str) -> std::io::Result<()> {
         let file = File::open(file_path)?;
         let lines = io::BufReader::new(file).lines();
-        for line in lines {
-            if let Ok(exp) = line {
-                let e = exp.replace(' ', "");
-                if e.is_empty() || e.starts_with('#') {
-                    // 空行とコメント行はスキップ
-                    println!("> {}", exp);
-                } else if let Err(e) = self.process_expression(&exp) {
-                    error!("{}", e);
-                }
-                println!();
+        for exp in lines.flatten() {
+            let e = exp.replace(' ', "");
+            if e.is_empty() || e.starts_with('#') {
+                // 空行とコメント行はスキップ
+                println!("> {}", exp);
+            } else if let Err(e) = self.process_expression(&exp) {
+                error!("{}", e);
             }
+            println!();
         }
         Ok(())
     }
@@ -179,7 +177,7 @@ impl Calculator {
 
             let mut yakus = "".to_string();
             for y in ctx.yakus {
-                yakus += &format!("{}: {}, ", y.0, y.1);
+                let _ = write!(yakus, "{}: {}, ", y.0, y.1);
             }
             println!("yakus: {}", yakus);
 

@@ -427,7 +427,7 @@ fn stream_handler(
         let mut wait_act = false;
         if cursor + 1 < len {
             send(&data.lock().unwrap().record[cursor])?;
-        } else if cursor + 1 == len {
+        } else if cursor < len {
             // select_actionがpossible_actionsを追加する可能性があるので待機
             // data.lock()が開放されている必要があることに注意
             sleep_ms(100);

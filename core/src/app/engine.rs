@@ -797,7 +797,6 @@ impl MahjongEngine {
         if !(t0.is_wind()) {
             return;
         }
-
         for s in 1..SEAT {
             if t0 != discards[s] {
                 return;

@@ -91,7 +91,7 @@ pub struct TenhouSerializer {
 impl TenhouSerializer {
     pub fn new(log: TenhouLog) -> Self {
         Self {
-            log: log,
+            log,
             kyoku: TenhouKyoku::default(),
         }
     }
@@ -189,7 +189,7 @@ impl TenhouSerializer {
                     k.result_detail
                         .push(points.iter().map(|&p| json!(p)).collect());
                     let mut detail = vec![json!(seat), json!(target_seat), json!(seat)];
-                    let score_title = if ctx.score_title == "" {
+                    let score_title = if ctx.score_title.is_empty() {
                         format!("{}符{}飜", ctx.fu, ctx.fan)
                     } else {
                         match ctx.score_title.as_str() {

@@ -55,7 +55,7 @@ impl ReplayApp {
             }
         }
 
-        if app.file_path == "" {
+        if app.file_path.is_empty() {
             error!("file(-f) not specified");
             exit(0);
         }
@@ -74,7 +74,7 @@ impl ReplayApp {
         let mut enabled_actors = [false; SEAT];
         for i in 0..SEAT {
             let n = &self.names[i];
-            if n != "" {
+            if !n.is_empty() {
                 actors[i] = create_actor(n);
                 enabled_actors[i] = true;
             }
@@ -108,7 +108,7 @@ impl ReplayApp {
         };
 
         // スキップ位置の情報をパース
-        let mut skips: Vec<usize> = if self.skip == "" {
+        let mut skips: Vec<usize> = if self.skip.is_empty() {
             vec![]
         } else {
             self.skip
@@ -158,7 +158,7 @@ impl Replay {
         }
 
         Self {
-            enabled_actors: enabled_actors,
+            enabled_actors,
             ctrl: StageController::new(actors, listeners),
             melding: None,
             is_kyoku_end: false,

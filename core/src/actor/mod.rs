@@ -61,7 +61,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
             }
 
             for (i, &a) in args.iter().enumerate() {
-                if a != "" {
+                if !a.is_empty() {
                     conf.args[i].value = match parse_as(&conf.args[i].value, a) {
                         Ok(v) => v,
                         Err(e) => {

@@ -61,7 +61,7 @@ pub fn calc_pair_candidate_index(tr: &TileRow) -> Vec<Tnum> {
 // 基本的に1つだが,3113,3111113のような形の場合2つ
 pub fn calc_pair_candidate(tr: &TileRow, ti: usize) -> Vec<Tile> {
     // 雀頭候補それぞれについて外してみた結果が完成面子になっているかをチェック
-    let mut tr = tr.clone();
+    let mut tr = *tr;
     let mut res = vec![];
     for ni in calc_pair_candidate_index(&tr) {
         if tr[ni] < 2 {
@@ -107,12 +107,12 @@ pub fn calc_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
 
 // 通常形
 pub fn is_normal_win(hand: &TileTable) -> bool {
-    !calc_possibole_pairs(&hand).is_empty()
+    !calc_possibole_pairs(hand).is_empty()
 }
 
 // 七対子
 pub fn is_chiitoitsu_win(hand: &TileTable) -> bool {
-    !parse_into_chiitoitsu_win(&hand).is_empty()
+    !parse_into_chiitoitsu_win(hand).is_empty()
 }
 
 // 国士無双
@@ -159,7 +159,7 @@ pub fn calc_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
         for i in 0..2 {
             let (ti0, ti1) = (ti_mod2[i], ti_mod2[1 - i]);
             if is_sets_pair(&hand[ti0], ti0) {
-                let mut tr = hand[ti1].clone();
+                let mut tr = hand[ti1];
                 for ni in 1..TNUM {
                     tr[ni] += 1;
                     if is_sets(&tr, ti1) {
@@ -174,7 +174,7 @@ pub fn calc_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
         // 雀頭候補が1つの牌種のみの場合
         for ti in 0..TYPE {
             if mods[ti] == 1 {
-                let mut tr = hand[ti].clone();
+                let mut tr = hand[ti];
                 for ni in 1..TNUM {
                     tr[ni] += 1;
                     if is_sets_pair(&tr, ti) {
@@ -283,7 +283,7 @@ pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
 // 通常形
 pub fn calc_discards_to_normal_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let mut res = vec![];
-    let mut hand = hand.clone();
+    let mut hand = *hand;
     for ti in 0..TYPE {
         for ni in 1..TNUM {
             if hand[ti][ni] > 0 {
@@ -320,7 +320,7 @@ pub fn calc_discards_to_chiitoitsu_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Ti
                     v2.push(Tile(ti, ni));
                 }
                 3 => {
-                    if v3.len() > 0 {
+                    if !v3.is_empty() {
                         return vec![];
                     }
                     v3.push(Tile(ti, ni));
@@ -354,7 +354,7 @@ pub fn calc_discards_to_chiitoitsu_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Ti
         _ => panic!(),
     }
 
-    discards_with_red5(&hand, res)
+    discards_with_red5(hand, res)
 }
 
 // 国士無双
@@ -379,7 +379,7 @@ pub fn calc_discards_to_kokushimusou_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<
     }
 
     let mut res = vec![];
-    let mut hand = hand.clone();
+    let mut hand = *hand;
     for ti in 0..TYPE {
         for ni in 1..TNUM {
             if hand[ti][ni] > 0 {

@@ -27,7 +27,7 @@ pub struct RandomDiscard {
 impl RandomDiscard {
     pub fn from_config(config: Config) -> Self {
         RandomDiscard {
-            config: config,
+            config,
             rng: rand::SeedableRng::seed_from_u64(0),
             seat: NO_SEAT,
         }

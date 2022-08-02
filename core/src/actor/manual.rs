@@ -27,7 +27,7 @@ pub struct Manual {
 impl Manual {
     pub fn from_config(config: Config) -> Self {
         Self {
-            config: config,
+            config,
             seat: NO_SEAT,
         }
     }

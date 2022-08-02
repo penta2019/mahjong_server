@@ -76,7 +76,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
         return None;
     };
 
-    let mut hand = pl.hand.clone();
+    let mut hand = pl.hand;
     if t.1 == 0 {
         // 赤5
         hand[t.0][0] += 1;
@@ -148,7 +148,7 @@ pub fn evaluate_hand(
     for mut ph in parse_into_normal_win(hand).into_iter() {
         ph.append(&mut pm.clone());
         let ctx = YakuContext::new(
-            hand.clone(),
+            *hand,
             ph,
             win_tile,
             prevalent_wind,
@@ -162,7 +162,7 @@ pub fn evaluate_hand(
     // 和了(七対子)
     for ph in parse_into_chiitoitsu_win(hand).into_iter() {
         let ctx = YakuContext::new(
-            hand.clone(),
+            *hand,
             ph,
             win_tile,
             prevalent_wind,
@@ -176,7 +176,7 @@ pub fn evaluate_hand(
     // 和了(国士無双)
     for ph in parse_into_kokusimusou_win(hand).into_iter() {
         let ctx = YakuContext::new(
-            hand.clone(),
+            *hand,
             ph,
             win_tile,
             prevalent_wind,

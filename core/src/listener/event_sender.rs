@@ -14,7 +14,7 @@ pub struct EventSender {
 impl EventSender {
     pub fn new(conn: Box<dyn Connection>) -> Self {
         Self {
-            conn: conn,
+            conn,
             msgs: vec![],
         }
     }
@@ -51,7 +51,7 @@ pub struct StageSender {
 
 impl StageSender {
     pub fn new(conn: Box<dyn Connection>) -> Self {
-        Self { conn: conn }
+        Self { conn }
     }
 }
 

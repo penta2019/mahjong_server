@@ -59,7 +59,7 @@ fn check_riichi(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_tsumo(stg: &Stage) -> Vec<Action> {
-    if let Some(_) = evaluate_hand_tsumo(&stg, &vec![]) {
+    if evaluate_hand_tsumo(stg, &vec![]).is_some() {
         vec![Action::tsumo()]
     } else {
         vec![]
@@ -87,7 +87,7 @@ fn check_ankan(stg: &Stage) -> Vec<Action> {
         if let Some(t) = pl.drawn {
             let t = t.to_normal();
             if pl.hand[t.0][t.1] == 4 {
-                let mut h = pl.hand.clone();
+                let mut h = pl.hand;
 
                 h[t.0][t.1] -= 1;
                 let mut v1 = calc_tiles_to_normal_win(&h);
@@ -268,7 +268,7 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
         }
     }
 
-    if 2 <= c0 && c0 <= 8 {
+    if (2..=8).contains(&c0) {
         check.push((l1, r1));
         // red 5
         if l1 == 5 {
@@ -350,7 +350,7 @@ fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
 fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
     let mut acts = vec![];
     for s in 0..SEAT {
-        if let Some(_) = evaluate_hand_ron(stg, &vec![], s) {
+        if evaluate_hand_ron(stg, &vec![], s).is_some() {
             acts.push((s, Action::ron()));
         }
     }

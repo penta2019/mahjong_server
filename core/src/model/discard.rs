@@ -10,6 +10,6 @@ pub struct Discard {
 
 impl fmt::Display for Discard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.tile.to_string())
+        write!(f, "{}", self.tile)
     }
 }

@@ -26,7 +26,7 @@ pub fn parse_melds(melds: &Vec<Meld>) -> ParsedHand {
     let mut res = vec![];
 
     for m in melds {
-        let mut t = m.tiles.iter().min().unwrap().clone();
+        let mut t = *m.tiles.iter().min().unwrap();
         if t.1 == 0 {
             t.1 = 5;
         }
@@ -119,7 +119,7 @@ fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
 
 // 手牌が完成形(七対子・国士無双は除く)なら面子+雀頭に分解して返却
 pub fn parse_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
-    let pairs = calc_possibole_pairs(&hand);
+    let pairs = calc_possibole_pairs(hand);
     if pairs.is_empty() {
         return vec![];
     }
@@ -128,7 +128,7 @@ pub fn parse_into_normal_win(hand: &TileTable) -> Vec<ParsedHand> {
 
     // 雀頭を含む列
     let pair_ti = pairs[0].0;
-    let mut tr = hand[pair_ti].clone();
+    let mut tr = hand[pair_ti];
     let mut phs = vec![];
     for pair in pairs {
         tr[pair.1] -= 2;

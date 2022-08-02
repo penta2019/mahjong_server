@@ -25,7 +25,7 @@ pub struct TiitoitsuBot {
 impl TiitoitsuBot {
     pub fn from_config(config: Config) -> Self {
         Self {
-            config: config,
+            config,
             seat: NO_SEAT,
         }
     }

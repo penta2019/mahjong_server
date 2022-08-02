@@ -63,7 +63,7 @@ impl YakuContext {
     pub fn calc_yaku(&self) -> (Vec<&'static Yaku>, usize, usize) {
         let mut yaku = vec![];
         for y in YAKU_LIST {
-            if (y.func)(&self) {
+            if (y.func)(self) {
                 yaku.push(y)
             }
         }
@@ -95,10 +95,10 @@ impl YakuContext {
     }
 
     pub fn calc_fu(&self) -> usize {
-        if is_pinfu(&self) {
+        if is_pinfu(self) {
             return if self.is_drawn { 20 } else { 30 };
         }
-        if is_chiitoitsu(&self) {
+        if is_chiitoitsu(self) {
             return 25;
         }
 
@@ -315,7 +315,7 @@ macro_rules! yaku {
     };
 }
 
-static YAKU_LIST: &'static [Yaku] = &[
+static YAKU_LIST: &[Yaku] = &[
     yaku!(11, "場風 東", is_bakaze_e, 1, 1),
     yaku!(11, "場風 南", is_bakaze_s, 1, 1),
     yaku!(11, "場風 西", is_bakaze_w, 1, 1),
@@ -796,7 +796,7 @@ fn is_junseichuurenpoutou(ctx: &YakuContext) -> bool {
 
 // 国士無双
 fn is_kokushimusou(ctx: &YakuContext) -> bool {
-    if ctx.parsed_hand.len() != 0 {
+    if !ctx.parsed_hand.is_empty() {
         return false;
     }
     let wt = &ctx.win_tile;
@@ -805,7 +805,7 @@ fn is_kokushimusou(ctx: &YakuContext) -> bool {
 
 // 国士無双十三面待ち
 fn is_kokushimusoujuusanmenmachi(ctx: &YakuContext) -> bool {
-    if ctx.parsed_hand.len() != 0 {
+    if !ctx.parsed_hand.is_empty() {
         return false;
     }
     let wt = &ctx.win_tile;

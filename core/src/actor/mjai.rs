@@ -48,12 +48,12 @@ impl MjaiEndpoint {
 
         let data = Arc::new(Mutex::new(SharedData::new()));
         let obj = Self {
-            config: config,
+            config,
             seat: NO_SEAT,
             data: data.clone(),
             try_riichi: None,
             is_new_game: false,
-            timeout: timeout,
+            timeout,
             timeout_count: 0,
         };
 
@@ -155,7 +155,7 @@ impl MjaiEndpoint {
             seat: event.kyoku,
             tile: stg.players[event.kyoku].drawn.unwrap(),
         };
-        self.notify_deal(&stg, &event2);
+        self.notify_deal(stg, &event2);
     }
 
     fn notify_deal(&mut self, stg: &Stage, event: &EventDeal) {
@@ -441,7 +441,7 @@ fn stream_handler(
             if event["possible_actions"] != json!(null) && cursor + 1 == record.len() {
                 wait_act = true;
             }
-            send(&event)?;
+            send(event)?;
         } else {
             sleep_ms(10);
             check_alive()?;
@@ -522,7 +522,7 @@ fn stream_handler(
 fn send_json(stream: &mut TcpStream, value: &Value, debug: bool) -> io::Result<()> {
     stream.write_all((value.to_string() + "\n").as_bytes())?;
     if debug {
-        println!("-> {}", value.to_string());
+        println!("-> {}", value);
         flush();
     }
     Ok(())
@@ -537,10 +537,10 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
         flush();
     }
 
-    if buf.len() == 0 {
+    if buf.is_empty() {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, ""));
     }
-    serde_json::from_str(&buf[..buf.len() - 1]).or_else(|e| Err(e.into()))
+    serde_json::from_str(&buf[..buf.len() - 1]).map_err(|e| e.into())
 }
 
 fn check_alive(stream: &mut TcpStream) -> io::Result<()> {

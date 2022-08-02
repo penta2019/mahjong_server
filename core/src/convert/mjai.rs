@@ -120,14 +120,14 @@ impl MjaiEvent {
             _ => 4, // 不明な場合は4人東にしておく
         };
         Self::StartGame {
-            id: id,
+            id,
             names: [
                 "Player0".to_string(),
                 "Player1".to_string(),
                 "Player2".to_string(),
                 "Player3".to_string(),
             ],
-            kyoku_first: kyoku_first,
+            kyoku_first,
             aka_flag: true,
         }
     }
@@ -147,12 +147,12 @@ impl MjaiEvent {
         Self::StartKyoku {
             bakaze: wind[bakaze].to_string(),
             kyoku: kyoku + 1,
-            honba: honba,
-            kyotaku: kyotaku,
+            honba,
+            kyotaku,
             oya: kyoku,
             dora_marker: tile_to_mjai(doras[0]),
             tehais: create_tehais(hands, id),
-            scores: scores.clone(),
+            scores: *scores,
         }
     }
 
@@ -185,8 +185,8 @@ impl MjaiEvent {
         deltas[seat] = -1000;
         Self::ReachAccepted {
             actor: seat,
-            deltas: deltas,
-            scores: scores.clone(),
+            deltas,
+            scores: *scores,
         }
     }
 
@@ -195,7 +195,7 @@ impl MjaiEvent {
             actor: seat,
             pai: tile_to_mjai(tile),
             consumed: tiles_to_mjai(consumed),
-            target: target,
+            target,
         }
     }
 
@@ -204,7 +204,7 @@ impl MjaiEvent {
             actor: seat,
             pai: tile_to_mjai(tile),
             consumed: tiles_to_mjai(consumed),
-            target: target,
+            target,
         }
     }
 
@@ -213,7 +213,7 @@ impl MjaiEvent {
             actor: seat,
             pai: tile_to_mjai(tile),
             consumed: tiles_to_mjai(consumed),
-            target: target,
+            target,
         }
     }
 
@@ -249,7 +249,7 @@ impl MjaiEvent {
     ) -> Self {
         Self::Hora {
             actor: seat,
-            target: target,
+            target,
             pai: tile_to_mjai(tile),
             uradora_markers: tiles_to_mjai(ura_doras),
             hora_tehais: vec![], // TODO
@@ -257,8 +257,8 @@ impl MjaiEvent {
             fu: context.fu,
             fan: context.fan,
             hora_points: context.points.0,
-            deltas: deltas.clone(),
-            scores: scores.clone(),
+            deltas: *deltas,
+            scores: *scores,
         }
     }
 
@@ -275,9 +275,9 @@ impl MjaiEvent {
         Self::Ryukyoku {
             reason: reason.to_string(), // TODO
             tehais: vec![],             // TODO
-            tenpais: is_tenpai.clone(),
-            deltas: deltas.clone(),
-            scores: scores.clone(),
+            tenpais: *is_tenpai,
+            deltas: *deltas,
+            scores: *scores,
         }
     }
 
@@ -287,7 +287,7 @@ impl MjaiEvent {
 
     pub fn end_game(scores: &[Score; SEAT]) -> Self {
         Self::EndGame {
-            scores: scores.clone(),
+            scores: *scores,
         }
     }
 }

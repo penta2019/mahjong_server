@@ -34,9 +34,9 @@ impl Endpoint {
         let addr = args[0].value.as_string();
         let conn = Box::new(WsConnection::new(&addr));
         Self {
-            config: config,
+            config,
             seat: NO_SEAT,
-            conn: conn,
+            conn,
             is_conn: false,
             record: vec![],
             cursor: 0,

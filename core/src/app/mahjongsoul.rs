@@ -90,15 +90,13 @@ impl MahjongsoulApp {
                     act = game.apply(&serde_json::from_str(&t).unwrap());
                 }
                 Message::NoMessage => {
-                    if act != None {
-                        if !self.read_only {
-                            let msg = json!({
-                                "id": "0",
-                                "op": "eval",
-                                "data": act,
-                            });
-                            conn_msc.send(&msg.to_string());
-                        }
+                    if act != None && !self.read_only {
+                        let msg = json!({
+                            "id": "0",
+                            "op": "eval",
+                            "data": act,
+                        });
+                        conn_msc.send(&msg.to_string());
                     }
                     act = None;
                 }
@@ -143,9 +141,9 @@ impl Mahjongsoul {
             step: 0,
             seat: NO_SEAT,
             events: vec![],
-            random_sleep: random_sleep,
-            actor: actor,
-            write_raw: write_raw,
+            random_sleep,
+            actor,
+            write_raw,
             start_time: unixtime_now(),
             kyoku_index: 0,
         }
@@ -290,7 +288,7 @@ impl Mahjongsoul {
 
         println!("possible: {:?}", acts);
         println!("selected: {:?}", act);
-        println!("");
+        println!();
         flush();
 
         // 選択されたactionのパース
@@ -394,7 +392,7 @@ impl Mahjongsoul {
 
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["scores"]) {
-            scores[s] = as_i32(&score);
+            scores[s] = as_i32(score);
         }
 
         let mut hands = [vec![], vec![], vec![], vec![]];
@@ -551,7 +549,7 @@ impl Mahjongsoul {
                 score_title,
                 points,
             };
-            wins.push((s, delta_scores.clone(), ctx));
+            wins.push((s, delta_scores, ctx));
 
             delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
 
@@ -651,16 +649,15 @@ fn calc_dapai_index(stg: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usiz
     let d = if let Some(d) = pl.drawn { d } else { Z8 };
     let is_drawn = if pl.drawn == Some(t) {
         if pl.hand[t.0][t.1] == 1 || (t.1 == 5 && pl.hand[t.0][5] == 2 && pl.hand[t.0][0] == 1) {
+            // is_drawn = falseでも指定した牌がツモ牌しかない場合trueにする
             true
         } else {
             is_drawn
         }
     } else {
-        if t.1 == 5 && pl.hand[t.0][t.1] == 1 && Some(Tile(t.0, 0)) == pl.drawn {
-            true // ツモった赤5を通常5で指定する場合に通常5がなければ赤5をツモ切り
-        } else {
-            false
-        }
+        // TODO: ここのコード単にfalseで良いかも
+        // ツモった赤5を通常5で指定する場合に通常5がなければ赤5をツモ切り
+        t.1 == 5 && pl.hand[t.0][t.1] == 1 && Some(Tile(t.0, 0)) == pl.drawn
     };
 
     let mut idx = 0;
@@ -795,7 +792,7 @@ fn parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
                 .as_str()
                 .unwrap()
                 .split('|')
-                .map(|sym| tile_from_mjsoul2(sym))
+                .map(tile_from_mjsoul2)
                 .collect();
             c.sort();
             c

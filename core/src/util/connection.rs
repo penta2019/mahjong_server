@@ -38,7 +38,7 @@ impl TcpConnection {
         let (tx, rx) = mpsc::channel();
         let conn = Self {
             stream: None,
-            rx: rx,
+            rx,
         };
 
         let listener = TcpListener::bind(&addr).unwrap();
@@ -78,7 +78,7 @@ impl Connection for TcpConnection {
             }
         }
 
-        if let None = self.stream {
+        if self.stream.is_none() {
             return Message::Close;
         }
 
@@ -88,7 +88,7 @@ impl Connection for TcpConnection {
         match reader.read_line(&mut buf) {
             Ok(size) => {
                 if size != 0 {
-                    if buf.chars().last() == Some('\n') {
+                    if buf.ends_with('\n') {
                         buf.pop();
                     }
                     return Message::Text(buf);
@@ -122,7 +122,7 @@ impl WsConnection {
         let (tx, rx) = mpsc::channel();
         let conn = Self {
             stream: None,
-            rx: rx,
+            rx,
         };
 
         let listener = websocket::sync::Server::bind(addr).unwrap();
@@ -158,7 +158,7 @@ impl Connection for WsConnection {
             }
         }
 
-        if let None = self.stream {
+        if self.stream.is_none() {
             return Message::NoConnection;
         }
 

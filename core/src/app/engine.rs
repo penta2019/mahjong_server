@@ -260,14 +260,14 @@ impl MahjongEngine {
         };
 
         Self {
-            seed: seed,
-            mode: mode,
-            initial_score: initial_score,
-            rng: rng,
-            ctrl: ctrl,
+            seed,
+            mode,
+            initial_score,
+            rng,
+            ctrl,
             melding: None,
             kyoku_result: None,
-            kyoku_next: kyoku_next,
+            kyoku_next,
             is_end: false,
             kan_dora: None,
             n_deal: 0,
@@ -297,15 +297,15 @@ impl MahjongEngine {
             self.do_event_new();
             loop {
                 self.do_turn_operation();
-                if let Some(_) = self.kyoku_result {
+                if self.kyoku_result.is_some() {
                     break;
                 }
                 self.do_call_operation();
-                if let Some(_) = self.kyoku_result {
+                if self.kyoku_result.is_some() {
                     break;
                 }
                 self.do_event_deal();
-                if let Some(_) = self.kyoku_result {
+                if self.kyoku_result.is_some() {
                     break;
                 }
             }
@@ -501,7 +501,7 @@ impl MahjongEngine {
             }
 
             let mut n_priority = n_rons;
-            if n_priority == 0 && rons.len() != 0 {
+            if n_priority == 0 && !rons.is_empty() {
                 self.kyoku_result = Some(KyokuResult::Ron(rons));
                 return;
             }
@@ -804,24 +804,20 @@ impl MahjongEngine {
             }
         }
 
-        if let None = self.kyoku_result {
+        if self.kyoku_result.is_none() {
             self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suufuurenda));
         }
     }
 
     fn check_suukansanra(&mut self) {
-        if self.is_suukansanra && self.melding == None {
-            if let None = self.kyoku_result {
-                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suukansanra));
-            }
+        if self.is_suukansanra && self.melding == None && self.kyoku_result.is_none() {
+            self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suukansanra));
         }
     }
 
     fn check_suuchariichi(&mut self) {
-        if self.get_stage().players.iter().all(|pl| pl.is_riichi) {
-            if let None = self.kyoku_result {
-                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suuchariichi));
-            }
+        if self.get_stage().players.iter().all(|pl| pl.is_riichi) && self.kyoku_result.is_none() {
+            self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suuchariichi));
         }
     }
 

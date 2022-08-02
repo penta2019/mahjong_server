@@ -53,15 +53,15 @@ impl StageController {
         }
 
         for a in &mut self.actors {
-            a.notify_event(stg, &event);
+            a.notify_event(stg, event);
         }
         for a in &mut self.listeners {
-            a.notify_event(stg, &event);
+            a.notify_event(stg, event);
         }
     }
 
     pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>, retry: i32) -> Option<Action> {
-        self.actors[seat].select_action(&self.stage, &acts, retry)
+        self.actors[seat].select_action(&self.stage, acts, retry)
     }
 }
 
@@ -263,8 +263,8 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
                 step: stg.step,
                 seat: s,
                 type_: event.meld_type,
-                tiles: tiles,
-                froms: froms,
+                tiles,
+                froms,
             };
             let &(prev_s, prev_i) = stg.discards.last().unwrap();
             stg.players[prev_s].discards[prev_i].meld = Some((s, idx));
@@ -279,8 +279,8 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
                 step: stg.step,
                 seat: s,
                 type_: MeldType::Ankan,
-                tiles: tiles,
-                froms: froms,
+                tiles,
+                froms,
             };
             pl.melds.push(m);
 
@@ -366,7 +366,7 @@ fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateTyp
     let te = &mut stg.tile_states[tn.0][tn.1];
     // println!("[table_edit] {}: {:?} | {:?} => {:?}", tile, te, old, new);
     let i = te.iter().position(|&x| x == old).unwrap();
-    te[i] = new.clone();
+    te[i] = new;
     te.sort();
 }
 
@@ -381,10 +381,8 @@ fn update_after_discard_completed(stg: &mut Stage) {
     if let Some((s, tp, t)) = stg.last_tile {
         if tp == ActionType::Discard || tp == ActionType::Kakan {
             for s2 in 0..SEAT {
-                if s2 != s {
-                    if stg.players[s2].win_tiles.contains(&t) {
-                        stg.players[s2].is_furiten_other = true;
-                    }
+                if s2 != s && stg.players[s2].win_tiles.contains(&t) {
+                    stg.players[s2].is_furiten_other = true;
                 }
             }
         }
@@ -401,7 +399,7 @@ fn update_after_discard_completed(stg: &mut Stage) {
 fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
     for s in 0..SEAT {
         let mut pl = &mut stg.players[s];
-        pl.score = pl.score + points[s];
+        pl.score += points[s];
     }
 
     let scores = stg.players.iter().map(|pl| pl.score).collect();

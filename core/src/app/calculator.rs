@@ -30,11 +30,11 @@ impl CalculatorApp {
                 "-d" => self.detail = true,
                 "-f" => file_path = next_value(&mut it, "-f"),
                 _ => {
-                    if exp.starts_with("-") {
+                    if exp.starts_with('-') {
                         error!("unknown option: {}", s);
                         return;
                     }
-                    if exp != "" {
+                    if !exp.is_empty() {
                         error!("multiple expression is not allowed");
                         return;
                     }
@@ -43,22 +43,22 @@ impl CalculatorApp {
             }
         }
 
-        if (file_path == "" && exp == "") || (file_path != "" && exp != "") {
+        if (file_path.is_empty() && exp.is_empty()) || (!file_path.is_empty() && !exp.is_empty()) {
             print_usage();
             return;
         }
 
-        if exp != "" {
+        if !exp.is_empty() {
             if let Err(e) = self.process_expression(&exp) {
                 error!("{}", e);
                 return;
             }
         }
 
-        if file_path != "" {
+        if !file_path.is_empty() {
             if let Err(e) = self.run_from_file(&file_path) {
                 error!("{}", e);
-                return;
+                
             }
         }
     }
@@ -68,8 +68,8 @@ impl CalculatorApp {
         let lines = io::BufReader::new(file).lines();
         for line in lines {
             if let Ok(exp) = line {
-                let e = exp.replace(" ", "");
-                if e == "" || e.chars().next().unwrap() == '#' {
+                let e = exp.replace(' ', "");
+                if e.is_empty() || e.starts_with('#') {
                     // 空行とコメント行はスキップ
                     println!("> {}", exp);
                 } else if let Err(e) = self.process_expression(&exp) {
@@ -114,7 +114,7 @@ struct Calculator {
 impl Calculator {
     fn new(detail: bool) -> Self {
         Self {
-            detail: detail,
+            detail,
             seat: 0,
             kyoku: 0,
             hand: TileTable::default(),
@@ -136,9 +136,9 @@ impl Calculator {
     fn parse(&mut self, input: &str) -> Result<(), String> {
         println!("> {}", input);
 
-        let input = input.replace(" ", "");
-        let input = input.split("#").collect::<Vec<&str>>()[0]; // コメント削除
-        let exps: Vec<&str> = input.split("/").collect();
+        let input = input.replace(' ', "");
+        let input = input.split('#').collect::<Vec<&str>>()[0]; // コメント削除
+        let exps: Vec<&str> = input.split('/').collect();
 
         if let Some(exp) = exps.get(1) {
             self.parse_stage_info(exp)?; // 副露のパースに座席情報が必要なので最初に実行
@@ -224,7 +224,7 @@ impl Calculator {
     }
 
     fn parse_stage_info(&mut self, input: &str) -> Result<(), String> {
-        let exps: Vec<&str> = input.split(",").collect();
+        let exps: Vec<&str> = input.split(',').collect();
         if let Some(exp) = exps.get(0) {
             let chars: Vec<char> = exp.chars().collect();
             if chars.len() != 3 {
@@ -234,7 +234,7 @@ impl Calculator {
             let kyoku = chars[1].to_digit(10).unwrap() as usize;
             let seat_wind = wind_from_char(chars[2])?;
 
-            if !(1 <= kyoku && kyoku <= 4) {
+            if !(1..=4).contains(&kyoku) {
                 return Err(format!("kyoku is not 1, 2, 3 or 4: {}", kyoku));
             }
 
@@ -257,11 +257,11 @@ impl Calculator {
         let mut exp_hand = "".to_string();
         let mut exp_melds = vec![];
         for exp in input.split(',') {
-            if exp_hand == "" {
-                if exp.chars().last().unwrap() == '+' {
+            if exp_hand.is_empty() {
+                if exp.ends_with('+') {
                     self.is_drawn = false;
                 }
-                exp_hand = exp.replace("+", "");
+                exp_hand = exp.replace('+', "");
             } else {
                 exp_melds.push(exp.to_string());
             }
@@ -294,7 +294,7 @@ impl Calculator {
     }
 
     fn parse_yaku_flags(&mut self, input: &str) -> Result<(), String> {
-        for y in input.split(",") {
+        for y in input.split(',') {
             match y {
                 "立直" => self.yaku_flags.riichi = true,
                 "両立直" => self.yaku_flags.dabururiichi = true,
@@ -313,7 +313,7 @@ impl Calculator {
     }
 
     fn parse_score_verify(&mut self, input: &str) -> Result<(), String> {
-        let exps: Vec<&str> = input.split(",").collect();
+        let exps: Vec<&str> = input.split(',').collect();
         if exps.len() != 3 {
             return Err(format!("invalid score verify info: {}", input));
         }
@@ -410,10 +410,10 @@ fn meld_from_string(exp: &str, seat: Seat) -> Result<Meld, String> {
 
     Ok(Meld {
         step: 0,
-        seat: seat,
+        seat,
         type_: meld_type,
-        tiles: tiles,
-        froms: froms,
+        tiles,
+        froms,
     })
 }
 

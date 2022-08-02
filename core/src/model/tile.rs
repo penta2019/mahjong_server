@@ -80,7 +80,7 @@ impl fmt::Display for Tile {
 
 impl fmt::Debug for Tile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self)
     }
 }
 
@@ -99,7 +99,7 @@ impl PartialOrd for Tile {
 
 impl Ord for Tile {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(&other).unwrap()
+        self.partial_cmp(other).unwrap()
     }
 }
 

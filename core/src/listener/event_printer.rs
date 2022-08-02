@@ -48,14 +48,14 @@ impl Listener for StagePrinter {
                     }
                 }
 
-                self.print_score_change(&stg, &deltas);
+                self.print_score_change(stg, &deltas);
                 println!("{}", stg);
             }
             Event::Draw(e) => {
                 println!("[Draw]");
                 println!("{:?}", e.type_);
                 println!("is_tenpai: {:?}", &e.tenpais);
-                self.print_score_change(&stg, &e.points);
+                self.print_score_change(stg, &e.points);
                 println!("{}", stg);
             }
             Event::End(_) => {
@@ -79,7 +79,7 @@ impl Listener for StageStepPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         use Event::*;
         let ev_str = format!("{:?}", event);
-        print!("[{}] ", ev_str.split('(').next().unwrap().to_string());
+        print!("[{}] ", ev_str.split('(').next().unwrap());
         println!("(step: {})", stg.step);
         match event {
             Begin(_) => {}

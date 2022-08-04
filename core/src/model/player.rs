@@ -80,3 +80,56 @@ impl fmt::Display for Player {
         write!(f, "discards: {}", discards)
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct Discard {
+    pub step: usize,
+    pub tile: Tile,
+    pub drawn: bool,                 // ツモ切りフラグ
+    pub meld: Option<(Seat, Index)>, // 鳴きが入った場合にセット
+}
+
+impl fmt::Display for Discard {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.tile)
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct Kita {
+    pub step: usize,
+    pub seat: Seat,
+    pub drawn: bool,
+}
+
+impl fmt::Display for Kita {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "z4")
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MeldType {
+    Chi,
+    Pon,
+    Minkan,
+    Kakan,
+    Ankan,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Meld {
+    pub step: usize,
+    pub seat: Seat,
+    pub type_: MeldType,
+    pub tiles: Vec<Tile>,
+    pub froms: Vec<Seat>,
+}
+
+impl fmt::Display for Meld {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let z = self.tiles.iter().zip(self.froms.iter());
+        let s: Vec<String> = z.map(|x| format!("{}({})", x.0, x.1)).collect();
+        write!(f, "{}", s.join("|"))
+    }
+}

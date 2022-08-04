@@ -5,6 +5,7 @@
 #![allow(clippy::single_match)]
 #![allow(clippy::vec_init_then_push)]
 #![allow(clippy::ptr_arg)]
+#![allow(clippy::too_many_arguments)]
 
 mod actor;
 mod app;

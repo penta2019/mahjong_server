@@ -5,7 +5,7 @@ authors = ["@_P_E_N_T_A"]
 edition = "2018"
 
 [dependencies]
-websocket = "0.26.2"
-serde = { version = "1.0.126", features = ["derive"] }
+websocket = "0.26"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rand = "0.8.3"
+rand = "0.8"

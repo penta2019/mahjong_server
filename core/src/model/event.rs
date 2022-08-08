@@ -174,7 +174,7 @@ pub enum DrawType {
 }
 
 impl fmt::Display for DrawType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
             "{}",

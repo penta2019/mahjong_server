@@ -43,7 +43,7 @@ impl Variant {
 }
 
 impl fmt::Display for Variant {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Int(v) => {
                 write!(f, "{}", v)

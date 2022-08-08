@@ -73,13 +73,13 @@ impl Tile {
 }
 
 impl fmt::Display for Tile {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", ['m', 'p', 's', 'z'][self.0], self.1)
     }
 }
 
 impl fmt::Debug for Tile {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self)
     }
 }
@@ -117,7 +117,7 @@ struct TileVisitor;
 impl<'de> de::Visitor<'de> for TileVisitor {
     type Value = Tile;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("tile symbol")
     }
 

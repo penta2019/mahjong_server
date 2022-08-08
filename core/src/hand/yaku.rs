@@ -298,7 +298,7 @@ impl Yaku {
 }
 
 impl fmt::Debug for Yaku {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {}, {})", self.name, self.fan_close, self.fan_open)
     }
 }

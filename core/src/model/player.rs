@@ -39,7 +39,7 @@ impl Player {
 }
 
 impl fmt::Display for Player {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut hand = vec![];
         for ti in 0..TYPE {
             for ni in 1..TNUM {
@@ -90,7 +90,7 @@ pub struct Discard {
 }
 
 impl fmt::Display for Discard {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.tile)
     }
 }
@@ -103,7 +103,7 @@ pub struct Kita {
 }
 
 impl fmt::Display for Kita {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "z4")
     }
 }
@@ -127,7 +127,7 @@ pub struct Meld {
 }
 
 impl fmt::Display for Meld {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let z = self.tiles.iter().zip(self.froms.iter());
         let s: Vec<String> = z.map(|x| format!("{}({})", x.0, x.1)).collect();
         write!(f, "{}", s.join("|"))

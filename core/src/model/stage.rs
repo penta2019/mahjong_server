@@ -25,7 +25,7 @@ impl Default for TileStateType {
 }
 
 impl fmt::Display for TileStateType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             H(s) => write!(f, "H{}", s),
             M(s, _) => write!(f, "M{}", s),
@@ -81,7 +81,7 @@ impl Stage {
 }
 
 impl fmt::Display for Stage {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
             "bakaze: {}, kyoku: {}, honba: {}, kyoutaku: {}",

@@ -369,10 +369,10 @@ static YAKU_LIST: &[Yaku] = &[
     yaku!(3, "槍槓", is_chankan, 1, 1),
     yaku!(35, "天和", is_tenhou, 13, 13),
     yaku!(36, "地和", is_tiihou, 13, 13),
-    yaku!(31, "ドラ", skip, 0, 0),
-    yaku!(32, "赤ドラ", skip, 0, 0),
-    yaku!(33, "裏ドラ", skip, 0, 0),
-    yaku!(34, "抜きドラ", skip, 0, 0),
+    yaku!(31, "ドラ", skip, 1, 1),
+    yaku!(32, "赤ドラ", skip, 1, 1),
+    yaku!(33, "裏ドラ", skip, 1, 1),
+    yaku!(34, "抜きドラ", skip, 1, 1),
 ];
 
 // [役の優先順位]

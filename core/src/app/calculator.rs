@@ -87,6 +87,13 @@ impl CalculatorApp {
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum Verify {
+    Ok,
+    Error,
+    Skip,
+}
+
 #[derive(Debug)]
 struct Calculator {
     detail: bool,
@@ -160,7 +167,7 @@ impl Calculator {
         Ok(())
     }
 
-    fn run(&self) -> Result<(), String> {
+    fn run(&self) -> Result<Verify, String> {
         if let Some(ctx) = evaluate_hand(
             &self.hand,
             &self.melds,
@@ -192,36 +199,36 @@ impl Calculator {
                 if ctx.yakuman_count > 0 {
                     // 役満以上は得点のみをチェック
                     if ctx.score == self.score {
-                        "ok"
+                        Verify::Ok
                     } else {
-                        "error"
+                        Verify::Error
                     }
                 } else {
                     if ctx.fu == self.fu && ctx.fan == self.fan && ctx.score == self.score {
-                        "ok"
+                        Verify::Ok
                     } else {
-                        "error"
+                        Verify::Error
                     }
                 }
             } else {
-                "skip"
+                Verify::Skip
             };
-            println!("verify: {}", verify);
+            println!("verify: {:?}", verify);
+            Ok(verify)
         } else {
             println!("not win hand");
             let verify = if self.verify {
                 if self.score == 0 {
-                    "ok"
+                    Verify::Ok
                 } else {
-                    "error"
+                    Verify::Error
                 }
             } else {
-                "skip"
+                Verify::Skip
             };
-            println!("verify: {}", verify);
+            println!("verify: {:?}", verify);
+            Ok(verify)
         }
-
-        Ok(())
     }
 
     fn parse_stage_info(&mut self, input: &str) -> Result<(), String> {
@@ -444,6 +451,17 @@ Options
 
 #[test]
 fn test_calculator() {
-    let args = vec!["-f".to_string(), "tests/win_hands.txt".to_string()];
-    CalculatorApp::new(args).run();
+    let file = File::open("tests/win_hands.txt").unwrap();
+    let lines = io::BufReader::new(file).lines();
+    for exp in lines.flatten() {
+        let e = exp.replace(' ', "");
+        if e.is_empty() || e.starts_with('#') {
+            // 空行とコメント行はスキップ
+            println!("> {}", exp);
+        } else {
+            let mut calculator = Calculator::new(false);
+            assert_eq!(Ok(()), calculator.parse(&e));
+            assert_ne!(Verify::Error, calculator.run().unwrap());
+        }
+    }
 }

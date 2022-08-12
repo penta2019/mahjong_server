@@ -2,12 +2,14 @@
 
 // 構造的な意味合いや一貫性を保つために以下の警告は無効化
 #![allow(clippy::useless_format)]
+#![allow(clippy::get_first)]
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::single_match)]
 #![allow(clippy::vec_init_then_push)]
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::too_many_arguments)]
+
 
 mod actor;
 mod app;

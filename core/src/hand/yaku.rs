@@ -315,7 +315,7 @@ macro_rules! yaku {
     };
 }
 
-static YAKU_LIST: &[Yaku] = &[
+const YAKU_LIST: &[Yaku] = &[
     yaku!(11, "場風 東", is_bakaze_e, 1, 1),
     yaku!(11, "場風 南", is_bakaze_s, 1, 1),
     yaku!(11, "場風 西", is_bakaze_w, 1, 1),

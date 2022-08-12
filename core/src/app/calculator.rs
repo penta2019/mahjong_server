@@ -114,7 +114,7 @@ struct Calculator {
     verify: bool,
     fu: usize,
     fan: usize,
-    score: i32,
+    score: Score,
 }
 
 impl Calculator {
@@ -327,7 +327,7 @@ impl Calculator {
         }
         self.fu = exps[0].parse::<usize>().map_err(|e| e.to_string())?;
         self.fan = exps[1].parse::<usize>().map_err(|e| e.to_string())?;
-        self.score = exps[2].parse::<i32>().map_err(|e| e.to_string())?;
+        self.score = exps[2].parse::<Score>().map_err(|e| e.to_string())?;
         self.verify = true;
         Ok(())
     }

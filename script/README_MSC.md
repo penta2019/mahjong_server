@@ -214,6 +214,7 @@ E_Round_Result:           // 対局結果
 pai            牌
 hule           和了
 zimo           ツモ
+qinjia         親番
 lizhi          リーチ
 liqi           リーチ？理牌？
 liqibang       リーチ棒

@@ -132,6 +132,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
 // 和了形である場合,最も高得点となるような役の組み合わせのSome(Result)を返却
 // 和了形でない場合,Noneを返却
 // 和了形でも無役の場合はResultの中身がyaku: [], points(0, 0, 0)となる.
+// この関数は本場数の得点を計算しない.
 pub fn evaluate_hand(
     hand: &TileTable,       // 手牌(鳴き以外)
     melds: &Vec<Meld>,      // 鳴き
@@ -150,6 +151,9 @@ pub fn evaluate_hand(
     let pm = parse_melds(melds);
     for mut ph in parse_into_normal_win(hand).into_iter() {
         ph.append(&mut pm.clone());
+        if ph.len() != 5 {
+            return None;
+        }
         let ctx = YakuContext::new(
             *hand,
             ph,
@@ -162,32 +166,34 @@ pub fn evaluate_hand(
         wins.push(ctx);
     }
 
-    // 和了(七対子)
-    for ph in parse_into_chiitoitsu_win(hand).into_iter() {
-        let ctx = YakuContext::new(
-            *hand,
-            ph,
-            win_tile,
-            prevalent_wind,
-            seat_wind,
-            is_drawn,
-            yaku_flags.clone(),
-        );
-        wins.push(ctx);
-    }
+    if wins.is_empty() && melds.is_empty() {
+        // 和了(七対子)
+        for ph in parse_into_chiitoitsu_win(hand).into_iter() {
+            let ctx = YakuContext::new(
+                *hand,
+                ph,
+                win_tile,
+                prevalent_wind,
+                seat_wind,
+                is_drawn,
+                yaku_flags.clone(),
+            );
+            wins.push(ctx);
+        }
 
-    // 和了(国士無双)
-    for ph in parse_into_kokusimusou_win(hand).into_iter() {
-        let ctx = YakuContext::new(
-            *hand,
-            ph,
-            win_tile,
-            prevalent_wind,
-            seat_wind,
-            is_drawn,
-            yaku_flags.clone(),
-        );
-        wins.push(ctx);
+        // 和了(国士無双)
+        for ph in parse_into_kokusimusou_win(hand).into_iter() {
+            let ctx = YakuContext::new(
+                *hand,
+                ph,
+                win_tile,
+                prevalent_wind,
+                seat_wind,
+                is_drawn,
+                yaku_flags.clone(),
+            );
+            wins.push(ctx);
+        }
     }
 
     if wins.is_empty() {
@@ -213,7 +219,7 @@ pub fn evaluate_hand(
     for ctx in wins {
         let hand = tiles_from_tile_table(hand);
         let fu = ctx.calc_fu();
-        let (yakus, mut fan, yakuman_times) = ctx.calc_yaku();
+        let (yakus, mut fan, yakuman_count) = ctx.calc_yaku();
         if yakus.is_empty() {
             continue; // 無役
         }
@@ -228,7 +234,7 @@ pub fn evaluate_hand(
                 (y.name.to_string(), fan)
             })
             .collect();
-        if yakuman_times == 0 {
+        if yakuman_count == 0 {
             fan += n_dora + n_red_dora + n_ura_dora;
             if n_dora != 0 {
                 yakus.push(("ドラ".to_string(), n_dora));
@@ -240,16 +246,26 @@ pub fn evaluate_hand(
                 yakus.push(("裏ドラ".to_string(), n_ura_dora));
             }
         }
-        let points = get_points(is_dealer, fu, fan, yakuman_times);
-        let score_title = get_score_title(fu, fan, yakuman_times);
+        let points = get_points(is_dealer, fu, fan, yakuman_count);
+        let score_title = get_score_title(fu, fan, yakuman_count);
+        let score = if is_drawn {
+            if is_dealer {
+                points.1 * 3
+            } else {
+                points.1 * 2 + points.2
+            }
+        } else {
+            points.0
+        };
         results.push(WinContext {
             hand,
             yakus,
             fu,
             fan,
-            yakuman_times,
-            score_title,
+            score,
             points,
+            yakuman_count,
+            score_title,
         });
     }
 

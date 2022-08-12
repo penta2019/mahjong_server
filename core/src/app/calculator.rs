@@ -104,6 +104,7 @@ struct Calculator {
     seat_wind: Index,
     yaku_flags: YakuFlags,
     // score verify
+    verify: bool,
     fu: usize,
     fan: usize,
     score: i32,
@@ -125,6 +126,7 @@ impl Calculator {
             prevalent_wind: 1,
             seat_wind: 1,
             yaku_flags: YakuFlags::default(),
+            verify: false,
             fu: 0,
             fan: 0,
             score: 0,
@@ -181,30 +183,21 @@ impl Calculator {
             }
             println!("yakus: {}", yakus);
 
-            let score = if self.is_drawn {
-                if self.is_dealer {
-                    ctx.points.1 * 3
-                } else {
-                    ctx.points.1 * 2 + ctx.points.2
-                }
-            } else {
-                ctx.points.0
-            };
             println!(
                 "fu: {}, fan: {}, score: {}, {}",
-                ctx.fu, ctx.fan, score, ctx.score_title
+                ctx.fu, ctx.fan, ctx.score, ctx.score_title
             );
 
-            let verify = if self.score != 0 {
-                if ctx.yakuman_times > 0 {
+            let verify = if self.verify {
+                if ctx.yakuman_count > 0 {
                     // 役満以上は得点のみをチェック
-                    if score == self.score {
+                    if ctx.score == self.score {
                         "ok"
                     } else {
                         "error"
                     }
                 } else {
-                    if ctx.fu == self.fu && ctx.fan == self.fan && score == self.score {
+                    if ctx.fu == self.fu && ctx.fan == self.fan && ctx.score == self.score {
                         "ok"
                     } else {
                         "error"
@@ -215,7 +208,17 @@ impl Calculator {
             };
             println!("verify: {}", verify);
         } else {
-            error!("not win hand");
+            println!("not win hand");
+            let verify = if self.verify {
+                if self.score == 0 {
+                    "ok"
+                } else {
+                    "error"
+                }
+            } else {
+                "skip"
+            };
+            println!("verify: {}", verify);
         }
 
         Ok(())
@@ -318,6 +321,7 @@ impl Calculator {
         self.fu = exps[0].parse::<usize>().map_err(|e| e.to_string())?;
         self.fan = exps[1].parse::<usize>().map_err(|e| e.to_string())?;
         self.score = exps[2].parse::<i32>().map_err(|e| e.to_string())?;
+        self.verify = true;
         Ok(())
     }
 }
@@ -436,4 +440,10 @@ Options
     -f: read expresisons from file instead of a commandline expression
 "
     );
+}
+
+#[test]
+fn test_calculator() {
+    let args = vec!["-f".to_string(), "tests/win_hands.txt".to_string()];
+    CalculatorApp::new(args).run();
 }

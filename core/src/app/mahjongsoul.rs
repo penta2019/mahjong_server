@@ -507,8 +507,9 @@ impl Mahjongsoul {
             let hand = tiles_from_mjsoul(&win["hand"]);
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
-            let yakuman_times = if is_yakuman { count } else { 0 };
-            let score_title = get_score_title(fu, fan, yakuman_times);
+            let score = as_i32(&win["dadian"]);
+            let yakuman_count = if is_yakuman { count } else { 0 };
+            let score_title = get_score_title(fu, fan, yakuman_count);
             let points = (
                 as_i32(&win["point_rong"]),
                 as_i32(&win["point_zimo_xian"]),
@@ -545,9 +546,10 @@ impl Mahjongsoul {
                 yakus,
                 fu,
                 fan,
-                yakuman_times,
-                score_title,
+                score,
                 points,
+                yakuman_count,
+                score_title,
             };
             wins.push((s, delta_scores, ctx));
 

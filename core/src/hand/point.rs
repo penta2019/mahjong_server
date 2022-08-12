@@ -104,25 +104,25 @@ fn get_points_non_dealer_yakuman(mag: usize) -> Points {
     (s, s / 4, s / 2)
 }
 
-pub fn get_points(is_dealer: bool, fu: usize, fan: usize, yakuman_times: usize) -> Points {
+pub fn get_points(is_dealer: bool, fu: usize, fan: usize, yakuman_count: usize) -> Points {
     if is_dealer {
-        if yakuman_times > 0 {
-            get_points_dealer_yakuman(yakuman_times)
+        if yakuman_count > 0 {
+            get_points_dealer_yakuman(yakuman_count)
         } else {
             get_points_dealer(fu, fan)
         }
     } else {
-        if yakuman_times > 0 {
-            get_points_non_dealer_yakuman(yakuman_times)
+        if yakuman_count > 0 {
+            get_points_non_dealer_yakuman(yakuman_count)
         } else {
             get_points_non_dealer(fu, fan)
         }
     }
 }
 
-pub fn get_score_title(fu: usize, fan: usize, yakuman_times: usize) -> String {
+pub fn get_score_title(fu: usize, fan: usize, yakuman_count: usize) -> String {
     let fu_index = calc_fu_index(fu);
-    match yakuman_times {
+    match yakuman_count {
         0 => {
             if fan >= 13 {
                 "数え役満"

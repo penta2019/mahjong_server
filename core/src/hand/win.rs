@@ -117,6 +117,7 @@ pub fn is_chiitoitsu_win(hand: &TileTable) -> bool {
 
 // 国士無双
 pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
+    let mut count = 0;
     for ti in 0..TZ {
         if hand[ti][1] == 0 || hand[ti][9] == 0 {
             return false;
@@ -126,14 +127,16 @@ pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
                 return false;
             }
         }
+        count += hand[ti][1] + hand[ti][9]
     }
     for ni in 1..8 {
         if hand[TZ][ni] == 0 {
             return false;
         }
+        count += hand[TZ][ni]
     }
 
-    true
+    count == 14
 }
 
 // [和了牌判定]

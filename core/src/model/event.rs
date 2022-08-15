@@ -20,6 +20,7 @@ impl Event {
         Self::Begin(EventBegin {})
     }
 
+    #[inline]
     pub fn new(
         bakaze: usize,
         kyoku: usize,
@@ -42,10 +43,12 @@ impl Event {
         })
     }
 
+    #[inline]
     pub fn deal(seat: Seat, tile: Tile) -> Self {
         Self::Deal(EventDeal { seat, tile })
     }
 
+    #[inline]
     pub fn discard(seat: Seat, tile: Tile, is_drawn: bool, is_riichi: bool) -> Self {
         Self::Discard(EventDiscard {
             seat,
@@ -55,6 +58,7 @@ impl Event {
         })
     }
 
+    #[inline]
     pub fn meld(seat: Seat, meld_type: MeldType, consumed: Vec<Tile>) -> Self {
         Self::Meld(EventMeld {
             seat,
@@ -63,14 +67,17 @@ impl Event {
         })
     }
 
+    #[inline]
     pub fn kita(seat: Seat, is_drawn: bool) -> Self {
         Self::Kita(EventKita { seat, is_drawn })
     }
 
+    #[inline]
     pub fn dora(tile: Tile) -> Self {
         Self::Dora(EventDora { tile })
     }
 
+    #[inline]
     pub fn win(ura_doras: Vec<Tile>, contexts: Vec<(Seat, [Point; SEAT], WinContext)>) -> Self {
         Self::Win(EventWin {
             ura_doras,
@@ -78,6 +85,7 @@ impl Event {
         })
     }
 
+    #[inline]
     pub fn draw(
         type_: DrawType,
         hands: [Vec<Tile>; SEAT],
@@ -92,6 +100,7 @@ impl Event {
         })
     }
 
+    #[inline]
     pub fn end() -> Self {
         Self::End(EventEnd {})
     }

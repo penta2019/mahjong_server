@@ -30,48 +30,58 @@ impl Action {
     pub fn nop() -> Self {
         Self(ActionType::Nop, vec![])
     }
+
     #[inline]
     pub fn discard(t: Tile) -> Self {
         Self(ActionType::Discard, vec![t])
     }
+
     #[inline]
     pub fn ankan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 4);
         v.sort();
         Self(ActionType::Ankan, v)
     }
+
     #[inline]
     pub fn kakan(t: Tile) -> Self {
         Self(ActionType::Kakan, vec![t])
     }
+
     #[inline]
     pub fn riichi(t: Tile) -> Self {
         Self(ActionType::Riichi, vec![t])
     }
+
     #[inline]
     pub fn tsumo() -> Self {
         Self(ActionType::Tsumo, vec![])
     }
+
     #[inline]
     pub fn kyushukyuhai() -> Self {
         Self(ActionType::Kyushukyuhai, vec![])
     }
+
     #[inline]
     pub fn kita() -> Self {
         Self(ActionType::Kita, vec![Tile(TZ, WN)])
     }
+
     #[inline]
     pub fn chi(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
         v.sort();
         Self(ActionType::Chi, v)
     }
+
     #[inline]
     pub fn pon(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
         v.sort();
         Self(ActionType::Pon, v)
     }
+
     #[inline]
     pub fn minkan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 3);

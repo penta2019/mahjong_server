@@ -6,28 +6,23 @@ use crate::model::*;
 // fn(&Stage) -> Option<Action>
 
 pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<Action> {
-    let mut acts = vec![Action::nop()];
-    if !stg.players[stg.turn].is_riichi {
-        if let Some(act) = melding {
-            // 鳴き後に捨てられない牌を追加
-            acts.push(Action(ActionType::Discard, calc_prohibited_discards(act)));
-        } else {
-            acts.push(Action(ActionType::Discard, vec![]))
+    if let Some(act) = melding {
+        if act.0 == ActionType::Chi || act.0 == ActionType::Pon {
+            // チー,ポンのあとは打牌のみ
+            return vec![Action(ActionType::Discard, calc_prohibited_discards(act))];
         }
     }
 
-    let can_op = match melding {
-        None => true,
-        Some(Action(tp, _)) => *tp != ActionType::Chi && *tp != ActionType::Pon,
-    };
-    if can_op {
-        acts.append(&mut check_ankan(stg));
-        acts.append(&mut check_kakan(stg));
-        acts.append(&mut check_riichi(stg));
-        acts.append(&mut check_tsumo(stg));
-        acts.append(&mut check_kyushukyuhai(stg));
-        acts.append(&mut check_kita(stg));
+    let mut acts = vec![Action::nop()];
+    if !stg.players[stg.turn].is_riichi {
+        acts.push(Action(ActionType::Discard, vec![]));
     }
+    acts.append(&mut check_ankan(stg));
+    acts.append(&mut check_kakan(stg));
+    acts.append(&mut check_riichi(stg));
+    acts.append(&mut check_tsumo(stg));
+    acts.append(&mut check_kyushukyuhai(stg));
+    acts.append(&mut check_kita(stg));
     acts
 }
 

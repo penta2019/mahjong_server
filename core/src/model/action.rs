@@ -2,19 +2,19 @@ use super::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionType {
-    Nop, // Actor用 Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
+    Nop, // Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
 
     // Turn Actions
     Discard,      // 打牌 (ゲーム側から提供される配列は鳴き後に捨てられない配)
     Ankan,        // 暗槓
     Kakan,        // 加槓
-    Riichi,       // リーチ
+    Riichi,       // リーチ (TODO:明示的にツモ切りリーチを行いたい場合,配列は空にする)
     Tsumo,        // ツモ
     Kyushukyuhai, // 九種九牌
     Kita,         // 北抜き
 
-    // Call Actions
-    Chi,    // チー (配列は鳴きが可能な組み合わせ 以下同様)
+    // Call Actions (配列は鳴きにより手牌から消失する牌のリスト)
+    Chi,    // チー
     Pon,    // ポン
     Minkan, // 明槓
     Ron,    // ロン

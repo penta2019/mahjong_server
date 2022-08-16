@@ -359,7 +359,7 @@ msc.Server = class {
             msc.log_error("(Server) conncet: ws connection already exists.");
             return;
         }
-        this.endpoint = `ws://localhost:${port}`;
+        this.endpoint = `ws://127.0.0.1:${port}`;
         this.ws = new WebSocket(this.endpoint);
         this.ws.onopen = this.on_open.bind(this);
         this.ws.onclose = this.on_close.bind(this);

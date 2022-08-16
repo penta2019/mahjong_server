@@ -65,7 +65,7 @@ impl MahjongsoulApp {
         println!("actor: {:?}", actor);
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-        let conn = WsConnection::new(&format!("localhost:{}", self.gui_port));
+        let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
         listeners.push(Box::new(StageSender::new(Box::new(conn))));
         if self.write {
             listeners.push(Box::new(EventWriter::new()));
@@ -73,12 +73,12 @@ impl MahjongsoulApp {
         };
 
         ///////////////////////////////////////////////////////////////////////
-        let conn = TcpConnection::new("localhost:52999");
+        let conn = TcpConnection::new("127.0.0.1:52999");
         listeners.push(Box::new(crate::listener::EventSender::new(Box::new(conn))));
         ///////////////////////////////////////////////////////////////////////
 
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
-        let mut conn_msc = WsConnection::new(&format!("localhost:{}", self.msc_port));
+        let mut conn_msc = WsConnection::new(&format!("127.0.0.1:{}", self.msc_port));
         let mut act = None;
         loop {
             match conn_msc.recv() {

@@ -86,7 +86,7 @@ impl ReplayApp {
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StageStepPrinter::new()));
-        let conn = WsConnection::new(&format!("localhost:{}", self.gui_port));
+        let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
         listeners.push(Box::new(StageSender::new(Box::new(conn))));
         listeners.push(Box::new(Prompt::new()));
 

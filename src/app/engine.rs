@@ -103,10 +103,10 @@ impl EngineApp {
     fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StagePrinter::new()));
-        let conn = WsConnection::new(&format!("localhost:{}", self.gui_port));
+        let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
         listeners.push(Box::new(StageSender::new(Box::new(conn))));
         ///////////////////////////////////////////////////////////////////////
-        let conn = TcpConnection::new("localhost:52999");
+        let conn = TcpConnection::new("127.0.0.1:52999");
         listeners.push(Box::new(EventSender::new(Box::new(conn))));
         ///////////////////////////////////////////////////////////////////////
         if self.write {

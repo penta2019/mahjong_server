@@ -1,45 +1,64 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+
 use serde_json::{json, Value};
 
 use crate::controller::Listener;
 use crate::model::*;
+use crate::util::common::sleep_ms;
 use crate::util::connection::{Connection, Message};
+
+#[derive(Debug)]
+struct MessageData {
+    msgs: Vec<Value>,
+    cursor: usize,
+}
 
 // [EventSender]
 #[derive(Debug)]
 pub struct EventSender {
-    conn: Box<dyn Connection>,
-    msgs: Vec<Value>,
+    data: Arc<Mutex<MessageData>>,
 }
 
 impl EventSender {
-    pub fn new(conn: Box<dyn Connection>) -> Self {
-        Self {
-            conn,
+    pub fn new(mut conn: Box<dyn Connection>) -> Self {
+        let arc0 = Arc::new(Mutex::new(MessageData {
             msgs: vec![],
-        }
+            cursor: 0,
+        }));
+        let arc1 = arc0.clone();
+        thread::spawn(move || loop {
+            loop {
+                let mut d = arc1.lock().unwrap();
+                match conn.recv() {
+                    Message::Open => d.cursor = 0,
+                    Message::Text(_) => {}
+                    Message::NoMessage => {
+                        while d.cursor < d.msgs.len() {
+                            conn.send(&d.msgs[d.cursor].to_string());
+                            d.cursor += 1;
+                        }
+                        break;
+                    }
+                    Message::Close => {}
+                    Message::NoConnection => break,
+                }
+            }
+            sleep_ms(100);
+        });
+
+        Self { data: arc0 }
     }
 }
 
 impl Listener for EventSender {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
+        let mut d = self.data.lock().unwrap();
         if let Event::New(_) = event {
-            self.msgs.clear();
+            d.msgs.clear();
+            d.cursor = 0;
         }
-        self.msgs.push(json!(event));
-
-        match self.conn.recv() {
-            Message::Open => {
-                for m in &self.msgs {
-                    self.conn.send(&m.to_string());
-                }
-            }
-            Message::Close => {}
-            _ => {
-                if let Some(m) = self.msgs.iter().last() {
-                    self.conn.send(&m.to_string());
-                }
-            }
-        }
+        d.msgs.push(json!(event));
     }
 }
 

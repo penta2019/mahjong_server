@@ -76,7 +76,7 @@ impl Connection for TcpConnection {
         }
 
         if self.stream.is_none() {
-            return Message::Close;
+            return Message::NoConnection;
         }
 
         let stream = self.stream.as_mut().unwrap();

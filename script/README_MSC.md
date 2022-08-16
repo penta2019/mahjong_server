@@ -3,12 +3,12 @@
 外部から雀魂の対戦画面を操作するためのスクリプト(mahjong_soul.js)についての内容です.
 
 ## 使い方
-Tampermonkeyなどのuserscriptを実行できるプラグインをインストールしてhttps://game.mahjongsoul.com/ 内で userscript.js が実行されるように設定してください.  
+Tampermonkeyなどのuserscriptを実行できるプラグインをインストールしてhttps://game.mahjongsoul.com/ 内で mahjong_soul.js が実行されるように設定してください.  
 MSCが定義する変数,関数,クラスはすべてグローバル変数mscの下にまとめられています.
 
 ### 動作確認
 websocket経由ですべての操作を行えますが,まずは友人戦(NPC戦)などでコンソールから動作確認を行いましょう.  
-何ができるかはcore/main.jsに目を通していただければだいたい解ると思います.  
+何ができるかはソースコードに目を通していただければだいたい解ると思います.  
 以下に具体例を示します.
 
 * 左からn番目の牌を捨てる  

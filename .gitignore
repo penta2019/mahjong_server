@@ -1,0 +1,11 @@
+private
+data
+data_raw
+mjsoul_data
+
+Cargo.lock
+target/
+
+node_modules
+package-lock.json
+favicon.ico

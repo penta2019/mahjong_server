@@ -1,5 +1,11 @@
 use super::*;
 
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct UserAction {
+//     seat: usize,
+//     actions: Vec<Action>,
+// }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionType {
     Nop, // Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ

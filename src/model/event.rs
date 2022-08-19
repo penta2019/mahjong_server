@@ -1,5 +1,11 @@
 use super::*;
 
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct Data {
+//     event: Event,
+//     actions: Vec<UserAction>,
+// }
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {

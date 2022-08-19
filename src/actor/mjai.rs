@@ -12,6 +12,17 @@ use crate::util::common::{flush, sleep_ms, vec_remove};
 
 use crate::{error, info};
 
+#[derive(Debug, Default)]
+struct SharedData {
+    send_start_game: bool,
+    seat: Seat,
+    record: Vec<Value>,
+    cursor: usize,
+    selected_action: Option<MjaiAction>,
+    is_riichi: bool,
+    mode: usize, // (= EventNew.mode)
+}
+
 pub struct MjaiEndpointBuilder;
 
 impl ActorBuilder for MjaiEndpointBuilder {
@@ -45,8 +56,7 @@ impl MjaiEndpoint {
         let args = &config.args;
         let addr = args[0].value.as_string();
         let timeout = args[1].value.as_int();
-
-        let data = Arc::new(Mutex::new(SharedData::new()));
+        let data = Arc::new(Mutex::new(SharedData::default()));
         let obj = Self {
             config,
             seat: NO_SEAT,
@@ -125,7 +135,7 @@ impl MjaiEndpoint {
             sleep_ms(1000);
         }
 
-        let mut data = SharedData::new();
+        let mut data = SharedData::default();
         if self.is_new_game {
             data.send_start_game = true;
             self.is_new_game = false;
@@ -344,31 +354,6 @@ impl Listener for MjaiEndpoint {
             Event::Win(e) => self.notify_win(stg, e),
             Event::Draw(e) => self.notify_draw(stg, e),
             Event::End(e) => self.notify_end(stg, e),
-        }
-    }
-}
-
-#[derive(Debug)]
-struct SharedData {
-    send_start_game: bool,
-    seat: Seat,
-    record: Vec<Value>,
-    cursor: usize,
-    selected_action: Option<MjaiAction>,
-    is_riichi: bool,
-    mode: usize, // (= EventNew.mode)
-}
-
-impl SharedData {
-    fn new() -> Self {
-        Self {
-            send_start_game: false,
-            seat: NO_SEAT,
-            record: vec![],
-            cursor: 0,
-            selected_action: None,
-            is_riichi: false,
-            mode: 1,
         }
     }
 }

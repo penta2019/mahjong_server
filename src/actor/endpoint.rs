@@ -1,9 +1,19 @@
-use serde_json::Value;
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+use serde_json::{json, Value};
 
 use super::*;
+use crate::util::common::sleep_ms;
 use crate::util::connection::{Connection, Message, WsConnection};
 
 pub struct EndpointBuilder;
+
+#[derive(Debug, Default)]
+struct SharedData {
+    msgs: Vec<Value>,
+    cursor: usize,
+}
 
 impl ActorBuilder for EndpointBuilder {
     fn get_default_config(&self) -> Config {
@@ -20,11 +30,8 @@ impl ActorBuilder for EndpointBuilder {
 
 pub struct Endpoint {
     config: Config,
+    data: Arc<Mutex<SharedData>>,
     seat: Seat,
-    conn: Box<dyn Connection>,
-    is_conn: bool,
-    record: Vec<Value>,
-    cursor: usize,
     is_selecting: bool,
 }
 
@@ -32,54 +39,36 @@ impl Endpoint {
     pub fn from_config(config: Config) -> Self {
         let args = &config.args;
         let addr = args[0].value.as_string();
-        let conn = Box::new(WsConnection::new(&addr));
+        let mut conn = Box::new(WsConnection::new(&addr));
+        let arc0 = Arc::new(Mutex::new(SharedData::default()));
+        let arc1 = arc0.clone();
+
+        thread::spawn(move || loop {
+            loop {
+                let mut d = arc1.lock().unwrap();
+                match conn.recv() {
+                    Message::Open => d.cursor = 0,
+                    Message::Text(_) => {}
+                    Message::NoMessage => {
+                        while d.cursor < d.msgs.len() {
+                            conn.send(&d.msgs[d.cursor].to_string());
+                            d.cursor += 1;
+                        }
+                        break;
+                    }
+                    Message::Close => {}
+                    Message::NoConnection => break,
+                }
+            }
+            sleep_ms(100);
+        });
+
         Self {
             config,
+            data: arc0,
             seat: NO_SEAT,
-            conn,
-            is_conn: false,
-            record: vec![],
-            cursor: 0,
             is_selecting: false,
         }
-    }
-
-    fn handle_conn(&mut self) -> Option<Action> {
-        let mut res = None;
-        loop {
-            match self.conn.recv() {
-                Message::Open => {
-                    self.is_conn = true;
-                    self.is_selecting = false;
-                    self.cursor = 0;
-                }
-                Message::Text(t) => {
-                    let a = serde_json::from_str::<Action>(&t);
-                    match a {
-                        Ok(act) => res = Some(act),
-                        Err(e) => error!("{}", e),
-                    }
-                }
-                Message::Close => {
-                    self.is_conn = false;
-                    self.is_selecting = false;
-                }
-                _ => return res,
-            }
-        }
-    }
-
-    fn flush_record(&mut self) -> bool {
-        let mut change = false;
-        if self.is_conn {
-            while self.cursor < self.record.len() {
-                self.conn.send(&self.record[self.cursor].to_string());
-                self.cursor += 1;
-                self.is_selecting = false;
-                change = true;
-            }
-        }
-        change
     }
 }
 
@@ -91,24 +80,24 @@ impl Clone for Endpoint {
 
 impl Actor for Endpoint {
     fn init(&mut self, seat: Seat) {
-        self.record.clear();
+        *self.data.lock().unwrap() = SharedData::default();
         self.seat = seat;
-        self.cursor = 0;
+        self.is_selecting = false;
     }
 
     fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, _repeat: i32) -> Option<Action> {
-        let act = self.handle_conn();
-        if self.is_selecting {
-            return act;
-        }
+        // let act = self.handle_conn();
+        // if self.is_selecting {
+        //     return act;
+        // }
 
-        self.flush_record(); // select_action中に再接続した場合
-        if self.is_conn && !self.is_selecting {
-            println!("{}", &stg.players[self.seat]);
-            self.conn
-                .send(&serde_json::to_value(acts).unwrap().to_string());
-            self.is_selecting = true;
-        }
+        // self.flush_record(); // select_action中に再接続した場合
+        // if self.is_conn && !self.is_selecting {
+        //     println!("{}", &stg.players[self.seat]);
+        //     self.conn
+        //         .send(&serde_json::to_value(acts).unwrap().to_string());
+        //     self.is_selecting = true;
+        // }
 
         None
     }
@@ -120,14 +109,7 @@ impl Actor for Endpoint {
 
 impl Listener for Endpoint {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        match event {
-            Event::New(_) => {}
-            Event::Deal(_) => {}
-            _ => {}
-        }
-        self.record.push(serde_json::to_value(event).unwrap());
-
-        self.handle_conn();
-        self.flush_record();
+        let mut d = self.data.lock().unwrap();
+        d.msgs.push(json!(event));
     }
 }

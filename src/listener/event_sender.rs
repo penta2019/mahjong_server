@@ -8,8 +8,8 @@ use crate::model::*;
 use crate::util::common::sleep_ms;
 use crate::util::connection::{Connection, Message};
 
-#[derive(Debug)]
-struct MessageData {
+#[derive(Debug, Default)]
+struct SharedData {
     msgs: Vec<Value>,
     cursor: usize,
 }
@@ -17,16 +17,14 @@ struct MessageData {
 // [EventSender]
 #[derive(Debug)]
 pub struct EventSender {
-    data: Arc<Mutex<MessageData>>,
+    data: Arc<Mutex<SharedData>>,
 }
 
 impl EventSender {
     pub fn new(mut conn: Box<dyn Connection>) -> Self {
-        let arc0 = Arc::new(Mutex::new(MessageData {
-            msgs: vec![],
-            cursor: 0,
-        }));
+        let arc0 = Arc::new(Mutex::new(SharedData::default()));
         let arc1 = arc0.clone();
+
         thread::spawn(move || loop {
             loop {
                 let mut d = arc1.lock().unwrap();

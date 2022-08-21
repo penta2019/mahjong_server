@@ -7,6 +7,8 @@ use super::*;
 use crate::util::common::sleep_ms;
 use crate::util::connection::{Connection, Message, TcpConnection};
 
+use crate::error;
+
 pub struct EndpointBuilder;
 
 #[derive(Debug, Default)]
@@ -49,7 +51,10 @@ impl Endpoint {
                 let mut d = arc1.lock().unwrap();
                 match conn.recv() {
                     Message::Open => d.cursor = 0,
-                    Message::Text(_) => {}
+                    Message::Text(act) => match serde_json::from_str::<Action>(&act) {
+                        Ok(a) => d.action = Some(a),
+                        Err(e) => error!("{}: {}", e, act),
+                    },
                     Message::NoMessage => {
                         while d.cursor < d.msgs.len() {
                             conn.send(&d.msgs[d.cursor].to_string());

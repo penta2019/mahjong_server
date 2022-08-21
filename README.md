@@ -3,7 +3,7 @@
 日本リーチ麻雀のゲームサーバーです.  
 主にBot同士を対戦させることを目的にしています.  
 Botは未実装でエンジンの動作確認のみができる状態です.  
-類似プロジェクト: Mjai(https://github.com/gimite/mjai-manue)
+類似プロジェクト: Mjai(https://github.com/gimite/mjai)
 
 ## 主な機能
 * 麻雀エンジン  

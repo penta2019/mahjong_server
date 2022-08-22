@@ -31,7 +31,7 @@ impl StageController {
     }
 
     pub fn handle_event(&mut self, event: &Event) {
-        if let Event::Begin(_) = event {
+        if let Event::New(_) = event {
             for s in 0..SEAT {
                 self.actors[s].init(s);
             }

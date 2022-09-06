@@ -405,23 +405,8 @@ fn discards_with_red5(
 ) -> Vec<(Tile, Vec<Tile>)> {
     let mut res = vec![];
     for (t, wins) in discards {
-        if t.1 == 5 {
-            if hand[t.0][0] > 0 {
-                if hand[t.0][5] == hand[t.0][0] {
-                    // 赤5しかない場合
-                    res.push((Tile(t.0, 0), wins));
-                } else {
-                    // 赤5と通常5の両方ある場合
-                    res.push((t, wins.clone()));
-                    res.push((Tile(t.0, 0), wins));
-                }
-            } else {
-                // 通常の5しかない場合
-                res.push((t, wins));
-            }
-        } else {
-            // 5ではない場合
-            res.push((t, wins));
+        for t2 in tiles_with_red5(hand, t) {
+            res.push((t2, wins.clone()))
         }
     }
     res

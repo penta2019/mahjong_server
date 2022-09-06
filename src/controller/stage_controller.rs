@@ -3,7 +3,7 @@ use crate::hand::*;
 use crate::model::*;
 use crate::util::common::rank_by_rank_vec;
 
-use TileStateType::*;
+use TileState::*;
 
 #[derive(Debug)]
 pub struct StageController {
@@ -344,7 +344,7 @@ fn event_kita(stg: &mut Stage, event: &EventKita) {
 }
 
 fn event_dora(stg: &mut Stage, event: &EventDora) {
-    table_edit(stg, event.tile, TileStateType::U, TileStateType::R);
+    table_edit(stg, event.tile, TileState::U, TileState::R);
     stg.doras.push(event.tile);
 }
 
@@ -361,7 +361,7 @@ fn event_draw(stg: &mut Stage, event: &EventDraw) {
 fn event_end(_stg: &mut Stage, _event: &EventEnd) {}
 
 // [Utility]
-fn table_edit(stg: &mut Stage, tile: Tile, old: TileStateType, new: TileStateType) {
+fn table_edit(stg: &mut Stage, tile: Tile, old: TileState, new: TileState) {
     let tn = tile.to_normal();
     let te = &mut stg.tile_states[tn.0][tn.1];
     // println!("[table_edit] {}: {:?} | {:?} => {:?}", tile, te, old, new);

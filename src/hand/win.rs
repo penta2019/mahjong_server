@@ -408,7 +408,7 @@ fn discards_with_red5(
         if t.1 == 5 {
             if hand[t.0][0] > 0 {
                 if hand[t.0][5] == hand[t.0][0] {
-                    // 赤5しか手牌にない場合
+                    // 赤5しかない場合
                     res.push((Tile(t.0, 0), wins));
                 } else {
                     // 赤5と通常5の両方ある場合
@@ -416,6 +416,7 @@ fn discards_with_red5(
                     res.push((Tile(t.0, 0), wins));
                 }
             } else {
+                // 通常の5しかない場合
                 res.push((t, wins));
             }
         } else {

@@ -233,52 +233,25 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
     }
 
     let mut check: Vec<(Tnum, Tnum)> = vec![];
-    let i = d.1;
-    // l2 l1 c0(discarded) r1 r2
-    let l2 = if i >= 2 { i - 2 } else { 255 };
-    let l1 = if i >= 1 { i - 1 } else { 255 };
-    let c0 = i;
-    let r1 = i + 1;
-    let r2 = i + 2;
+    let Tile(ti, ni) = d;
 
-    if 3 <= c0 {
-        check.push((l2, l1));
-        // red 5
-        if l2 == 5 {
-            check.push((0, l1));
-        }
-        if l1 == 5 {
-            check.push((l2, 0));
-        }
+    if 3 <= ni {
+        check.push((ni - 2, ni - 1)); // 右端をチー
+    }
+    if (2..=8).contains(&ni) {
+        check.push((ni - 1, ni + 1)); // 嵌張をチー
+    }
+    if ni <= 7 {
+        check.push((ni + 1, ni + 2)); // 左端をチー
     }
 
-    if c0 <= 7 {
-        check.push((r1, r2));
-        // red 5
-        if r1 == 5 {
-            check.push((0, r2));
-        }
-        if r2 == 5 {
-            check.push((r1, 0));
-        }
-    }
-
-    if (2..=8).contains(&c0) {
-        check.push((l1, r1));
-        // red 5
-        if l1 == 5 {
-            check.push((0, r1));
-        }
-        if r1 == 5 {
-            check.push((l1, 0));
-        }
-    }
-
-    let h = &stg.players[s].hand[d.0];
+    let h = &stg.players[s].hand;
     let mut acts = vec![];
-    for pair in check {
-        if h[pair.0] > 0 && h[pair.1] > 0 {
-            acts.push((s, Action::chi(vec![Tile(d.0, pair.0), Tile(d.0, pair.1)])));
+    for (ni0, ni1) in check {
+        for t0 in tiles_with_red5(h, Tile(ti, ni0)) {
+            for t1 in tiles_with_red5(h, Tile(ti, ni1)) {
+                acts.push((s, Action::chi(vec![t0, t1])));
+            }
         }
     }
 

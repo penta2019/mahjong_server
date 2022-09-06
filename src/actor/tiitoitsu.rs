@@ -87,7 +87,7 @@ impl Actor for TiitoitsuBot {
 impl Listener for TiitoitsuBot {}
 
 pub fn count_left_tile(stg: &Stage, seat: Seat, tile: Tile) -> usize {
-    use TileStateType::*;
+    use TileState::*;
     let mut n = 0;
     for &st in &stg.tile_states[tile.0][tile.1] {
         match st {

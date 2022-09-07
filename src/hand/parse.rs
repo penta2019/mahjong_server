@@ -30,7 +30,7 @@ pub fn parse_melds(melds: &Vec<Meld>) -> ParsedHand {
         if t.1 == 0 {
             t.1 = 5;
         }
-        res.push(match m.type_ {
+        res.push(match m.meld_type {
             MeldType::Chi => SetPair(Chi, t),
             MeldType::Pon => SetPair(Pon, t),
             MeldType::Minkan | MeldType::Kakan => SetPair(Minkan, t),

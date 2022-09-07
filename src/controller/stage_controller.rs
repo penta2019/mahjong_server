@@ -262,7 +262,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             let m = Meld {
                 step: stg.step,
                 seat: s,
-                type_: event.meld_type,
+                meld_type: event.meld_type,
                 tiles,
                 froms,
             };
@@ -278,7 +278,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             let m = Meld {
                 step: stg.step,
                 seat: s,
-                type_: MeldType::Ankan,
+                meld_type: MeldType::Ankan,
                 tiles,
                 froms,
             };
@@ -297,7 +297,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             for m in &mut pl.melds {
                 if m.tiles[0] == t || m.tiles[1] == t {
                     m.step = stg.step;
-                    m.type_ = MeldType::Kakan;
+                    m.meld_type = MeldType::Kakan;
                     m.tiles.push(t);
                     m.froms.push(s);
                     break;

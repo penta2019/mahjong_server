@@ -240,7 +240,7 @@ impl MjaiEndpoint {
 
     fn notify_draw(&mut self, stg: &Stage, event: &EventDraw) {
         self.add_record(MjaiEvent::ryukyoku(
-            event.type_,
+            event.draw_type,
             &[false; SEAT],
             &[0; SEAT],
             &stg.get_scores(),

@@ -121,7 +121,7 @@ pub enum MeldType {
 pub struct Meld {
     pub step: usize,
     pub seat: Seat,
-    pub type_: MeldType,
+    pub meld_type: MeldType,
     pub tiles: Vec<Tile>,
     pub froms: Vec<Seat>,
 }

@@ -829,7 +829,7 @@ impl MahjongEngine {
         for s in 0..SEAT {
             for m in &self.get_stage().players[s].melds {
                 let mut k = 0;
-                match m.type_ {
+                match m.meld_type {
                     MeldType::Ankan | MeldType::Kakan | MeldType::Minkan => k += 1,
                     _ => {}
                 }

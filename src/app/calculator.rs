@@ -292,7 +292,7 @@ impl Calculator {
         if self.is_drawn {
             self.yaku_flags.menzentsumo = true;
             for m in &self.melds {
-                if m.type_ != MeldType::Ankan {
+                if m.meld_type != MeldType::Ankan {
                     self.yaku_flags.menzentsumo = false;
                 }
             }
@@ -420,7 +420,7 @@ fn meld_from_string(exp: &str, seat: Seat) -> Result<Meld, String> {
     Ok(Meld {
         step: 0,
         seat,
-        type_: meld_type,
+        meld_type,
         tiles,
         froms,
     })

@@ -122,7 +122,7 @@ fn check_kakan(stg: &Stage) -> Vec<Action> {
 
     let mut acts = vec![];
     for m in &pl.melds {
-        if m.type_ == MeldType::Pon {
+        if m.meld_type == MeldType::Pon {
             let t = m.tiles[0].to_normal();
             if pl.hand[t.0][t.1] != 0 {
                 acts.push(if t.is_suit() && t.1 == 5 && pl.hand[t.0][0] > 0 {

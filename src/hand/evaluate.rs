@@ -25,7 +25,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
         ..Default::default()
     };
     for m in &pl.melds {
-        if m.type_ != MeldType::Ankan {
+        if m.meld_type != MeldType::Ankan {
             yf.menzentsumo = false;
         }
     }

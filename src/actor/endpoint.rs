@@ -13,6 +13,7 @@ pub struct EndpointBuilder;
 
 #[derive(Debug, Default)]
 struct SharedData {
+    send_request: bool,
     msgs: Vec<Value>,
     cursor: usize,
     action: Option<Action>,
@@ -49,6 +50,7 @@ impl Endpoint {
         thread::spawn(move || loop {
             loop {
                 let mut d = arc1.lock().unwrap();
+                d.send_request = false;
                 match conn.recv() {
                     Message::Open => d.cursor = 0,
                     Message::Text(act) => {
@@ -69,7 +71,7 @@ impl Endpoint {
                     Message::NoConnection => break,
                 }
             }
-            sleep_ms(100);
+            sleep_ms(10);
         });
 
         Self {
@@ -115,14 +117,21 @@ impl Actor for Endpoint {
 
 impl Listener for Endpoint {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        let mut d = self.data.lock().unwrap();
-        let mut val = json!(event);
-        match event {
-            Event::New(_) => {
-                val["seat"] = json!(self.seat);
+        {
+            let mut d = self.data.lock().unwrap();
+            let mut val = json!(event);
+            match event {
+                Event::New(_) => {
+                    val["seat"] = json!(self.seat);
+                }
+                _ => {}
             }
-            _ => {}
+            d.msgs.push(val);
+            d.send_request = true;
         }
-        d.msgs.push(val);
+
+        while self.data.lock().unwrap().send_request {
+            sleep_ms(10); // pushしたデータが処理されるまで待機
+        }
     }
 }

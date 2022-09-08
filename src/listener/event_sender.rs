@@ -10,6 +10,7 @@ use crate::util::connection::{Connection, Message};
 
 #[derive(Debug, Default)]
 struct SharedData {
+    send_request: bool,
     msgs: Vec<Value>,
     cursor: usize,
 }
@@ -28,6 +29,7 @@ impl EventSender {
         thread::spawn(move || loop {
             loop {
                 let mut d = arc1.lock().unwrap();
+                d.send_request = false;
                 match conn.recv() {
                     Message::Open => d.cursor = 0,
                     Message::Text(_) => {}
@@ -42,7 +44,7 @@ impl EventSender {
                     Message::NoConnection => break,
                 }
             }
-            sleep_ms(100);
+            sleep_ms(10);
         });
 
         Self { data: arc0 }
@@ -51,12 +53,19 @@ impl EventSender {
 
 impl Listener for EventSender {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        let mut d = self.data.lock().unwrap();
-        if let Event::New(_) = event {
-            d.msgs.clear();
-            d.cursor = 0;
+        {
+            let mut d = self.data.lock().unwrap();
+            if let Event::New(_) = event {
+                d.msgs.clear();
+                d.cursor = 0;
+            }
+            d.msgs.push(json!(event));
+            d.send_request = true;
         }
-        d.msgs.push(json!(event));
+
+        while self.data.lock().unwrap().send_request {
+            sleep_ms(10); // pushしたデータが処理されるまで待機
+        }
     }
 }
 

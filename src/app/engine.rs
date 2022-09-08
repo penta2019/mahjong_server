@@ -672,27 +672,14 @@ impl MahjongEngine {
                         // 聴牌集計
                         let mut tenpais = [false; SEAT];
                         let mut n_tenpai = 0;
+                        let mut nagashimangan = false;
                         for s in 0..SEAT {
-                            tenpais[s] = !stg.players[s].win_tiles.is_empty();
+                            let pl = &stg.players[s];
+                            tenpais[s] = !pl.win_tiles.is_empty();
+                            nagashimangan |= pl.is_nagashimangan;
                             if tenpais[s] {
                                 n_tenpai += 1;
                             }
-                        }
-
-                        // 流局時の聴牌人数による得点変動
-                        let (pay, recv) = match n_tenpai {
-                            0 => (0, 0), // 全員ノーテン
-                            1 => (1000, 3000),
-                            2 => (1500, 1500),
-                            3 => (3000, 1000),
-                            4 => (0, 0), // 全員聴牌
-                            _ => panic!(),
-                        };
-
-                        // プレイヤーごとの得点変動
-                        let mut d_scores = [0; SEAT];
-                        for s in 0..SEAT {
-                            d_scores[s] = if tenpais[s] { recv } else { -pay };
                         }
 
                         let mut hands = [vec![], vec![], vec![], vec![]];
@@ -702,13 +689,58 @@ impl MahjongEngine {
                             }
                         }
 
-                        let event = Event::draw(DrawType::Kouhaiheikyoku, hands, d_scores);
+                        // プレイヤーごとの得点変動
+                        let mut d_scores = [0; SEAT];
+                        let mut nm_scores = [0; SEAT]; // 流し満貫スコア
+                        if nagashimangan {
+                            // 流し満貫スコア集計
+                            for s_nm in 0..SEAT {
+                                if stg.players[s_nm].is_nagashimangan {
+                                    if stg.is_dealer(s_nm) {
+                                        nm_scores[s_nm] = 12000;
+                                        for s in 0..SEAT {
+                                            if s_nm != s {
+                                                d_scores[s] -= 4000;
+                                            }
+                                        }
+                                    } else {
+                                        nm_scores[s_nm] = 8000;
+                                        for s in 0..SEAT {
+                                            if s_nm != s {
+                                                if stg.is_dealer(s) {
+                                                    d_scores[s] -= 4000;
+                                                } else {
+                                                    d_scores[s] -= 2000;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // 流局時の聴牌人数による得点変動
+                            let (pay, recv) = match n_tenpai {
+                                0 => (0, 0), // 全員ノーテン
+                                1 => (1000, 3000),
+                                2 => (1500, 1500),
+                                3 => (3000, 1000),
+                                4 => (0, 0), // 全員聴牌
+                                _ => panic!(),
+                            };
+
+                            for s in 0..SEAT {
+                                d_scores[s] = if tenpais[s] { recv } else { -pay };
+                            }
+                        }
+
+                        let event =
+                            Event::draw(DrawType::Kouhaiheikyoku, hands, d_scores, nm_scores);
                         self.handle_event(event);
                         need_dealer_change = !tenpais[kyoku];
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
-                        let event = Event::draw(*type_, hands, [0; SEAT]);
+                        let event = Event::draw(*type_, hands, [0; SEAT], [0; SEAT]);
                         self.handle_event(event);
                     }
                 }

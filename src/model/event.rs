@@ -89,11 +89,17 @@ impl Event {
     }
 
     #[inline]
-    pub fn draw(draw_type: DrawType, hands: [Vec<Tile>; SEAT], points: [Point; SEAT]) -> Self {
+    pub fn draw(
+        draw_type: DrawType,
+        hands: [Vec<Tile>; SEAT],
+        delta_scores: [Point; SEAT],
+        nagashimangan_scores: [Point; SEAT],
+    ) -> Self {
         Self::Draw(EventDraw {
             draw_type,
             hands,
-            points,
+            delta_scores,
+            nagashimangan_scores,
         })
     }
 
@@ -161,7 +167,8 @@ pub struct EventWin {
 pub struct EventDraw {
     pub draw_type: DrawType,
     pub hands: [Vec<Tile>; SEAT], // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
-    pub points: [Point; SEAT],    // 聴牌,流し満貫による点数変動
+    pub delta_scores: [Point; SEAT], // 聴牌,流し満貫による点数変動
+    pub nagashimangan_scores: [Point; SEAT], // 流し満貫のスコア (該当者がいない場合すべて0)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

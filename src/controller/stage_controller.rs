@@ -360,7 +360,7 @@ fn event_win(stg: &mut Stage, event: &EventWin) {
 }
 
 fn event_draw(stg: &mut Stage, event: &EventDraw) {
-    update_scores(stg, &event.points);
+    update_scores(stg, &event.delta_scores);
 }
 
 fn event_end(_stg: &mut Stage, _event: &EventEnd) {}

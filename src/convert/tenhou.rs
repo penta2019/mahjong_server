@@ -219,7 +219,7 @@ impl TenhouSerializer {
                 // TODO
                 k.result = "流局".to_string();
                 k.result_detail
-                    .push(e.points.iter().map(|&p| json!(p)).collect());
+                    .push(e.delta_scores.iter().map(|&p| json!(p)).collect());
             }
             Event::End(_) => {}
         }

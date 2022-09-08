@@ -495,7 +495,7 @@ impl Mahjongsoul {
 
     fn handler_hule(&mut self, data: &Value) {
         let mut d_scores = [0; SEAT];
-        for (s, score) in as_enumerate(&data["d_scores"]) {
+        for (s, score) in as_enumerate(&data["delta_scores"]) {
             d_scores[s] = as_i32(score);
         }
 
@@ -567,7 +567,8 @@ impl Mahjongsoul {
     fn handler_liuju(&mut self, data: &Value) {
         let mut type_ = DrawType::Unknown;
         let mut hands = [vec![], vec![], vec![], vec![]];
-        let points = [0; 4];
+        let d_scores = [0; 4];
+        let nm_scores = [0; 4];
         match as_usize(&data["type"]) {
             1 => {
                 // 九種九牌
@@ -594,14 +595,15 @@ impl Mahjongsoul {
             _ => {}
         }
 
-        self.handle_event(Event::draw(type_, hands, points));
+        self.handle_event(Event::draw(type_, hands, d_scores, nm_scores));
     }
 
     fn handler_notile(&mut self, data: &Value) {
-        let mut points = [0; SEAT];
-        if let Some(ds) = &data["scores"][0]["d_scores"].as_array() {
+        let mut d_scores = [0; SEAT];
+        let nm_scores = [0; 4]; // TODO
+        if let Some(ds) = &data["scores"][0]["delta_scores"].as_array() {
             for (s, score) in ds.iter().enumerate() {
-                points[s] = as_i32(score);
+                d_scores[s] = as_i32(score);
             }
         }
 
@@ -614,7 +616,12 @@ impl Mahjongsoul {
             }
         }
 
-        self.handle_event(Event::draw(DrawType::Kouhaiheikyoku, hands, points));
+        self.handle_event(Event::draw(
+            DrawType::Kouhaiheikyoku,
+            hands,
+            d_scores,
+            nm_scores,
+        ));
     }
 }
 

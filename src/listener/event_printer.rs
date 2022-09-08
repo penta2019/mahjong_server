@@ -55,7 +55,7 @@ impl Listener for StagePrinter {
                 println!("[Draw]");
                 println!("{:?}", e.draw_type);
                 println!("tenpai hand: {:?}", &e.hands);
-                self.print_score_change(stg, &e.points);
+                self.print_score_change(stg, &e.delta_scores);
                 println!("{}", stg);
             }
             Event::End(_) => {

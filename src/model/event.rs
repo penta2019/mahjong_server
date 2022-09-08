@@ -29,6 +29,7 @@ impl Event {
         doras: Vec<Tile>,
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
+        wall_count: usize,
         mode: usize,
     ) -> Self {
         Self::New(EventNew {
@@ -39,6 +40,7 @@ impl Event {
             doras,
             scores,
             hands,
+            wall_count,
             mode,
         })
     }
@@ -86,16 +88,10 @@ impl Event {
     }
 
     #[inline]
-    pub fn draw(
-        draw_type: DrawType,
-        hands: [Vec<Tile>; SEAT],
-        tenpais: [bool; SEAT],
-        points: [Point; SEAT],
-    ) -> Self {
+    pub fn draw(draw_type: DrawType, hands: [Vec<Tile>; SEAT], points: [Point; SEAT]) -> Self {
         Self::Draw(EventDraw {
             draw_type,
             hands,
-            tenpais,
             points,
         })
     }
@@ -111,35 +107,36 @@ pub struct EventBegin {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventNew {
-    pub bakaze: usize,
-    pub kyoku: usize,
-    pub honba: usize,
-    pub kyoutaku: usize,
-    pub doras: Vec<Tile>,
-    pub scores: [Score; SEAT],
-    pub hands: [Vec<Tile>; SEAT],
-    pub mode: usize, // 1: 4人東, 2: 4人南
+    pub bakaze: usize,            // 場風
+    pub kyoku: usize,             // 局
+    pub honba: usize,             // 本場
+    pub kyoutaku: usize,          // 供託(リーチ棒)
+    pub doras: Vec<Tile>,         // ドラ表示牌
+    pub scores: [Score; SEAT],    // 各プレイヤーの所持点
+    pub hands: [Vec<Tile>; SEAT], // 各プレイヤーの手牌(親:14枚, 子:13枚)
+    pub wall_count: usize,        // 牌山残り枚数
+    pub mode: usize,              // 1: 4人東, 2: 4人南
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventDeal {
     pub seat: Seat,
-    pub tile: Tile,
+    pub tile: Tile, // ツモ牌
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventDiscard {
     pub seat: Seat,
     pub tile: Tile,
-    pub is_drawn: bool,
-    pub is_riichi: bool,
+    pub is_drawn: bool,  // ツモ切り
+    pub is_riichi: bool, // リーチ宣言
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventMeld {
     pub seat: Seat,
-    pub meld_type: MeldType,
-    pub consumed: Vec<Tile>,
+    pub meld_type: MeldType, // 鳴き種別
+    pub consumed: Vec<Tile>, // 手牌から消費される牌
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -155,16 +152,15 @@ pub struct EventDora {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventWin {
-    pub ura_doras: Vec<Tile>,
+    pub ura_doras: Vec<Tile>, // 裏ドラ表示牌
     pub contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventDraw {
     pub draw_type: DrawType,
-    pub hands: [Vec<Tile>; SEAT],
-    pub tenpais: [bool; SEAT],
-    pub points: [Point; SEAT],
+    pub hands: [Vec<Tile>; SEAT], // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
+    pub points: [Point; SEAT],    // 聴牌,流し満貫による点数変動
 }
 
 #[derive(Debug, Serialize, Deserialize)]

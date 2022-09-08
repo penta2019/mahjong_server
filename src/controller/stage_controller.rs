@@ -75,7 +75,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
     stg.honba = event.honba;
     stg.kyoutaku = event.kyoutaku;
     stg.turn = event.kyoku;
-    stg.left_tile_count = 69;
+    stg.wall_count = event.wall_count;
     stg.doras = event.doras.clone();
     update_scores(stg, &event.scores);
 
@@ -99,6 +99,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
                 player_inc_tile(pl, ph[13]);
             }
         } else {
+            // 手牌が見えない場合,牌すべてz8(不明な牌)になる
             if s == event.kyoku {
                 pl.drawn = Some(Z8);
             }
@@ -132,7 +133,7 @@ fn event_deal(stg: &mut Stage, event: &EventDeal) {
     }
 
     stg.turn = s;
-    stg.left_tile_count -= 1;
+    stg.wall_count -= 1;
 
     let pl = &mut stg.players[s];
     pl.drawn = Some(t);
@@ -398,8 +399,7 @@ fn update_after_discard_completed(stg: &mut Stage) {
 
 fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
     for s in 0..SEAT {
-        let mut pl = &mut stg.players[s];
-        pl.score += points[s];
+        stg.players[s].score += points[s];
     }
 
     let scores = stg.players.iter().map(|pl| pl.score).collect();

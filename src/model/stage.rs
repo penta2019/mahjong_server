@@ -9,7 +9,7 @@ pub struct Stage {
     pub kyoutaku: usize,                             // リーチ棒の供託
     pub turn: Seat,                                  // ツモ番のプレイヤーの座席
     pub step: usize,                                 // ステップ op関数を呼び出す毎に+1する
-    pub left_tile_count: usize,                      // 牌山の残り枚数
+    pub wall_count: usize,                           // 牌山の残り枚数
     pub doras: Vec<Tile>,                            // ドラ表示牌
     pub discards: Vec<(Seat, Index)>,                // プレイヤー全員の捨て牌
     pub last_tile: Option<(Seat, ActionType, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
@@ -53,9 +53,9 @@ impl fmt::Display for Stage {
         )?;
         writeln!(
             f,
-            "turn: {}, left_tile_count: {}, doras: {}, last_tile: {:?}",
+            "turn: {}, wall_count: {}, doras: {}, last_tile: {:?}",
             self.turn,
-            self.left_tile_count,
+            self.wall_count,
             vec_to_string(&self.doras),
             self.last_tile,
         )?;

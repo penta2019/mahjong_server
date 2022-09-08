@@ -6,7 +6,7 @@ use crate::hand::*;
 use crate::listener::*;
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::connection::{TcpConnection, WsConnection};
+use crate::util::connection::TcpConnection;
 
 use crate::{error, warn};
 
@@ -103,8 +103,8 @@ impl EngineApp {
     fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StagePrinter::new()));
-        let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
-        listeners.push(Box::new(StageSender::new(Box::new(conn))));
+        // let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
+        // listeners.push(Box::new(StageSender::new(Box::new(conn))));
         ///////////////////////////////////////////////////////////////////////
         let conn = TcpConnection::new("127.0.0.1:52999");
         listeners.push(Box::new(EventSender::new(Box::new(conn))));
@@ -235,7 +235,7 @@ struct MahjongEngine {
     kyoku_next: NextKyokuInfo,
     is_end: bool,
     // 牌山
-    wall: Vec<Tile>,             // 牌山全体
+    wall: Vec<Tile>,             // 牌山全体 (=136)
     dora_wall: Vec<Tile>,        // ドラ表示牌
     ura_dora_wall: Vec<Tile>,    // 裏ドラ
     replacement_wall: Vec<Tile>, // 嶺上牌
@@ -336,15 +336,13 @@ impl MahjongEngine {
         self.ura_dora_wall = vec![];
         self.replacement_wall = vec![];
 
-        let is_3p = false;
-
         // 山の初期化
         self.wall = create_wall(self.rng.next_u64());
 
         // 王牌
         self.dora_wall = self.draw_tiles(5); // 槓ドラ
         self.ura_dora_wall = self.draw_tiles(5); // 裏ドラ
-        self.replacement_wall = self.draw_tiles(if is_3p { 8 } else { 4 }); // 嶺上牌
+        self.replacement_wall = self.draw_tiles(4); // 嶺上牌
 
         // プレイヤーの手牌生成
         let mut ph = [vec![], vec![], vec![], vec![]];
@@ -370,6 +368,7 @@ impl MahjongEngine {
             doras,
             rn.scores,
             ph,
+            self.wall.len() - self.n_deal,
             self.mode,
         );
         self.handle_event(event);
@@ -564,7 +563,7 @@ impl MahjongEngine {
                 _ => panic!(),
             }
         } else {
-            if stg.left_tile_count > 0 {
+            if stg.wall_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
                 self.handle_event(Event::deal(s, t));
@@ -572,7 +571,7 @@ impl MahjongEngine {
                 self.kyoku_result = Some(KyokuResult::Draw(DrawType::Kouhaiheikyoku));
             }
         }
-        assert!(self.get_stage().left_tile_count + self.n_deal + self.n_kan == self.wall.len());
+        assert!(self.get_stage().wall_count + self.n_deal + self.n_kan == self.wall.len());
     }
 
     fn do_event_win_draw(&mut self) {
@@ -701,13 +700,13 @@ impl MahjongEngine {
                             }
                         }
 
-                        let event = Event::draw(DrawType::Kouhaiheikyoku, hands, tenpais, d_scores);
+                        let event = Event::draw(DrawType::Kouhaiheikyoku, hands, d_scores);
                         self.handle_event(event);
                         need_dealer_change = !tenpais[kyoku];
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
-                        let event = Event::draw(*type_, hands, [false; SEAT], [0; SEAT]);
+                        let event = Event::draw(*type_, hands, [0; SEAT]);
                         self.handle_event(event);
                     }
                 }
@@ -780,7 +779,7 @@ impl MahjongEngine {
 
     fn check_suufuurenda(&mut self) {
         let stg = self.get_stage();
-        if stg.left_tile_count != 66 {
+        if stg.wall_count != 66 {
             return;
         }
 

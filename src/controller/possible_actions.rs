@@ -27,7 +27,7 @@ pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<
 }
 
 fn check_riichi(stg: &Stage) -> Vec<Action> {
-    if stg.left_tile_count < 4 {
+    if stg.wall_count < 4 {
         return vec![];
     }
 
@@ -62,7 +62,7 @@ fn check_tsumo(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_ankan(stg: &Stage) -> Vec<Action> {
-    if stg.left_tile_count == 0 || stg.doras.len() == 5 {
+    if stg.wall_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
 
@@ -111,7 +111,7 @@ fn check_ankan(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_kakan(stg: &Stage) -> Vec<Action> {
-    if stg.left_tile_count == 0 || stg.doras.len() == 5 {
+    if stg.wall_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
 
@@ -176,7 +176,7 @@ fn check_kita(stg: &Stage) -> Vec<Action> {
     }
 
     //　海底不可
-    if stg.left_tile_count == 0 {
+    if stg.wall_count == 0 {
         return vec![];
     }
 
@@ -217,7 +217,7 @@ pub fn calc_possible_call_actions(stg: &Stage, can_meld: bool) -> [Vec<Action>; 
 }
 
 fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
-    if stg.left_tile_count == 0 {
+    if stg.wall_count == 0 {
         return vec![];
     }
 
@@ -259,7 +259,7 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
 }
 
 fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
-    if stg.left_tile_count == 0 {
+    if stg.wall_count == 0 {
         return vec![];
     }
 
@@ -292,7 +292,7 @@ fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
 }
 
 fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
-    if stg.left_tile_count == 0 || stg.doras.len() == 5 {
+    if stg.wall_count == 0 || stg.doras.len() == 5 {
         return vec![];
     }
 

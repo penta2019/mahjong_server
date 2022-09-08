@@ -387,8 +387,9 @@ impl Mahjongsoul {
         let kyoku = as_usize(&data["ju"]);
         let honba = as_usize(&data["ben"]);
         let kyoutaku = as_usize(&data["liqibang"]);
-        let mode = as_usize(&data["mode"]);
         let doras = tiles_from_mjsoul(&data["doras"]);
+        let wall = as_usize(&data["left_tile_count"]);
+        let mode = as_usize(&data["mode"]);
 
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["scores"]) {
@@ -415,7 +416,7 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::new(
-            bakaze, kyoku, honba, kyoutaku, doras, scores, hands, mode,
+            bakaze, kyoku, honba, kyoutaku, doras, scores, hands, wall, mode,
         ));
     }
 
@@ -566,7 +567,6 @@ impl Mahjongsoul {
     fn handler_liuju(&mut self, data: &Value) {
         let mut type_ = DrawType::Unknown;
         let mut hands = [vec![], vec![], vec![], vec![]];
-        let tenpais = [false; 4];
         let points = [0; 4];
         match as_usize(&data["type"]) {
             1 => {
@@ -594,7 +594,7 @@ impl Mahjongsoul {
             _ => {}
         }
 
-        self.handle_event(Event::draw(type_, hands, tenpais, points));
+        self.handle_event(Event::draw(type_, hands, points));
     }
 
     fn handler_notile(&mut self, data: &Value) {
@@ -614,12 +614,7 @@ impl Mahjongsoul {
             }
         }
 
-        self.handle_event(Event::draw(
-            DrawType::Kouhaiheikyoku,
-            hands,
-            tenpais,
-            points,
-        ));
+        self.handle_event(Event::draw(DrawType::Kouhaiheikyoku, hands, points));
     }
 }
 

@@ -18,7 +18,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
         riichi: pl.is_riichi && !pl.is_daburii,
         dabururiichi: pl.is_daburii,
         ippatsu: pl.is_ippatsu,
-        haiteiraoyue: stg.left_tile_count == 0,
+        haiteiraoyue: stg.wall_count == 0,
         rinshankaihou: pl.is_rinshan,
         tenhou: false, // TODO
         tiihou: false, // TODO
@@ -93,7 +93,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
         ..Default::default()
     };
     match tp {
-        ActionType::Discard => yf.houteiraoyui = stg.left_tile_count == 0,
+        ActionType::Discard => yf.houteiraoyui = stg.wall_count == 0,
         ActionType::Kakan => yf.chankan = true,
         ActionType::Ankan => {
             if parse_into_kokusimusou_win(&hand).is_empty() {

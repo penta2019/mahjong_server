@@ -276,6 +276,7 @@ pub enum Action {
 ### 変数名省略
 n_*: number of *
 i_*: index of *
+d_*: delta of *
 stg: stage  
 ti: Tile type index  
 ni: Tile number index  

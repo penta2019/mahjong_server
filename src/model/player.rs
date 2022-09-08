@@ -20,22 +20,12 @@ pub struct Player {
     pub is_furiten_other: bool, // 他家の捨て牌の見逃しによるフリテン
 
     // 条件役用のフラグ 天和,地和,海底など和了のタイミングで発生する役はここに含まない
-    pub is_menzen: bool,  // 門前ツモ
-    pub is_riichi: bool,  // リーチ (ダブルリーチを含む)
-    pub is_daburii: bool, // ダブルリーチ
-    pub is_ippatsu: bool, // 一発 立直後にセットして次の打牌または他家の鳴きでfalseをセット
-    pub is_rinshan: bool, // 槓の操作中にtrueをセット 打牌でfalseをセット
-}
-
-impl Player {
-    pub fn count_tile(&self, t: Tile) -> usize {
-        let h = &self.hand;
-        if t.1 == 5 {
-            h[t.0][t.1] - h[t.0][0]
-        } else {
-            h[t.0][t.1]
-        }
-    }
+    pub is_menzen: bool,        // 門前ツモ
+    pub is_riichi: bool,        // リーチ (ダブルリーチを含む)
+    pub is_daburii: bool,       // ダブルリーチ
+    pub is_ippatsu: bool,       // 一発 立直後にセットして次の打牌または他家の鳴きでfalseをセット
+    pub is_rinshan: bool,       // 槓の操作中にtrueをセット 打牌でfalseをセット
+    pub is_nagashimangan: bool, // 初期値としてtrueをセット, 中張牌や他家に鳴かれたらfalseをセット
 }
 
 impl fmt::Display for Player {
@@ -78,6 +68,17 @@ impl fmt::Display for Player {
         writeln!(f, "hand: {}", hand)?;
         writeln!(f, "melds: {}", melds)?;
         write!(f, "discards: {}", discards)
+    }
+}
+
+impl Player {
+    pub fn count_tile(&self, t: Tile) -> usize {
+        let h = &self.hand;
+        if t.1 == 5 {
+            h[t.0][t.1] - h[t.0][0]
+        } else {
+            h[t.0][t.1]
+        }
     }
 }
 

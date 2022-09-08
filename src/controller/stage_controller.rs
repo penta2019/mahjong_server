@@ -86,6 +86,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
         pl.seat = s;
         pl.is_shown = !ph.is_empty() && !ph.contains(&Z8);
         pl.is_menzen = true;
+        pl.is_nagashimangan = true;
 
         if pl.is_shown {
             for &t in &ph[..13] {
@@ -155,7 +156,9 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
     stg.turn = s;
     let pl = &mut stg.players[s];
     pl.is_rinshan = false;
-
+    if t.is_simple() {
+        pl.is_nagashimangan = false;
+    }
     if pl.is_shown {
         assert!(pl.count_tile(t) > 0, "{} not found in hand", t);
     }
@@ -270,6 +273,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             let &(prev_s, prev_i) = stg.discards.last().unwrap();
             stg.players[prev_s].discards[prev_i].meld = Some((s, idx));
             stg.players[s].melds.push(m);
+            stg.players[prev_s].is_nagashimangan = false;
         }
         MeldType::Ankan => {
             pl.is_rinshan = true;

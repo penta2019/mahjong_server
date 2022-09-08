@@ -16,6 +16,7 @@ pub enum Event {
 }
 
 impl Event {
+    #[inline]
     pub fn begin() -> Self {
         Self::Begin(EventBegin {})
     }

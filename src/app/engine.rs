@@ -132,8 +132,8 @@ impl EngineApp {
         let mut n_game_end = 0;
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
-        let mut total_score_delta = [0; SEAT];
-        let mut total_rank_sum = [0; SEAT];
+        let mut sum_delta_scores = [0; SEAT];
+        let mut sum_ranks = [0; SEAT];
         loop {
             if n_game < self.n_game && n_thread < self.n_thread {
                 n_game += 1;
@@ -170,8 +170,8 @@ impl EngineApp {
                         let pl = &game.get_stage().players[s];
                         let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
-                        total_score_delta[i] += score - game.initial_score;
-                        total_rank_sum[i] += rank;
+                        sum_delta_scores[i] += score - game.initial_score;
+                        sum_ranks[i] += rank;
                         print!(", ac{}:{:5}({})", i, score, rank);
                     }
                     println!();
@@ -188,10 +188,10 @@ impl EngineApp {
             if n_thread == 0 && n_game == self.n_game {
                 for i in 0..SEAT {
                     println!(
-                        "ac{} avg_rank: {:.2}, avg_score_delta: {:6}",
+                        "ac{} avg_rank: {:.2}, avg_delta_score: {:6}",
                         i,
-                        total_rank_sum[i] as f32 / n_game as f32,
-                        total_score_delta[i] / n_game as i32,
+                        sum_ranks[i] as f32 / n_game as f32,
+                        sum_delta_scores[i] / n_game as i32,
                     );
                 }
                 break;
@@ -390,7 +390,9 @@ impl MahjongEngine {
             sleep_ms(10);
         };
 
-        assert!(act.0 == Discard || acts.contains(&act));
+        if act.0 != Discard {
+            assert!(acts.contains(&act))
+        }
         let Action(tp, cs) = act.clone();
         self.melding = None;
 

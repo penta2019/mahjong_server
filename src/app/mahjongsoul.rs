@@ -494,9 +494,9 @@ impl Mahjongsoul {
     }
 
     fn handler_hule(&mut self, data: &Value) {
-        let mut delta_scores = [0; SEAT];
-        for (s, score) in as_enumerate(&data["delta_scores"]) {
-            delta_scores[s] = as_i32(score);
+        let mut d_scores = [0; SEAT];
+        for (s, score) in as_enumerate(&data["d_scores"]) {
+            d_scores[s] = as_i32(score);
         }
 
         let mut ura_doras = vec![];
@@ -552,9 +552,9 @@ impl Mahjongsoul {
                 yakuman_count,
                 score_title,
             };
-            wins.push((s, delta_scores, ctx));
+            wins.push((s, d_scores, ctx));
 
-            delta_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
+            d_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
 
             if let Value::Array(_) = win["li_doras"] {
                 ura_doras = tiles_from_mjsoul(&win["li_doras"]);
@@ -599,7 +599,7 @@ impl Mahjongsoul {
 
     fn handler_notile(&mut self, data: &Value) {
         let mut points = [0; SEAT];
-        if let Some(ds) = &data["scores"][0]["delta_scores"].as_array() {
+        if let Some(ds) = &data["scores"][0]["d_scores"].as_array() {
             for (s, score) in ds.iter().enumerate() {
                 points[s] = as_i32(score);
             }

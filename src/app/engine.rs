@@ -390,7 +390,14 @@ impl MahjongEngine {
             sleep_ms(10);
         };
 
-        if act.0 != Discard {
+        let mut restricted_discards = None;
+        if act.0 == Discard {
+            for a in &acts {
+                if a.0 == Discard {
+                    restricted_discards = Some(&a.1);
+                }
+            }
+        } else {
             assert!(acts.contains(&act))
         }
         let Action(tp, cs) = act.clone();
@@ -400,12 +407,19 @@ impl MahjongEngine {
         match tp {
             Nop => {
                 // 打牌: ツモ切り
-                let drawn = stg.players[turn].drawn.unwrap();
-                self.handle_event(Event::discard(turn, drawn, true, false));
+                let t = stg.players[turn].drawn.unwrap();
+                assert!(!restricted_discards.unwrap().contains(&t));
+                self.handle_event(Event::discard(turn, t, true, false));
             }
             Discard => {
                 // 打牌: ツモ切り以外
-                self.handle_event(Event::discard(turn, cs[0], false, false))
+                let (t, m) = if cs.len() == 0 {
+                    (stg.players[turn].drawn.unwrap(), true)
+                } else {
+                    (cs[0], false)
+                };
+                assert!(!restricted_discards.unwrap().contains(&t));
+                self.handle_event(Event::discard(turn, t, m, false))
             }
             Ankan => {
                 self.melding = Some(act);
@@ -416,9 +430,15 @@ impl MahjongEngine {
                 self.handle_event(Event::meld(turn, MeldType::Kakan, cs));
             }
             Riichi => {
-                let t = cs[0];
                 let pl = &stg.players[turn];
-                let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
+                let (t, m) = if cs.len() == 0 {
+                    // 明示的なツモ切りリーチ
+                    (pl.drawn.unwrap(), true)
+                } else {
+                    let t = cs[0];
+                    let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
+                    (t, m)
+                };
                 self.handle_event(Event::discard(turn, t, m, true));
             }
             Tsumo => {

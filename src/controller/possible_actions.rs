@@ -9,7 +9,7 @@ pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<
     if let Some(act) = melding {
         if act.0 == ActionType::Chi || act.0 == ActionType::Pon {
             // チー,ポンのあとは打牌のみ
-            return vec![Action(ActionType::Discard, calc_prohibited_discards(act))];
+            return vec![Action(ActionType::Discard, calc_restricted_discards(act))];
         }
     }
 
@@ -326,7 +326,7 @@ fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
 }
 
 // 鳴き後の組み換え禁止の牌
-fn calc_prohibited_discards(act: &Action) -> Vec<Tile> {
+fn calc_restricted_discards(act: &Action) -> Vec<Tile> {
     let mut v = vec![];
     let Action(tp, cs) = act;
     match tp {
@@ -360,14 +360,12 @@ fn calc_prohibited_discards(act: &Action) -> Vec<Tile> {
         _ => return vec![],
     }
 
-    let mut has5 = false;
+    // 組み換え禁止の牌のなかに5がある場合, 赤5も追加
     for t in &v {
         if t.is_suit() && t.1 == 5 {
-            has5 = true;
+            v.push(Tile(v[0].0, 0));
+            break;
         }
-    }
-    if has5 {
-        v.push(Tile(v[0].0, 0));
     }
 
     v

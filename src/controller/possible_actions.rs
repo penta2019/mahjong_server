@@ -36,24 +36,23 @@ fn check_riichi(stg: &Stage) -> Vec<Action> {
         return vec![];
     }
 
-    let mut acts = vec![];
-    let mut f = TileTable::default();
     let ds1 = calc_discards_to_normal_tenpai(&pl.hand);
     let ds2 = calc_discards_to_chiitoitsu_tenpai(&pl.hand);
     let ds3 = calc_discards_to_kokushimusou_tenpai(&pl.hand);
+    let mut tiles = vec![];
     for ds in [ds1, ds2, ds3] {
         for (d, _) in ds {
-            if f[d.0][d.1] == 0 {
-                f[d.0][d.1] += 1;
-                acts.push(Action::riichi(d));
-                if pl.drawn == Some(d) {
-                    acts.push(Action::riichi_drawn()); // 明示的なツモ切りリーチ
-                }
-            }
+            tiles.push(d);
         }
     }
+    tiles.sort();
+    tiles.dedup();
 
-    acts
+    if tiles.is_empty() {
+        vec![]
+    } else {
+        vec![Action(ActionType::Riichi, tiles)]
+    }
 }
 
 fn check_tsumo(stg: &Stage) -> Vec<Action> {

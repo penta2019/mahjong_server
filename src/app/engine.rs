@@ -388,44 +388,26 @@ impl MahjongEngine {
             sleep_ms(10);
         };
 
-        let mut restricted_discards = None;
-        if act.0 == Discard {
-            for a in &acts {
-                if a.0 == Discard {
-                    restricted_discards = Some(&a.1);
-                }
-            }
-        } else {
-            assert!(acts.contains(&act))
-        }
         let Action(tp, cs) = act.clone();
         self.melding = None;
+
+        match tp {
+            Discard | Riichi => {}             // 後で個別にチェック
+            _ => assert!(acts.contains(&act)), // 選択されたActionが有効であることを検証
+        }
 
         let stg = self.get_stage();
         match tp {
             Nop => {
                 // 打牌: ツモ切り
                 let t = stg.players[turn].drawn.unwrap();
-                assert!(!restricted_discards.unwrap().contains(&t));
                 self.handle_event(Event::discard(turn, t, true, false));
             }
             Discard => {
                 // 打牌: ツモ切り以外
-                let (t, m) = if cs.len() == 0 {
-                    (stg.players[turn].drawn.unwrap(), true)
-                } else {
-                    (cs[0], false)
-                };
-                assert!(!restricted_discards.unwrap().contains(&t));
-                self.handle_event(Event::discard(turn, t, m, false))
-            }
-            Ankan => {
-                self.melding = Some(act);
-                self.handle_event(Event::meld(turn, MeldType::Ankan, cs));
-            }
-            Kakan => {
-                self.melding = Some(act);
-                self.handle_event(Event::meld(turn, MeldType::Kakan, cs));
+                let t = cs[0];
+                assert!(!acts.iter().find(|a| a.0 == Discard).unwrap().1.contains(&t));
+                self.handle_event(Event::discard(turn, t, false, false))
             }
             Riichi => {
                 let pl = &stg.players[turn];
@@ -437,7 +419,16 @@ impl MahjongEngine {
                     let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
                     (t, m)
                 };
+                assert!(acts.iter().find(|a| a.0 == Riichi).unwrap().1.contains(&t));
                 self.handle_event(Event::discard(turn, t, m, true));
+            }
+            Ankan => {
+                self.melding = Some(act);
+                self.handle_event(Event::meld(turn, MeldType::Ankan, cs));
+            }
+            Kakan => {
+                self.melding = Some(act);
+                self.handle_event(Event::meld(turn, MeldType::Kakan, cs));
             }
             Tsumo => {
                 self.kyoku_result = Some(KyokuResult::Tsumo);

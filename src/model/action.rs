@@ -2,13 +2,18 @@ use super::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionType {
+    // Controller側から提供されるDiscard(打牌)の配列は鳴き後に捨てられない牌の一覧
+    // 打牌は空切り優先. 明示的にツモ切りを行いたい場合Nopを返す Action(Nop, [])
+    // Controller側から提供されるRiichi(リーチ)の配列はリーチ宣言可能な牌の一覧
+    // リーチは空切り優先. 明示的にツモ切りリーチを行いたい場合は空の配列を返す Action(Riichi, [])
+    // DiscardとRiichi以外は提供されたActionの配列から厳密に同じものを返却
     Nop, // Turn: ツモ切り(主にリーチ中), Call: 鳴き,ロンのスキップ
 
     // Turn Actions
-    Discard,      // 打牌 (ゲーム側から提供される配列は鳴き後に捨てられない配)
+    Discard,      // 打牌
+    Riichi,       // リーチ
     Ankan,        // 暗槓
     Kakan,        // 加槓
-    Riichi,       // リーチ (明示的にツモ切りリーチを行いたい場合,配列は空にする)
     Tsumo,        // ツモ
     Kyushukyuhai, // 九種九牌
     Kita,         // 北抜き
@@ -34,11 +39,6 @@ impl Action {
     #[inline]
     pub fn discard(t: Tile) -> Self {
         Self(ActionType::Discard, vec![t])
-    }
-
-    #[inline]
-    pub fn discard_drawn() -> Self {
-        Self(ActionType::Discard, vec![])
     }
 
     #[inline]

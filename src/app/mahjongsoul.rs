@@ -340,7 +340,12 @@ impl Mahjongsoul {
                 format!("action_gang({})", arg_idx)
             }
             Riichi => {
-                let idx = calc_dapai_index(stg, s, cs[0], false);
+                let (t, m) = if cs.len() == 0 {
+                    (stg.players[stg.turn].drawn.unwrap(), true)
+                } else {
+                    (cs[0], false)
+                };
+                let idx = calc_dapai_index(stg, s, t, m);
                 format!("action_lizhi({})", idx)
             }
             Tsumo => {
@@ -754,9 +759,13 @@ fn parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
             }
             7 => {
                 // リーチ
-                for (idx, comb) in parse_combination(combs).iter().enumerate() {
-                    push(Action::riichi(comb[0]), idx);
-                }
+                push(
+                    Action(
+                        ActionType::Riichi,
+                        parse_combination(combs).iter().map(|x| x[0]).collect(),
+                    ),
+                    0,
+                );
             }
             8 => {
                 // ツモ

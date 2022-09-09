@@ -4,6 +4,7 @@ use crate::util::common::prompt;
 use crate::error;
 
 pub struct ManualBuilder;
+use ActionType::*;
 
 impl ActorBuilder for ManualBuilder {
     fn get_default_config(&self) -> Config {
@@ -52,7 +53,11 @@ impl Actor for Manual {
             println!("{} => {:?}", idx, act);
         }
 
+        let mut riichi = false;
         loop {
+            if riichi {
+                print!("riichi ");
+            }
             let buf = prompt();
             let mut chars = buf.chars();
             let c = if let Some(c) = chars.next() {
@@ -93,8 +98,29 @@ impl Actor for Manual {
                         continue;
                     }
 
-                    println!();
-                    return Some(Action::discard(Tile(ti, ni)));
+                    if riichi {
+                        if let Some(a) = acts.iter().find(|a| a.0 == Riichi) {
+                            if a.1.contains(&t) {
+                                println!();
+                                return Some(Action::riichi(t));
+                            } else {
+                                error!("invalid Riichi tile");
+                            }
+                        } else {
+                            assert!(false);
+                        }
+                    } else {
+                        if let Some(a) = acts.iter().find(|a| a.0 == Discard) {
+                            if !a.1.contains(&t) {
+                                println!();
+                                return Some(Action::discard(t));
+                            } else {
+                                error!("restricted tile after Chi or Pon");
+                            }
+                        } else {
+                            error!("Discard is not allowed");
+                        }
+                    }
                 }
                 '!' => {
                     match &buf[1..] {
@@ -123,8 +149,18 @@ impl Actor for Manual {
                         continue;
                     }
 
-                    println!();
-                    return Some(acts[n].clone());
+                    match acts[n].0 {
+                        Discard => {
+                            println!("please select tile");
+                        }
+                        Riichi => {
+                            riichi = true;
+                        }
+                        _ => {
+                            println!();
+                            return Some(acts[n].clone());
+                        }
+                    }
                 }
             };
         }

@@ -59,7 +59,7 @@ impl Tile {
         self.0 == TZ && DW <= self.1 && self.1 <= DR
     }
 
-    fn from_symbol(s: &str) -> Self {
+    pub fn from_symbol(s: &str) -> Self {
         let b = s.as_bytes();
         let n = b[1] - b'0';
         let t = match b[0] as char {

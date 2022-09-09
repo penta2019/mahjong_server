@@ -46,6 +46,9 @@ fn check_riichi(stg: &Stage) -> Vec<Action> {
             if f[d.0][d.1] == 0 {
                 f[d.0][d.1] += 1;
                 acts.push(Action::riichi(d));
+                if pl.drawn == Some(d) {
+                    acts.push(Action::riichi_drawn()); // 明示的なツモ切りリーチ
+                }
             }
         }
     }

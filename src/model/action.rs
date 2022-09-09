@@ -8,7 +8,7 @@ pub enum ActionType {
     Discard,      // 打牌 (ゲーム側から提供される配列は鳴き後に捨てられない配)
     Ankan,        // 暗槓
     Kakan,        // 加槓
-    Riichi,       // リーチ (TODO:明示的にツモ切りリーチを行いたい場合,配列は空にする)
+    Riichi,       // リーチ (明示的にツモ切りリーチを行いたい場合,配列は空にする)
     Tsumo,        // ツモ
     Kyushukyuhai, // 九種九牌
     Kita,         // 北抜き
@@ -37,6 +37,11 @@ impl Action {
     }
 
     #[inline]
+    pub fn discard_drawn() -> Self {
+        Self(ActionType::Discard, vec![])
+    }
+
+    #[inline]
     pub fn ankan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 4);
         v.sort();
@@ -51,6 +56,11 @@ impl Action {
     #[inline]
     pub fn riichi(t: Tile) -> Self {
         Self(ActionType::Riichi, vec![t])
+    }
+
+    #[inline]
+    pub fn riichi_drawn() -> Self {
+        Self(ActionType::Riichi, vec![])
     }
 
     #[inline]

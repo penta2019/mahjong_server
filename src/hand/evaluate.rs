@@ -29,6 +29,13 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
             yf.menzentsumo = false;
         }
     }
+    if check_tenhou_tiihou(stg, stg.turn) {
+        if stg.is_dealer(stg.turn) {
+            yf.tenhou = true;
+        } else {
+            yf.tiihou = true;
+        }
+    }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
         ura_dora_wall[0..stg.doras.len()].to_vec()
@@ -101,6 +108,13 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> 
             }
         }
         _ => panic!(),
+    }
+    if check_tenhou_tiihou(stg, stg.turn) {
+        if stg.is_dealer(stg.turn) {
+            yf.tenhou = true;
+        } else {
+            yf.tiihou = true;
+        }
     }
 
     let ura_doras = if !ura_dora_wall.is_empty() && pl.is_riichi {
@@ -316,4 +330,17 @@ fn count_dora(hand: &TileTable, melds: &Vec<Meld>, doras: &Vec<Tile>) -> usize {
     }
 
     n_dora
+}
+
+fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
+    if stg.players[seat].discards.len() != 0 {
+        return false;
+    } else {
+        for s in 0..SEAT {
+            if stg.players[s].melds.len() != 0 {
+                return false;
+            }
+        }
+    }
+    return true;
 }

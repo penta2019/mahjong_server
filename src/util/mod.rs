@@ -3,3 +3,4 @@ pub mod connection;
 pub mod log;
 pub mod test;
 pub mod variant;
+pub mod wall;

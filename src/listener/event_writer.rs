@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
 use crate::controller::Listener;
-use crate::convert::tenhou::{TenhouLog, TenhouSerializer};
+use crate::convert::tenhou::TenhouSerializer;
 use crate::model::*;
 use crate::util::common::*;
 
@@ -63,11 +63,11 @@ pub struct TenhouEventWriter {
 }
 
 impl TenhouEventWriter {
-    pub fn new(log: TenhouLog) -> Self {
+    pub fn new() -> Self {
         Self {
             start_time: unixtime_now(),
             kyoku_index: 0,
-            serializer: TenhouSerializer::new(log),
+            serializer: TenhouSerializer::new(),
         }
     }
 }
@@ -90,7 +90,10 @@ impl Listener for TenhouEventWriter {
         self.serializer.push_event(stg, event);
         if write {
             write_to_file(
-                &format!("data/{}/{:2}.json", self.start_time, self.kyoku_index),
+                &format!(
+                    "data_tenhou/{}/{:2}.json",
+                    self.start_time, self.kyoku_index
+                ),
                 &self.serializer.serialize(),
             );
             self.kyoku_index += 1;

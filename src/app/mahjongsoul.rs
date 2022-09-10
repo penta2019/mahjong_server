@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 use crate::actor::create_actor;
 use crate::controller::*;
 use crate::hand::{get_score_title, Yaku};
-use crate::listener::{EventWriter, StageSender};
+use crate::listener::EventWriter;
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::connection::*;
@@ -22,7 +22,6 @@ pub struct MahjongsoulApp {
     write: bool,
     write_raw: bool, // mahjongsoul format
     msc_port: u32,
-    gui_port: u32,
     actor_name: String,
 }
 
@@ -36,7 +35,6 @@ impl MahjongsoulApp {
             write: false,
             write_raw: false,
             msc_port: super::MSC_PORT,
-            gui_port: super::GUI_PORT,
             actor_name: "".to_string(),
         };
 
@@ -48,7 +46,6 @@ impl MahjongsoulApp {
                 "-w" => app.write = true,
                 "-wr" => app.write_raw = true,
                 "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 "-0" => app.actor_name = next_value(&mut it, "-0"),
                 opt => {
                     error!("unknown option: {}", opt);
@@ -65,17 +62,12 @@ impl MahjongsoulApp {
         println!("actor: {:?}", actor);
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-        let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
-        listeners.push(Box::new(StageSender::new(Box::new(conn))));
         if self.write {
             listeners.push(Box::new(EventWriter::new()));
-            // listeners.push(Box::new(TenhouEventWriter::new(TenhouLog::new())));
         };
-
-        ///////////////////////////////////////////////////////////////////////
+        // Debug port
         let conn = TcpConnection::new("127.0.0.1:52999");
         listeners.push(Box::new(crate::listener::EventSender::new(Box::new(conn))));
-        ///////////////////////////////////////////////////////////////////////
 
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
         let mut conn_msc = WsConnection::new(&format!("127.0.0.1:{}", self.msc_port));

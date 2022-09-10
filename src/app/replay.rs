@@ -4,10 +4,10 @@ use std::path::{Path, PathBuf};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::listener::{Prompt, StageSender, StageStepPrinter};
+use crate::listener::{Prompt, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
-use crate::util::connection::WsConnection;
+// use crate::util::connection::WsConnection;
 
 use crate::error;
 
@@ -15,7 +15,6 @@ use crate::error;
 pub struct ReplayApp {
     file_path: String,
     skip: String,
-    gui_port: u32,
     debug: bool,
     names: [String; SEAT], // actor names
 }
@@ -27,7 +26,6 @@ impl ReplayApp {
         let mut app = Self {
             file_path: String::new(),
             skip: String::new(),
-            gui_port: super::GUI_PORT,
             debug: false,
             names: [
                 "".to_string(),
@@ -42,7 +40,6 @@ impl ReplayApp {
             match s.as_str() {
                 "-f" => app.file_path = next_value(&mut it, "-f"),
                 "-s" => app.skip = next_value(&mut it, "-s"),
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
                 "-d" => app.debug = true,
                 "-0" => app.names[0] = next_value(&mut it, "-0"),
                 "-1" => app.names[1] = next_value(&mut it, "-1"),
@@ -86,8 +83,8 @@ impl ReplayApp {
 
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StageStepPrinter::new()));
-        let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
-        listeners.push(Box::new(StageSender::new(Box::new(conn))));
+        // let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
+        // listeners.push(Box::new(StageSender::new(Box::new(conn))));
         listeners.push(Box::new(Prompt::new()));
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む

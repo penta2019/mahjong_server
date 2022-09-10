@@ -89,9 +89,9 @@ pub struct TenhouSerializer {
 }
 
 impl TenhouSerializer {
-    pub fn new(log: TenhouLog) -> Self {
+    pub fn new() -> Self {
         Self {
-            log,
+            log: TenhouLog::new(),
             kyoku: TenhouKyoku::default(),
         }
     }

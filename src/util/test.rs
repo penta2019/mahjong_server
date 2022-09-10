@@ -8,6 +8,7 @@ fn silence_unused_warning() {
     let _ = crate::convert::tenhou::TenhouLog::new;
 
     let _ = crate::listener::TenhouEventWriter::new;
+    let _ = crate::listener::StageSender::new;
     let _ = crate::listener::StageStepPrinter::new;
     let _ = crate::listener::StageDebugPrinter::new;
 }

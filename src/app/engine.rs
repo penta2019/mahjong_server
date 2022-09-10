@@ -20,7 +20,7 @@ pub struct EngineApp {
     n_game: u32,
     n_thread: u32,
     write: bool,
-    gui_port: u32,
+    write_tenhou: bool,
     debug: bool,
     names: [String; SEAT], // actor names
 }
@@ -33,7 +33,7 @@ impl EngineApp {
             n_game: 0,
             n_thread: 16,
             write: false,
-            gui_port: super::GUI_PORT,
+            write_tenhou: false,
             debug: false,
             names: [
                 "".to_string(),
@@ -51,7 +51,7 @@ impl EngineApp {
                 "-g" => app.n_game = next_value(&mut it, "-g"),
                 "-t" => app.n_thread = next_value(&mut it, "-t"),
                 "-w" => app.write = true,
-                "-gui-port" => app.gui_port = next_value(&mut it, "-gui-port"),
+                "-w-tenhou" => app.write_tenhou = true,
                 "-d" => app.debug = true,
                 "-0" => app.names[0] = next_value(&mut it, "-0"),
                 "-1" => app.names[1] = next_value(&mut it, "-1"),
@@ -103,20 +103,18 @@ impl EngineApp {
     fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StagePrinter::new()));
-        // let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
-        // listeners.push(Box::new(StageSender::new(Box::new(conn))));
-        ///////////////////////////////////////////////////////////////////////
-        let conn = TcpConnection::new("127.0.0.1:52999");
-        listeners.push(Box::new(EventSender::new(Box::new(conn))));
-        ///////////////////////////////////////////////////////////////////////
         if self.write {
             listeners.push(Box::new(EventWriter::new()));
         }
-        // let log = crate::convert::tenhou::TenhouLog::new();
-        // listeners.push(Box::new(crate::listener::TenhouEventWriter::new(log)));
+        if self.write_tenhou {
+            listeners.push(Box::new(crate::listener::TenhouEventWriter::new()));
+        }
         if self.debug {
             listeners.push(Box::new(Prompt::new()));
         }
+        // Debug port
+        let conn = TcpConnection::new("127.0.0.1:52999");
+        listeners.push(Box::new(EventSender::new(Box::new(conn))));
 
         let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
         game.run();

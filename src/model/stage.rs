@@ -72,15 +72,15 @@ impl fmt::Display for Stage {
         for ti in 0..TYPE {
             writeln!(f)?;
             writeln!(f)?;
-            for i in 1..TNUM {
-                write!(f, "{}{} ", ['m', 'p', 's', 'z'][ti], i)?;
+            for ni in 1..TNUM {
+                write!(f, "{}{} ", ['m', 'p', 's', 'z'][ti], ni)?;
             }
             writeln!(f)?;
             write!(f, "--------------------------")?;
             for pi in 0..TILE {
                 writeln!(f)?;
-                for i in 1..TNUM {
-                    write!(f, "{} ", self.tile_states[ti][i][pi])?;
+                for ni in 1..TNUM {
+                    write!(f, "{} ", self.tile_states[ti][ni][pi])?;
                 }
             }
         }

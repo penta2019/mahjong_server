@@ -55,8 +55,8 @@ TODO
     1: 4人東, 2: 4人南
 -w
     ファイルに牌譜を出力
--gui-port port (デフォルト値: 52001)
-    GUI用のwsサーバのポート
+-w-tenhou
+    ファイルに牌譜を天鳳形式で出力 (https://tenhou.net/6/)
 -d
     ステップ実行.各プレイヤーが牌をツモった後に一時停止します.  
 -0 actor_name (デフォルト値: Nop)
@@ -121,8 +121,6 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
     局終了時に生のイベントデータを/data_raw/[unixtime].jsonに保存します.  
 -msc-port port (デフォルト値:52000)
     雀魂側のスクリプトから接続するためのwsサーバのポート
--gui-port port (デフォルト値:52001)
-    GUI用のwsサーバのポート
 -0 actor_name (必須)
     使用するActor(AI).
 ```

@@ -70,7 +70,7 @@ impl YakuContext {
 
         let mut yakuman = vec![];
         for &y in &yaku {
-            if y.fan_close >= 13 {
+            if y.yakuman_count >= 1 {
                 yakuman.push(y);
             }
         }
@@ -78,7 +78,7 @@ impl YakuContext {
         if !yakuman.is_empty() {
             let mut m = 0;
             for y in &yakuman {
-                m += y.fan_close - 12;
+                m += y.yakuman_count;
             }
             (yakuman, 0, m) // 役満が含まれている場合,役満以上の役のみを返却
         } else {
@@ -283,6 +283,7 @@ pub struct Yaku {
     pub func: fn(&YakuContext) -> bool, // 役判定関数
     pub fan_close: usize, // 鳴きなしの飜
     pub fan_open: usize, // 鳴きありの飜(食い下がり)
+    pub yakuman_count: usize, // 通常役: 0, 役満: 1, 二倍役満: 2
 }
 
 impl Yaku {
@@ -299,80 +300,85 @@ impl Yaku {
 
 impl fmt::Debug for Yaku {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({}, {}, {})", self.name, self.fan_close, self.fan_open)
+        write!(
+            f,
+            "({}, {}, {}, {})",
+            self.name, self.fan_close, self.fan_open, self.yakuman_count
+        )
     }
 }
 
 macro_rules! yaku {
-    ($id: expr, $n: expr, $f: expr, $c: expr, $o: expr) => {
+    ($id: expr, $n: expr, $f: expr, $c: expr, $o: expr, $y: expr) => {
         Yaku {
             id: $id,
             name: $n,
             func: $f,
             fan_close: $c,
             fan_open: $o,
+            yakuman_count: $y,
         }
     };
 }
 
 const YAKU_LIST: &[Yaku] = &[
-    yaku!(11, "場風 東", is_bakaze_e, 1, 1),
-    yaku!(11, "場風 南", is_bakaze_s, 1, 1),
-    yaku!(11, "場風 西", is_bakaze_w, 1, 1),
-    yaku!(11, "場風 北", is_bakaze_n, 1, 1),
-    yaku!(10, "自風 東", is_jikaze_e, 1, 1),
-    yaku!(10, "自風 南", is_jikaze_s, 1, 1),
-    yaku!(10, "自風 西", is_jikaze_w, 1, 1),
-    yaku!(10, "自風 北", is_jikaze_n, 1, 1),
-    yaku!(7, "役牌 白", is_haku, 1, 1),
-    yaku!(8, "役牌 發", is_hatsu, 1, 1),
-    yaku!(9, "役牌 中", is_chun, 1, 1),
-    yaku!(12, "断幺九", is_tanyaochuu, 1, 1),
-    yaku!(14, "平和", is_pinfu, 1, 0),
-    yaku!(13, "一盃口", is_iipeikou, 1, 0),
-    yaku!(28, "二盃口", is_ryanpeikou, 3, 0),
-    yaku!(16, "一気通貫", is_ikkitsuukan, 2, 1),
-    yaku!(17, "三色同順", is_sanshokudoujun, 2, 1),
-    yaku!(19, "三色同刻", is_sanshokudoukou, 2, 2),
-    yaku!(15, "混全帯幺九", is_chanta, 2, 1),
-    yaku!(26, "純全帯幺九", is_junchan, 3, 2),
-    yaku!(24, "混老頭", is_honroutou, 2, 2),
-    yaku!(41, "清老頭", is_chinroutou, 13, 13),
-    yaku!(21, "対々和", is_toitoihou, 2, 2),
-    yaku!(22, "三暗刻", is_sanankou, 2, 2),
-    yaku!(38, "四暗刻", is_suuankou, 13, 0),
-    yaku!(48, "四暗刻単騎", is_suuankoutanki, 14, 0),
-    yaku!(20, "三槓子", is_sankantsu, 2, 2),
-    yaku!(44, "四槓子", is_suukantsu, 13, 13),
-    yaku!(27, "混一色", is_honiisou, 3, 2),
-    yaku!(29, "清一色", is_chiniisou, 6, 5),
-    yaku!(23, "小三元", is_shousangen, 2, 2),
-    yaku!(37, "大三元", is_daisangen, 13, 13),
-    yaku!(43, "小四喜", is_shousuushii, 13, 13),
-    yaku!(50, "大四喜", is_daisuushii, 14, 14),
-    yaku!(40, "緑一色", is_ryuuiisou, 13, 13),
-    yaku!(39, "字一色", is_tuuiisou, 13, 13),
-    yaku!(45, "九蓮宝燈", is_chuurenpoutou, 13, 0),
-    yaku!(47, "純正九蓮宝燈", is_junseichuurenpoutou, 14, 0),
+    yaku!(11, "場風 東", is_bakaze_e, 1, 1, 0),
+    yaku!(11, "場風 南", is_bakaze_s, 1, 1, 0),
+    yaku!(11, "場風 西", is_bakaze_w, 1, 1, 0),
+    yaku!(11, "場風 北", is_bakaze_n, 1, 1, 0),
+    yaku!(10, "自風 東", is_jikaze_e, 1, 1, 0),
+    yaku!(10, "自風 南", is_jikaze_s, 1, 1, 0),
+    yaku!(10, "自風 西", is_jikaze_w, 1, 1, 0),
+    yaku!(10, "自風 北", is_jikaze_n, 1, 1, 0),
+    yaku!(7, "役牌 白", is_haku, 1, 1, 0),
+    yaku!(8, "役牌 發", is_hatsu, 1, 1, 0),
+    yaku!(9, "役牌 中", is_chun, 1, 1, 0),
+    yaku!(12, "断幺九", is_tanyaochuu, 1, 1, 0),
+    yaku!(14, "平和", is_pinfu, 1, 0, 0),
+    yaku!(13, "一盃口", is_iipeikou, 1, 0, 0),
+    yaku!(28, "二盃口", is_ryanpeikou, 3, 0, 0),
+    yaku!(16, "一気通貫", is_ikkitsuukan, 2, 1, 0),
+    yaku!(17, "三色同順", is_sanshokudoujun, 2, 1, 0),
+    yaku!(19, "三色同刻", is_sanshokudoukou, 2, 2, 0),
+    yaku!(15, "混全帯幺九", is_chanta, 2, 1, 0),
+    yaku!(26, "純全帯幺九", is_junchan, 3, 2, 0),
+    yaku!(24, "混老頭", is_honroutou, 2, 2, 0),
+    yaku!(41, "清老頭", is_chinroutou, 0, 0, 1),
+    yaku!(21, "対々和", is_toitoihou, 2, 2, 0),
+    yaku!(22, "三暗刻", is_sanankou, 2, 2, 0),
+    yaku!(38, "四暗刻", is_suuankou, 0, 0, 1),
+    yaku!(48, "四暗刻単騎", is_suuankoutanki, 0, 0, 2),
+    yaku!(20, "三槓子", is_sankantsu, 2, 2, 0),
+    yaku!(44, "四槓子", is_suukantsu, 0, 0, 1),
+    yaku!(27, "混一色", is_honiisou, 3, 2, 0),
+    yaku!(29, "清一色", is_chiniisou, 6, 5, 0),
+    yaku!(23, "小三元", is_shousangen, 2, 2, 0),
+    yaku!(37, "大三元", is_daisangen, 0, 0, 1),
+    yaku!(43, "小四喜", is_shousuushii, 0, 0, 1),
+    yaku!(50, "大四喜", is_daisuushii, 0, 0, 2),
+    yaku!(40, "緑一色", is_ryuuiisou, 0, 0, 1),
+    yaku!(39, "字一色", is_tuuiisou, 0, 0, 1),
+    yaku!(45, "九蓮宝燈", is_chuurenpoutou, 0, 0, 1),
+    yaku!(47, "純正九蓮宝燈", is_junseichuurenpoutou, 0, 0, 2),
     // 特殊な組み合わせ
-    yaku!(42, "国士無双", is_kokushimusou, 13, 0),
-    yaku!(49, "国士無双１３面", is_kokushimusoujuusanmenmachi, 14, 0),
-    yaku!(25, "七対子", is_chiitoitsu, 2, 0),
+    yaku!(42, "国士無双", is_kokushimusou, 0, 0, 1),
+    yaku!(49, "国士無双１３面", is_kokushimusoujuusanmenmachi, 0, 0, 2),
+    yaku!(25, "七対子", is_chiitoitsu, 2, 0, 0),
     // 特殊条件
-    yaku!(1, "門前清自摸和", is_menzentsumo, 1, 0),
-    yaku!(2, "立直", is_riichi, 1, 0),
-    yaku!(18, "両立直", is_dabururiichi, 2, 0),
-    yaku!(30, "一発", is_ippatsu, 1, 0),
-    yaku!(5, "海底摸月", is_haiteiraoyue, 1, 1),
-    yaku!(6, "河底撈魚", is_houteiraoyui, 1, 1),
-    yaku!(4, "嶺上開花", is_rinshankaihou, 1, 1),
-    yaku!(3, "槍槓", is_chankan, 1, 1),
-    yaku!(35, "天和", is_tenhou, 13, 13),
-    yaku!(36, "地和", is_tiihou, 13, 13),
-    yaku!(31, "ドラ", skip, 1, 1),
-    yaku!(32, "赤ドラ", skip, 1, 1),
-    yaku!(33, "裏ドラ", skip, 1, 1),
-    yaku!(34, "抜きドラ", skip, 1, 1),
+    yaku!(1, "門前清自摸和", is_menzentsumo, 1, 0, 0),
+    yaku!(2, "立直", is_riichi, 1, 0, 0),
+    yaku!(18, "両立直", is_dabururiichi, 2, 0, 0),
+    yaku!(30, "一発", is_ippatsu, 1, 0, 0),
+    yaku!(5, "海底摸月", is_haiteiraoyue, 1, 1, 0),
+    yaku!(6, "河底撈魚", is_houteiraoyui, 1, 1, 0),
+    yaku!(4, "嶺上開花", is_rinshankaihou, 1, 1, 0),
+    yaku!(3, "槍槓", is_chankan, 1, 1, 0),
+    yaku!(35, "天和", is_tenhou, 0, 0, 1),
+    yaku!(36, "地和", is_tiihou, 0, 0, 1),
+    yaku!(31, "ドラ", skip, 1, 1, 0),
+    yaku!(32, "赤ドラ", skip, 1, 1, 0),
+    yaku!(33, "裏ドラ", skip, 1, 1, 0),
+    yaku!(34, "抜きドラ", skip, 1, 1, 0),
 ];
 
 // [役の優先順位]

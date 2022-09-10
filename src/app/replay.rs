@@ -7,7 +7,6 @@ use crate::controller::*;
 use crate::listener::{Prompt, StageStepPrinter};
 use crate::model::*;
 use crate::util::common::*;
-// use crate::util::connection::WsConnection;
 
 use crate::error;
 
@@ -41,10 +40,6 @@ impl ReplayApp {
                 "-f" => app.file_path = next_value(&mut it, "-f"),
                 "-s" => app.skip = next_value(&mut it, "-s"),
                 "-d" => app.debug = true,
-                "-0" => app.names[0] = next_value(&mut it, "-0"),
-                "-1" => app.names[1] = next_value(&mut it, "-1"),
-                "-2" => app.names[2] = next_value(&mut it, "-2"),
-                "-3" => app.names[3] = next_value(&mut it, "-3"),
                 opt => {
                     error!("unknown option: {}", opt);
                     exit(0);
@@ -61,30 +56,8 @@ impl ReplayApp {
     }
 
     pub fn run(&mut self) {
-        let nop = create_actor("Nop");
-        let mut actors: [Box<dyn Actor>; SEAT] = [
-            nop.clone_box(),
-            nop.clone_box(),
-            nop.clone_box(),
-            nop.clone_box(),
-        ];
-        let mut enabled_actors = [false; SEAT];
-        for i in 0..SEAT {
-            let n = &self.names[i];
-            if !n.is_empty() {
-                actors[i] = create_actor(n);
-                enabled_actors[i] = true;
-            }
-        }
-        for s in 0..SEAT {
-            println!("actor{}: {:?}", s, actors[s]);
-        }
-        println!();
-
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
         listeners.push(Box::new(StageStepPrinter::new()));
-        // let conn = WsConnection::new(&format!("127.0.0.1:{}", self.gui_port));
-        // listeners.push(Box::new(StageSender::new(Box::new(conn))));
         listeners.push(Box::new(Prompt::new()));
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む
@@ -118,8 +91,9 @@ impl ReplayApp {
         }
         let rkh = (skips[0], skips[1], skips[2]);
 
-        let mut game = Replay::new(actors, enabled_actors, listeners);
+        let mut game = Replay::new(listeners);
         for p in paths {
+            println!("{:?}", p);
             let contents = std::fs::read_to_string(p).unwrap_or_else(error_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
@@ -136,169 +110,29 @@ impl ReplayApp {
 
 #[derive(Debug)]
 struct Replay {
-    enabled_actors: [bool; SEAT],
     ctrl: StageController,
-    melding: Option<Action>,
-    is_kyoku_end: bool,
-    events: Vec<Event>,
-    cursor: usize, // eventsのindex
 }
 
 impl Replay {
-    fn new(
-        mut actors: [Box<dyn Actor>; SEAT],
-        enabled_actors: [bool; SEAT],
-        listeners: Vec<Box<dyn Listener>>,
-    ) -> Self {
-        for s in 0..SEAT {
-            actors[s].init(s);
-        }
+    fn new(listeners: Vec<Box<dyn Listener>>) -> Self {
+        let nop = create_actor("Nop");
+        let nops: [Box<dyn Actor>; SEAT] = [
+            nop.clone_box(),
+            nop.clone_box(),
+            nop.clone_box(),
+            nop.clone_box(),
+        ];
 
         Self {
-            enabled_actors,
-            ctrl: StageController::new(actors, listeners),
-            melding: None,
-            is_kyoku_end: false,
-            events: vec![],
-            cursor: 0,
+            ctrl: StageController::new(nops, listeners),
         }
     }
 
     fn run(&mut self, events: Vec<Event>) {
-        self.events = events;
-        self.cursor = 0;
-        self.is_kyoku_end = false;
-
-        self.do_event_new();
-        loop {
-            self.check_kan_dora(); // 暗槓の槓ドラ(不要だが念の為)
-            self.do_turn_operation();
-            if self.is_kyoku_end {
-                break;
-            }
-
-            self.check_kan_dora(); // 明槓,加槓の槓ドラ
-            self.do_call_operation();
-            if self.is_kyoku_end {
-                break;
-            }
-
-            self.check_kan_dora(); // 暗槓の槓ドラ
-            self.do_event_deal();
-            if self.is_kyoku_end {
-                break;
-            }
-        }
-        self.do_event_end();
-    }
-
-    fn get_stage(&self) -> &Stage {
-        self.ctrl.get_stage()
-    }
-
-    fn get_event(&self) -> &Event {
-        &self.events[self.cursor]
-    }
-
-    fn handle_event(&mut self) {
-        self.ctrl.handle_event(&self.events[self.cursor]);
-        self.cursor += 1;
-    }
-
-    fn check_kan_dora(&mut self) {
-        if let Event::Dora(_) = self.get_event() {
-            self.handle_event();
+        let mut cursor = 0;
+        while cursor < events.len() {
+            self.ctrl.handle_event(&events[cursor]);
+            cursor += 1
         }
     }
-
-    fn do_event_new(&mut self) {
-        match self.get_event() {
-            Event::New(_) => {
-                self.handle_event();
-            }
-            _ => panic!(),
-        }
-    }
-
-    fn do_turn_operation(&mut self) {
-        // let stg = self.get_stage();
-        // let turn = stg.turn;
-        // let acts = calc_possible_turn_actions(stg, &self.melding);
-
-        // TODO
-        let act = 0; // let act = self.ctrl.select_action(turn, &acts);
-
-        let act2 = match self.get_event() {
-            Event::Discard(e) => {
-                if e.is_riichi {
-                    Action::riichi(e.tile)
-                    // TODO
-                    // if e.is_drawn {
-                    //     Action::riichi(e.tile)
-                    // } else {
-                    //     Action::riichi(e.tile)
-                    // }
-                } else {
-                    if e.is_drawn {
-                        Action::nop()
-                    } else {
-                        Action::discard(e.tile)
-                    }
-                }
-            }
-            Event::Meld(e) => {
-                let a = match e.meld_type {
-                    MeldType::Ankan => Action::ankan(e.consumed.clone()),
-                    MeldType::Kakan => Action::kakan(e.consumed.clone()[0]),
-                    _ => panic!(),
-                };
-                self.melding = Some(a.clone());
-                a
-            }
-            Event::Win(_) => {
-                self.is_kyoku_end = true;
-                Action::tsumo()
-            }
-            Event::Draw(_) => Action::kyushukyuhai(),
-            Event::Kita(_) => Action::kita(),
-            _ => panic!(),
-        };
-
-        println!("selected: {:?}, actual: {:?}", act, act2);
-        self.handle_event();
-    }
-
-    fn do_call_operation(&mut self) {
-        match self.get_event() {
-            Event::Win(_) => {
-                self.is_kyoku_end = true;
-            }
-            Event::Meld(e) => {
-                // self.melding =
-                match e.meld_type {
-                    MeldType::Chi => {}
-                    MeldType::Pon => {}
-                    MeldType::Minkan => {}
-                    _ => panic!(),
-                }
-            }
-            _ => return,
-        }
-
-        self.handle_event();
-    }
-
-    fn do_event_deal(&mut self) {
-        match self.get_event() {
-            Event::Deal(_) => {}
-            Event::Draw(_) => {
-                self.is_kyoku_end = true;
-            }
-            Event::Meld(_) => return, // Chi, pon
-            _ => panic!(),
-        }
-        self.handle_event();
-    }
-
-    fn do_event_end(&mut self) {}
 }

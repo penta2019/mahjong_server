@@ -4,9 +4,9 @@ use crate::util::common::vec_to_string;
 
 // [StagePrinter]
 #[derive(Debug)]
-pub struct StagePrinter {}
+pub struct EventPrinter {}
 
-impl StagePrinter {
+impl EventPrinter {
     pub fn new() -> Self {
         Self {}
     }
@@ -22,23 +22,44 @@ impl StagePrinter {
     }
 }
 
-impl Listener for StagePrinter {
+impl Listener for EventPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
+        use Event::*;
+        print!("(step:{}) ", stg.step);
+        let pl = &stg.players[stg.turn];
         match event {
-            Event::Begin(_) => {
-                println!("[Begin]");
+            Begin(_) => {
+                println!("Begin");
             }
-            Event::New(_) => {
-                println!("[New]");
+            New(_) => {
+                println!("New");
                 println!("{}", stg);
             }
-            Event::Deal(_) => {}
-            Event::Discard(_) => {}
-            Event::Meld(_) => {}
-            Event::Kita(_) => {}
-            Event::Dora(_) => {}
-            Event::Win(e) => {
-                println!("[Win]");
+            Deal(e) => {
+                println!("Deal {}", e.tile);
+                println!("{}", pl);
+            }
+            Discard(e) => {
+                println!(
+                    "Discard {} {}",
+                    e.tile,
+                    if e.is_riichi { "riichi" } else { "" }
+                );
+                println!("{}", pl);
+            }
+            Meld(_) => {
+                println!("Meld");
+                println!("{}", pl);
+            }
+            Kita(_) => {
+                println!("Kita");
+                println!("{}", pl);
+            }
+            Dora(e) => {
+                println!("Dora {}", e.tile);
+            }
+            Win(e) => {
+                println!("Win");
                 println!("ura_dora: {}", vec_to_string(&e.ura_doras));
                 println!("{:?}", e.contexts);
                 let mut deltas = [0; SEAT];
@@ -47,68 +68,18 @@ impl Listener for StagePrinter {
                         deltas[s] += ctx.1[s];
                     }
                 }
-
                 self.print_score_change(stg, &deltas);
                 println!("{}", stg);
             }
-            Event::Draw(e) => {
-                println!("[Draw]");
-                println!("{:?}", e.draw_type);
-                println!("tenpai hand: {:?}", &e.hands);
+            Draw(e) => {
+                println!("Draw");
+                println!("{}", stg);
                 self.print_score_change(stg, &e.delta_scores);
-                println!("{}", stg);
             }
-            Event::End(_) => {
-                println!("[End]");
-            }
-        }
-    }
-}
-
-// [StageStepPrinter]
-#[derive(Debug)]
-pub struct StageStepPrinter {}
-
-impl StageStepPrinter {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl Listener for StageStepPrinter {
-    fn notify_event(&mut self, stg: &Stage, event: &Event) {
-        use Event::*;
-        let ev_str = format!("{:?}", event);
-        print!("[{}] ", ev_str.split('(').next().unwrap());
-        println!("(step: {})", stg.step);
-        match event {
-            Begin(_) => {}
-            Deal(_) | Discard(_) | Meld(_) | Kita(_) => {
-                println!("{}", stg.players[stg.turn]);
-            }
-            Dora(_) => {
-                println!("{:?}", stg.doras);
-            }
-            New(_) | Win(_) | Draw(_) | End(_) => {
-                println!("{}", stg);
+            End(_) => {
+                println!("End");
             }
         }
         println!();
-    }
-}
-
-// [StageDebugPrinter]
-pub struct StageDebugPrinter {}
-
-impl StageDebugPrinter {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl Listener for StageDebugPrinter {
-    fn notify_event(&mut self, stg: &Stage, event: &Event) {
-        println!("step: {}", stg.step);
-        println!("{}", serde_json::to_string(event).unwrap());
     }
 }

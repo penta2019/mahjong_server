@@ -38,7 +38,6 @@ impl StageController {
         }
 
         let stg = &mut self.stage;
-        stg.step += 1;
         match event {
             Event::Begin(e) => event_begin(stg, e),
             Event::New(e) => event_new(stg, e),
@@ -58,6 +57,7 @@ impl StageController {
         for a in &mut self.listeners {
             a.notify_event(stg, event);
         }
+        stg.step += 1;
     }
 
     pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>, retry: i32) -> Option<Action> {

@@ -87,6 +87,7 @@ impl EngineApp {
         for s in 0..SEAT {
             println!("actor{}: {:?}", s, actors[s]);
         }
+        println!();
 
         let start = std::time::Instant::now();
         if self.n_game == 0 {
@@ -102,7 +103,12 @@ impl EngineApp {
 
     fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-        listeners.push(Box::new(StagePrinter::new()));
+
+        // Debug port
+        let conn = TcpConnection::new("127.0.0.1:52999");
+        listeners.push(Box::new(EventSender::new(Box::new(conn))));
+
+        listeners.push(Box::new(EventPrinter::new()));
         if self.write {
             listeners.push(Box::new(EventWriter::new()));
         }
@@ -110,11 +116,8 @@ impl EngineApp {
             listeners.push(Box::new(crate::listener::TenhouEventWriter::new()));
         }
         if self.debug {
-            listeners.push(Box::new(Prompt::new()));
+            listeners.push(Box::new(Debug::new()));
         }
-        // Debug port
-        let conn = TcpConnection::new("127.0.0.1:52999");
-        listeners.push(Box::new(EventSender::new(Box::new(conn))));
 
         let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
         game.run();

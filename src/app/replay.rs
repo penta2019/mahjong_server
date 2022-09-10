@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::listener::{Prompt, StageStepPrinter};
+use crate::listener::{Debug, EventPrinter};
 use crate::model::*;
 use crate::util::common::*;
 
@@ -57,8 +57,11 @@ impl ReplayApp {
 
     pub fn run(&mut self) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-        listeners.push(Box::new(StageStepPrinter::new()));
-        listeners.push(Box::new(Prompt::new()));
+
+        listeners.push(Box::new(EventPrinter::new()));
+        if self.debug {
+            listeners.push(Box::new(Debug::new()));
+        }
 
         // パスがディレクトリならそのディレクトリ内のすべてのjsonファイルを読み込む
         let path = Path::new(&self.file_path);
@@ -93,7 +96,7 @@ impl ReplayApp {
 
         let mut game = Replay::new(listeners);
         for p in paths {
-            println!("{:?}", p);
+            println!("source file: {:?}\n", p);
             let contents = std::fs::read_to_string(p).unwrap_or_else(error_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 

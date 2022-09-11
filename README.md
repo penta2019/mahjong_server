@@ -58,7 +58,7 @@ TODO
 -w-tenhou
     ファイルに牌譜を天鳳形式で出力 (https://tenhou.net/6/)
 -d
-    ステップ実行.各プレイヤーが牌をツモった後に一時停止します.  
+    ステップ実行. イベントを処理するごとに一時停止します.
 -0 actor_name (デフォルト値: Nop)
     座席0のActor.
 -1 actor_name (デフォルト値: Nop)
@@ -118,7 +118,7 @@ cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 Ti
 -w
     局終了時にイベントデータを/data/[unixtime].jsonに保存します.  
 -wr
-    局終了時に生のイベントデータを/data_raw/[unixtime].jsonに保存します.  
+    局終了時に生のイベントデータを/data_raw/[unixtime].jsonに保存します. 
 -msc-port port (デフォルト値:52000)
     雀魂側のスクリプトから接続するためのwsサーバのポート
 -0 actor_name (必須)

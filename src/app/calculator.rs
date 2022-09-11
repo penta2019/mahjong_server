@@ -191,12 +191,12 @@ impl Calculator {
             println!("yakus: {}", yakus);
 
             println!(
-                "fu: {}, fan: {}, score: {}, {}",
-                ctx.fu, ctx.fan, ctx.score, ctx.score_title
+                "fu: {}, fan: {}, yakuman: {}, score: {}, {}",
+                ctx.fu, ctx.fan, ctx.yakuman, ctx.score, ctx.title
             );
 
             let verify = if self.verify {
-                if ctx.yakuman_count > 0 {
+                if ctx.yakuman > 0 {
                     // 役満以上は得点のみをチェック
                     if ctx.score == self.score {
                         Verify::Ok

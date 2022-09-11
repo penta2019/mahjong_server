@@ -506,8 +506,8 @@ impl Mahjongsoul {
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let score = as_i32(&win["dadian"]);
-            let yakuman_count = if is_yakuman { count } else { 0 };
-            let score_title = get_score_title(fu, fan, yakuman_count);
+            let yakuman = if is_yakuman { count } else { 0 };
+            let title = get_score_title(fu, fan, yakuman);
             let points = (
                 as_i32(&win["point_rong"]),
                 as_i32(&win["point_zimo_xian"]),
@@ -544,10 +544,10 @@ impl Mahjongsoul {
                 yakus,
                 fu,
                 fan,
+                yakuman,
                 score,
                 points,
-                yakuman_count,
-                score_title,
+                title,
             };
             wins.push((s, d_scores, ctx));
 

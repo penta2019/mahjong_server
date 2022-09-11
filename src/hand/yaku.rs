@@ -70,7 +70,7 @@ impl YakuContext {
 
         let mut yakuman = vec![];
         for &y in &yaku {
-            if y.yakuman_count >= 1 {
+            if y.yakuman >= 1 {
                 yakuman.push(y);
             }
         }
@@ -78,7 +78,7 @@ impl YakuContext {
         if !yakuman.is_empty() {
             let mut m = 0;
             for y in &yakuman {
-                m += y.yakuman_count;
+                m += y.yakuman;
             }
             (yakuman, 0, m) // 役満が含まれている場合,役満以上の役のみを返却
         } else {
@@ -283,7 +283,7 @@ pub struct Yaku {
     pub func: fn(&YakuContext) -> bool, // 役判定関数
     pub fan_close: usize, // 鳴きなしの飜
     pub fan_open: usize, // 鳴きありの飜(食い下がり)
-    pub yakuman_count: usize, // 通常役: 0, 役満: 1, 二倍役満: 2
+    pub yakuman: usize, // 通常役: 0, 役満: 1, 二倍役満: 2
 }
 
 impl Yaku {
@@ -303,7 +303,7 @@ impl fmt::Debug for Yaku {
         write!(
             f,
             "({}, {}, {}, {})",
-            self.name, self.fan_close, self.fan_open, self.yakuman_count
+            self.name, self.fan_close, self.fan_open, self.yakuman
         )
     }
 }
@@ -316,7 +316,7 @@ macro_rules! yaku {
             func: $f,
             fan_close: $c,
             fan_open: $o,
-            yakuman_count: $y,
+            yakuman: $y,
         }
     };
 }

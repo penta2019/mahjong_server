@@ -189,25 +189,25 @@ impl TenhouSerializer {
                     k.result_detail
                         .push(points.iter().map(|&p| json!(p)).collect());
                     let mut detail = vec![json!(seat), json!(target_seat), json!(seat)];
-                    let score_title = if ctx.score_title.is_empty() {
+                    let title = if ctx.title.is_empty() {
                         format!("{}符{}飜", ctx.fu, ctx.fan)
                     } else {
-                        match ctx.score_title.as_str() {
+                        match ctx.title.as_str() {
                             "数え役満" | "二倍役満" | "三倍役満" => "役満".to_string(),
-                            _ => ctx.score_title.clone(),
+                            _ => ctx.title.clone(),
                         }
                     };
                     if *seat == stg.turn {
                         if ctx.points.2 == 0 {
-                            detail.push(json!(format!("{}{}点∀", score_title, ctx.points.1)));
+                            detail.push(json!(format!("{}{}点∀", title, ctx.points.1)));
                         } else {
                             detail.push(json!(format!(
                                 "{}{}-{}点",
-                                score_title, ctx.points.1, ctx.points.2,
+                                title, ctx.points.1, ctx.points.2,
                             )));
                         }
                     } else {
-                        detail.push(json!(format!("{}{}点", score_title, ctx.points.0)));
+                        detail.push(json!(format!("{}{}点", title, ctx.points.0)));
                     }
                     for y in &ctx.yakus {
                         detail.push(json!(format!("{}({}飜)", y.0, y.1)));

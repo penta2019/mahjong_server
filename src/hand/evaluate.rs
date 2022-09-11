@@ -233,22 +233,26 @@ pub fn evaluate_hand(
     for ctx in wins {
         let hand = tiles_from_tile_table(hand);
         let fu = ctx.calc_fu();
-        let (yakus, mut fan, yakuman_count) = ctx.calc_yaku();
+        let (yakus, mut fan, yakuman) = ctx.calc_yaku();
         if yakus.is_empty() {
             continue; // 無役
         }
         let mut yakus: Vec<(String, usize)> = yakus
             .iter()
             .map(|y| {
-                let fan = if ctx.is_open() {
-                    y.fan_open
+                let fan = if y.yakuman > 0 {
+                    y.yakuman
                 } else {
-                    y.fan_close
+                    if ctx.is_open() {
+                        y.fan_open
+                    } else {
+                        y.fan_close
+                    }
                 };
                 (y.name.to_string(), fan)
             })
             .collect();
-        if yakuman_count == 0 {
+        if yakuman == 0 {
             fan += n_dora + n_red_dora + n_ura_dora;
             if n_dora != 0 {
                 yakus.push(("ドラ".to_string(), n_dora));
@@ -260,8 +264,8 @@ pub fn evaluate_hand(
                 yakus.push(("裏ドラ".to_string(), n_ura_dora));
             }
         }
-        let points = get_points(is_dealer, fu, fan, yakuman_count);
-        let score_title = get_score_title(fu, fan, yakuman_count);
+        let points = get_points(is_dealer, fu, fan, yakuman);
+        let title = get_score_title(fu, fan, yakuman);
         let score = if is_drawn {
             if is_dealer {
                 points.1 * 3
@@ -276,10 +280,10 @@ pub fn evaluate_hand(
             yakus,
             fu,
             fan,
+            yakuman,
             score,
             points,
-            yakuman_count,
-            score_title,
+            title,
         });
     }
 

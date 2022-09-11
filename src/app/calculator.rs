@@ -97,8 +97,6 @@ enum Verify {
 #[derive(Debug)]
 struct Calculator {
     detail: bool,
-    seat: Seat,
-    kyoku: usize,
     // evaluate_hand params
     hand: TileTable,
     melds: Vec<Meld>,
@@ -121,8 +119,6 @@ impl Calculator {
     fn new(detail: bool) -> Self {
         Self {
             detail,
-            seat: 0,
-            kyoku: 0,
             hand: TileTable::default(),
             melds: vec![],
             doras: vec![],
@@ -235,22 +231,15 @@ impl Calculator {
         let exps: Vec<&str> = input.split(',').collect();
         if let Some(exp) = exps.get(0) {
             let chars: Vec<char> = exp.chars().collect();
-            if chars.len() != 3 {
-                return Err(format!("stage info len is not 3: {}", exp));
+            if chars.len() != 2 {
+                return Err(format!("stage info len is not 2: {}", exp));
             }
             let prevalent_wind = wind_from_char(chars[0])?;
-            let kyoku = chars[1].to_digit(10).unwrap() as usize;
-            let seat_wind = wind_from_char(chars[2])?;
-
-            if !(1..=4).contains(&kyoku) {
-                return Err(format!("kyoku is not 1, 2, 3 or 4: {}", kyoku));
-            }
+            let seat_wind = wind_from_char(chars[1])?;
 
             self.prevalent_wind = prevalent_wind;
             self.seat_wind = seat_wind;
-            self.kyoku = kyoku - 1;
             self.is_dealer = seat_wind == 1;
-            self.seat = (seat_wind + kyoku - 2) % SEAT;
         }
         if let Some(exp) = exps.get(1) {
             self.doras = tiles_from_string(exp)?;
@@ -286,7 +275,7 @@ impl Calculator {
 
         // parse melds
         for exp_meld in &exp_melds {
-            self.melds.push(meld_from_string(exp_meld, self.seat)?);
+            self.melds.push(meld_from_string(exp_meld)?);
         }
 
         if self.is_drawn {
@@ -358,10 +347,12 @@ fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
     Ok(tiles)
 }
 
-fn meld_from_string(exp: &str, seat: Seat) -> Result<Meld, String> {
+fn meld_from_string(exp: &str) -> Result<Meld, String> {
     let undef: usize = 255;
+    let seat = 0; // 点数計算する上で座席の番号は関係ないので0で固定
     let mut ti = undef;
     let mut nis = vec![];
+
     let mut from = 0;
     let mut tiles = vec![];
     let mut froms = vec![];

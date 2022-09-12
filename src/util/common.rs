@@ -23,11 +23,12 @@ pub fn sleep_ms(ms: u64) {
     std::thread::sleep(std::time::Duration::from_millis(ms));
 }
 
-pub fn unixtime_now() -> u64 {
+pub fn unixtime_now() -> f64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
-        .as_secs()
+        .as_millis() as f64
+        / 1000.0
 }
 
 pub fn prompt() -> String {

@@ -16,7 +16,7 @@ pub struct EventWriter {
 impl EventWriter {
     pub fn new() -> Self {
         Self {
-            start_time: unixtime_now(),
+            start_time: unixtime_now() as u64,
             kyoku_index: 0,
             record: vec![],
         }
@@ -29,7 +29,7 @@ impl Listener for EventWriter {
         match event {
             Event::Begin(_) => {
                 self.record.clear();
-                self.start_time = unixtime_now();
+                self.start_time = unixtime_now() as u64;
                 self.kyoku_index = 0;
             }
             Event::New(_) => {
@@ -65,7 +65,7 @@ pub struct TenhouEventWriter {
 impl TenhouEventWriter {
     pub fn new() -> Self {
         Self {
-            start_time: unixtime_now(),
+            start_time: unixtime_now() as u64,
             kyoku_index: 0,
             serializer: TenhouSerializer::new(),
         }
@@ -77,7 +77,7 @@ impl Listener for TenhouEventWriter {
         let mut write = false;
         match event {
             Event::Begin(_) => {
-                self.start_time = unixtime_now();
+                self.start_time = unixtime_now() as u64;
                 self.kyoku_index = 0;
             }
             Event::Win(_) | Event::Draw(_) => {

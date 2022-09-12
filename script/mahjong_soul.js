@@ -450,7 +450,7 @@ msc.Server = class {
 
         if (ch == "mjaction") { // それまでの局の進行内容をすべて送信
             for (let a of this.action_store) {
-                this.send({ id: s.id, type: "message_cache", data: a });
+                this.send({ id: s.id, type: "message", data: a });
             }
         }
     }

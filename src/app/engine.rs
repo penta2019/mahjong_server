@@ -65,7 +65,7 @@ impl EngineApp {
         }
 
         if app.seed == 0 {
-            app.seed = unixtime_now();
+            app.seed = unixtime_now() as u64;
             warn!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
                 app.seed

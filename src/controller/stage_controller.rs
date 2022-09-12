@@ -51,12 +51,15 @@ impl StageController {
             Event::End(e) => event_end(stg, e),
         }
 
-        for a in &mut self.actors {
-            a.notify_event(stg, event);
-        }
+        // Actorより先にListenrsにイベントを通知
+        // Debug(Listener)などが一時停止する可能性があるため, またActorが特定のイベントでクラッシュする際にイベントを前もって補足するため
         for a in &mut self.listeners {
             a.notify_event(stg, event);
         }
+        for a in &mut self.actors {
+            a.notify_event(stg, event);
+        }
+
         stg.step += 1;
     }
 

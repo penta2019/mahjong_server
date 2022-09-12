@@ -119,7 +119,6 @@ impl MjaiEndpoint {
     }
 
     fn notify_begin(&mut self, _stg: &Stage, _event: &EventBegin) {
-        assert!(self.seat != NO_SEAT);
         self.is_new_game = true;
     }
 

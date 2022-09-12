@@ -71,7 +71,8 @@ impl MahjongsoulApp {
 
         let mut game = Mahjongsoul::new(self.sleep, actor, listeners, self.write_raw);
         let mut conn_msc = WsConnection::new(&format!("127.0.0.1:{}", self.msc_port));
-        let mut act = None;
+        let mut last_event = None;
+        let mut last_event_ts = 0.0;
         loop {
             match conn_msc.recv() {
                 Message::Open => {
@@ -79,21 +80,44 @@ impl MahjongsoulApp {
                     conn_msc.send(msg);
                 }
                 Message::Text(t) => {
-                    act = game.apply(&serde_json::from_str(&t).unwrap());
-                }
-                Message::NoMessage => {
-                    if act != None && !self.read_only {
-                        let msg = json!({
-                            "id": "0",
-                            "op": "eval",
-                            "data": act,
-                        });
-                        conn_msc.send(&msg.to_string());
+                    let msg: &Value = &serde_json::from_str(&t).unwrap();
+                    match as_str(&msg["id"]) {
+                        "id_mjaction" => {
+                            if msg["type"] == json!("message") {
+                                // キャッシュデータの場合すぐに次のデータが届く
+                                if let Some(e) = last_event {
+                                    game.apply(&e);
+                                }
+                                last_event = Some(msg["data"].clone());
+                                last_event_ts = unixtime_now();
+                            }
+                        }
+                        _ => {}
                     }
-                    act = None;
                 }
                 _ => {}
             }
+
+            // 0.1秒以上次のデータが来なかった時,リアルタイムのデータとみなす
+            if unixtime_now() - last_event_ts > 0.1 {
+                if let Some(e) = last_event {
+                    game.apply(&e);
+                    last_event = None;
+                }
+                if last_event.is_none() {
+                    if !self.read_only {
+                        if let Some(a) = game.poll_action() {
+                            let msg = json!({
+                                "id": "0",
+                                "op": "eval",
+                                "data": a,
+                            });
+                            conn_msc.send(&msg.to_string());
+                        }
+                    }
+                }
+            }
+
             sleep_ms(10);
         }
     }
@@ -111,6 +135,9 @@ struct Mahjongsoul {
     write_raw: bool, // 雀魂フォーマットでeventを出力
     start_time: u64,
     kyoku_index: i32,
+    acts: Vec<Action>,
+    acts_idxs: Vec<usize>,
+    retry: i32,
 }
 
 impl Mahjongsoul {
@@ -136,8 +163,11 @@ impl Mahjongsoul {
             random_sleep,
             actor,
             write_raw,
-            start_time: unixtime_now(),
+            start_time: unixtime_now() as u64,
             kyoku_index: 0,
+            acts: vec![],
+            acts_idxs: vec![],
+            retry: 0,
         }
     }
 
@@ -153,7 +183,7 @@ impl Mahjongsoul {
         let mut write = false;
         match event {
             Event::Begin(_) => {
-                self.start_time = unixtime_now();
+                self.start_time = unixtime_now() as u64;
                 self.kyoku_index = 0;
             }
             Event::Win(_) | Event::Draw(_) => {
@@ -172,22 +202,7 @@ impl Mahjongsoul {
         }
     }
 
-    fn apply(&mut self, msg: &Value) -> Option<Value> {
-        match as_str(&msg["id"]) {
-            "id_mjaction" => {
-                if msg["type"] == json!("message") {
-                    self.apply_data(&msg["data"], false)
-                } else if msg["type"] == json!("message_cache") {
-                    self.apply_data(&msg["data"], true)
-                } else {
-                    None
-                }
-            }
-            _ => None, // type: "success"
-        }
-    }
-
-    fn apply_data(&mut self, event: &Value, is_cache: bool) -> Option<Value> {
+    fn apply(&mut self, event: &Value) {
         let step = as_usize(&event["step"]);
         let name = as_str(&event["name"]);
         let data = &event["data"];
@@ -203,6 +218,7 @@ impl Mahjongsoul {
 
         self.events.push(event.clone());
         if self.seat == NO_SEAT {
+            // operation の含まれているイベントデータが届くまで自身の座席は不明
             if let Value::Object(act) = &data["operation"] {
                 self.seat = as_usize(&act["seat"]);
             }
@@ -214,26 +230,21 @@ impl Mahjongsoul {
             }
 
             if self.seat == NO_SEAT {
-                return None;
+                return;
             }
 
             // seatが確定し時点でactorを設定
-            self.actor.init(self.seat);
+            self.actor.init(self.seat); // TODO: これがないとMjaiが不正なseatを送信ことがある
             self.ctrl.swap_actor(self.seat, &mut self.actor);
         }
 
         // seatが確定するまでは実行されないので溜まったeventをまとめて処理
-        let mut act = None;
         while self.step < self.events.len() {
             let event = self.events[self.step].clone();
             assert!(self.step == as_usize(&event["step"]));
 
             let data = &event["data"];
             let name = &event["name"];
-            let is_last = self.step + 1 == self.events.len();
-            if !is_cache && is_last && as_str(name) == "ActionNewRound" {
-                sleep_ms(3000);
-            }
             match as_str(name) {
                 "ActionMJStart" => self.handler_mjstart(data),
                 "ActionNewRound" => self.handler_newround(data),
@@ -247,38 +258,33 @@ impl Mahjongsoul {
                 "ActionNoTile" => self.handler_notile(data),
                 s => panic!("unknown event {}", s),
             };
-            self.step += 1;
 
-            let a = &data["operation"];
-            if *a != json!(null) {
-                // self.ctrl.select_actionはstageを更新した直後sleepを挟まずに実行する必要がある
-                act = self.select_action(a);
+            let acts = data["operation"].clone();
+            if acts != json!(null) && acts["operation_list"] != json!(null) {
+                (self.acts, self.acts_idxs) = parse_possible_action(&acts, self.get_stage());
+                self.retry = 0;
+            } else {
+                self.acts = vec![];
             }
-        }
 
-        act
+            self.step += 1;
+        }
     }
 
-    fn select_action(&mut self, data: &Value) -> Option<Value> {
-        if data["operation_list"] == json!(null) {
+    fn poll_action(&mut self) -> Option<Value> {
+        if self.acts == vec![] {
             return None;
         }
 
         let start = time::Instant::now();
-        let s = as_usize(&data["seat"]);
+        let act = self.ctrl.select_action(self.seat, &self.acts, self.retry);
+        self.retry += 1;
+        if act.is_none() {
+            return None;
+        }
+        let act = act.unwrap();
 
-        // 可能なactionのパースと選択
-        let (acts, idxs) = parse_possible_action(data, self.get_stage());
-        let mut retry = 0;
-        let act = loop {
-            if let Some(act) = self.ctrl.select_action(s, &acts, retry) {
-                break act;
-            }
-            retry += 1;
-            sleep_ms(10);
-        };
-
-        println!("possible: {:?}", acts);
+        println!("possible: {:?}", self.acts);
         println!("selected: {:?}", act);
         println!();
         flush();
@@ -287,15 +293,19 @@ impl Mahjongsoul {
         let arg_idx = if act.0 == Discard || act.0 == Riichi {
             0
         } else {
-            idxs[acts.iter().position(|act2| act2 == &act).unwrap()]
+            self.acts_idxs[self.acts.iter().position(|act2| act2 == &act).unwrap()]
         };
         let Action(tp, cs) = act;
 
         // sleep処理
+        if self.step <= 1 {
+            // ActionNewRoundの直後はゲームの初期化が終わっていない場合があるので長めに待機
+            sleep_ms(3000);
+        }
         let stg = self.get_stage();
         let ellapsed = start.elapsed().as_millis();
         let mut sleep = 1000;
-        if self.random_sleep && s == stg.turn && tp != Tsumo {
+        if self.random_sleep && self.seat == stg.turn && tp != Tsumo {
             // ツモ・ロン・鳴きのキャンセル以外の操作の場合,ランダムにsleep時間(1 ~ 4秒)を取る
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
@@ -314,15 +324,15 @@ impl Mahjongsoul {
 
         let action = match tp {
             Nop => {
-                if stg.turn == s {
-                    let idx = 13 - stg.players[s].melds.len() * 3;
+                if stg.turn == self.seat {
+                    let idx = 13 - stg.players[self.seat].melds.len() * 3;
                     format!("action_dapai({})", idx)
                 } else {
                     format!("action_cancel()")
                 }
             }
             Discard => {
-                let idx = calc_dapai_index(stg, s, cs[0], false);
+                let idx = calc_dapai_index(stg, self.seat, cs[0], false);
                 format!("action_dapai({})", idx)
             }
             Ankan => {
@@ -337,7 +347,7 @@ impl Mahjongsoul {
                 } else {
                     (cs[0], false)
                 };
-                let idx = calc_dapai_index(stg, s, t, m);
+                let idx = calc_dapai_index(stg, self.seat, t, m);
                 format!("action_lizhi({})", idx)
             }
             Tsumo => {
@@ -362,7 +372,9 @@ impl Mahjongsoul {
                 format!("action_hu()")
             }
         };
-        Some(json!(format!("msc.ui.{}", action)))
+
+        self.acts = vec![];
+        return Some(json!(format!("msc.ui.{}", action)));
     }
 
     fn update_doras(&mut self, data: &Value) {

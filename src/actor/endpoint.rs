@@ -14,7 +14,7 @@ pub struct EndpointBuilder;
 #[derive(Debug, Default)]
 struct SharedData {
     send_request: bool,
-    msgs: Vec<Value>,
+    msgs: Vec<(Value, bool)>, // [(message, is_action)]
     cursor: usize,
     action: Option<Action>,
 }
@@ -66,7 +66,12 @@ impl Endpoint {
                     }
                     Message::NoMessage => {
                         while d.cursor < d.msgs.len() {
-                            conn.send(&d.msgs[d.cursor].to_string());
+                            let (msg, is_action) = &d.msgs[d.cursor];
+                            if *is_action && d.cursor != d.msgs.len() - 1 {
+                                // メッセージがアクションでかつ最後のメッセージでない場合は失効済みなので送信しない
+                            } else {
+                                conn.send(&msg.to_string());
+                            }
                             d.cursor += 1;
                         }
                         break;
@@ -104,7 +109,7 @@ impl Actor for Endpoint {
         let mut d = self.data.lock().unwrap();
         if repeat == 0 {
             let act_msg = json!({"type": "Action", "actions": json!(acts)});
-            d.msgs.push(act_msg);
+            d.msgs.push((act_msg, true));
         } else {
             ret = d.action.clone();
         }
@@ -150,7 +155,7 @@ impl Listener for Endpoint {
                 }
                 _ => json!(event),
             };
-            d.msgs.push(val);
+            d.msgs.push((val, false));
             d.send_request = true;
         }
 

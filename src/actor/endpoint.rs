@@ -23,7 +23,10 @@ impl ActorBuilder for EndpointBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "Endpoint".to_string(),
-            args: vec![Arg::string("addr", "127.0.0.1:52010")],
+            args: vec![
+                Arg::bool("debug", false),
+                Arg::string("addr", "127.0.0.1:52010"),
+            ],
         }
     }
 
@@ -36,13 +39,14 @@ pub struct Endpoint {
     config: Config,
     data: Arc<Mutex<SharedData>>,
     seat: Seat,
-    is_selecting: bool,
+    debug: bool,
 }
 
 impl Endpoint {
     pub fn from_config(config: Config) -> Self {
         let args = &config.args;
-        let addr = args[0].value.as_string();
+        let debug = args[0].value.as_bool();
+        let addr = args[1].value.as_string();
         let mut conn = Box::new(TcpConnection::new(&addr));
         let arc0 = Arc::new(Mutex::new(SharedData::default()));
         let arc1 = arc0.clone();
@@ -78,7 +82,7 @@ impl Endpoint {
             config,
             data: arc0,
             seat: NO_SEAT,
-            is_selecting: false,
+            debug,
         }
     }
 }
@@ -93,7 +97,6 @@ impl Actor for Endpoint {
     fn init(&mut self, seat: Seat) {
         *self.data.lock().unwrap() = SharedData::default();
         self.seat = seat;
-        self.is_selecting = false;
     }
 
     fn select_action(&mut self, _stg: &Stage, acts: &Vec<Action>, repeat: i32) -> Option<Action> {
@@ -119,13 +122,34 @@ impl Listener for Endpoint {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         {
             let mut d = self.data.lock().unwrap();
-            let mut val = json!(event);
-            match event {
-                Event::New(_) => {
+            let val = match event {
+                Event::New(e) => {
+                    let mut hands = e.hands.clone();
+                    for s in 0..SEAT {
+                        if !self.debug && s != self.seat {
+                            hands[s].fill(Tile(TZ, UK));
+                        }
+                    }
+                    let e2 = Event::New(EventNew {
+                        hands,
+                        doras: e.doras.clone(),
+                        ..*e
+                    });
+                    let mut val = json!(e2);
                     val["seat"] = json!(self.seat);
+                    val
                 }
-                _ => {}
-            }
+                Event::Deal(e) => {
+                    let t = if !self.debug && self.seat != e.seat {
+                        Tile(TZ, UK)
+                    } else {
+                        e.tile
+                    };
+                    let e2 = Event::Deal(EventDeal { tile: t, ..*e });
+                    json!(e2)
+                }
+                _ => json!(event),
+            };
             d.msgs.push(val);
             d.send_request = true;
         }

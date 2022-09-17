@@ -81,10 +81,19 @@ impl Event {
     }
 
     #[inline]
-    pub fn win(ura_doras: Vec<Tile>, contexts: Vec<(Seat, [Point; SEAT], WinContext)>) -> Self {
+    pub fn win(
+        contexts: Vec<WinContext>,
+        doras: Vec<Tile>,
+        ura_doras: Vec<Tile>,
+        scores: [Point; SEAT],
+        delta_scores: [Point; SEAT],
+    ) -> Self {
         Self::Win(EventWin {
-            ura_doras,
             contexts,
+            doras,
+            ura_doras,
+            scores,
+            delta_scores,
         })
     }
 
@@ -159,8 +168,13 @@ pub struct EventDora {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventWin {
-    pub ura_doras: Vec<Tile>, // 裏ドラ表示牌
-    pub contexts: Vec<(Seat, [Point; SEAT], WinContext)>,
+    // Stageを見れば明らかにわかることであっても和了演出に必要な情報はすべてここに含める
+    // StageControllerにとって必要なデータはdelta_scoresのみ
+    pub contexts: Vec<WinContext>,
+    pub doras: Vec<Tile>,            // ドラ表示牌
+    pub ura_doras: Vec<Tile>,        // 裏ドラ表示牌
+    pub scores: [Point; SEAT],       // 変化前のスコア
+    pub delta_scores: [Point; SEAT], // scores + delta_scores = new_scores
 }
 
 #[derive(Debug, Serialize, Deserialize)]

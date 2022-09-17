@@ -17,7 +17,7 @@ impl Listener for Debug {
             let input = prompt();
             let args: Vec<&str> = input.split_whitespace().collect();
             // println!("{:?}", args);
-            if args.len() == 0 {
+            if args.is_empty() {
                 break;
             }
 

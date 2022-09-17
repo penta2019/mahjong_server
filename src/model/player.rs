@@ -118,7 +118,7 @@ pub enum MeldType {
     Ankan,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Meld {
     pub step: usize,
     pub seat: Seat,

@@ -53,7 +53,7 @@ pub fn create_wall_debug(seed: u64) -> Vec<Tile> {
     subtract_tile_table(&mut tt, &ura_dora);
     subtract_tile_table(&mut tt, &replacement);
     for h in &hands {
-        subtract_tile_table(&mut tt, &h);
+        subtract_tile_table(&mut tt, h);
         assert!(h.len() < 14);
     }
     subtract_tile_table(&mut tt, &deal);
@@ -79,13 +79,13 @@ pub fn create_wall_debug(seed: u64) -> Vec<Tile> {
     append_tiles_from_symbol(&mut wall, &replacement);
     move_tiles(&mut remain, &mut wall, 4 - replacement.len());
     for h in &hands {
-        append_tiles_from_symbol(&mut wall, &h);
+        append_tiles_from_symbol(&mut wall, h);
         move_tiles(&mut remain, &mut wall, 13 - h.len());
     }
     append_tiles_from_symbol(&mut wall, &deal);
     move_tiles(&mut remain, &mut wall, 136 - 14 - 13 * 4 - deal.len());
 
-    assert!(remain.len() == 0);
+    assert!(remain.is_empty());
     wall
 }
 

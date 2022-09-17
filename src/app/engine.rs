@@ -411,7 +411,7 @@ impl MahjongEngine {
             }
             Riichi => {
                 let pl = &stg.players[turn];
-                let (t, m) = if cs.len() == 0 {
+                let (t, m) = if cs.is_empty() {
                     // 明示的なツモ切りリーチ
                     (pl.drawn.unwrap(), true)
                 } else {
@@ -597,8 +597,8 @@ impl MahjongEngine {
             KyokuResult::Tsumo => {
                 let mut d_scores = [0; SEAT]; // 得点変動
 
-                let ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
-                let (_, mut non_dealer, mut dealer) = ctx.points;
+                let score_ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
+                let (_, mut non_dealer, mut dealer) = score_ctx.points;
 
                 // 積み棒
                 non_dealer += honba as i32 * 100;
@@ -629,9 +629,33 @@ impl MahjongEngine {
                     need_dealer_change = true;
                 }
 
-                let contexts = vec![(turn, d_scores, ctx)];
+                let pl = &stg.players[turn];
+                let mut h = pl.hand;
+                let wt = pl.drawn.unwrap();
+                // 和了牌は手牌から外す
+                h[wt.0][wt.1] -= 1;
+                if wt.1 == 0 {
+                    h[wt.0][5] -= 1
+                }
+                let win_ctx = WinContext {
+                    seat: turn,
+                    hand: tiles_from_tile_table(&h),
+                    win_tile: wt,
+                    melds: pl.melds.clone(),
+                    is_dealer: stg.is_dealer(turn),
+                    is_drawn: true,
+                    is_riichi: pl.riichi.is_some(),
+                    delta_scores: d_scores,
+                    score_context: score_ctx,
+                };
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.handle_event(Event::win(ura_doras, contexts));
+                self.handle_event(Event::win(
+                    vec![win_ctx],
+                    stg.doras.clone(),
+                    ura_doras,
+                    stg.get_scores(),
+                    d_scores,
+                ));
             }
             KyokuResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
@@ -645,10 +669,11 @@ impl MahjongEngine {
                 }
                 assert!(s0 != SEAT);
 
-                let mut contexts = vec![];
+                let mut ctxs = vec![];
+                let mut total_d_scores = [0; SEAT];
                 for &s in seats {
-                    let ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
-                    let (total, _, _) = ctx.points;
+                    let score_ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
+                    let (total, _, _) = score_ctx.points;
                     let mut d_scores = [0; SEAT]; // 得点変動
                     d_scores[turn] -= total; // 直撃を受けたプレイヤー
                     d_scores[s] += total; // 和了ったプレイヤー
@@ -659,8 +684,23 @@ impl MahjongEngine {
                         d_scores[s] += honba as i32 * 300;
                         d_scores[s] += kyoutaku as i32 * 1000;
                     }
+                    for s in 0..SEAT {
+                        total_d_scores[s] += d_scores[s];
+                    }
 
-                    contexts.push((s, d_scores, ctx));
+                    let pl = &stg.players[s];
+                    let win_ctx = WinContext {
+                        seat: s,
+                        hand: tiles_from_tile_table(&pl.hand),
+                        win_tile: stg.last_tile.unwrap().2,
+                        melds: pl.melds.clone(),
+                        is_dealer: stg.is_dealer(s),
+                        is_drawn: false,
+                        is_riichi: pl.riichi.is_some(),
+                        delta_scores: d_scores,
+                        score_context: score_ctx,
+                    };
+                    ctxs.push(win_ctx);
                 }
 
                 // stage情報
@@ -673,7 +713,13 @@ impl MahjongEngine {
                 need_dealer_change = seats.iter().all(|&s| !stg.is_dealer(s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.handle_event(Event::win(ura_doras, contexts));
+                self.handle_event(Event::win(
+                    ctxs,
+                    stg.doras.clone(),
+                    ura_doras,
+                    stg.get_scores(),
+                    total_d_scores,
+                ));
             }
             KyokuResult::Draw(type_) => {
                 match type_ {

@@ -104,16 +104,14 @@ impl MahjongsoulApp {
                     game.apply(&e);
                     last_event = None;
                 }
-                if last_event.is_none() {
-                    if !self.read_only {
-                        if let Some(a) = game.poll_action() {
-                            let msg = json!({
-                                "id": "0",
-                                "op": "eval",
-                                "data": a,
-                            });
-                            conn_msc.send(&msg.to_string());
-                        }
+                if last_event.is_none() && !self.read_only {
+                    if let Some(a) = game.poll_action() {
+                        let msg = json!({
+                            "id": "0",
+                            "op": "eval",
+                            "data": a,
+                        });
+                        conn_msc.send(&msg.to_string());
                     }
                 }
             }
@@ -279,9 +277,8 @@ impl Mahjongsoul {
         let start = time::Instant::now();
         let act = self.ctrl.select_action(self.seat, &self.acts, self.retry);
         self.retry += 1;
-        if act.is_none() {
-            return None;
-        }
+
+        act.as_ref()?; // None なら return
         let act = act.unwrap();
 
         println!("possible: {:?}", self.acts);
@@ -342,7 +339,7 @@ impl Mahjongsoul {
                 format!("action_gang({})", arg_idx)
             }
             Riichi => {
-                let (t, m) = if cs.len() == 0 {
+                let (t, m) = if cs.is_empty() {
                     (stg.players[stg.turn].drawn.unwrap(), true)
                 } else {
                     (cs[0], false)
@@ -374,7 +371,7 @@ impl Mahjongsoul {
         };
 
         self.acts = vec![];
-        return Some(json!(format!("msc.ui.{}", action)));
+        Some(json!(format!("msc.ui.{}", action)))
     }
 
     fn update_doras(&mut self, data: &Value) {
@@ -503,18 +500,20 @@ impl Mahjongsoul {
     }
 
     fn handler_hule(&mut self, data: &Value) {
-        let mut d_scores = [0; SEAT];
-        for (s, score) in as_enumerate(&data["delta_scores"]) {
-            d_scores[s] = as_i32(score);
-        }
-
+        let stg = self.ctrl.get_stage();
+        let mut doras = vec![];
         let mut ura_doras = vec![];
-        let mut wins = vec![];
+        let mut ctxs = vec![];
         for win in as_array(&data["hules"]) {
             let s = as_usize(&win["seat"]);
+            let hand = tiles_from_mjsoul(&win["hand"]);
+            let win_tile = tile_from_mjsoul(&win["hu_tile"]);
+            let is_dealer = as_bool(&win["qinjia"]);
+            let is_riichi = as_bool(&win["liqi"]);
+            let is_drawn = as_bool(&win["zimo"]);
+
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
-            let hand = tiles_from_mjsoul(&win["hand"]);
             let fu = as_usize(&win["fu"]);
             let fan = if is_yakuman { 0 } else { count };
             let score = as_i32(&win["dadian"]);
@@ -525,6 +524,15 @@ impl Mahjongsoul {
                 as_i32(&win["point_zimo_xian"]),
                 win["point_zimo_qin"].as_i64().unwrap_or(0) as Point,
             );
+
+            if doras.is_empty() {
+                doras = tiles_from_mjsoul(&win["doras"]);
+            }
+            if ura_doras.is_empty() {
+                if let Value::Array(_) = win["li_doras"] {
+                    ura_doras = tiles_from_mjsoul(&win["li_doras"]);
+                }
+            }
 
             let mut yakus = vec![];
             for yaku in as_array(&win["fans"]) {
@@ -551,8 +559,7 @@ impl Mahjongsoul {
                 };
             }
 
-            let ctx = WinContext {
-                hand,
+            let score_ctx = ScoreContext {
                 yakus,
                 fu,
                 fan,
@@ -561,16 +568,32 @@ impl Mahjongsoul {
                 points,
                 title,
             };
-            wins.push((s, d_scores, ctx));
 
-            d_scores = [0; SEAT]; // ダブロン,トリロンの場合の内訳は不明なので最初の和了に集約
+            let win_ctx = WinContext {
+                seat: s,
+                hand,
+                win_tile,
+                melds: stg.players[s].melds.clone(),
+                is_dealer,
+                is_drawn,
+                is_riichi,
+                delta_scores: [0; SEAT], // 和了毎のスコア内訳は不明
+                score_context: score_ctx,
+            };
 
-            if let Value::Array(_) = win["li_doras"] {
-                ura_doras = tiles_from_mjsoul(&win["li_doras"]);
-            }
+            ctxs.push(win_ctx);
         }
 
-        self.handle_event(Event::win(ura_doras, wins));
+        let mut scores = [0; SEAT];
+        for (s, score) in as_enumerate(&data["old_scores"]) {
+            scores[s] = as_i32(score);
+        }
+        let mut d_scores = [0; SEAT];
+        for (s, score) in as_enumerate(&data["delta_scores"]) {
+            d_scores[s] = as_i32(score);
+        }
+
+        self.handle_event(Event::win(ctxs, doras, ura_doras, scores, d_scores));
     }
 
     fn handler_liuju(&mut self, data: &Value) {

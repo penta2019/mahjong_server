@@ -60,15 +60,10 @@ impl Listener for EventPrinter {
             }
             Win(e) => {
                 println!("Win");
-                println!("ura_dora: {}", vec_to_string(&e.ura_doras));
+                println!("doras: {}", vec_to_string(&e.doras));
+                println!("ura_doras: {}", vec_to_string(&e.ura_doras));
                 println!("{:?}", e.contexts);
-                let mut deltas = [0; SEAT];
-                for ctx in &e.contexts {
-                    for s in 0..SEAT {
-                        deltas[s] += ctx.1[s];
-                    }
-                }
-                self.print_score_change(stg, &deltas);
+                self.print_score_change(stg, &e.delta_scores);
                 println!("{}", stg);
             }
             Draw(e) => {

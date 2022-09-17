@@ -2,9 +2,9 @@ use super::*;
 
 pub type Points = (Point, Point, Point); // (ロンの支払い, ツモ・子の支払い, ツモ・親の支払い)
 
+// 手役評価関数 hand::evaluate::hand_evaluateの返り値
 #[derive(Debug, Deserialize, Serialize)]
-pub struct WinContext {
-    pub hand: Vec<Tile>,             // 和了手牌(鳴きは含まない)
+pub struct ScoreContext {
     pub yakus: Vec<(String, usize)>, // 役一覧(ドラを含む), Vec<(name, fan)>
     pub fu: usize,                   // 符数
     pub fan: usize,                  // 飜数(ドラを含む), 役満の場合は0
@@ -15,3 +15,17 @@ pub struct WinContext {
 }
 
 // TODO: yakuman_countをis_yakumanに変更してfanを通常の翻数と役満倍率で兼用 (要検討)
+
+// 和了情報
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WinContext {
+    pub seat: usize,                 // 和了者
+    pub hand: Vec<Tile>,             // 手牌 (和了牌は含まない = 3*n+2-1枚)
+    pub win_tile: Tile,              // 和了牌
+    pub melds: Vec<Meld>,            // 副露
+    pub is_dealer: bool,             // 親番フラグ
+    pub is_drawn: bool,              // ツモフラグ
+    pub is_riichi: bool,             // 立直フラグ
+    pub delta_scores: [Point; SEAT], // この和了による点数変動 (ダブロン時の他の和了者の点数は含まない)
+    pub score_context: ScoreContext, // スコア計算に関する情報
+}

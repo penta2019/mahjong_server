@@ -243,7 +243,7 @@ impl MjaiEvent {
         target: Seat,
         tile: Tile,
         ura_doras: &Vec<Tile>,
-        context: &WinContext,
+        context: &ScoreContext,
         deltas: &[Point; SEAT],
         scores: &[Score; SEAT],
     ) -> Self {
@@ -286,9 +286,7 @@ impl MjaiEvent {
     }
 
     pub fn end_game(scores: &[Score; SEAT]) -> Self {
-        Self::EndGame {
-            scores: *scores,
-        }
+        Self::EndGame { scores: *scores }
     }
 }
 

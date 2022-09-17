@@ -3,7 +3,7 @@ use super::point::*;
 use super::yaku::*;
 use crate::model::*;
 
-pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<WinContext> {
+pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<ScoreContext> {
     let pl = &stg.players[stg.turn];
     if !pl.is_shown {
         return None;
@@ -63,7 +63,11 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Win
     None
 }
 
-pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &Vec<Tile>, seat: Seat) -> Option<WinContext> {
+pub fn evaluate_hand_ron(
+    stg: &Stage,
+    ura_dora_wall: &Vec<Tile>,
+    seat: Seat,
+) -> Option<ScoreContext> {
     if seat == stg.turn {
         return None;
     }
@@ -158,7 +162,7 @@ pub fn evaluate_hand(
     prevalent_wind: Index,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Index,       // 自風 (同上)
     yaku_flags: &YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
-) -> Option<WinContext> {
+) -> Option<ScoreContext> {
     let mut wins = vec![]; // 和了形のリスト (無役を含む)
 
     // 和了(通常)
@@ -231,7 +235,6 @@ pub fn evaluate_hand(
 
     let mut results = vec![];
     for ctx in wins {
-        let hand = tiles_from_tile_table(hand);
         let fu = ctx.calc_fu();
         let (yakus, mut fan, yakuman) = ctx.calc_yaku();
         if yakus.is_empty() {
@@ -275,8 +278,7 @@ pub fn evaluate_hand(
         } else {
             points.0
         };
-        results.push(WinContext {
-            hand,
+        results.push(ScoreContext {
             yakus,
             fu,
             fan,
@@ -337,14 +339,14 @@ fn count_dora(hand: &TileTable, melds: &Vec<Meld>, doras: &Vec<Tile>) -> usize {
 }
 
 fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
-    if stg.players[seat].discards.len() != 0 {
+    if !stg.players[seat].discards.is_empty() {
         return false;
     } else {
         for s in 0..SEAT {
-            if stg.players[s].melds.len() != 0 {
+            if !stg.players[s].melds.is_empty() {
                 return false;
             }
         }
     }
-    return true;
+    true
 }

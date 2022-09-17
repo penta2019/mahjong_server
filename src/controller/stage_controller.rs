@@ -358,7 +358,7 @@ fn event_dora(stg: &mut Stage, event: &EventDora) {
 
 fn event_win(stg: &mut Stage, event: &EventWin) {
     for ctx in &event.contexts {
-        update_scores(stg, &ctx.1);
+        update_scores(stg, &ctx.delta_scores);
     }
 }
 

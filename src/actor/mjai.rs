@@ -223,14 +223,15 @@ impl MjaiEndpoint {
     }
 
     fn notify_win(&mut self, stg: &Stage, event: &EventWin) {
-        for (seat, deltas, ctx) in &event.contexts {
+        // for (seat, deltas, ctx) in &event.contexts {
+        for ctx in &event.contexts {
             self.add_record(MjaiEvent::hora(
-                *seat,
+                ctx.seat,
                 stg.turn,
                 stg.last_tile.unwrap().2,
                 &event.ura_doras,
-                ctx,
-                deltas,
+                &ctx.score_context,
+                &ctx.delta_scores,
                 &stg.get_scores(),
             ));
         }

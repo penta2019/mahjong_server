@@ -182,34 +182,38 @@ impl TenhouSerializer {
                 k.doras.push(tile_to_tenhou(e.tile));
             }
             Event::Win(e) => {
-                let target_seat = stg.turn;
                 k.result = "和了".to_string();
                 k.ura_doras = tiles_to_tenhou(&e.ura_doras);
-                for (seat, points, ctx) in &e.contexts {
+                // for (seat, points, ctx) in &e.contexts {
+                for ctx in &e.contexts {
+                    let score_ctx = &ctx.score_context;
                     k.result_detail
-                        .push(points.iter().map(|&p| json!(p)).collect());
-                    let mut detail = vec![json!(seat), json!(target_seat), json!(seat)];
-                    let title = if ctx.title.is_empty() {
-                        format!("{}符{}飜", ctx.fu, ctx.fan)
+                        .push(ctx.delta_scores.iter().map(|&p| json!(p)).collect());
+                    // detail = [和了者, 放銃者, 責任払い?]
+                    let mut detail = vec![json!(ctx.seat), json!(stg.turn), json!(ctx.seat)];
+                    let title = if score_ctx.title.is_empty() {
+                        format!("{}符{}飜", score_ctx.fu, score_ctx.fan)
                     } else {
-                        match ctx.title.as_str() {
-                            "数え役満" | "二倍役満" | "三倍役満" => "役満".to_string(),
-                            _ => ctx.title.clone(),
+                        if score_ctx.yakuman != 0 || score_ctx.fan >= 13 {
+                            "役満"
+                        } else {
+                            &score_ctx.title
                         }
+                        .to_string()
                     };
-                    if *seat == stg.turn {
-                        if ctx.points.2 == 0 {
-                            detail.push(json!(format!("{}{}点∀", title, ctx.points.1)));
+                    if ctx.is_drawn {
+                        if score_ctx.points.2 == 0 {
+                            detail.push(json!(format!("{}{}点∀", title, score_ctx.points.1)));
                         } else {
                             detail.push(json!(format!(
                                 "{}{}-{}点",
-                                title, ctx.points.1, ctx.points.2,
+                                title, score_ctx.points.1, score_ctx.points.2,
                             )));
                         }
                     } else {
-                        detail.push(json!(format!("{}{}点", title, ctx.points.0)));
+                        detail.push(json!(format!("{}{}点", title, score_ctx.points.0)));
                     }
-                    for y in &ctx.yakus {
+                    for y in &score_ctx.yakus {
                         detail.push(json!(format!("{}({}飜)", y.0, y.1)));
                     }
                     k.result_detail.push(detail);

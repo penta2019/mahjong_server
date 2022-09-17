@@ -107,7 +107,7 @@ impl Actor for Manual {
                                 error!("invalid Riichi tile");
                             }
                         } else {
-                            assert!(false);
+                            panic!();
                         }
                     } else {
                         if let Some(a) = acts.iter().find(|a| a.0 == Discard) {

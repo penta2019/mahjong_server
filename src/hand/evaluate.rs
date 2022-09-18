@@ -240,7 +240,7 @@ pub fn evaluate_hand(
         if yakus.is_empty() {
             continue; // 無役
         }
-        let mut yakus: Vec<(String, usize)> = yakus
+        let mut yakus: Vec<Yaku> = yakus
             .iter()
             .map(|y| {
                 let fan = if y.yakuman > 0 {
@@ -252,19 +252,31 @@ pub fn evaluate_hand(
                         y.fan_close
                     }
                 };
-                (y.name.to_string(), fan)
+                Yaku {
+                    name: y.name.to_string(),
+                    fan,
+                }
             })
             .collect();
         if yakuman == 0 {
             fan += n_dora + n_red_dora + n_ura_dora;
             if n_dora != 0 {
-                yakus.push(("ドラ".to_string(), n_dora));
+                yakus.push(Yaku {
+                    name: "ドラ".to_string(),
+                    fan: n_dora,
+                });
             }
             if n_red_dora != 0 {
-                yakus.push(("赤ドラ".to_string(), n_red_dora));
+                yakus.push(Yaku {
+                    name: "赤ドラ".to_string(),
+                    fan: n_red_dora,
+                });
             }
             if n_ura_dora != 0 {
-                yakus.push(("裏ドラ".to_string(), n_ura_dora));
+                yakus.push(Yaku {
+                    name: "裏ドラ".to_string(),
+                    fan: n_ura_dora,
+                });
             }
         }
         let points = get_points(is_dealer, fu, fan, yakuman);

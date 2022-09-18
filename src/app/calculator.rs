@@ -182,7 +182,7 @@ impl Calculator {
 
             let mut yakus = "".to_string();
             for y in ctx.yakus {
-                let _ = write!(yakus, "{}({}), ", y.0, y.1);
+                let _ = write!(yakus, "{}({}), ", y.name, y.fan);
             }
             println!("yakus: {}", yakus);
 

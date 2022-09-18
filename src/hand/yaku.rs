@@ -60,7 +60,7 @@ impl YakuContext {
     }
 
     // (役一覧, 飜数, 役満倍数)を返却. 役満ではない場合,役満倍率は0, 役一覧に鳴き0飜とドラは含まない
-    pub fn calc_yaku(&self) -> (Vec<&'static Yaku>, usize, usize) {
+    pub fn calc_yaku(&self) -> (Vec<&'static YakuDefine>, usize, usize) {
         let mut yaku = vec![];
         for y in YAKU_LIST {
             if (y.func)(self) {
@@ -277,7 +277,7 @@ fn check_yakuhai(ph: &ParsedHand) -> TileRow {
     tr
 }
 
-pub struct Yaku {
+pub struct YakuDefine {
     pub id: usize, // 雀魂のID > for(let y of cfg.fan.fan.rows_) {console.log(y.id, y.name_jp);}
     pub name: &'static str, // 天鳳の名称 https://tenhou.net/6
     pub func: fn(&YakuContext) -> bool, // 役判定関数
@@ -286,8 +286,8 @@ pub struct Yaku {
     pub yakuman: usize, // 通常役: 0, 役満: 1, 二倍役満: 2
 }
 
-impl Yaku {
-    pub fn get_from_id(id: usize) -> Option<&'static Yaku> {
+impl YakuDefine {
+    pub fn get_from_id(id: usize) -> Option<&'static YakuDefine> {
         assert!(id != 10 && id != 11); // 自風, 場風は特定不能
         for y in YAKU_LIST {
             if y.id == id {
@@ -298,7 +298,7 @@ impl Yaku {
     }
 }
 
-impl fmt::Debug for Yaku {
+impl fmt::Debug for YakuDefine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -310,7 +310,7 @@ impl fmt::Debug for Yaku {
 
 macro_rules! yaku {
     ($id: expr, $n: expr, $f: expr, $c: expr, $o: expr, $y: expr) => {
-        Yaku {
+        YakuDefine {
             id: $id,
             name: $n,
             func: $f,
@@ -321,7 +321,7 @@ macro_rules! yaku {
     };
 }
 
-const YAKU_LIST: &[Yaku] = &[
+const YAKU_LIST: &[YakuDefine] = &[
     yaku!(11, "場風 東", is_bakaze_e, 1, 1, 0),
     yaku!(11, "場風 南", is_bakaze_s, 1, 1, 0),
     yaku!(11, "場風 西", is_bakaze_w, 1, 1, 0),

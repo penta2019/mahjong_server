@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 
 use crate::actor::create_actor;
 use crate::controller::*;
-use crate::hand::{get_score_title, Yaku};
+use crate::hand::{get_score_title, YakuDefine};
 use crate::listener::EventWriter;
 use crate::model::*;
 use crate::util::common::*;
@@ -543,15 +543,24 @@ impl Mahjongsoul {
                 match id {
                     10 => {
                         // 自風
-                        yakus.push((format!("自風 {}", jp_wind[stg.get_seat_wind(s)]), 1));
+                        yakus.push(Yaku {
+                            name: format!("自風 {}", jp_wind[stg.get_seat_wind(s)]),
+                            fan: 1,
+                        });
                     }
                     11 => {
                         // 場風
-                        yakus.push((format!("場風 {}", jp_wind[stg.get_prevalent_wind()]), 1));
+                        yakus.push(Yaku {
+                            name: format!("場風 {}", jp_wind[stg.get_prevalent_wind()]),
+                            fan: 1,
+                        });
                     }
                     _ => {
-                        if let Some(y) = Yaku::get_from_id(id) {
-                            yakus.push((y.name.to_string(), val));
+                        if let Some(y) = YakuDefine::get_from_id(id) {
+                            yakus.push(Yaku {
+                                name: y.name.to_string(),
+                                fan: val,
+                            });
                         } else {
                             error!("yaku not found: id = {}", id);
                         }

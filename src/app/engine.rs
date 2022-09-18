@@ -451,7 +451,7 @@ impl MahjongEngine {
                 self.melding = Some(act);
                 self.handle_event(Event::kita(turn, false));
             }
-            _ => panic!("action {:?} not found in {:?}", act, acts),
+            _ => panic!("action {} not found in {}", act, vec_to_string(&acts)),
         };
 
         if let Some(kd) = self.kan_dora {
@@ -515,7 +515,7 @@ impl MahjongEngine {
                         Pon => pon = Some((s, act)),
                         Minkan => minkan = Some((s, act)),
                         Ron => rons.push(s),
-                        _ => panic!("action {:?} not found in {:?}", act, acts),
+                        _ => panic!("action {} not found in {}", act, vec_to_string(&acts)),
                     }
                     acts_list[s] = vec![];
                 }

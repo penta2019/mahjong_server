@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 
 use super::*;
 use crate::convert::mjai::*;
-use crate::util::common::{flush, sleep_ms, vec_remove};
+use crate::util::common::{flush, sleep_ms, vec_remove, vec_to_string};
 
 use crate::{error, info};
 
@@ -326,8 +326,9 @@ impl Actor for MjaiEndpoint {
             _ => {
                 if !acts.contains(&act) {
                     error!(
-                        "selected_action={:?} is not contained in possible_actions={:?}",
-                        act, acts
+                        "selected_action={} is not contained in possible_actions={}",
+                        act,
+                        vec_to_string(acts)
                     );
                     return Some(Action::nop());
                 }

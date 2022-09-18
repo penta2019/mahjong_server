@@ -111,3 +111,11 @@ impl Action {
         Self::new(ActionType::Ron, vec![])
     }
 }
+
+impl fmt::Display for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}{:?}", self.action_type, self.tiles)?;
+
+        Ok(())
+    }
+}

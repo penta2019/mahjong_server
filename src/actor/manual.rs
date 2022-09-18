@@ -50,7 +50,7 @@ impl Actor for Manual {
             println!("[Call Action] select action");
         }
         for (idx, act) in acts.iter().enumerate() {
-            println!("{} => {:?}", idx, act);
+            println!("{} => {}", idx, act);
         }
 
         let mut riichi = false;
@@ -91,7 +91,7 @@ impl Actor for Manual {
                     let h = &stg.players[self.seat].hand;
                     let t = Tile(ti, ni);
                     if t.0 > TZ || t.1 > 9 {
-                        error!("invalid tile: {:?}", t);
+                        error!("invalid tile: {}", t);
                         continue;
                     } else if h[t.0][t.1] == 0 {
                         error!("tile not found: {}", t);

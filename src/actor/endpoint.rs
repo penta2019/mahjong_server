@@ -58,7 +58,7 @@ impl Endpoint {
                 match conn.recv() {
                     Message::Open => d.cursor = 0,
                     Message::Text(act) => {
-                        // println!("{:?}", act);
+                        // println!("{}", act);
                         match serde_json::from_str::<Action>(&act) {
                             Ok(a) => d.action = Some(a),
                             Err(e) => error!("{}: {}", e, act),

@@ -77,7 +77,7 @@ pub fn vec_count<T: PartialEq>(v: &Vec<T>, e: &T) -> usize {
 
 pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
     let vs: Vec<String> = v.iter().map(|x| format!("{}", x)).collect();
-    vs.join(" ")
+    "[".to_string() + &vs.join(", ") + "]"
 }
 
 pub fn cartesian_product<T>(vv: &Vec<Vec<T>>) -> Vec<Vec<&T>> {

@@ -281,8 +281,8 @@ impl Mahjongsoul {
         act.as_ref()?; // None なら return
         let act = act.unwrap();
 
-        println!("possible: {:?}", self.acts);
-        println!("selected: {:?}", act);
+        println!("possible: {}", vec_to_string(&self.acts));
+        println!("selected: {}", act);
         println!();
         flush();
 

@@ -387,12 +387,15 @@ fn disable_ippatsu(stg: &mut Stage) {
 fn update_after_discard_completed(stg: &mut Stage) {
     // 他のプレイヤーの捨て牌,または加槓した牌の見逃しフリテン
     if let Some((s, tp, t)) = stg.last_tile {
-        if tp == ActionType::Discard || tp == ActionType::Kakan {
-            for s2 in 0..SEAT {
-                if s2 != s && stg.players[s2].win_tiles.contains(&t) {
-                    stg.players[s2].is_furiten_other = true;
+        match tp {
+            ActionType::Discard | ActionType::Kakan => {
+                for s2 in 0..SEAT {
+                    if s2 != s && stg.players[s2].win_tiles.contains(&t) {
+                        stg.players[s2].is_furiten_other = true;
+                    }
                 }
             }
+            _ => {}
         }
     }
 

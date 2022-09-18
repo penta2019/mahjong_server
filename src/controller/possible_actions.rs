@@ -7,15 +7,21 @@ use crate::model::*;
 
 pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<Action> {
     if let Some(act) = melding {
-        if act.0 == ActionType::Chi || act.0 == ActionType::Pon {
-            // チー,ポンのあとは打牌のみ
-            return vec![Action(ActionType::Discard, calc_restricted_discards(act))];
+        match act.action_type {
+            ActionType::Chi | ActionType::Pon => {
+                // チー,ポンのあとは打牌のみ
+                return vec![Action::new(
+                    ActionType::Discard,
+                    calc_restricted_discards(act),
+                )];
+            }
+            _ => {}
         }
     }
 
     let mut acts = vec![Action::nop()];
     if !stg.players[stg.turn].is_riichi {
-        acts.push(Action(ActionType::Discard, vec![]));
+        acts.push(Action::new(ActionType::Discard, vec![]));
     }
     acts.append(&mut check_ankan(stg));
     acts.append(&mut check_kakan(stg));
@@ -51,7 +57,7 @@ fn check_riichi(stg: &Stage) -> Vec<Action> {
     if tiles.is_empty() {
         vec![]
     } else {
-        vec![Action(ActionType::Riichi, tiles)]
+        vec![Action::new(ActionType::Riichi, tiles)]
     }
 }
 
@@ -330,7 +336,8 @@ fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
 // 鳴き後の組み換え禁止の牌
 fn calc_restricted_discards(act: &Action) -> Vec<Tile> {
     let mut v = vec![];
-    let Action(tp, cs) = act;
+    let tp = act.action_type;
+    let cs = &act.tiles;
     match tp {
         ActionType::Chi => {
             // 赤5が混じっている可能性を考慮

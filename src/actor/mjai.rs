@@ -316,7 +316,7 @@ impl Actor for MjaiEndpoint {
 
         let act = mjai_act.to_action(self.seat == stg.turn);
         // actがacts内に存在する有効な操作であるかをチェック
-        match act.0 {
+        match act.action_type {
             ActionType::Discard => {
                 if self.seat != stg.turn {
                     error!("invalid discard action");

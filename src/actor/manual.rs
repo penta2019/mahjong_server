@@ -99,8 +99,8 @@ impl Actor for Manual {
                     }
 
                     if riichi {
-                        if let Some(a) = acts.iter().find(|a| a.0 == Riichi) {
-                            if a.1.contains(&t) {
+                        if let Some(a) = acts.iter().find(|a| a.action_type == Riichi) {
+                            if a.tiles.contains(&t) {
                                 println!();
                                 return Some(Action::riichi(t));
                             } else {
@@ -110,8 +110,8 @@ impl Actor for Manual {
                             panic!();
                         }
                     } else {
-                        if let Some(a) = acts.iter().find(|a| a.0 == Discard) {
-                            if !a.1.contains(&t) {
+                        if let Some(a) = acts.iter().find(|a| a.action_type == Discard) {
+                            if !a.tiles.contains(&t) {
                                 println!();
                                 return Some(Action::discard(t));
                             } else {
@@ -149,7 +149,7 @@ impl Actor for Manual {
                         continue;
                     }
 
-                    match acts[n].0 {
+                    match acts[n].action_type {
                         Discard => {
                             println!("please select tile");
                         }

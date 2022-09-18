@@ -388,7 +388,8 @@ impl MahjongEngine {
             sleep_ms(10);
         };
 
-        let Action(tp, cs) = act.clone();
+        let tp = act.action_type;
+        let cs = act.tiles.clone();
         self.melding = None;
 
         match tp {
@@ -406,7 +407,12 @@ impl MahjongEngine {
             Discard => {
                 // 打牌: ツモ切り以外
                 let t = cs[0];
-                assert!(!acts.iter().find(|a| a.0 == Discard).unwrap().1.contains(&t));
+                assert!(!acts
+                    .iter()
+                    .find(|a| a.action_type == Discard)
+                    .unwrap()
+                    .tiles
+                    .contains(&t));
                 self.handle_event(Event::discard(turn, t, false, false))
             }
             Riichi => {
@@ -419,7 +425,12 @@ impl MahjongEngine {
                     let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
                     (t, m)
                 };
-                assert!(acts.iter().find(|a| a.0 == Riichi).unwrap().1.contains(&t));
+                assert!(acts
+                    .iter()
+                    .find(|a| a.action_type == Riichi)
+                    .unwrap()
+                    .tiles
+                    .contains(&t));
                 self.handle_event(Event::discard(turn, t, m, true));
             }
             Ankan => {
@@ -462,7 +473,7 @@ impl MahjongEngine {
         let mut n_chi = 0;
         for s in 0..SEAT {
             for act in &acts_list[s] {
-                match act.0 {
+                match act.action_type {
                     Nop => {}
                     Chi => n_chi += 1,
                     Pon => n_pon += 1,
@@ -489,7 +500,7 @@ impl MahjongEngine {
                 }
                 if let Some(act) = self.ctrl.select_action(s, acts, retry) {
                     for act in acts {
-                        match act.0 {
+                        match act.action_type {
                             Nop => {}
                             Chi => n_chi -= 1,
                             Pon => n_pon -= 1,
@@ -498,7 +509,7 @@ impl MahjongEngine {
                             _ => panic!(),
                         }
                     }
-                    match act.0 {
+                    match act.action_type {
                         Nop => {}
                         Chi => chi = Some((s, act)),
                         Pon => pon = Some((s, act)),
@@ -518,21 +529,21 @@ impl MahjongEngine {
             n_priority += n_minkan;
             if n_priority == 0 && minkan != None {
                 let (s, act) = minkan.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Minkan, act.1.clone()));
+                self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone()));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_pon;
             if n_priority == 0 && pon != None {
                 let (s, act) = pon.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Pon, act.1.clone()));
+                self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone()));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_chi;
             if n_priority == 0 && chi != None {
                 let (s, act) = chi.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Chi, act.1.clone()));
+                self.handle_event(Event::meld(s, MeldType::Chi, act.tiles.clone()));
                 self.melding = Some(act);
                 break;
             }
@@ -553,12 +564,12 @@ impl MahjongEngine {
     fn do_event_deal(&mut self) {
         let stg = self.get_stage();
         let turn = stg.turn;
-        if let Some(Action(meld_type, _)) = self.melding {
-            match meld_type {
+        if let Some(Action { action_type, .. }) = self.melding {
+            match action_type {
                 Pon | Chi => {}
                 Ankan | Minkan | Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    if meld_type == Ankan {
+                    if action_type == Ankan {
                         self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
                         self.handle_event(Event::deal(turn, r));
                     } else {

@@ -287,12 +287,13 @@ impl Mahjongsoul {
         flush();
 
         // 選択されたactionのパース
-        let arg_idx = if act.0 == Discard || act.0 == Riichi {
-            0
-        } else {
-            self.acts_idxs[self.acts.iter().position(|act2| act2 == &act).unwrap()]
+        let arg_idx = match act.action_type {
+            Discard | Riichi => 0,
+            _ => self.acts_idxs[self.acts.iter().position(|act2| act2 == &act).unwrap()],
         };
-        let Action(tp, cs) = act;
+
+        let tp = act.action_type;
+        let cs = &act.tiles;
 
         // sleep処理
         if self.step <= 1 {
@@ -756,7 +757,7 @@ fn parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
                 } else {
                     vec![vec![]]
                 };
-                push(Action(Discard, combs[0].clone()), 0);
+                push(Action::new(Discard, combs[0].clone()), 0);
             }
             2 => {
                 // チー
@@ -796,7 +797,7 @@ fn parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
             7 => {
                 // リーチ
                 push(
-                    Action(
+                    Action::new(
                         ActionType::Riichi,
                         parse_combination(combs).iter().map(|x| x[0]).collect(),
                     ),

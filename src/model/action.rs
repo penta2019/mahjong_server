@@ -28,78 +28,86 @@ pub enum ActionType {
 // Vec<Tile>は操作により手牌からなくなる牌
 // Chi, Ponなどの標的の牌はstage.last_tileを参照する
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Action(pub ActionType, pub Vec<Tile>);
+pub struct Action {
+    pub action_type: ActionType,
+    pub tiles: Vec<Tile>,
+}
 
 impl Action {
     #[inline]
+    pub fn new(action_type: ActionType, tiles: Vec<Tile>) -> Self {
+        Self { action_type, tiles }
+    }
+
+    #[inline]
     pub fn nop() -> Self {
-        Self(ActionType::Nop, vec![])
+        Self::new(ActionType::Nop, vec![])
     }
 
     #[inline]
     pub fn discard(t: Tile) -> Self {
-        Self(ActionType::Discard, vec![t])
+        Self::new(ActionType::Discard, vec![t])
     }
 
     #[inline]
     pub fn ankan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 4);
         v.sort();
-        Self(ActionType::Ankan, v)
+        Self::new(ActionType::Ankan, v)
     }
 
     #[inline]
     pub fn kakan(t: Tile) -> Self {
-        Self(ActionType::Kakan, vec![t])
+        Self::new(ActionType::Kakan, vec![t])
     }
 
     #[inline]
     pub fn riichi(t: Tile) -> Self {
-        Self(ActionType::Riichi, vec![t])
+        Self::new(ActionType::Riichi, vec![t])
     }
 
     #[inline]
     pub fn riichi_drawn() -> Self {
-        Self(ActionType::Riichi, vec![])
+        Self::new(ActionType::Riichi, vec![])
     }
 
     #[inline]
     pub fn tsumo() -> Self {
-        Self(ActionType::Tsumo, vec![])
+        Self::new(ActionType::Tsumo, vec![])
     }
 
     #[inline]
     pub fn kyushukyuhai() -> Self {
-        Self(ActionType::Kyushukyuhai, vec![])
+        Self::new(ActionType::Kyushukyuhai, vec![])
     }
 
     #[inline]
     pub fn kita() -> Self {
-        Self(ActionType::Kita, vec![Tile(TZ, WN)])
+        Self::new(ActionType::Kita, vec![Tile(TZ, WN)])
     }
 
     #[inline]
     pub fn chi(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
         v.sort();
-        Self(ActionType::Chi, v)
+        Self::new(ActionType::Chi, v)
     }
 
     #[inline]
     pub fn pon(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 2);
         v.sort();
-        Self(ActionType::Pon, v)
+        Self::new(ActionType::Pon, v)
     }
 
     #[inline]
     pub fn minkan(mut v: Vec<Tile>) -> Self {
         assert!(v.len() == 3);
         v.sort();
-        Self(ActionType::Minkan, v)
+        Self::new(ActionType::Minkan, v)
     }
     #[inline]
     pub fn ron() -> Self {
-        Self(ActionType::Ron, vec![])
+        Self::new(ActionType::Ron, vec![])
     }
 }

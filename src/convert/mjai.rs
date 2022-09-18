@@ -349,7 +349,8 @@ pub enum MjaiAction {
 
 impl MjaiAction {
     pub fn from_action(stg: &Stage, seat: Seat, act: &Action) -> Option<Self> {
-        let Action(tp, cs) = act;
+        let tp = act.action_type;
+        let cs = &act.tiles;
         Some(match tp {
             ActionType::Nop => return None,
             ActionType::Discard => return None,
@@ -358,7 +359,7 @@ impl MjaiAction {
                 consumed: tiles_to_mjai(cs),
             },
             ActionType::Kakan => {
-                let t = act.1[0];
+                let t = cs[0];
                 let comsumed = tiles_to_mjai(&if t.1 == 0 {
                     // 赤5
                     let t2 = Tile(t.0, 5);

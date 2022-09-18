@@ -889,6 +889,9 @@ impl MahjongEngine {
             if !pl.melds.is_empty() {
                 return;
             }
+            if pl.discards.is_empty() {
+                return;
+            }
             discards.push(pl.discards[0].tile);
         }
 

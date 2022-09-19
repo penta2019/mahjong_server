@@ -323,15 +323,14 @@ impl Mahjongsoul {
         let action = match tp {
             Nop => {
                 if stg.turn == self.seat {
-                    let idx = 13 - stg.players[self.seat].melds.len() * 3;
-                    format!("action_dapai({})", idx)
+                    let t = stg.players[self.seat].drawn.unwrap();
+                    format!("action_dapai(\"{}\", {})", tile_to_mjsoul(t), true)
                 } else {
                     format!("action_cancel()")
                 }
             }
             Discard => {
-                let idx = calc_dapai_index(stg, self.seat, cs[0], false);
-                format!("action_dapai({})", idx)
+                format!("action_dapai(\"{}\", {})", tile_to_mjsoul(cs[0]), false)
             }
             Ankan => {
                 format!("action_gang({})", arg_idx)
@@ -345,8 +344,7 @@ impl Mahjongsoul {
                 } else {
                     (cs[0], false)
                 };
-                let idx = calc_dapai_index(stg, self.seat, t, m);
-                format!("action_lizhi({})", idx)
+                format!("action_lizhi(\"{}\", {})", tile_to_mjsoul(t), m)
             }
             Tsumo => {
                 format!("action_zimo()")
@@ -667,7 +665,7 @@ impl Mahjongsoul {
     }
 }
 
-fn tile_from_mjsoul2(s: &str) -> Tile {
+fn tile_from_mjsoul_str(s: &str) -> Tile {
     let b = s.as_bytes();
     let n = b[0] - b'0';
     let t = match b[1] as char {
@@ -681,60 +679,15 @@ fn tile_from_mjsoul2(s: &str) -> Tile {
 }
 
 fn tile_from_mjsoul(v: &Value) -> Tile {
-    tile_from_mjsoul2(as_str(v))
+    tile_from_mjsoul_str(as_str(v))
 }
 
 fn tiles_from_mjsoul(v: &Value) -> Vec<Tile> {
     as_vec(tile_from_mjsoul, v)
 }
 
-fn calc_dapai_index(stg: &Stage, seat: Seat, tile: Tile, is_drawn: bool) -> usize {
-    let pl = &stg.players[seat];
-    let h = &pl.hand;
-    let t = tile;
-    let d = if let Some(d) = pl.drawn { d } else { Z8 };
-    let is_drawn = if pl.drawn == Some(t) {
-        if pl.hand[t.0][t.1] == 1 || (t.1 == 5 && pl.hand[t.0][5] == 2 && pl.hand[t.0][0] == 1) {
-            // is_drawn = falseでも指定した牌がツモ牌しかない場合trueにする
-            true
-        } else {
-            is_drawn
-        }
-    } else {
-        // TODO: ここのコード単にfalseで良いかも
-        // ツモった赤5を通常5で指定する場合に通常5がなければ赤5をツモ切り
-        t.1 == 5 && pl.hand[t.0][t.1] == 1 && Some(Tile(t.0, 0)) == pl.drawn
-    };
-
-    let mut idx = 0;
-    for ti in 0..TYPE {
-        for ni in 1..TNUM {
-            if h[ti][ni] > 0 {
-                if ti == t.0 && ni == t.to_normal().1 && !is_drawn {
-                    if ni == 5
-                        && h[ti][5] > 1
-                        && h[ti][0] == 1
-                        && t.1 == 5
-                        && pl.drawn != Some(Tile(ti, 0))
-                    {
-                        return idx + 1; // 赤5が存在しているが指定された牌が通常5の場合
-                    } else {
-                        return idx;
-                    }
-                }
-                idx += h[ti][ni];
-                if ti == d.0 && ni == d.to_normal().1 {
-                    idx -= 1;
-                }
-            }
-        }
-    }
-
-    if !is_drawn {
-        error!("tile {} not found", t);
-    }
-
-    idx
+fn tile_to_mjsoul(t: Tile) -> String {
+    t.to_string().chars().rev().collect()
 }
 
 // Actionと元々のデータの各Action内のIndexを返す
@@ -842,7 +795,7 @@ fn parse_combination(combs: &Value) -> Vec<Vec<Tile>> {
                 .as_str()
                 .unwrap()
                 .split('|')
-                .map(tile_from_mjsoul2)
+                .map(tile_from_mjsoul_str)
                 .collect();
             c.sort();
             c

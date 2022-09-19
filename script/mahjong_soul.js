@@ -178,21 +178,25 @@ msc.UiController = class {
         }, 500);
     }
 
-    // action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる.
-    //     let leftmost_pai = { x: 265, y: 980 };
-    //     let pai_interval = (1405 - 265) / 12;
-    //     let pos = {
-    //         x: leftmost_pai.x + pai_interval * n,
-    //         y: leftmost_pai.y,
-    //     }
-    //     this.mouse_click(pos);
-    // }
-
-    action_dapai(n) { // 一番左をの牌を0番目として左からn番目を捨てる.
+    action_dapai(tile, is_drawn = false) { // 打牌(e.g. 一萬: 1m, 東: 1z, 中: 7z)
         let vp = window.view.ViewPlayer_Me.Inst;
         if (!vp.can_discard) return;
-        vp.setChoosePai(vp.hand[n]);
-        vp.DoDiscardTile();
+        let type = window.mjcore.E_MJPai[tile[1]];
+        let index = tile[0] == 0 ? 5 : tile[0];
+        let dora = tile[0] == 0;
+
+        // is_drawn == trueの時はツモ切り優先で牌を右側から探索
+        let hand = is_drawn ? vp.hand.slice().reverse() : vp.hand;
+
+        for (let t of hand) {
+            let v = t.val
+            if (v.type == type && v.index == index && v.dora == dora) {
+                vp.setChoosePai(t);
+                vp.DoDiscardTile();
+                return;
+            }
+        }
+        msc.log_error(`tile "${tile}" not found in hand`);
     }
 
     action_cancel() { // スキップ
@@ -213,9 +217,9 @@ msc.UiController = class {
         this.choose_detail_if_visible(choose_idx);
     }
 
-    action_lizhi(discard_idx = 0) { // リーチ
+    action_lizhi(tile, is_drawn = false) { // リーチ
         this.btn_click(this.get_op_ui().op_btns.btn_lizhi);
-        setTimeout(() => { this.action_dapai(discard_idx, false); }, 500);
+        setTimeout(() => { this.action_dapai(tile, is_drawn); }, 500);
     }
 
     action_zimo() { // ツモ

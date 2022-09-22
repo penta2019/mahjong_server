@@ -203,18 +203,18 @@ impl EngineApp {
 
 // [Engine]
 #[derive(Debug)]
-enum KyokuResult {
+enum RoundResult {
     Tsumo,          // ツモ番のプレイヤーの和了
     Ron(Vec<Seat>), // ロン 和了ったプレイヤーの配列 (ロン|ダブロン|トリロン)
     Draw(DrawType),
 }
 
 #[derive(Debug)]
-struct NextKyokuInfo {
-    bakaze: usize,
-    kyoku: usize,
-    honba: usize,
-    kyoutaku: usize,
+struct NextRoundInfo {
+    round: usize,
+    dealer: usize,
+    honba_sticks: usize,
+    riichi_sticks: usize,
     scores: [Score; SEAT],
 }
 
@@ -232,8 +232,8 @@ struct MahjongEngine {
     n_kan: usize,            // 槓した回数
     n_kita: usize,           // 北抜きの回数
     is_suukansanra: bool,    // 四槓散了の処理フラグ
-    kyoku_result: Option<KyokuResult>,
-    kyoku_next: NextKyokuInfo,
+    round_result: Option<RoundResult>,
+    round_next: NextRoundInfo,
     is_end: bool,
     // 牌山
     wall: Vec<Tile>,             // 牌山全体 (=136)
@@ -252,11 +252,11 @@ impl MahjongEngine {
     ) -> Self {
         let ctrl = StageController::new(actors, listeners);
         let rng = rand::SeedableRng::seed_from_u64(seed);
-        let kyoku_next = NextKyokuInfo {
-            bakaze: 0,
-            kyoku: 0,
-            honba: 0,
-            kyoutaku: 0,
+        let round_next = NextRoundInfo {
+            round: 0,
+            dealer: 0,
+            honba_sticks: 0,
+            riichi_sticks: 0,
             scores: [initial_score; SEAT],
         };
 
@@ -267,8 +267,8 @@ impl MahjongEngine {
             rng,
             ctrl,
             melding: None,
-            kyoku_result: None,
-            kyoku_next,
+            round_result: None,
+            round_next,
             is_end: false,
             kan_dora: None,
             n_deal: 0,
@@ -298,15 +298,15 @@ impl MahjongEngine {
             self.do_event_new();
             loop {
                 self.do_turn_operation();
-                if self.kyoku_result.is_some() {
+                if self.round_result.is_some() {
                     break;
                 }
                 self.do_call_operation();
-                if self.kyoku_result.is_some() {
+                if self.round_result.is_some() {
                     break;
                 }
                 self.do_event_deal();
-                if self.kyoku_result.is_some() {
+                if self.round_result.is_some() {
                     break;
                 }
             }
@@ -330,7 +330,7 @@ impl MahjongEngine {
         self.n_kita = 0;
         // game end
         self.is_suukansanra = false;
-        self.kyoku_result = None;
+        self.round_result = None;
         // wall
         self.wall = vec![];
         self.dora_wall = vec![];
@@ -352,17 +352,17 @@ impl MahjongEngine {
         }
         // 親の14枚目
         let t = self.draw_tile();
-        ph[self.kyoku_next.kyoku].push(t);
+        ph[self.round_next.dealer].push(t);
 
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
-        let rn = &self.kyoku_next;
+        let rn = &self.round_next;
         let event = Event::new(
-            rn.bakaze,
-            rn.kyoku,
-            rn.honba,
-            rn.kyoutaku,
+            rn.round,
+            rn.dealer,
+            rn.honba_sticks,
+            rn.riichi_sticks,
             doras,
             rn.scores,
             ph,
@@ -442,10 +442,10 @@ impl MahjongEngine {
                 self.handle_event(Event::meld(turn, MeldType::Kakan, cs));
             }
             Tsumo => {
-                self.kyoku_result = Some(KyokuResult::Tsumo);
+                self.round_result = Some(RoundResult::Tsumo);
             }
             Kyushukyuhai => {
-                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Kyushukyuhai));
+                self.round_result = Some(RoundResult::Draw(DrawType::Kyushukyuhai));
             }
             Kita => {
                 self.melding = Some(act);
@@ -523,7 +523,7 @@ impl MahjongEngine {
 
             let mut n_priority = n_rons;
             if n_priority == 0 && !rons.is_empty() {
-                self.kyoku_result = Some(KyokuResult::Ron(rons));
+                self.round_result = Some(RoundResult::Ron(rons));
                 return;
             }
             n_priority += n_minkan;
@@ -590,7 +590,7 @@ impl MahjongEngine {
                 let t = self.draw_tile();
                 self.handle_event(Event::deal(s, t));
             } else {
-                self.kyoku_result = Some(KyokuResult::Draw(DrawType::Kouhaiheikyoku));
+                self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }
         }
         assert!(self.get_stage().wall_count + self.n_deal + self.n_kan == self.wall.len());
@@ -598,22 +598,22 @@ impl MahjongEngine {
 
     fn do_event_win_draw(&mut self) {
         let stg = self.get_stage();
-        let mut bakaze = stg.bakaze;
-        let mut kyoku = stg.kyoku;
-        let mut honba = stg.honba;
-        let mut kyoutaku = stg.kyoutaku;
+        let mut round = stg.round;
+        let mut dealer = stg.dealer;
+        let mut honba_sticks = stg.honba_sticks;
+        let mut riichi_sticks = stg.riichi_sticks;
         let turn = stg.turn;
         let mut need_dealer_change = false; // 親の交代
-        match self.kyoku_result.as_ref().unwrap() {
-            KyokuResult::Tsumo => {
+        match self.round_result.as_ref().unwrap() {
+            RoundResult::Tsumo => {
                 let mut d_scores = [0; SEAT]; // 得点変動
 
                 let score_ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
                 let (_, mut non_dealer, mut dealer) = score_ctx.points;
 
                 // 積み棒
-                non_dealer += honba as i32 * 100;
-                dealer += honba as i32 * 100;
+                non_dealer += honba_sticks as i32 * 100;
+                dealer += honba_sticks as i32 * 100;
 
                 for s in 0..SEAT {
                     if s != turn {
@@ -630,13 +630,13 @@ impl MahjongEngine {
                 }
 
                 // 供託
-                d_scores[turn] += kyoutaku as i32 * 1000;
+                d_scores[turn] += riichi_sticks as i32 * 1000;
 
                 // stage情報
-                kyoutaku = 0;
+                riichi_sticks = 0;
                 // 和了が子の場合　積み棒をリセットして親交代
                 if !stg.is_dealer(turn) {
-                    honba = 0;
+                    honba_sticks = 0;
                     need_dealer_change = true;
                 }
 
@@ -668,7 +668,7 @@ impl MahjongEngine {
                     d_scores,
                 ));
             }
-            KyokuResult::Ron(seats) => {
+            RoundResult::Ron(seats) => {
                 // 放銃者から一番近い和了プレイヤーの探索(上家取り)
                 let mut s0 = SEAT;
                 for s1 in turn + 1..turn + SEAT {
@@ -691,9 +691,9 @@ impl MahjongEngine {
 
                     // 積み棒&供託(上家取り)
                     if s == s0 {
-                        d_scores[turn] -= honba as i32 * 300;
-                        d_scores[s] += honba as i32 * 300;
-                        d_scores[s] += kyoutaku as i32 * 1000;
+                        d_scores[turn] -= honba_sticks as i32 * 300;
+                        d_scores[s] += honba_sticks as i32 * 300;
+                        d_scores[s] += riichi_sticks as i32 * 1000;
                     }
                     for s in 0..SEAT {
                         total_d_scores[s] += d_scores[s];
@@ -715,10 +715,10 @@ impl MahjongEngine {
                 }
 
                 // stage情報
-                kyoutaku = 0;
+                riichi_sticks = 0;
                 // 子の和了がある場合は積み棒をリセット
                 if seats.iter().any(|&s| !stg.is_dealer(s)) {
-                    honba = 0;
+                    honba_sticks = 0;
                 }
                 // 和了が子しかいない場合は親交代
                 need_dealer_change = seats.iter().all(|&s| !stg.is_dealer(s));
@@ -732,7 +732,7 @@ impl MahjongEngine {
                     total_d_scores,
                 ));
             }
-            KyokuResult::Draw(type_) => {
+            RoundResult::Draw(type_) => {
                 match type_ {
                     DrawType::Kouhaiheikyoku => {
                         // 聴牌集計
@@ -802,7 +802,7 @@ impl MahjongEngine {
                         let event =
                             Event::draw(DrawType::Kouhaiheikyoku, hands, d_scores, nm_scores);
                         self.handle_event(event);
-                        need_dealer_change = !tenpais[kyoku];
+                        need_dealer_change = !tenpais[dealer];
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
@@ -810,32 +810,32 @@ impl MahjongEngine {
                         self.handle_event(event);
                     }
                 }
-                honba += 1;
+                honba_sticks += 1;
             }
         }
 
         // 親交代
         if need_dealer_change {
-            kyoku += 1;
-            if kyoku == SEAT {
-                kyoku = 0;
-                bakaze += 1;
+            dealer += 1;
+            if dealer == SEAT {
+                dealer = 0;
+                round += 1;
             }
         }
 
         let stg = self.ctrl.get_stage();
 
         // stage情報更新
-        self.kyoku_next = NextKyokuInfo {
-            bakaze,
-            kyoku,
-            honba,
-            kyoutaku,
+        self.round_next = NextRoundInfo {
+            round,
+            dealer,
+            honba_sticks,
+            riichi_sticks,
             scores: stg.get_scores(),
         };
 
         // 対戦終了判定
-        if bakaze == self.mode {
+        if round == self.mode {
             self.is_end = true;
         }
 
@@ -846,7 +846,7 @@ impl MahjongEngine {
             }
         }
 
-        self.kyoku_result = None;
+        self.round_result = None;
     }
 
     fn do_event_end(&mut self) {
@@ -905,20 +905,20 @@ impl MahjongEngine {
             }
         }
 
-        if self.kyoku_result.is_none() {
-            self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suufuurenda));
+        if self.round_result.is_none() {
+            self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
         }
     }
 
     fn check_suukansanra(&mut self) {
-        if self.is_suukansanra && self.melding == None && self.kyoku_result.is_none() {
-            self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suukansanra));
+        if self.is_suukansanra && self.melding == None && self.round_result.is_none() {
+            self.round_result = Some(RoundResult::Draw(DrawType::Suukansanra));
         }
     }
 
     fn check_suuchariichi(&mut self) {
-        if self.get_stage().players.iter().all(|pl| pl.is_riichi) && self.kyoku_result.is_none() {
-            self.kyoku_result = Some(KyokuResult::Draw(DrawType::Suuchariichi));
+        if self.get_stage().players.iter().all(|pl| pl.is_riichi) && self.round_result.is_none() {
+            self.round_result = Some(RoundResult::Draw(DrawType::Suuchariichi));
         }
     }
 

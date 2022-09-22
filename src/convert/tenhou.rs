@@ -47,10 +47,10 @@ struct TenhouPlayer {
 }
 
 #[derive(Debug, Default)]
-struct TenhouKyoku {
-    kyoku: usize,
-    honba: usize,
-    kyoutaku: usize,
+struct TenhouRound {
+    dealer: usize,
+    honba_sticks: usize,
+    riichi_sticks: usize,
     scores: [Score; SEAT],
     doras: Vec<i64>,
     ura_doras: Vec<i64>,
@@ -59,10 +59,10 @@ struct TenhouKyoku {
     result_detail: Vec<Vec<Value>>,
 }
 
-impl TenhouKyoku {
+impl TenhouRound {
     fn to_log(&self) -> Value {
         let mut v = vec![
-            json!([self.kyoku, self.honba, self.kyoutaku]),
+            json!([self.dealer, self.honba_sticks, self.riichi_sticks]),
             json!(self.scores),
             json!(self.doras),
             json!(self.ura_doras),
@@ -85,27 +85,27 @@ impl TenhouKyoku {
 #[derive(Debug)]
 pub struct TenhouSerializer {
     log: TenhouLog,
-    kyoku: TenhouKyoku,
+    dealer: TenhouRound,
 }
 
 impl TenhouSerializer {
     pub fn new() -> Self {
         Self {
             log: TenhouLog::new(),
-            kyoku: TenhouKyoku::default(),
+            dealer: TenhouRound::default(),
         }
     }
 
     pub fn push_event(&mut self, stg: &Stage, event: &Event) {
-        let k = &mut self.kyoku;
+        let k = &mut self.dealer;
         match event {
             Event::Begin(_) => {}
             Event::New(e) => {
-                self.kyoku = TenhouKyoku::default();
-                let k = &mut self.kyoku;
-                k.kyoku = e.bakaze * 4 + e.kyoku;
-                k.honba = e.honba;
-                k.kyoutaku = e.kyoutaku;
+                self.dealer = TenhouRound::default();
+                let k = &mut self.dealer;
+                k.dealer = e.round * 4 + e.dealer;
+                k.honba_sticks = e.honba_sticks;
+                k.riichi_sticks = e.riichi_sticks;
                 k.doras = tiles_to_tenhou(&e.doras);
                 k.scores = e.scores;
                 for s in 0..SEAT {
@@ -230,7 +230,7 @@ impl TenhouSerializer {
     }
 
     pub fn serialize(&mut self) -> String {
-        self.log.log = vec![self.kyoku.to_log()];
+        self.log.log = vec![self.dealer.to_log()];
         serde_json::to_string(&self.log).unwrap()
     }
 }

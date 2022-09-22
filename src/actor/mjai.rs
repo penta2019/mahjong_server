@@ -151,18 +151,18 @@ impl MjaiEndpoint {
 
         self.add_record(MjaiEvent::start_kyoku(
             self.seat,
-            event.bakaze,
-            event.kyoku,
-            event.honba,
-            event.kyoutaku,
+            event.round,
+            event.dealer,
+            event.honba_sticks,
+            event.riichi_sticks,
             &event.doras,
             &ph,
             &stg.get_scores(),
         ));
 
         let event2 = EventDeal {
-            seat: event.kyoku,
-            tile: stg.players[event.kyoku].drawn.unwrap(),
+            seat: event.dealer,
+            tile: stg.players[event.dealer].drawn.unwrap(),
         };
         self.notify_deal(stg, &event2);
     }

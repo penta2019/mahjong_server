@@ -23,10 +23,10 @@ impl Event {
 
     #[inline]
     pub fn new(
-        bakaze: usize,
-        kyoku: usize,
-        honba: usize,
-        kyoutaku: usize,
+        round: usize,
+        dealer: usize,
+        honba_sticks: usize,
+        riichi_sticks: usize,
         doras: Vec<Tile>,
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
@@ -34,10 +34,10 @@ impl Event {
         mode: usize,
     ) -> Self {
         Self::New(EventNew {
-            bakaze,
-            kyoku,
-            honba,
-            kyoutaku,
+            round,
+            dealer,
+            honba_sticks,
+            riichi_sticks,
             doras,
             scores,
             hands,
@@ -123,10 +123,10 @@ pub struct EventBegin {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventNew {
-    pub bakaze: usize,            // 場風
-    pub kyoku: usize,             // 局
-    pub honba: usize,             // 本場
-    pub kyoutaku: usize,          // 供託(リーチ棒)
+    pub round: usize,             // 場風
+    pub dealer: usize,            // 局
+    pub honba_sticks: usize,      // 本場
+    pub riichi_sticks: usize,     // 供託(リーチ棒)
     pub doras: Vec<Tile>,         // ドラ表示牌
     pub scores: [Score; SEAT],    // 各プレイヤーの所持点
     pub hands: [Vec<Tile>; SEAT], // 各プレイヤーの手牌(親:14枚, 子:13枚)

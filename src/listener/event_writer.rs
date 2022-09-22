@@ -9,7 +9,7 @@ use crate::util::common::*;
 #[derive(Debug)]
 pub struct EventWriter {
     start_time: u64,
-    kyoku_index: i32,
+    round_index: i32,
     record: Vec<Value>,
 }
 
@@ -17,7 +17,7 @@ impl EventWriter {
     pub fn new() -> Self {
         Self {
             start_time: unixtime_now() as u64,
-            kyoku_index: 0,
+            round_index: 0,
             record: vec![],
         }
     }
@@ -30,7 +30,7 @@ impl Listener for EventWriter {
             Event::Begin(_) => {
                 self.record.clear();
                 self.start_time = unixtime_now() as u64;
-                self.kyoku_index = 0;
+                self.round_index = 0;
             }
             Event::New(_) => {
                 self.record.clear();
@@ -45,11 +45,11 @@ impl Listener for EventWriter {
         self.record.push(json!(event));
         if write {
             write_to_file(
-                &format!("data/{}/{:02}.json", self.start_time, self.kyoku_index),
+                &format!("data/{}/{:02}.json", self.start_time, self.round_index),
                 &serde_json::to_string_pretty(&json!(self.record)).unwrap(),
             );
             self.record.clear();
-            self.kyoku_index += 1;
+            self.round_index += 1;
         }
     }
 }
@@ -58,7 +58,7 @@ impl Listener for EventWriter {
 #[derive(Debug)]
 pub struct TenhouEventWriter {
     start_time: u64,
-    kyoku_index: i32,
+    round_index: i32,
     serializer: TenhouSerializer,
 }
 
@@ -66,7 +66,7 @@ impl TenhouEventWriter {
     pub fn new() -> Self {
         Self {
             start_time: unixtime_now() as u64,
-            kyoku_index: 0,
+            round_index: 0,
             serializer: TenhouSerializer::new(),
         }
     }
@@ -78,7 +78,7 @@ impl Listener for TenhouEventWriter {
         match event {
             Event::Begin(_) => {
                 self.start_time = unixtime_now() as u64;
-                self.kyoku_index = 0;
+                self.round_index = 0;
             }
             Event::Win(_) | Event::Draw(_) => {
                 write = true;
@@ -92,11 +92,11 @@ impl Listener for TenhouEventWriter {
             write_to_file(
                 &format!(
                     "data_tenhou/{}/{:02}.json",
-                    self.start_time, self.kyoku_index
+                    self.start_time, self.round_index
                 ),
                 &self.serializer.serialize(),
             );
-            self.kyoku_index += 1;
+            self.round_index += 1;
         }
     }
 }

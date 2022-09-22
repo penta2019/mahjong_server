@@ -3,10 +3,10 @@ use crate::util::common::vec_to_string;
 
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
-    pub bakaze: usize,                               // 場 (東:0, 南:1, 西:2, 北:3)
-    pub kyoku: usize,                                // 局 (0~3 = 親のseat)
-    pub honba: usize,                                // 本場
-    pub kyoutaku: usize,                             // リーチ棒の供託
+    pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
+    pub dealer: usize,                               // 局 (0~3 = 親のseat)
+    pub honba_sticks: usize,                         // 本場
+    pub riichi_sticks: usize,                        // リーチ棒の供託
     pub turn: Seat,                                  // ツモ番のプレイヤーの座席
     pub step: usize,                                 // ステップ op関数を呼び出す毎に+1する
     pub wall_count: usize,                           // 牌山の残り枚数
@@ -22,17 +22,17 @@ pub struct Stage {
 impl Stage {
     #[inline]
     pub fn is_dealer(&self, seat: Seat) -> bool {
-        seat == self.kyoku
+        seat == self.dealer
     }
 
     #[inline]
     pub fn get_prevalent_wind(&self) -> Tnum {
-        self.bakaze % SEAT + 1 // WE | WS | WW | WN
+        self.round % SEAT + 1 // WE | WS | WW | WN
     }
 
     #[inline]
     pub fn get_seat_wind(&self, seat: Seat) -> Tnum {
-        (seat + SEAT - self.kyoku) % SEAT + 1 // WE | WS | WW | WN
+        (seat + SEAT - self.dealer) % SEAT + 1 // WE | WS | WW | WN
     }
 
     pub fn get_scores(&self) -> [Score; SEAT] {
@@ -48,8 +48,8 @@ impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
-            "bakaze: {}, kyoku: {}, honba: {}, kyoutaku: {}",
-            self.bakaze, self.kyoku, self.honba, self.kyoutaku,
+            "round: {}, dealer: {}, honba_sticks: {}, riichi_sticks: {}",
+            self.round, self.dealer, self.honba_sticks, self.riichi_sticks,
         )?;
         writeln!(
             f,

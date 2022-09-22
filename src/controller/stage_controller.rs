@@ -73,11 +73,11 @@ fn event_begin(_stg: &mut Stage, _event: &EventBegin) {}
 
 fn event_new(stg: &mut Stage, event: &EventNew) {
     *stg = Stage::default();
-    stg.bakaze = event.bakaze;
-    stg.kyoku = event.kyoku;
-    stg.honba = event.honba;
-    stg.kyoutaku = event.kyoutaku;
-    stg.turn = event.kyoku;
+    stg.round = event.round;
+    stg.dealer = event.dealer;
+    stg.honba_sticks = event.honba_sticks;
+    stg.riichi_sticks = event.riichi_sticks;
+    stg.turn = event.dealer;
     stg.wall_count = event.wall_count;
     stg.doras = event.doras.clone();
     update_scores(stg, &event.scores);
@@ -104,10 +104,10 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
             }
         } else {
             // 手牌が見えない場合,牌すべてz8(不明な牌)になる
-            if s == event.kyoku {
+            if s == event.dealer {
                 pl.drawn = Some(Z8);
             }
-            pl.hand[TZ][UK] = if s == event.kyoku { 14 } else { 13 }; // 親:14, 子:13
+            pl.hand[TZ][UK] = if s == event.dealer { 14 } else { 13 }; // 親:14, 子:13
         }
     }
 
@@ -402,7 +402,7 @@ fn update_after_discard_completed(stg: &mut Stage) {
     // リーチがロンされずに成立した場合の供託への点棒追加
     if let Some(s) = stg.last_riichi {
         stg.players[s].score -= 1000;
-        stg.kyoutaku += 1;
+        stg.riichi_sticks += 1;
         stg.last_riichi = None;
     }
 }

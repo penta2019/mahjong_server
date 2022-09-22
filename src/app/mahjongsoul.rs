@@ -132,7 +132,7 @@ struct Mahjongsoul {
     actor: Box<dyn Actor>,
     write_raw: bool, // 雀魂フォーマットでeventを出力
     start_time: u64,
-    kyoku_index: i32,
+    round_index: i32,
     acts: Vec<Action>,
     acts_idxs: Vec<usize>,
     retry: i32,
@@ -162,7 +162,7 @@ impl Mahjongsoul {
             actor,
             write_raw,
             start_time: unixtime_now() as u64,
-            kyoku_index: 0,
+            round_index: 0,
             acts: vec![],
             acts_idxs: vec![],
             retry: 0,
@@ -182,7 +182,7 @@ impl Mahjongsoul {
         match event {
             Event::Begin(_) => {
                 self.start_time = unixtime_now() as u64;
-                self.kyoku_index = 0;
+                self.round_index = 0;
             }
             Event::Win(_) | Event::Draw(_) => {
                 write = true;
@@ -193,10 +193,10 @@ impl Mahjongsoul {
 
         if self.write_raw && write {
             write_to_file(
-                &format!("data_raw/{}/{:2}.json", self.start_time, self.kyoku_index),
+                &format!("data_raw/{}/{:2}.json", self.start_time, self.round_index),
                 &serde_json::to_string_pretty(&json!(self.events)).unwrap(),
             );
-            self.kyoku_index += 1;
+            self.round_index += 1;
         }
     }
 
@@ -388,10 +388,10 @@ impl Mahjongsoul {
     }
 
     fn handler_newround(&mut self, data: &Value) {
-        let bakaze = as_usize(&data["chang"]);
-        let kyoku = as_usize(&data["ju"]);
-        let honba = as_usize(&data["ben"]);
-        let kyoutaku = as_usize(&data["liqibang"]);
+        let round = as_usize(&data["chang"]);
+        let dealer = as_usize(&data["ju"]);
+        let honba_sticks = as_usize(&data["ben"]);
+        let riichi_sticks = as_usize(&data["liqibang"]);
         let doras = tiles_from_mjsoul(&data["doras"]);
         let wall = as_usize(&data["left_tile_count"]);
         let mode = as_usize(&data["mode"]);
@@ -407,7 +407,7 @@ impl Mahjongsoul {
                 hands[s] = tiles_from_mjsoul(&data["tiles"]);
             } else {
                 let hand = &mut hands[s];
-                if s == kyoku {
+                if s == dealer {
                     // 親番は手牌14枚から開始
                     for _ in 0..14 {
                         hand.push(Z8);
@@ -421,7 +421,15 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::new(
-            bakaze, kyoku, honba, kyoutaku, doras, scores, hands, wall, mode,
+            round,
+            dealer,
+            honba_sticks,
+            riichi_sticks,
+            doras,
+            scores,
+            hands,
+            wall,
+            mode,
         ));
     }
 

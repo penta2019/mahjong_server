@@ -134,10 +134,10 @@ impl MjaiEvent {
 
     pub fn start_kyoku(
         id: Seat,
-        bakaze: usize,
-        kyoku: usize,
-        honba: usize,
-        kyotaku: usize,
+        round: usize,
+        dealer: usize,
+        honba_sticks: usize,
+        riichi_sticks: usize,
         doras: &Vec<Tile>,
         hands: &[Vec<Tile>; SEAT],
         scores: &[Score; SEAT],
@@ -145,11 +145,11 @@ impl MjaiEvent {
         assert!(doras.len() == 1);
         let wind = ["E", "S", "W", "N"];
         Self::StartKyoku {
-            bakaze: wind[bakaze].to_string(),
-            kyoku: kyoku + 1,
-            honba,
-            kyotaku,
-            oya: kyoku,
+            bakaze: wind[round].to_string(),
+            kyoku: dealer + 1,
+            honba: honba_sticks,
+            kyotaku: riichi_sticks,
+            oya: dealer,
             dora_marker: tile_to_mjai(doras[0]),
             tehais: create_tehais(hands, id),
             scores: *scores,

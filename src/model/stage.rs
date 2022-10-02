@@ -3,6 +3,8 @@ use crate::util::common::vec_to_string;
 
 #[derive(Debug, Default, Serialize)]
 pub struct Stage {
+    pub mode: usize,                                 // ゲーム設定 (1: 4人東, 2: 4人南)
+    pub is_sanma: bool,                              // 三麻フラグ(未実装, 常にfalse)
     pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
     pub dealer: usize,                               // 局 (0~3 = 親のseat)
     pub honba_sticks: usize,                         // 本場
@@ -15,7 +17,6 @@ pub struct Stage {
     pub last_tile: Option<(Seat, ActionType, Tile)>, // 他家にロンされる可能性のある牌(捨て牌,槍槓) フリテン判定用
     pub last_riichi: Option<Seat>,                   // リーチがロンされずに成立した場合の供託更新用
     pub players: [Player; SEAT],                     // 各プレイヤー情報
-    pub is_3p: bool,                                 // 三麻フラグ(未実装, 常にfalse)
     pub tile_states: [[[TileState; TILE]; TNUM]; TYPE],
 }
 

@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
-use crate::controller::Listener;
 use crate::convert::tenhou::TenhouSerializer;
+use crate::listener::Listener;
 use crate::model::*;
 use crate::util::common::*;
 

@@ -1,6 +1,6 @@
 use rand::prelude::*;
 
-use crate::actor::create_actor;
+use crate::actor::*;
 use crate::controller::*;
 use crate::hand::*;
 use crate::listener::*;
@@ -338,7 +338,7 @@ impl MahjongEngine {
         self.replacement_wall = vec![];
 
         // 山の初期化
-        self.wall = crate::util::wall::create_wall(self.rng.next_u64());
+        self.wall = crate::controller::create_wall(self.rng.next_u64());
 
         // 王牌
         self.dora_wall = self.draw_tiles(5); // 槓ドラ
@@ -515,7 +515,7 @@ impl MahjongEngine {
                         Pon => pon = Some((s, act)),
                         Minkan => minkan = Some((s, act)),
                         Ron => rons.push(s),
-                        _ => panic!("action {} not found in {}", act, vec_to_string(&acts)),
+                        _ => panic!("action {} not found in {}", act, vec_to_string(acts)),
                     }
                     acts_list[s] = vec![];
                 }

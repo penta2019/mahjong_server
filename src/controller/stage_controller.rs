@@ -1,5 +1,6 @@
-use super::*;
+use crate::actor::Actor;
 use crate::hand::*;
+use crate::listener::Listener;
 use crate::model::*;
 use crate::util::common::rank_by_rank_vec;
 
@@ -73,6 +74,7 @@ fn event_begin(_stg: &mut Stage, _event: &EventBegin) {}
 
 fn event_new(stg: &mut Stage, event: &EventNew) {
     *stg = Stage::default();
+    stg.mode = event.mode;
     stg.round = event.round;
     stg.dealer = event.dealer;
     stg.honba_sticks = event.honba_sticks;

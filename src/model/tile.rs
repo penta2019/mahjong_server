@@ -178,7 +178,7 @@ pub fn tiles_with_red5(tt: &TileTable, t: Tile) -> Vec<Tile> {
     if tr[0] == tr[5] {
         return vec![Tile(ti, 0)]; // 赤5しかない場合
     }
-    vec![t, Tile(ti, 0)] // 通常5と赤5の療法がある場合
+    vec![t, Tile(ti, 0)] // 通常5と赤5の両方がある場合
 }
 
 // [TileState]

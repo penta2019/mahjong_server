@@ -123,6 +123,7 @@ pub struct EventBegin {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventNew {
+    pub mode: usize,              // 1: 4人東, 2: 4人南
     pub round: usize,             // 場風
     pub dealer: usize,            // 局
     pub honba_sticks: usize,      // 本場
@@ -131,7 +132,6 @@ pub struct EventNew {
     pub scores: [Score; SEAT],    // 各プレイヤーの所持点
     pub hands: [Vec<Tile>; SEAT], // 各プレイヤーの手牌(親:14枚, 子:13枚)
     pub wall_count: usize,        // 牌山残り枚数
-    pub mode: usize,              // 1: 4人東, 2: 4人南
 }
 
 #[derive(Debug, Serialize, Deserialize)]

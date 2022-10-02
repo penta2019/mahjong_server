@@ -2,10 +2,10 @@ use std::time;
 
 use serde_json::{json, Value};
 
-use crate::actor::create_actor;
-use crate::controller::*;
+use crate::actor::{create_actor, Actor};
+use crate::controller::StageController;
 use crate::hand::{get_score_title, YakuDefine};
-use crate::listener::EventWriter;
+use crate::listener::{EventWriter, Listener};
 use crate::model::*;
 use crate::util::common::*;
 use crate::util::connection::*;

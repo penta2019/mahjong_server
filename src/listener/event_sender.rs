@@ -3,7 +3,7 @@ use std::thread;
 
 use serde_json::{json, Value};
 
-use crate::controller::Listener;
+use crate::listener::Listener;
 use crate::model::*;
 use crate::util::common::sleep_ms;
 use crate::util::connection::{Connection, Message};

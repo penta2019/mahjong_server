@@ -464,8 +464,7 @@ impl MahjongEngine {
     fn do_call_operation(&mut self) {
         // 順番以外のプレイヤーにActionを要求
         // act: Nop, Chi, Pon, Minkan, Ron
-        let can_meld = self.melding == None && !self.is_suukansanra;
-        let mut acts_list = calc_possible_call_actions(self.get_stage(), can_meld);
+        let mut acts_list = calc_possible_call_actions(self.get_stage(), !self.is_suukansanra);
 
         // プレイヤー全体でのアクション数をカウント
         let mut n_rons = 0;

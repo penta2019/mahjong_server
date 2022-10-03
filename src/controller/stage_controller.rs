@@ -138,6 +138,10 @@ fn event_deal(stg: &mut Stage, event: &EventDeal) {
         disable_ippatsu(stg);
     }
 
+    // call_operation用なのでturn_operationでセットして
+    // ここ(call_operation終了後)でNoneをセット
+    stg.last_tile = None;
+
     stg.turn = s;
     stg.wall_count -= 1;
 
@@ -295,10 +299,7 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             pl.melds.push(m);
 
             let t = event.consumed[0];
-            if t.is_end() {
-                // 国士の暗槓ロン
-                stg.last_tile = Some((s, ActionType::Ankan, t));
-            }
+            stg.last_tile = Some((s, ActionType::Ankan, t)); // 国士の暗槓ロン
         }
         MeldType::Kakan => {
             pl.is_rinshan = true;
@@ -351,6 +352,7 @@ fn event_kita(stg: &mut Stage, event: &EventKita) {
     }
 
     stg.players[s].kitas.push(k);
+    stg.last_tile = Some((s, ActionType::Kita, t));
 }
 
 fn event_dora(stg: &mut Stage, event: &EventDora) {

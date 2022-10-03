@@ -24,12 +24,15 @@ pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<
     if !stg.players[stg.turn].is_riichi {
         acts.push(Action::new(ActionType::Discard, vec![]));
     }
-    acts.append(&mut check_ankan(stg));
-    acts.append(&mut check_kakan(stg));
+    if stg.wall_count != 0 {
+        acts.append(&mut check_ankan(stg));
+        acts.append(&mut check_kakan(stg));
+        acts.append(&mut check_kita(stg));
+    }
     acts.append(&mut check_riichi(stg));
     acts.append(&mut check_tsumo(stg));
     acts.append(&mut check_kyushukyuhai(stg));
-    acts.append(&mut check_kita(stg));
+
     acts
 }
 
@@ -71,7 +74,7 @@ fn check_tsumo(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_ankan(stg: &Stage) -> Vec<Action> {
-    if stg.wall_count == 0 || stg.doras.len() == 5 {
+    if stg.doras.len() == 5 {
         return vec![];
     }
 
@@ -120,7 +123,7 @@ fn check_ankan(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_kakan(stg: &Stage) -> Vec<Action> {
-    if stg.wall_count == 0 || stg.doras.len() == 5 {
+    if stg.doras.len() == 5 {
         return vec![];
     }
 
@@ -184,11 +187,6 @@ fn check_kita(stg: &Stage) -> Vec<Action> {
         return vec![];
     }
 
-    //　海底不可
-    if stg.wall_count == 0 {
-        return vec![];
-    }
-
     let mut acts = vec![];
     if stg.players[stg.turn].hand[TZ][WN] != 0 {
         acts.push(Action::kita());
@@ -207,8 +205,8 @@ pub fn calc_possible_call_actions(stg: &Stage, can_meld: bool) -> [Vec<Action>; 
     for s in 0..SEAT {
         acts_list[s].push(Action::nop());
     }
-    // 暗槓,加槓,四槓散了に対して他家はロン以外の操作は行えない
-    if can_meld {
+    // 打牌以外, 牌山なし , 四槓散了(can_meld)の場合は鳴き操作不可
+    if stg.last_tile.unwrap().1 == ActionType::Discard && stg.wall_count != 0 && can_meld {
         for (s, act) in check_chi(stg) {
             acts_list[s].push(act);
         }
@@ -226,12 +224,7 @@ pub fn calc_possible_call_actions(stg: &Stage, can_meld: bool) -> [Vec<Action>; 
 }
 
 fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
-    if stg.wall_count == 0 {
-        return vec![];
-    }
-
-    let pl_turn = &stg.players[stg.turn];
-    let d = pl_turn.discards.last().unwrap().tile.to_normal();
+    let d = stg.last_tile.unwrap().2;
     if d.is_hornor() {
         return vec![];
     }
@@ -242,7 +235,7 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
     }
 
     let mut check: Vec<(Tnum, Tnum)> = vec![];
-    let Tile(ti, ni) = d;
+    let Tile(ti, ni) = d.to_normal();
 
     if 3 <= ni {
         check.push((ni - 2, ni - 1)); // 右端をチー
@@ -268,10 +261,6 @@ fn check_chi(stg: &Stage) -> Vec<(Seat, Action)> {
 }
 
 fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
-    if stg.wall_count == 0 {
-        return vec![];
-    }
-
     let d = stg.last_tile.unwrap().2;
     let t = d.to_normal();
     let mut acts = vec![];
@@ -301,7 +290,7 @@ fn check_pon(stg: &Stage) -> Vec<(Seat, Action)> {
 }
 
 fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
-    if stg.wall_count == 0 || stg.doras.len() == 5 {
+    if stg.doras.len() == 5 {
         return vec![];
     }
 

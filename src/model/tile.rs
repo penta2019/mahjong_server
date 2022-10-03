@@ -7,6 +7,19 @@ pub struct Tile(pub Type, pub Tnum); // (type index, number index)
 pub const Z8: Tile = Tile(TZ, UK); // unknown tile
 
 impl Tile {
+    pub fn from_symbol(s: &str) -> Self {
+        let b = s.as_bytes();
+        let n = b[1] - b'0';
+        let t = match b[0] as char {
+            'm' => 0,
+            'p' => 1,
+            's' => 2,
+            'z' => 3,
+            _ => panic!("invalid Tile type"),
+        };
+        Self(t, n as usize)
+    }
+
     // 赤5の場合,通常の5を返却. それ以外の場合はコピーをそのまま返却.
     #[inline]
     pub fn to_normal(self) -> Self {
@@ -57,19 +70,6 @@ impl Tile {
     #[inline]
     pub fn is_doragon(&self) -> bool {
         self.0 == TZ && DW <= self.1 && self.1 <= DR
-    }
-
-    pub fn from_symbol(s: &str) -> Self {
-        let b = s.as_bytes();
-        let n = b[1] - b'0';
-        let t = match b[0] as char {
-            'm' => 0,
-            'p' => 1,
-            's' => 2,
-            'z' => 3,
-            _ => panic!("invalid Tile type"),
-        };
-        Self(t, n as usize)
     }
 }
 
@@ -142,44 +142,6 @@ impl<'de> de::Deserialize<'de> for Tile {
 // [TileTable]
 pub type TileRow = [usize; TNUM];
 pub type TileTable = [TileRow; TYPE];
-
-pub fn tiles_from_tile_table(tt: &TileTable) -> Vec<Tile> {
-    let mut hand = vec![];
-    for ti in 0..TYPE {
-        for ni in 1..TNUM {
-            // 赤5
-            if ni == 5 {
-                for _ in 0..tt[ti][0] {
-                    hand.push(Tile(ti, 0));
-                }
-            }
-
-            for _ in 0..tt[ti][ni] {
-                hand.push(Tile(ti, ni));
-            }
-        }
-    }
-    hand
-}
-
-pub fn tiles_with_red5(tt: &TileTable, t: Tile) -> Vec<Tile> {
-    if tt[t.0][t.1] == 0 {
-        return vec![];
-    }
-
-    let Tile(ti, ni) = t;
-    let tr = tt[ti];
-    if ni != 5 {
-        return vec![t]; // 5ではない場合
-    }
-    if tr[0] == 0 {
-        return vec![t]; // 通常5しかない場合
-    }
-    if tr[0] == tr[5] {
-        return vec![Tile(ti, 0)]; // 赤5しかない場合
-    }
-    vec![t, Tile(ti, 0)] // 通常5と赤5の両方がある場合
-}
 
 // [TileState]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]

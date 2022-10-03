@@ -1,4 +1,5 @@
 use super::parse::parse_into_chiitoitsu_win;
+use crate::controller::tiles_with_red5;
 use crate::model::*;
 
 // [完成形判定 (面子, 雀頭)]

@@ -23,6 +23,7 @@ impl Event {
 
     #[inline]
     pub fn new(
+        rule: Rule,
         round: usize,
         dealer: usize,
         honba_sticks: usize,
@@ -31,9 +32,9 @@ impl Event {
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
         wall_count: usize,
-        mode: usize,
     ) -> Self {
         Self::New(EventNew {
+            rule,
             round,
             dealer,
             honba_sticks,
@@ -42,7 +43,6 @@ impl Event {
             scores,
             hands,
             wall_count,
-            mode,
         })
     }
 
@@ -123,7 +123,7 @@ pub struct EventBegin {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventNew {
-    pub mode: usize,              // 1: 4人東, 2: 4人南
+    pub rule: Rule,               // ゲーム設定
     pub round: usize,             // 場風
     pub dealer: usize,            // 局
     pub honba_sticks: usize,      // 本場

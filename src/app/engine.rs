@@ -16,7 +16,7 @@ use ActionType::*;
 #[derive(Debug)]
 pub struct EngineApp {
     seed: u64,
-    mode: usize,
+    rule: Rule,
     n_game: u32,
     n_thread: u32,
     write: bool,
@@ -29,7 +29,11 @@ impl EngineApp {
     pub fn new(args: Vec<String>) -> Self {
         let mut app = Self {
             seed: 0,
-            mode: 1,
+            rule: Rule {
+                round: 1,
+                sanma: false,
+                initial_score: 25000,
+            },
             n_game: 0,
             n_thread: 16,
             write: false,
@@ -47,7 +51,7 @@ impl EngineApp {
         while let Some(s) = it.next() {
             match s.as_str() {
                 "-s" => app.seed = next_value(&mut it, "-s"),
-                "-m" => app.mode = next_value(&mut it, "-m"),
+                "-r" => app.rule.round = next_value(&mut it, "-r"),
                 "-g" => app.n_game = next_value(&mut it, "-g"),
                 "-t" => app.n_thread = next_value(&mut it, "-t"),
                 "-w" => app.write = true,
@@ -119,7 +123,7 @@ impl EngineApp {
             listeners.push(Box::new(Debug::new()));
         }
 
-        let mut game = MahjongEngine::new(self.seed, self.mode, 25000, actors, listeners);
+        let mut game = MahjongEngine::new(self.seed, self.rule.clone(), actors, listeners);
         game.run();
     }
 
@@ -127,7 +131,6 @@ impl EngineApp {
         use std::sync::mpsc;
         use std::{thread, time};
 
-        let mode = self.mode;
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
@@ -154,10 +157,11 @@ impl EngineApp {
                     shuffled_actors[s] = actors[shuffle_table[s]].clone_box();
                 }
 
+                let rule = self.rule.clone();
                 let tx2 = tx.clone();
                 thread::spawn(move || {
                     let start = time::Instant::now();
-                    let mut game = MahjongEngine::new(seed, mode, 25000, shuffled_actors, vec![]);
+                    let mut game = MahjongEngine::new(seed, rule, shuffled_actors, vec![]);
                     game.run();
                     tx2.send((shuffle_table, game, start.elapsed())).unwrap();
                 });
@@ -171,7 +175,7 @@ impl EngineApp {
                         let pl = &game.get_stage().players[s];
                         let (score, rank) = (pl.score, pl.rank + 1);
                         let i = shuffle[s];
-                        sum_delta_scores[i] += score - game.initial_score;
+                        sum_delta_scores[i] += score - game.rule.initial_score;
                         sum_ranks[i] += rank;
                         print!(", ac{}:{:5}({})", i, score, rank);
                     }
@@ -221,10 +225,9 @@ struct NextRoundInfo {
 #[derive(Debug)]
 struct MahjongEngine {
     seed: u64,               // 牌山生成用の乱数のシード値
-    mode: usize,             // 1: 東風戦, 2: 半荘戦, 4: 一荘戦
-    initial_score: Score,    // 初期得点
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
     // ゲーム制御
+    rule: Rule,
     ctrl: StageController,
     melding: Option<Action>, // 鳴き処理用
     kan_dora: Option<Tile>,  // 加槓・明槓の打牌後の槓ドラ更新用
@@ -245,8 +248,7 @@ struct MahjongEngine {
 impl MahjongEngine {
     fn new(
         seed: u64,
-        mode: usize,
-        initial_score: Score,
+        rule: Rule,
         actors: [Box<dyn Actor>; SEAT],
         listeners: Vec<Box<dyn Listener>>,
     ) -> Self {
@@ -257,14 +259,13 @@ impl MahjongEngine {
             dealer: 0,
             honba_sticks: 0,
             riichi_sticks: 0,
-            scores: [initial_score; SEAT],
+            scores: [rule.initial_score; SEAT],
         };
 
         Self {
             seed,
-            mode,
-            initial_score,
             rng,
+            rule,
             ctrl,
             melding: None,
             round_result: None,
@@ -359,6 +360,7 @@ impl MahjongEngine {
 
         let rn = &self.round_next;
         let event = Event::new(
+            self.rule.clone(),
             rn.round,
             rn.dealer,
             rn.honba_sticks,
@@ -367,7 +369,6 @@ impl MahjongEngine {
             rn.scores,
             ph,
             self.wall.len() - self.n_deal,
-            self.mode,
         );
         self.handle_event(event);
     }
@@ -835,7 +836,7 @@ impl MahjongEngine {
         };
 
         // 対戦終了判定
-        if round == self.mode {
+        if round == self.rule.round {
             self.is_end = true;
         }
 

@@ -74,7 +74,7 @@ fn event_begin(_stg: &mut Stage, _event: &EventBegin) {}
 
 fn event_new(stg: &mut Stage, event: &EventNew) {
     *stg = Stage::default();
-    stg.mode = event.mode;
+    stg.rule = event.rule.clone();
     stg.round = event.round;
     stg.dealer = event.dealer;
     stg.honba_sticks = event.honba_sticks;

@@ -396,6 +396,12 @@ impl Mahjongsoul {
         let wall = as_usize(&data["left_tile_count"]);
         let mode = as_usize(&data["mode"]);
 
+        let rule = Rule {
+            round: mode,
+            sanma: false,
+            initial_score: 25000,
+        };
+
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["scores"]) {
             scores[s] = as_i32(score);
@@ -421,6 +427,7 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::new(
+            rule,
             round,
             dealer,
             honba_sticks,
@@ -429,7 +436,6 @@ impl Mahjongsoul {
             scores,
             hands,
             wall,
-            mode,
         ));
     }
 

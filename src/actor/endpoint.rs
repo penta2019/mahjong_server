@@ -136,6 +136,7 @@ impl Listener for Endpoint {
                         }
                     }
                     let e2 = Event::New(EventNew {
+                        rule: e.rule.clone(),
                         hands,
                         doras: e.doras.clone(),
                         ..*e

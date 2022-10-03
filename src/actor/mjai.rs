@@ -140,7 +140,7 @@ impl MjaiEndpoint {
             self.is_new_game = false;
         }
         data.seat = self.seat;
-        data.mode = event.mode;
+        data.mode = event.rule.round;
         *self.data.lock().unwrap() = data;
         self.try_riichi = None;
 

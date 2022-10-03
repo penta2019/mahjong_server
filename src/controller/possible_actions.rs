@@ -179,7 +179,7 @@ fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_kita(stg: &Stage) -> Vec<Action> {
-    if !stg.is_sanma {
+    if !stg.rule.sanma {
         return vec![];
     }
 

@@ -652,7 +652,7 @@ impl MahjongEngine {
                 let win_ctx = WinContext {
                     seat: turn,
                     hand: tiles_from_tile_table(&h),
-                    win_tile: wt,
+                    winning_tile: wt,
                     melds: pl.melds.clone(),
                     is_dealer: stg.is_dealer(turn),
                     is_drawn: true,
@@ -704,7 +704,7 @@ impl MahjongEngine {
                     let win_ctx = WinContext {
                         seat: s,
                         hand: tiles_from_tile_table(&pl.hand),
-                        win_tile: stg.last_tile.unwrap().2,
+                        winning_tile: stg.last_tile.unwrap().2,
                         melds: pl.melds.clone(),
                         is_dealer: stg.is_dealer(s),
                         is_drawn: false,
@@ -742,7 +742,7 @@ impl MahjongEngine {
                         let mut nagashimangan = false;
                         for s in 0..SEAT {
                             let pl = &stg.players[s];
-                            tenpais[s] = !pl.win_tiles.is_empty();
+                            tenpais[s] = !pl.winning_tiles.is_empty();
                             nagashimangan |= pl.is_nagashimangan;
                             if tenpais[s] {
                                 n_tenpai += 1;

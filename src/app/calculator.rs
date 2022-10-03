@@ -102,7 +102,7 @@ struct Calculator {
     melds: Vec<Meld>,
     doras: Vec<Tile>,
     ura_doras: Vec<Tile>,
-    win_tile: Tile,
+    winning_tile: Tile,
     is_drawn: bool,
     is_dealer: bool,
     prevalent_wind: Index,
@@ -123,7 +123,7 @@ impl Calculator {
             melds: vec![],
             doras: vec![],
             ura_doras: vec![],
-            win_tile: Z8,
+            winning_tile: Z8,
             is_drawn: true,
             is_dealer: true,
             prevalent_wind: 1,
@@ -169,7 +169,7 @@ impl Calculator {
             &self.melds,
             &self.doras,
             &self.ura_doras,
-            self.win_tile,
+            self.winning_tile,
             self.is_drawn,
             self.is_dealer,
             self.prevalent_wind,
@@ -270,7 +270,7 @@ impl Calculator {
             if t.1 == 0 {
                 self.hand[t.0][5] += 1;
             }
-            self.win_tile = t;
+            self.winning_tile = t;
         }
 
         // parse melds

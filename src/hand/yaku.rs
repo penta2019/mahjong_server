@@ -11,7 +11,7 @@ pub struct YakuContext {
     hand: TileTable,         // 元々の手牌(鳴きは含まない) 国士, 九蓮宝燈の判定などに使用
     parsed_hand: ParsedHand, // 鳴きを含むすべての面子
     pair_tile: Tile,         // 雀頭の牌
-    win_tile: Tile,          // 上がり牌
+    winning_tile: Tile,      // 上がり牌
     is_drawn: bool,          // ツモ和了
     is_open: bool,           // 鳴きの有無
     prevalent_wind: Tnum,    // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
@@ -26,14 +26,14 @@ impl YakuContext {
     pub fn new(
         hand: TileTable,
         parsed_hand: ParsedHand,
-        win_tile: Tile,
+        winning_tile: Tile,
         prevalent_wind: Tnum,
         seat_wind: Tnum,
         is_drawn: bool,
         yaku_flags: YakuFlags,
     ) -> Self {
         let pair_tile = get_pair(&parsed_hand);
-        let win_tile = win_tile.to_normal(); // 赤5は通常5に変換
+        let winning_tile = winning_tile.to_normal(); // 赤5は通常5に変換
         let counts = count_type(&parsed_hand);
         let iipeikou_count = count_iipeikou(&parsed_hand);
         let yakuhai_check = check_yakuhai(&parsed_hand);
@@ -43,7 +43,7 @@ impl YakuContext {
             hand,
             parsed_hand,
             pair_tile,
-            win_tile,
+            winning_tile,
             is_drawn,
             is_open,
             prevalent_wind,
@@ -139,7 +139,7 @@ impl YakuContext {
         }
 
         // 待ちの形
-        let wt = &self.win_tile;
+        let wt = &self.winning_tile;
         for SetPair(tp, t) in &self.parsed_hand {
             if t.0 != wt.0 {
                 continue;
@@ -473,7 +473,7 @@ fn is_pinfu(ctx: &YakuContext) -> bool {
     }
 
     // 上がり牌の両面待ち判定
-    let wt = &ctx.win_tile;
+    let wt = &ctx.winning_tile;
     if wt.is_hornor() {
         return false;
     }
@@ -676,7 +676,7 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
     let mut cnt = 0;
     for SetPair(tp, t) in &ctx.parsed_hand {
         if let Koutsu = tp {
-            if !ctx.is_drawn && ctx.win_tile == *t {
+            if !ctx.is_drawn && ctx.winning_tile == *t {
                 continue;
             }
             cnt += 1;
@@ -688,12 +688,12 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
 
 // 四暗刻
 fn is_suuankou(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 4 && ctx.win_tile != ctx.pair_tile && ctx.is_drawn
+    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile && ctx.is_drawn
 }
 
 // 四暗刻単騎
 fn is_suuankoutanki(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 4 && ctx.win_tile == ctx.pair_tile
+    ctx.counts.ankou_total == 4 && ctx.winning_tile == ctx.pair_tile
 }
 
 // 三槓子
@@ -786,14 +786,14 @@ fn is_tuuiisou(ctx: &YakuContext) -> bool {
 
 // 九蓮宝燈
 fn is_chuurenpoutou(ctx: &YakuContext) -> bool {
-    let wt = &ctx.win_tile;
+    let wt = &ctx.winning_tile;
     let cnt = ctx.hand[wt.0][wt.1];
     is_chuurenpoutou2(ctx) && (cnt == 1 || cnt == 3)
 }
 
 // 純正九蓮宝燈
 fn is_junseichuurenpoutou(ctx: &YakuContext) -> bool {
-    let wt = &ctx.win_tile;
+    let wt = &ctx.winning_tile;
     let cnt = ctx.hand[wt.0][wt.1];
     is_chuurenpoutou2(ctx) && (cnt == 2 || cnt == 4)
 }
@@ -803,7 +803,7 @@ fn is_kokushimusou(ctx: &YakuContext) -> bool {
     if !ctx.parsed_hand.is_empty() {
         return false;
     }
-    let wt = &ctx.win_tile;
+    let wt = &ctx.winning_tile;
     is_kokushimusou_win(&ctx.hand) && ctx.hand[wt.0][wt.1] != 2
 }
 
@@ -812,7 +812,7 @@ fn is_kokushimusoujuusanmenmachi(ctx: &YakuContext) -> bool {
     if !ctx.parsed_hand.is_empty() {
         return false;
     }
-    let wt = &ctx.win_tile;
+    let wt = &ctx.winning_tile;
     is_kokushimusou_win(&ctx.hand) && ctx.hand[wt.0][wt.1] == 2
 }
 

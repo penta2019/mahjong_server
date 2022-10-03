@@ -98,7 +98,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
                 player_inc_tile(pl, t);
             }
             let pl = &mut stg.players[s];
-            pl.win_tiles = get_win_tiles(pl);
+            pl.winning_tiles = get_winning_tiles(pl);
             if ph.len() == 14 {
                 // 親番
                 pl.drawn = Some(ph[13]);
@@ -217,7 +217,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
     let pl = &mut stg.players[s];
     if pl.is_shown {
         if pl.drawn != Some(t) {
-            let wt = get_win_tiles(pl);
+            let wt = get_winning_tiles(pl);
             pl.is_furiten = false;
             if !wt.is_empty() {
                 let mut tt = TileTable::default();
@@ -232,8 +232,8 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
                     }
                 }
             }
-            pl.win_tiles = wt;
-        } else if pl.win_tiles.contains(&t) {
+            pl.winning_tiles = wt;
+        } else if pl.winning_tiles.contains(&t) {
             // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
             pl.is_furiten = true;
         }
@@ -392,7 +392,7 @@ fn update_after_discard_completed(stg: &mut Stage) {
         match tp {
             ActionType::Discard | ActionType::Kakan => {
                 for s2 in 0..SEAT {
-                    if s2 != s && stg.players[s2].win_tiles.contains(&t) {
+                    if s2 != s && stg.players[s2].winning_tiles.contains(&t) {
                         stg.players[s2].is_furiten_other = true;
                     }
                 }
@@ -441,8 +441,8 @@ fn player_dec_tile(pl: &mut Player, tile: Tile) {
     assert!(h[t.0][5] != 0 || h[t.0][0] == 0);
 }
 
-fn get_win_tiles(pl: &Player) -> Vec<Tile> {
-    let mut win_tiles = vec![];
+fn get_winning_tiles(pl: &Player) -> Vec<Tile> {
+    let mut winning_tiles = vec![];
     let mut tt = TileTable::default();
     let wts0 = calc_tiles_to_kokushimusou_win(&pl.hand);
     let wts1 = calc_tiles_to_normal_win(&pl.hand);
@@ -451,9 +451,9 @@ fn get_win_tiles(pl: &Player) -> Vec<Tile> {
         for &t in wts {
             if tt[t.0][t.1] == 0 {
                 tt[t.0][t.1] += 1;
-                win_tiles.push(t);
+                winning_tiles.push(t);
             }
         }
     }
-    win_tiles
+    winning_tiles
 }

@@ -27,7 +27,7 @@ pub struct ScoreContext {
 pub struct WinContext {
     pub seat: usize,                 // 和了者
     pub hand: Vec<Tile>,             // 手牌 (和了牌は含まない = 3*n+2-1枚)
-    pub win_tile: Tile,              // 和了牌
+    pub winning_tile: Tile,          // 和了牌
     pub melds: Vec<Meld>,            // 副露
     pub is_dealer: bool,             // 親番フラグ
     pub is_drawn: bool,              // ツモフラグ

@@ -111,9 +111,9 @@ pub struct Player {
     pub rank: usize,            // 現在の順位
 
     // 聴牌
-    pub win_tiles: Vec<Tile>,   // 聴牌時の和了牌
-    pub is_furiten: bool,       // 自分の捨て牌によるフリテン
-    pub is_furiten_other: bool, // 他家の捨て牌の見逃しによるフリテン
+    pub winning_tiles: Vec<Tile>, // 聴牌時の和了牌
+    pub is_furiten: bool,         // 自分の捨て牌によるフリテン
+    pub is_furiten_other: bool,   // 他家の捨て牌の見逃しによるフリテン
 
     // 条件役用のフラグ 天和,地和,海底など和了のタイミングで発生する役はここに含まない
     pub is_menzen: bool,        // 門前ツモ
@@ -158,8 +158,8 @@ impl fmt::Display for Player {
         )?;
         writeln!(
             f,
-            "furiten: {}, furiten_other: {}, rinshan: {}, win_tiles: {:?}",
-            self.is_furiten, self.is_furiten_other, self.is_rinshan, self.win_tiles,
+            "furiten: {}, furiten_other: {}, rinshan: {}, winning_tiles: {:?}",
+            self.is_furiten, self.is_furiten_other, self.is_rinshan, self.winning_tiles,
         )?;
         writeln!(f, "hand: {}", hand)?;
         writeln!(f, "melds: {}", melds)?;

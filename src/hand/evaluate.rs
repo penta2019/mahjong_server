@@ -9,7 +9,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
         return None;
     }
 
-    if !pl.win_tiles.contains(&pl.drawn.unwrap().to_normal()) {
+    if !pl.winning_tiles.contains(&pl.drawn.unwrap().to_normal()) {
         return None;
     }
 
@@ -74,7 +74,7 @@ pub fn evaluate_hand_ron(
 
     let pl = &stg.players[seat];
     if let Some((_, _, t)) = stg.last_tile {
-        if !pl.win_tiles.contains(&t.to_normal()) {
+        if !pl.winning_tiles.contains(&t.to_normal()) {
             return None;
         }
     }
@@ -156,7 +156,7 @@ pub fn evaluate_hand(
     melds: &Vec<Meld>,      // 鳴き
     doras: &Vec<Tile>,      // ドラ表示牌 (注:ドラそのものではない)
     ura_doras: &Vec<Tile>,  // 裏ドラ表示牌 リーチしていない場合は空
-    win_tile: Tile,         // 上がり牌
+    winning_tile: Tile,     // 上がり牌
     is_drawn: bool,         // ツモ和了
     is_dealer: bool,        // 親番
     prevalent_wind: Index,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
@@ -175,7 +175,7 @@ pub fn evaluate_hand(
         let ctx = YakuContext::new(
             *hand,
             ph,
-            win_tile,
+            winning_tile,
             prevalent_wind,
             seat_wind,
             is_drawn,
@@ -190,7 +190,7 @@ pub fn evaluate_hand(
             let ctx = YakuContext::new(
                 *hand,
                 ph,
-                win_tile,
+                winning_tile,
                 prevalent_wind,
                 seat_wind,
                 is_drawn,
@@ -204,7 +204,7 @@ pub fn evaluate_hand(
             let ctx = YakuContext::new(
                 *hand,
                 ph,
-                win_tile,
+                winning_tile,
                 prevalent_wind,
                 seat_wind,
                 is_drawn,

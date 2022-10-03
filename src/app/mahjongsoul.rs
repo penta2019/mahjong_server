@@ -520,7 +520,7 @@ impl Mahjongsoul {
         for win in as_array(&data["hules"]) {
             let s = as_usize(&win["seat"]);
             let hand = tiles_from_mjsoul(&win["hand"]);
-            let win_tile = tile_from_mjsoul(&win["hu_tile"]);
+            let winning_tile = tile_from_mjsoul(&win["hu_tile"]);
             let is_dealer = as_bool(&win["qinjia"]);
             let is_riichi = as_bool(&win["liqi"]);
             let is_drawn = as_bool(&win["zimo"]);
@@ -594,7 +594,7 @@ impl Mahjongsoul {
             let win_ctx = WinContext {
                 seat: s,
                 hand,
-                win_tile,
+                winning_tile,
                 melds: stg.players[s].melds.clone(),
                 is_dealer,
                 is_drawn,

@@ -617,7 +617,7 @@ impl MahjongEngine {
 
                 for s in 0..SEAT {
                     if s != turn {
-                        if !stg.is_dealer(s) {
+                        if !is_dealer(stg, s) {
                             // 子の支払い
                             d_scores[s] -= non_dealer;
                             d_scores[turn] += non_dealer;
@@ -635,7 +635,7 @@ impl MahjongEngine {
                 // stage情報
                 riichi_sticks = 0;
                 // 和了が子の場合　積み棒をリセットして親交代
-                if !stg.is_dealer(turn) {
+                if !is_dealer(stg, turn) {
                     honba_sticks = 0;
                     need_dealer_change = true;
                 }
@@ -653,7 +653,7 @@ impl MahjongEngine {
                     hand: tiles_from_tile_table(&h),
                     winning_tile: wt,
                     melds: pl.melds.clone(),
-                    is_dealer: stg.is_dealer(turn),
+                    is_dealer: is_dealer(stg, turn),
                     is_drawn: true,
                     is_riichi: pl.riichi.is_some(),
                     delta_scores: d_scores,
@@ -664,7 +664,7 @@ impl MahjongEngine {
                     vec![win_ctx],
                     stg.doras.clone(),
                     ura_doras,
-                    stg.get_scores(),
+                    get_scores(stg),
                     d_scores,
                 ));
             }
@@ -705,7 +705,7 @@ impl MahjongEngine {
                         hand: tiles_from_tile_table(&pl.hand),
                         winning_tile: stg.last_tile.unwrap().2,
                         melds: pl.melds.clone(),
-                        is_dealer: stg.is_dealer(s),
+                        is_dealer: is_dealer(stg, s),
                         is_drawn: false,
                         is_riichi: pl.riichi.is_some(),
                         delta_scores: d_scores,
@@ -717,18 +717,18 @@ impl MahjongEngine {
                 // stage情報
                 riichi_sticks = 0;
                 // 子の和了がある場合は積み棒をリセット
-                if seats.iter().any(|&s| !stg.is_dealer(s)) {
+                if seats.iter().any(|&s| !is_dealer(stg, s)) {
                     honba_sticks = 0;
                 }
                 // 和了が子しかいない場合は親交代
-                need_dealer_change = seats.iter().all(|&s| !stg.is_dealer(s));
+                need_dealer_change = seats.iter().all(|&s| !is_dealer(stg, s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(
                     ctxs,
                     stg.doras.clone(),
                     ura_doras,
-                    stg.get_scores(),
+                    get_scores(stg),
                     total_d_scores,
                 ));
             }
@@ -762,7 +762,7 @@ impl MahjongEngine {
                             // 流し満貫スコア集計
                             for s_nm in 0..SEAT {
                                 if stg.players[s_nm].is_nagashimangan {
-                                    if stg.is_dealer(s_nm) {
+                                    if is_dealer(stg, s_nm) {
                                         nm_scores[s_nm] = 12000;
                                         for s in 0..SEAT {
                                             if s_nm != s {
@@ -773,7 +773,7 @@ impl MahjongEngine {
                                         nm_scores[s_nm] = 8000;
                                         for s in 0..SEAT {
                                             if s_nm != s {
-                                                if stg.is_dealer(s) {
+                                                if is_dealer(stg, s) {
                                                     d_scores[s] -= 4000;
                                                 } else {
                                                     d_scores[s] -= 2000;
@@ -831,7 +831,7 @@ impl MahjongEngine {
             dealer,
             honba_sticks,
             riichi_sticks,
-            scores: stg.get_scores(),
+            scores: get_scores(stg),
         };
 
         // 対戦終了判定

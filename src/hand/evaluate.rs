@@ -1,6 +1,7 @@
 use super::parse::*;
 use super::point::*;
 use super::yaku::*;
+use crate::controller::{get_prevalent_wind, get_seat_wind, is_dealer};
 use crate::model::*;
 
 pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<ScoreContext> {
@@ -30,7 +31,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
         }
     }
     if check_tenhou_tiihou(stg, stg.turn) {
-        if stg.is_dealer(stg.turn) {
+        if is_dealer(stg, stg.turn) {
             yf.tenhou = true;
         } else {
             yf.tiihou = true;
@@ -50,9 +51,9 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
         &ura_doras,
         pl.drawn.unwrap(),
         true,
-        stg.is_dealer(pl.seat),
-        stg.get_prevalent_wind(),
-        stg.get_seat_wind(pl.seat),
+        is_dealer(stg, pl.seat),
+        get_prevalent_wind(stg),
+        get_seat_wind(stg, pl.seat),
         &yf,
     ) {
         if !res.yakus.is_empty() {
@@ -114,7 +115,7 @@ pub fn evaluate_hand_ron(
         _ => panic!(),
     }
     if check_tenhou_tiihou(stg, stg.turn) {
-        if stg.is_dealer(stg.turn) {
+        if is_dealer(stg, stg.turn) {
             yf.tenhou = true;
         } else {
             yf.tiihou = true;
@@ -134,9 +135,9 @@ pub fn evaluate_hand_ron(
         &ura_doras,
         t,
         false,
-        stg.is_dealer(pl.seat),
-        stg.get_prevalent_wind(),
-        stg.get_seat_wind(pl.seat),
+        is_dealer(stg, pl.seat),
+        get_prevalent_wind(stg),
+        get_seat_wind(stg, pl.seat),
         &yf,
     ) {
         if !res.yakus.is_empty() {

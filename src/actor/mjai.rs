@@ -7,6 +7,7 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
+use crate::controller::get_scores;
 use crate::convert::mjai::*;
 use crate::util::common::{flush, sleep_ms, vec_remove, vec_to_string};
 
@@ -114,7 +115,7 @@ impl MjaiEndpoint {
     fn confirm_riichi_accepted(&mut self, stg: &Stage) {
         if let Some(s) = self.try_riichi {
             self.try_riichi = None;
-            self.add_record(MjaiEvent::reach_accepted(s, &stg.get_scores()));
+            self.add_record(MjaiEvent::reach_accepted(s, &get_scores(stg)));
         }
     }
 
@@ -157,7 +158,7 @@ impl MjaiEndpoint {
             event.riichi_sticks,
             &event.doras,
             &ph,
-            &stg.get_scores(),
+            &get_scores(stg),
         ));
 
         let event2 = EventDeal {
@@ -232,7 +233,7 @@ impl MjaiEndpoint {
                 &event.ura_doras,
                 &ctx.score_context,
                 &ctx.delta_scores,
-                &stg.get_scores(),
+                &get_scores(stg),
             ));
         }
         self.add_record(MjaiEvent::end_kyoku());
@@ -243,13 +244,13 @@ impl MjaiEndpoint {
             event.draw_type,
             &[false; SEAT],
             &[0; SEAT],
-            &stg.get_scores(),
+            &get_scores(stg),
         ));
         self.add_record(MjaiEvent::end_kyoku());
     }
 
     fn notify_end(&mut self, stg: &Stage, _event: &EventEnd) {
-        self.add_record(MjaiEvent::end_game(&stg.get_scores()));
+        self.add_record(MjaiEvent::end_game(&get_scores(stg)));
     }
 }
 

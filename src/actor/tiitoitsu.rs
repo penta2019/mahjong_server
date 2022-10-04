@@ -1,4 +1,5 @@
 use super::*;
+use crate::controller::count_tile;
 
 pub struct TiitoitsuBotBuilder;
 
@@ -51,7 +52,7 @@ impl Actor for TiitoitsuBot {
             for ti in 0..TYPE {
                 for ni in 0..TNUM {
                     let t = Tile(ti, ni);
-                    match pl.count_tile(t) {
+                    match count_tile(&pl.hand, t) {
                         0 | 2 => {}
                         3 | 4 => {
                             return Some(Action::discard(t));

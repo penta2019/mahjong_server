@@ -1,6 +1,7 @@
 use rand::Rng;
 
 use super::*;
+use crate::controller::count_tile;
 
 pub struct RandomDiscardBuilder;
 
@@ -52,7 +53,7 @@ impl Actor for RandomDiscard {
             for ti in 0..TYPE {
                 for ni in 1..TNUM {
                     let t = Tile(ti, ni);
-                    let c = pl.count_tile(t);
+                    let c = count_tile(&pl.hand, t);
                     if c > n {
                         return Some(Action::discard(Tile(ti, ni)));
                     } else {

@@ -26,31 +26,6 @@ pub struct Stage {
     pub tile_states: [[[TileState; TILE]; TNUM]; TYPE],
 }
 
-impl Stage {
-    #[inline]
-    pub fn is_dealer(&self, seat: Seat) -> bool {
-        seat == self.dealer
-    }
-
-    #[inline]
-    pub fn get_prevalent_wind(&self) -> Tnum {
-        self.round % SEAT + 1 // WE | WS | WW | WN
-    }
-
-    #[inline]
-    pub fn get_seat_wind(&self, seat: Seat) -> Tnum {
-        (seat + SEAT - self.dealer) % SEAT + 1 // WE | WS | WW | WN
-    }
-
-    pub fn get_scores(&self) -> [Score; SEAT] {
-        let mut scores = [0; SEAT];
-        for s in 0..SEAT {
-            scores[s] = self.players[s].score;
-        }
-        scores
-    }
-}
-
 impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
@@ -164,17 +139,6 @@ impl fmt::Display for Player {
         writeln!(f, "hand: {}", hand)?;
         writeln!(f, "melds: {}", melds)?;
         write!(f, "discards: {}", discards)
-    }
-}
-
-impl Player {
-    pub fn count_tile(&self, t: Tile) -> usize {
-        let h = &self.hand;
-        if t.1 == 5 {
-            h[t.0][t.1] - h[t.0][0]
-        } else {
-            h[t.0][t.1]
-        }
     }
 }
 

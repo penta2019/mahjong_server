@@ -3,7 +3,7 @@ use std::time;
 use serde_json::{json, Value};
 
 use crate::actor::{create_actor, Actor};
-use crate::controller::StageController;
+use crate::controller::{get_prevalent_wind, get_seat_wind, StageController};
 use crate::hand::{get_score_title, YakuDefine};
 use crate::listener::{EventWriter, Listener};
 use crate::model::*;
@@ -557,14 +557,14 @@ impl Mahjongsoul {
                     10 => {
                         // 自風
                         yakus.push(Yaku {
-                            name: format!("自風 {}", jp_wind[stg.get_seat_wind(s)]),
+                            name: format!("自風 {}", jp_wind[get_seat_wind(stg, s)]),
                             fan: 1,
                         });
                     }
                     11 => {
                         // 場風
                         yakus.push(Yaku {
-                            name: format!("場風 {}", jp_wind[stg.get_prevalent_wind()]),
+                            name: format!("場風 {}", jp_wind[get_prevalent_wind(stg)]),
                             fan: 1,
                         });
                     }

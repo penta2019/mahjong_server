@@ -1,4 +1,5 @@
 use crate::actor::Actor;
+use crate::controller::count_tile;
 use crate::hand::*;
 use crate::listener::Listener;
 use crate::model::*;
@@ -169,7 +170,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
         pl.is_nagashimangan = false;
     }
     if pl.is_shown {
-        assert!(pl.count_tile(t) > 0, "{} not found in hand", t);
+        assert!(count_tile(&pl.hand, t) > 0, "{} not found in hand", t);
     }
 
     let is_drawn = if pl.is_shown {

@@ -236,8 +236,7 @@ struct MahjongEngine {
     n_kita: usize,           // 北抜きの回数
     is_suukansanra: bool,    // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
-    round_next: NextRoundInfo,
-    is_end: bool,
+    next_round_info: NextRoundInfo,
     // 牌山
     wall: Vec<Tile>,             // 牌山全体 (=136)
     dora_wall: Vec<Tile>,        // ドラ表示牌
@@ -254,7 +253,7 @@ impl MahjongEngine {
     ) -> Self {
         let ctrl = StageController::new(actors, listeners);
         let rng = rand::SeedableRng::seed_from_u64(seed);
-        let round_next = NextRoundInfo {
+        let next_round_info = NextRoundInfo {
             round: 0,
             dealer: 0,
             honba_sticks: 0,
@@ -269,8 +268,7 @@ impl MahjongEngine {
             ctrl,
             melding: None,
             round_result: None,
-            round_next,
-            is_end: false,
+            next_round_info,
             kan_dora: None,
             n_deal: 0,
             n_kan: 0,
@@ -295,7 +293,7 @@ impl MahjongEngine {
 
     fn run(&mut self) {
         self.do_event_begin();
-        while !self.is_end {
+        while !self.is_game_end() {
             self.do_event_new();
             loop {
                 self.do_turn_operation();
@@ -353,12 +351,12 @@ impl MahjongEngine {
         }
         // 親の14枚目
         let t = self.draw_tile();
-        ph[self.round_next.dealer].push(t);
+        ph[self.next_round_info.dealer].push(t);
 
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
-        let rn = &self.round_next;
+        let rn = &self.next_round_info;
         let event = Event::new(
             self.rule.clone(),
             rn.round,
@@ -556,9 +554,11 @@ impl MahjongEngine {
         }
 
         // 途中流局の確認
-        self.check_suufuurenda();
-        self.check_suukansanra();
-        self.check_suuchariichi();
+        if self.round_result.is_none() {
+            self.check_suufuurenda();
+            self.check_suukansanra();
+            self.check_suuchariichi();
+        }
     }
 
     fn do_event_deal(&mut self) {
@@ -826,7 +826,7 @@ impl MahjongEngine {
         let stg = self.ctrl.get_stage();
 
         // stage情報更新
-        self.round_next = NextRoundInfo {
+        self.next_round_info = NextRoundInfo {
             round,
             dealer,
             honba_sticks,
@@ -834,23 +834,27 @@ impl MahjongEngine {
             scores: get_scores(stg),
         };
 
-        // 対戦終了判定
-        if round == self.rule.round {
-            self.is_end = true;
-        }
-
-        // 飛びによる対戦終了
-        for s in 0..SEAT {
-            if stg.players[s].score < 0 {
-                self.is_end = true;
-            }
-        }
-
         self.round_result = None;
     }
 
     fn do_event_end(&mut self) {
         self.handle_event(Event::end());
+    }
+
+    fn is_game_end(&self) -> bool {
+        // 対戦終了判定
+        if self.next_round_info.round == self.rule.round {
+            return true;
+        }
+
+        // 飛びによる対戦終了
+        for s in 0..SEAT {
+            if self.get_stage().players[s].score < 0 {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn draw_tile(&mut self) -> Tile {
@@ -905,19 +909,17 @@ impl MahjongEngine {
             }
         }
 
-        if self.round_result.is_none() {
-            self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
-        }
+        self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
     }
 
     fn check_suukansanra(&mut self) {
-        if self.is_suukansanra && self.melding == None && self.round_result.is_none() {
+        if self.is_suukansanra {
             self.round_result = Some(RoundResult::Draw(DrawType::Suukansanra));
         }
     }
 
     fn check_suuchariichi(&mut self) {
-        if self.get_stage().players.iter().all(|pl| pl.is_riichi) && self.round_result.is_none() {
+        if self.get_stage().players.iter().all(|pl| pl.is_riichi) {
             self.round_result = Some(RoundResult::Draw(DrawType::Suuchariichi));
         }
     }

@@ -21,7 +21,7 @@ struct SharedData {
     cursor: usize,
     selected_action: Option<MjaiAction>,
     is_riichi: bool,
-    mode: usize, // (= EventNew.mode)
+    round: usize, // (= EventNew.rule.round)
 }
 
 pub struct MjaiEndpointBuilder;
@@ -141,7 +141,7 @@ impl MjaiEndpoint {
             self.is_new_game = false;
         }
         data.seat = self.seat;
-        data.mode = event.rule.round;
+        data.round = event.rule.round;
         *self.data.lock().unwrap() = data;
         self.try_riichi = None;
 
@@ -405,7 +405,7 @@ fn stream_handler(
                 // start_game 新しい試合が始まった場合,またはクライアントの再接続時に送信
                 need_start_game = false;
                 d.send_start_game = false;
-                send(&json!(MjaiEvent::start_game(d.seat, d.mode)))?;
+                send(&json!(MjaiEvent::start_game(d.seat, d.round)))?;
                 recv()?; // recv none
             }
         }

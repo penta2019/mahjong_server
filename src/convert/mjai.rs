@@ -113,8 +113,8 @@ impl MjaiEvent {
         }
     }
 
-    pub fn start_game(id: Seat, mode: usize) -> Self {
-        let kyoku_first = match mode {
+    pub fn start_game(id: Seat, round: usize) -> Self {
+        let kyoku_first = match round {
             1 => 4, // 4人東
             2 => 0, // 4人南
             _ => 4, // 不明な場合は4人東にしておく

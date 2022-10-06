@@ -33,6 +33,7 @@ impl EngineApp {
                 round: 1,
                 sanma: false,
                 initial_score: 25000,
+                minimal_1st_score: 30000,
             },
             n_game: 0,
             n_thread: 16,
@@ -312,6 +313,45 @@ impl MahjongEngine {
             self.do_event_win_draw();
         }
         self.do_event_end();
+    }
+
+    fn is_game_end(&self) -> bool {
+        let stg = self.get_stage();
+        let rule = &self.rule;
+        let next_round = self.next_round_info.round;
+
+        // 飛びによる対戦終了
+        for s in 0..SEAT {
+            if stg.players[s].score < 0 {
+                return true;
+            }
+        }
+
+        // オーラスで親が所定の点数より高くかつ1位の場合はゲーム終了
+        let last_dealer = if rule.sanma { 2 } else { 3 };
+        if stg.round == rule.round - 1 && stg.dealer == last_dealer {
+            let pl = &stg.players[last_dealer];
+            if pl.rank == 0 && pl.score >= rule.minimal_1st_score {
+                return true;
+            }
+        }
+
+        // round延長時の対戦終了判定 (親が1位以外でオーラスが終了した場合も含む)
+        if next_round == rule.round {
+            for pl in &stg.players {
+                if pl.score >= rule.minimal_1st_score {
+                    return true;
+                }
+            }
+        }
+
+        // round延長(南入,西入)しても点差がつかない場合は強制終了
+        if next_round > rule.round {
+            return true;
+        }
+
+        // 試合続行
+        false
     }
 
     fn do_event_begin(&mut self) {
@@ -839,22 +879,6 @@ impl MahjongEngine {
 
     fn do_event_end(&mut self) {
         self.handle_event(Event::end());
-    }
-
-    fn is_game_end(&self) -> bool {
-        // 対戦終了判定
-        if self.next_round_info.round == self.rule.round {
-            return true;
-        }
-
-        // 飛びによる対戦終了
-        for s in 0..SEAT {
-            if self.get_stage().players[s].score < 0 {
-                return true;
-            }
-        }
-
-        false
     }
 
     fn draw_tile(&mut self) -> Tile {

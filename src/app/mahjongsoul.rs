@@ -400,6 +400,7 @@ impl Mahjongsoul {
             round: mode,
             sanma: false,
             initial_score: 25000,
+            minimal_1st_score: 30000,
         };
 
         let mut scores = [0; SEAT];

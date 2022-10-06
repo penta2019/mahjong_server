@@ -229,7 +229,7 @@ impl MjaiEndpoint {
             self.add_record(MjaiEvent::hora(
                 ctx.seat,
                 stg.turn,
-                stg.last_tile.unwrap().2,
+                ctx.winning_tile,
                 &event.ura_doras,
                 &ctx.score_context,
                 &ctx.delta_scores,

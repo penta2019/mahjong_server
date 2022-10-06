@@ -3,9 +3,10 @@ use crate::util::common::vec_to_string;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Rule {
-    pub round: usize, // ゲーム設定 (1: 4人東, 2: 4人南)
-    pub sanma: bool,  // 三麻フラグ(未実装, 常にfalse)
-    pub initial_score: Score,
+    pub round: usize,             // ゲーム設定 (1: 4人東, 2: 4人南)
+    pub sanma: bool,              // 三麻フラグ(未実装, 常にfalse)
+    pub initial_score: Score,     // 初期スコア (3麻:25000)
+    pub minimal_1st_score: Score, // ゲームが終了して1位が確定するのに必要なスコア (4麻:30000)
 }
 
 #[derive(Debug, Default, Serialize)]

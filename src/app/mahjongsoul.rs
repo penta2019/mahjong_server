@@ -1,5 +1,3 @@
-use std::time;
-
 use serde_json::{json, Value};
 
 use crate::actor::{create_actor, Actor};
@@ -101,7 +99,7 @@ impl MahjongsoulApp {
             // 0.1秒以上次のデータが来なかった時,リアルタイムのデータとみなす
             if unixtime_now() - last_event_ts > 0.1 {
                 if let Some(e) = last_event {
-                    game.apply(&e);
+                    game.apply(&e); // mjai側の仕様上select_actionを行う直前にeventを送信する必要がある
                     last_event = None;
                 }
                 if last_event.is_none() && !self.read_only {
@@ -136,6 +134,7 @@ struct Mahjongsoul {
     acts: Vec<Action>,
     acts_idxs: Vec<usize>,
     retry: i32,
+    action_ts: f64, // select_actionのpollを開始した時刻
 }
 
 impl Mahjongsoul {
@@ -166,6 +165,7 @@ impl Mahjongsoul {
             acts: vec![],
             acts_idxs: vec![],
             retry: 0,
+            action_ts: 0.0,
         }
     }
 
@@ -261,6 +261,7 @@ impl Mahjongsoul {
             if acts != json!(null) && acts["operation_list"] != json!(null) {
                 (self.acts, self.acts_idxs) = parse_possible_action(&acts, self.get_stage());
                 self.retry = 0;
+                self.action_ts = unixtime_now();
             } else {
                 self.acts = vec![];
             }
@@ -274,7 +275,6 @@ impl Mahjongsoul {
             return None;
         }
 
-        let start = time::Instant::now();
         let act = self.ctrl.select_action(self.seat, &self.acts, self.retry);
         self.retry += 1;
 
@@ -294,16 +294,22 @@ impl Mahjongsoul {
 
         let tp = act.action_type;
         let cs = &act.tiles;
+        let stg = self.get_stage();
 
         // sleep処理
         if self.step <= 1 {
             // ActionNewRoundの直後はゲームの初期化が終わっていない場合があるので長めに待機
             sleep_ms(3000);
         }
-        let stg = self.get_stage();
-        let ellapsed = start.elapsed().as_millis();
-        let mut sleep = 1000;
-        if self.random_sleep && self.seat == stg.turn && tp != Tsumo {
+
+        let mut sleep = 1.0;
+        let is_random = match tp {
+            Nop => self.seat == stg.turn,
+            Ron => false,
+            Tsumo => false,
+            _ => true,
+        };
+        if self.random_sleep && is_random {
             // ツモ・ロン・鳴きのキャンセル以外の操作の場合,ランダムにsleep時間(1 ~ 4秒)を取る
             use rand::distributions::{Bernoulli, Distribution};
             let d = Bernoulli::new(0.1).unwrap();
@@ -312,12 +318,13 @@ impl Mahjongsoul {
                 if c == 30 || d.sample(&mut rand::thread_rng()) {
                     break;
                 }
-                sleep += 100;
+                sleep += 0.1;
                 c += 1;
             }
         }
+        let ellapsed = unixtime_now() - self.action_ts;
         if sleep > ellapsed {
-            sleep_ms((sleep - ellapsed) as u64);
+            sleep_ms(((sleep - ellapsed) * 1000.0) as u64);
         }
 
         let action = match tp {
@@ -435,7 +442,7 @@ impl Mahjongsoul {
             doras,
             scores,
             hands,
-            wall,
+            wall + 1,
         ));
 
         self.handle_event(Event::deal(dealer, t14));

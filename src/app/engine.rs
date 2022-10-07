@@ -188,7 +188,7 @@ impl EngineApp {
                 if n_thread < self.n_thread {
                     break;
                 }
-                sleep_ms(10);
+                sleep(0.01);
             }
 
             if n_thread == 0 && n_game == self.n_game {
@@ -456,7 +456,7 @@ impl MahjongEngine {
                 break act;
             }
             retry += 1;
-            sleep_ms(10);
+            sleep(0.01);
         };
 
         let tp = act.action_type;
@@ -622,7 +622,7 @@ impl MahjongEngine {
                 break;
             }
             retry += 1;
-            sleep_ms(10);
+            sleep(0.01);
         }
 
         // 途中流局の確認

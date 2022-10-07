@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::common::sleep_ms;
+use crate::util::common::sleep;
 use crate::util::connection::{Connection, Message};
 
 #[derive(Debug, Default)]
@@ -44,7 +44,7 @@ impl EventSender {
                     Message::NoConnection => break,
                 }
             }
-            sleep_ms(10);
+            sleep(0.01);
         });
 
         Self { data: arc0 }
@@ -64,7 +64,7 @@ impl Listener for EventSender {
         }
 
         while self.data.lock().unwrap().send_request {
-            sleep_ms(10); // pushしたデータが処理されるまで待機
+            sleep(0.01); // pushしたデータが処理されるまで待機
         }
     }
 }

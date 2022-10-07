@@ -114,7 +114,7 @@ impl MahjongsoulApp {
                 }
             }
 
-            sleep_ms(10);
+            sleep(0.01);
         }
     }
 }
@@ -299,10 +299,10 @@ impl Mahjongsoul {
         // sleep処理
         if self.step <= 1 {
             // ActionNewRoundの直後はゲームの初期化が終わっていない場合があるので長めに待機
-            sleep_ms(3000);
+            sleep(3.0);
         }
 
-        let mut sleep = 1.0;
+        let mut sleep_sec = 1.0;
         let is_random = match tp {
             Nop => self.seat == stg.turn,
             Ron => false,
@@ -318,13 +318,13 @@ impl Mahjongsoul {
                 if c == 30 || d.sample(&mut rand::thread_rng()) {
                     break;
                 }
-                sleep += 0.1;
+                sleep_sec += 0.1;
                 c += 1;
             }
         }
         let ellapsed = unixtime_now() - self.action_ts;
-        if sleep > ellapsed {
-            sleep_ms(((sleep - ellapsed) * 1000.0) as u64);
+        if sleep_sec > ellapsed {
+            sleep(sleep_sec - ellapsed);
         }
 
         let action = match tp {

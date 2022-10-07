@@ -4,7 +4,7 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
-use crate::util::common::sleep_ms;
+use crate::util::common::sleep;
 use crate::util::connection::{Connection, Message, TcpConnection};
 
 use crate::error;
@@ -80,7 +80,7 @@ impl Endpoint {
                     Message::NoConnection => break,
                 }
             }
-            sleep_ms(10);
+            sleep(0.01);
         });
 
         Self {
@@ -161,7 +161,7 @@ impl Listener for Endpoint {
         }
 
         while self.data.lock().unwrap().send_request {
-            sleep_ms(10); // pushしたデータが処理されるまで待機
+            sleep(0.01); // pushしたデータが処理されるまで待機
         }
     }
 }

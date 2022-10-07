@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use super::*;
 use crate::controller::get_scores;
 use crate::convert::mjai::*;
-use crate::util::common::{flush, sleep_ms, vec_to_string};
+use crate::util::common::{flush, sleep, vec_to_string};
 
 use crate::{error, info};
 
@@ -132,7 +132,7 @@ impl MjaiEndpoint {
             d.cursor < d.record.len()
         };
         if wait {
-            sleep_ms(1000);
+            sleep(1.0);
         }
 
         let mut data = SharedData::default();
@@ -275,7 +275,7 @@ impl Actor for MjaiEndpoint {
         // possible_actionに対する応答を待機
         let mut c = 0;
         loop {
-            sleep_ms(100);
+            sleep(0.1);
             if self.data.lock().unwrap().selected_action.is_some() {
                 self.timeout_count = 0;
                 break;
@@ -372,7 +372,7 @@ fn stream_handler(
     }
 
     while data.lock().unwrap().seat == NO_SEAT {
-        sleep_ms(100);
+        sleep(0.1);
         check_alive()?;
     }
 
@@ -406,7 +406,7 @@ fn stream_handler(
         } else if cursor < len {
             // select_actionがpossible_actionsを追加する可能性があるので待機
             // data.lock()が開放されている必要があることに注意
-            sleep_ms(100);
+            sleep(0.1);
 
             let record = &data.lock().unwrap().record;
             let event = &record[cursor];
@@ -419,7 +419,7 @@ fn stream_handler(
             }
             send(event)?;
         } else {
-            sleep_ms(10);
+            sleep(0.01);
             check_alive()?;
             continue;
         }
@@ -448,7 +448,7 @@ fn stream_handler(
             // recordに reach -> dahai -> (reach_accepted or hora) の順で追加される
             let mut step = 0;
             loop {
-                sleep_ms(10);
+                sleep(0.01);
                 check_alive()?;
                 if data.lock().unwrap().record.len() == cursor {
                     continue;

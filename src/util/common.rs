@@ -19,8 +19,8 @@ where
         .unwrap_or_else(|e| error_exit(format!("{}: {} '{}'", opt, e, n)))
 }
 
-pub fn sleep_ms(ms: u64) {
-    std::thread::sleep(std::time::Duration::from_millis(ms));
+pub fn sleep(sec: f64) {
+    std::thread::sleep(std::time::Duration::from_millis((sec * 1000.0) as u64));
 }
 
 pub fn unixtime_now() -> f64 {

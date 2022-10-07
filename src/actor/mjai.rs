@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use super::*;
 use crate::controller::get_scores;
 use crate::convert::mjai::*;
-use crate::util::common::{flush, sleep_ms, vec_remove, vec_to_string};
+use crate::util::common::{flush, sleep_ms, vec_to_string};
 
 use crate::{error, info};
 
@@ -145,11 +145,6 @@ impl MjaiEndpoint {
         *self.data.lock().unwrap() = data;
         self.try_riichi = None;
 
-        // 親番の14枚目の牌は最初のツモとして扱うので取り除く
-        let mut ph = event.hands.clone();
-        let d = stg.players[stg.turn].drawn.unwrap();
-        vec_remove(&mut ph[stg.turn], &d);
-
         self.add_record(MjaiEvent::start_kyoku(
             self.seat,
             event.round,
@@ -157,15 +152,9 @@ impl MjaiEndpoint {
             event.honba_sticks,
             event.riichi_sticks,
             &event.doras,
-            &ph,
+            &event.hands,
             &get_scores(stg),
         ));
-
-        let event2 = EventDeal {
-            seat: event.dealer,
-            tile: stg.players[event.dealer].drawn.unwrap(),
-        };
-        self.notify_deal(stg, &event2);
     }
 
     fn notify_deal(&mut self, stg: &Stage, event: &EventDeal) {

@@ -67,9 +67,9 @@ pub fn write_to_file(file_path: &String, data: &String) {
     write!(f, "{}", data).unwrap();
 }
 
-pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
-    v.remove(v.iter().position(|x| x == e).unwrap());
-}
+// pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
+//     v.remove(v.iter().position(|x| x == e).unwrap());
+// }
 
 pub fn vec_count<T: PartialEq>(v: &Vec<T>, e: &T) -> usize {
     v.iter().filter(|&n| n == e).count()

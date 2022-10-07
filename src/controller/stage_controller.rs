@@ -80,7 +80,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
     stg.dealer = event.dealer;
     stg.honba_sticks = event.honba_sticks;
     stg.riichi_sticks = event.riichi_sticks;
-    stg.turn = event.dealer;
+    stg.turn = (event.dealer + 3) % SEAT; // 親の14枚目(ツモ)でturn=dealerになる
     stg.wall_count = event.wall_count;
     stg.doras = event.doras.clone();
     update_scores(stg, &event.scores);
@@ -95,22 +95,14 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
         pl.is_nagashimangan = true;
 
         if pl.is_shown {
-            for &t in &ph[..13] {
+            for &t in ph {
                 player_inc_tile(pl, t);
             }
             let pl = &mut stg.players[s];
             pl.winning_tiles = get_winning_tiles(pl);
-            if ph.len() == 14 {
-                // 親番
-                pl.drawn = Some(ph[13]);
-                player_inc_tile(pl, ph[13]);
-            }
         } else {
             // 手牌が見えない場合,牌すべてz8(不明な牌)になる
-            if s == event.dealer {
-                pl.drawn = Some(Z8);
-            }
-            pl.hand[TZ][UK] = if s == event.dealer { 14 } else { 13 }; // 親:14, 子:13
+            pl.hand[TZ][UK] = 13;
         }
     }
 

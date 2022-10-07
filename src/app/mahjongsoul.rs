@@ -414,17 +414,16 @@ impl Mahjongsoul {
                 hands[s] = tiles_from_mjsoul(&data["tiles"]);
             } else {
                 let hand = &mut hands[s];
-                if s == dealer {
-                    // 親番は手牌14枚から開始
-                    for _ in 0..14 {
-                        hand.push(Z8);
-                    }
-                } else {
-                    for _ in 0..13 {
-                        hand.push(Z8);
-                    }
+                for _ in 0..13 {
+                    hand.push(Z8);
                 }
             }
+        }
+
+        // 親の14枚目は最初のツモとして扱う
+        let mut t14 = Z8;
+        if hands[self.seat].len() == 14 {
+            t14 = hands[self.seat].pop().unwrap();
         }
 
         self.handle_event(Event::new(
@@ -438,6 +437,8 @@ impl Mahjongsoul {
             hands,
             wall,
         ));
+
+        self.handle_event(Event::deal(dealer, t14));
     }
 
     fn handler_dealtile(&mut self, data: &Value) {

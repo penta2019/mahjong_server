@@ -297,15 +297,15 @@ impl MahjongEngine {
         while !self.is_game_end() {
             self.do_event_new();
             loop {
+                self.do_event_deal();
+                if self.round_result.is_some() {
+                    break;
+                }
                 self.do_turn_operation();
                 if self.round_result.is_some() {
                     break;
                 }
                 self.do_call_operation();
-                if self.round_result.is_some() {
-                    break;
-                }
-                self.do_event_deal();
                 if self.round_result.is_some() {
                     break;
                 }
@@ -389,9 +389,6 @@ impl MahjongEngine {
         for s in 0..SEAT {
             ph[s] = self.draw_tiles(13);
         }
-        // 親の14枚目
-        let t = self.draw_tile();
-        ph[self.next_round_info.dealer].push(t);
 
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
@@ -409,6 +406,41 @@ impl MahjongEngine {
             self.wall.len() - self.n_deal,
         );
         self.handle_event(event);
+    }
+
+    fn do_event_deal(&mut self) {
+        let stg = self.get_stage();
+        let turn = stg.turn;
+        if let Some(Action { action_type, .. }) = self.melding {
+            match action_type {
+                Pon | Chi => {}
+                Ankan | Minkan | Kakan => {
+                    let (r, kd) = self.draw_kan_tile();
+                    if action_type == Ankan {
+                        self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
+                        self.handle_event(Event::deal(turn, r));
+                    } else {
+                        self.handle_event(Event::deal(turn, r));
+                        self.kan_dora = Some(kd); // 明槓,加槓の槓ドラは打牌後
+                    }
+                    self.check_suukansanra_needed();
+                }
+                Kita => {
+                    let k = self.draw_kita_tile();
+                    self.handle_event(Event::deal(turn, k));
+                }
+                _ => panic!(),
+            }
+        } else {
+            if stg.wall_count > 0 {
+                let s = (turn + 1) % SEAT;
+                let t = self.draw_tile();
+                self.handle_event(Event::deal(s, t));
+            } else {
+                self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
+            }
+        }
+        assert!(self.get_stage().wall_count + self.n_deal + self.n_kan == self.wall.len());
     }
 
     fn do_turn_operation(&mut self) {
@@ -599,41 +631,6 @@ impl MahjongEngine {
             self.check_suukansanra();
             self.check_suuchariichi();
         }
-    }
-
-    fn do_event_deal(&mut self) {
-        let stg = self.get_stage();
-        let turn = stg.turn;
-        if let Some(Action { action_type, .. }) = self.melding {
-            match action_type {
-                Pon | Chi => {}
-                Ankan | Minkan | Kakan => {
-                    let (r, kd) = self.draw_kan_tile();
-                    if action_type == Ankan {
-                        self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
-                        self.handle_event(Event::deal(turn, r));
-                    } else {
-                        self.handle_event(Event::deal(turn, r));
-                        self.kan_dora = Some(kd); // 明槓,加槓の槓ドラは打牌後
-                    }
-                    self.check_suukansanra_needed();
-                }
-                Kita => {
-                    let k = self.draw_kita_tile();
-                    self.handle_event(Event::deal(turn, k));
-                }
-                _ => panic!(),
-            }
-        } else {
-            if stg.wall_count > 0 {
-                let s = (turn + 1) % SEAT;
-                let t = self.draw_tile();
-                self.handle_event(Event::deal(s, t));
-            } else {
-                self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
-            }
-        }
-        assert!(self.get_stage().wall_count + self.n_deal + self.n_kan == self.wall.len());
     }
 
     fn do_event_win_draw(&mut self) {

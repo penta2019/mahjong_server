@@ -109,11 +109,7 @@ impl TenhouSerializer {
                 k.doras = tiles_to_tenhou(&e.doras);
                 k.scores = e.scores;
                 for s in 0..SEAT {
-                    let h = &e.hands[s];
-                    k.players[s].hand = tiles_to_tenhou(&h[..13]);
-                    if h.len() == 14 {
-                        k.players[s].drawns.push(json!(tile_to_tenhou(h[13])));
-                    }
+                    k.players[s].hand = tiles_to_tenhou(&e.hands[s]);
                 }
             }
             Event::Deal(e) => {

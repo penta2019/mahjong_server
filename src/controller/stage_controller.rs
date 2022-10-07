@@ -445,18 +445,11 @@ fn player_dec_tile(pl: &mut Player, tile: Tile) {
 }
 
 fn get_winning_tiles(pl: &Player) -> Vec<Tile> {
-    let mut winning_tiles = vec![];
-    let mut tt = TileTable::default();
     let wts0 = calc_tiles_to_kokushimusou_win(&pl.hand);
     let wts1 = calc_tiles_to_normal_win(&pl.hand);
     let wts2 = calc_tiles_to_chiitoitsu_win(&pl.hand);
-    for wts in &[wts0, wts1, wts2] {
-        for &t in wts {
-            if tt[t.0][t.1] == 0 {
-                tt[t.0][t.1] += 1;
-                winning_tiles.push(t);
-            }
-        }
-    }
-    winning_tiles
+    let mut wts = [wts0, wts1, wts2].concat();
+    wts.sort();
+    wts.dedup();
+    wts
 }

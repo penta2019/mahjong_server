@@ -480,7 +480,7 @@ impl Mahjongsoul {
             }
         }
 
-        self.handle_event(Event::meld(s, tp, consumed));
+        self.handle_event(Event::meld(s, tp, consumed, false));
     }
 
     fn handler_angangaddgang(&mut self, data: &Value) {
@@ -503,7 +503,7 @@ impl Mahjongsoul {
         } else {
             vec![t]
         };
-        self.handle_event(Event::meld(s, tp, consumed));
+        self.handle_event(Event::meld(s, tp, consumed, false));
     }
 
     fn handler_babei(&mut self, data: &Value) {

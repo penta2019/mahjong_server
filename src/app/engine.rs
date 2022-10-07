@@ -474,11 +474,11 @@ impl MahjongEngine {
             }
             Ankan => {
                 self.melding = Some(act);
-                self.handle_event(Event::meld(turn, MeldType::Ankan, cs));
+                self.handle_event(Event::meld(turn, MeldType::Ankan, cs, false));
             }
             Kakan => {
                 self.melding = Some(act);
-                self.handle_event(Event::meld(turn, MeldType::Kakan, cs));
+                self.handle_event(Event::meld(turn, MeldType::Kakan, cs, false));
             }
             Tsumo => {
                 self.round_result = Some(RoundResult::Tsumo);
@@ -567,21 +567,21 @@ impl MahjongEngine {
             n_priority += n_minkan;
             if n_priority == 0 && minkan != None {
                 let (s, act) = minkan.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone()));
+                self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone(), false));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_pon;
             if n_priority == 0 && pon != None {
                 let (s, act) = pon.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone()));
+                self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone(), false));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_chi;
             if n_priority == 0 && chi != None {
                 let (s, act) = chi.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Chi, act.tiles.clone()));
+                self.handle_event(Event::meld(s, MeldType::Chi, act.tiles.clone(), false));
                 self.melding = Some(act);
                 break;
             }

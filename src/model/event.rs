@@ -62,11 +62,12 @@ impl Event {
     }
 
     #[inline]
-    pub fn meld(seat: Seat, meld_type: MeldType, consumed: Vec<Tile>) -> Self {
+    pub fn meld(seat: Seat, meld_type: MeldType, consumed: Vec<Tile>, is_pao: bool) -> Self {
         Self::Meld(EventMeld {
             seat,
             meld_type,
             consumed,
+            is_pao,
         })
     }
 
@@ -153,6 +154,7 @@ pub struct EventMeld {
     pub seat: Seat,
     pub meld_type: MeldType, // 鳴き種別
     pub consumed: Vec<Tile>, // 手牌から消費される牌
+    pub is_pao: bool,        // 責任払いが発生するかどうか
 }
 
 #[derive(Debug, Serialize, Deserialize)]

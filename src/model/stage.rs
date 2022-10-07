@@ -83,10 +83,11 @@ pub struct Player {
     pub kitas: Vec<Kita>,       // 北抜き vecの中身はすべてTile(TZ, TN)
     pub riichi: Option<Index>,  // リーチ宣言牌のdiscardsにおけるindex
     pub discards: Vec<Discard>, // 捨て牌一覧
+    pub pao: Option<Seat>,      // 責任払い, 役満を確定する副露を許したプレイヤーの座席
     pub is_shown: bool,         // 手牌が見えるかどうか 見えない場合,手牌はすべてz8(=unknown)
     pub rank: usize,            // 現在の順位
 
-    // 聴牌
+    // 聴牌 (is_shown = trueの時のみ有効)
     pub winning_tiles: Vec<Tile>, // 聴牌時の和了牌
     pub is_furiten: bool,         // 自分の捨て牌によるフリテン
     pub is_furiten_other: bool,   // 他家の捨て牌の見逃しによるフリテン

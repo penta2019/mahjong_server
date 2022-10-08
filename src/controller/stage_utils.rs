@@ -50,6 +50,32 @@ pub fn tiles_from_tile_table(tt: &TileTable) -> Vec<Tile> {
     hand
 }
 
+pub fn tiles_to_tile_table(tiles: &Vec<Tile>) -> TileTable {
+    let mut tt = TileTable::default();
+    for &t in tiles {
+        inc_tile(&mut tt, t);
+    }
+    tt
+}
+
+pub fn inc_tile(tt: &mut TileTable, tile: Tile) {
+    let t = tile;
+    tt[t.0][t.1] += 1;
+    if t.1 == 0 {
+        // 0は赤5のフラグなので本来の5をたてる
+        tt[t.0][5] += 1;
+    }
+}
+
+pub fn dec_tile(tt: &mut TileTable, tile: Tile) {
+    let t = tile;
+    tt[t.0][t.1] -= 1;
+    if t.1 == 0 {
+        tt[t.0][5] -= 1;
+    }
+    assert!(tt[t.0][5] != 0 || tt[t.0][0] == 0);
+}
+
 pub fn tiles_with_red5(tt: &TileTable, t: Tile) -> Vec<Tile> {
     if tt[t.0][t.1] == 0 {
         return vec![];

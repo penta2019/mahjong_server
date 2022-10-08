@@ -307,6 +307,28 @@ pub fn evaluate_hand(
     results.pop()
 }
 
+pub struct WinningTile {
+    tile: Tile,       // 和了牌
+    has_yaku: bool,   // 出和了可能な役があるかどうか
+    is_furiten: bool, // フリテンの有無
+}
+
+pub struct Tenpai {
+    discard_tile: Tile,              // 聴牌になる打牌
+    winning_tiles: Vec<WinningTile>, // 聴牌になる和了牌のリスト
+}
+
+// 聴牌になる打牌を各々の上がり牌に対するスコア(翻数)やフリテンの情報を添えて返却
+// 返り値: [{打牌, [{和了牌, 役の有無, フリテンの有無}]}]
+pub fn evaluate_hand_tenpai_discards(
+    hand: &TileTable,
+    melds: &Vec<Meld>,
+    prevalent_wind: Index,
+    seat_wind: Index,
+) -> Vec<Tenpai> {
+    vec![]
+}
+
 // ドラ表示牌のリストを受け取ってドラ評価値のテーブルを返却
 fn create_dora_table(doras: &Vec<Tile>) -> TileTable {
     let mut dt = TileTable::default();

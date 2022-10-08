@@ -1,5 +1,5 @@
 use crate::actor::Actor;
-use crate::controller::count_tile;
+use crate::controller::{count_tile, dec_tile, inc_tile};
 use crate::hand::*;
 use crate::listener::Listener;
 use crate::model::*;
@@ -387,8 +387,13 @@ fn update_after_discard_completed(stg: &mut Stage) {
         match tp {
             ActionType::Discard | ActionType::Kakan => {
                 for s2 in 0..SEAT {
-                    if s2 != s && stg.players[s2].winning_tiles.contains(&t) {
-                        stg.players[s2].is_furiten_other = true;
+                    let pl = &mut stg.players[s2];
+                    if s2 != s && pl.winning_tiles.contains(&t) {
+                        if pl.is_riichi {
+                            pl.is_furiten = true; // リーチ時の見逃しは局終了までフリテンとなる
+                        } else {
+                            pl.is_furiten_other = true;
+                        }
                     }
                 }
             }
@@ -416,24 +421,14 @@ fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
     }
 }
 
+#[inline]
 fn player_inc_tile(pl: &mut Player, tile: Tile) {
-    let h = &mut pl.hand;
-    let t = tile;
-    h[t.0][t.1] += 1;
-    if t.1 == 0 {
-        // 0は赤5のフラグなので本来の5をたてる
-        h[t.0][5] += 1;
-    }
+    inc_tile(&mut pl.hand, tile);
 }
 
+#[inline]
 fn player_dec_tile(pl: &mut Player, tile: Tile) {
-    let h = &mut pl.hand;
-    let t = tile;
-    h[t.0][t.1] -= 1;
-    if t.1 == 0 {
-        h[t.0][5] -= 1;
-    }
-    assert!(h[t.0][5] != 0 || h[t.0][0] == 0);
+    dec_tile(&mut pl.hand, tile);
 }
 
 fn get_winning_tiles(pl: &Player) -> Vec<Tile> {

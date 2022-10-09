@@ -1,12 +1,15 @@
 use rand::prelude::*;
 
 use crate::actor::*;
-use crate::controller::*;
 use crate::hand::*;
 use crate::listener::*;
 use crate::model::*;
-use crate::util::misc::*;
+use crate::tool::common::*;
+use crate::tool::possible_actions::*;
+use crate::tool::stage_controller::StageController;
+use crate::tool::wall::*;
 use crate::util::connection::TcpConnection;
+use crate::util::misc::*;
 
 use crate::{error, warn};
 
@@ -377,7 +380,7 @@ impl MahjongEngine {
         self.replacement_wall = vec![];
 
         // 山の初期化
-        self.wall = crate::controller::create_wall(self.rng.next_u64());
+        self.wall = create_wall(self.rng.next_u64());
 
         // 王牌
         self.dora_wall = self.draw_tiles(5); // 槓ドラ

@@ -7,8 +7,8 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
-use crate::controller::get_scores;
 use crate::convert::mjai::*;
+use crate::tool::common::get_scores;
 use crate::util::misc::{flush, sleep, vec_to_string};
 
 use crate::{error, info};

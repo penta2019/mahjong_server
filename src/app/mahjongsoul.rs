@@ -1,10 +1,11 @@
 use serde_json::{json, Value};
 
 use crate::actor::{create_actor, Actor};
-use crate::controller::{get_prevalent_wind, get_seat_wind, StageController};
 use crate::hand::{get_score_title, YakuDefine};
 use crate::listener::{EventWriter, Listener};
 use crate::model::*;
+use crate::tool::common::*;
+use crate::tool::stage_controller::StageController;
 use crate::util::connection::*;
 use crate::util::misc::*;
 

@@ -5,8 +5,8 @@ use crate::controller::{get_prevalent_wind, get_seat_wind, StageController};
 use crate::hand::{get_score_title, YakuDefine};
 use crate::listener::{EventWriter, Listener};
 use crate::model::*;
-use crate::util::common::*;
 use crate::util::connection::*;
+use crate::util::misc::*;
 
 use crate::error;
 

@@ -2,9 +2,10 @@ use std::fmt::Write as _;
 use std::fs::File;
 use std::io::{self, BufRead};
 
+use crate::controller::*;
 use crate::hand::{evaluate_hand, YakuFlags};
 use crate::model::*;
-use crate::util::common::*;
+use crate::util::misc::*;
 
 use crate::error;
 
@@ -320,111 +321,6 @@ impl Calculator {
         self.verify = true;
         Ok(())
     }
-}
-
-fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
-    let mut tiles = vec![];
-    let undef: usize = 255;
-    let mut ti = undef;
-    for c in exp.chars() {
-        match c {
-            'm' => ti = 0,
-            'p' => ti = 1,
-            's' => ti = 2,
-            'z' => ti = 3,
-            '0'..='9' => {
-                if ti == undef {
-                    return Err(format!("tile number befor tile type"));
-                }
-                let ni = c.to_digit(10).unwrap() as usize;
-                tiles.push(Tile(ti, ni));
-            }
-            _ => {
-                return Err(format!("invalid char: '{}'", c));
-            }
-        }
-    }
-    Ok(tiles)
-}
-
-fn meld_from_string(exp: &str) -> Result<Meld, String> {
-    let undef: usize = 255;
-    let seat = 0; // 点数計算する上で座席の番号は関係ないので0で固定
-    let mut ti = undef;
-    let mut nis = vec![];
-
-    let mut from = 0;
-    let mut tiles = vec![];
-    let mut froms = vec![];
-    for c in exp.chars() {
-        match c {
-            'm' => ti = 0,
-            'p' => ti = 1,
-            's' => ti = 2,
-            'z' => ti = 3,
-            '+' => {
-                if froms.is_empty() {
-                    return Err("invalid '+' suffix".into());
-                }
-                let last = froms.len() - 1;
-                froms[last] = from % SEAT;
-            }
-            '0'..='9' => {
-                if ti == undef {
-                    return Err("tile number befor tile type".into());
-                }
-
-                from += 1;
-                let ni = c.to_digit(10).unwrap() as usize;
-                nis.push(if ni == 0 { 5 } else { ni });
-                tiles.push(Tile(ti, ni));
-                froms.push(seat);
-            }
-            _ => {
-                return Err(format!("invalid char: '{}'", c));
-            }
-        }
-    }
-
-    nis.sort();
-    let mut diffs = vec![];
-    let mut ni0 = nis[0];
-    for ni in &nis[1..] {
-        diffs.push(ni - ni0);
-        ni0 = *ni;
-    }
-
-    let meld_type = if diffs.len() == 2 && vec_count(&diffs, &1) == 2 {
-        MeldType::Chi
-    } else if diffs.len() == 2 && vec_count(&diffs, &0) == 2 {
-        MeldType::Pon
-    } else if diffs.len() == 3 && vec_count(&diffs, &0) == 3 {
-        if vec_count(&froms, &seat) == 4 {
-            MeldType::Ankan
-        } else {
-            MeldType::Minkan
-        }
-    } else {
-        return Err(format!("invalid meld: '{}'", exp));
-    };
-
-    Ok(Meld {
-        step: 0,
-        seat,
-        meld_type,
-        tiles,
-        froms,
-    })
-}
-
-fn wind_from_char(c: char) -> Result<Index, String> {
-    Ok(match c {
-        'E' => 1,
-        'S' => 2,
-        'W' => 3,
-        'N' => 4,
-        _ => return Err(format!("invalid wind symbol: {}", c)),
-    })
 }
 
 fn print_usage() {

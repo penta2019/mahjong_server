@@ -4,8 +4,8 @@ use std::thread;
 use serde_json::{json, Value};
 
 use super::*;
-use crate::util::common::sleep;
 use crate::util::connection::{Connection, Message, TcpConnection};
+use crate::util::misc::sleep;
 
 use crate::error;
 

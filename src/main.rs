@@ -1,5 +1,4 @@
 #![warn(rust_2018_idioms)]
-
 // 構造的な意味合いや一貫性を保つために以下の警告は無効化
 #![allow(clippy::useless_format)]
 #![allow(clippy::get_first)]
@@ -9,7 +8,6 @@
 #![allow(clippy::vec_init_then_push)]
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::too_many_arguments)]
-
 
 mod actor;
 mod app;

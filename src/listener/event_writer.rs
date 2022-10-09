@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use crate::convert::tenhou::TenhouSerializer;
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::common::*;
+use crate::util::misc::*;
 
 // [EventWriter]
 #[derive(Debug)]

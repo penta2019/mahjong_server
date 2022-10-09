@@ -1,6 +1,6 @@
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::common::prompt;
+use crate::util::misc::prompt;
 
 pub struct Debug {}
 

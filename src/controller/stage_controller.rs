@@ -3,7 +3,7 @@ use crate::controller::{count_tile, dec_tile, inc_tile};
 use crate::hand::*;
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::common::rank_by_rank_vec;
+use crate::util::misc::rank_by_rank_vec;
 
 use TileState::*;
 

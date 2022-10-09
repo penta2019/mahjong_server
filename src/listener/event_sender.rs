@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::common::sleep;
 use crate::util::connection::{Connection, Message};
+use crate::util::misc::sleep;
 
 #[derive(Debug, Default)]
 struct SharedData {

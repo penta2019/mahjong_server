@@ -1,6 +1,6 @@
 use super::win::{calc_possibole_pairs, is_kokushimusou_win};
 use crate::model::*;
-use crate::util::common::cartesian_product;
+use crate::util::misc::cartesian_product;
 
 use SetPairType::*;
 

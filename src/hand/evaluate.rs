@@ -1,7 +1,8 @@
 use super::parse::*;
 use super::point::*;
+use super::win::*;
 use super::yaku::*;
-use crate::controller::{get_prevalent_wind, get_seat_wind, is_dealer};
+use crate::controller::*;
 use crate::model::*;
 
 pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<ScoreContext> {
@@ -89,6 +90,7 @@ pub fn evaluate_hand_ron(
         return None;
     };
 
+    // 和了牌を追加
     let mut hand = pl.hand;
     if t.1 == 0 {
         // 赤5
@@ -153,7 +155,7 @@ pub fn evaluate_hand_ron(
 // 和了形でも無役の場合はResultの中身がyaku: [], points(0, 0, 0)となる.
 // この関数は本場数の得点を計算しない.
 pub fn evaluate_hand(
-    hand: &TileTable,       // 手牌(鳴き以外)
+    hand: &TileTable,       // 手牌(鳴き以外, ロンの場合でも和了牌を含む)
     melds: &Vec<Meld>,      // 鳴き
     doras: &Vec<Tile>,      // ドラ表示牌 (注:ドラそのものではない)
     ura_doras: &Vec<Tile>,  // 裏ドラ表示牌 リーチしていない場合は空
@@ -164,16 +166,22 @@ pub fn evaluate_hand(
     seat_wind: Index,       // 自風 (同上)
     yaku_flags: &YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
 ) -> Option<ScoreContext> {
-    let mut wins = vec![]; // 和了形のリスト (無役を含む)
+    let mut phs = vec![];
+    phs.append(&mut parse_into_normal_win(hand));
+    if melds.is_empty() {
+        phs.append(&mut parse_into_chiitoitsu_win(hand));
+        phs.append(&mut parse_into_kokusimusou_win(hand));
+    }
 
-    // 和了(通常)
+    let mut wins = vec![]; // 和了形のリスト (無役を含む)
     let pm = parse_melds(melds);
-    for mut ph in parse_into_normal_win(hand).into_iter() {
+    for mut ph in phs.into_iter() {
         ph.append(&mut pm.clone());
-        if ph.len() != 5 {
-            return None;
+        match ph.len() {
+            0 | 5 | 7 => {} // 国士, 通常, 七対子
+            _ => continue,  // 無効な和了形
         }
-        let ctx = YakuContext::new(
+        wins.push(YakuContext::new(
             *hand,
             ph,
             winning_tile,
@@ -181,38 +189,7 @@ pub fn evaluate_hand(
             seat_wind,
             is_drawn,
             yaku_flags.clone(),
-        );
-        wins.push(ctx);
-    }
-
-    if wins.is_empty() && melds.is_empty() {
-        // 和了(七対子)
-        for ph in parse_into_chiitoitsu_win(hand).into_iter() {
-            let ctx = YakuContext::new(
-                *hand,
-                ph,
-                winning_tile,
-                prevalent_wind,
-                seat_wind,
-                is_drawn,
-                yaku_flags.clone(),
-            );
-            wins.push(ctx);
-        }
-
-        // 和了(国士無双)
-        for ph in parse_into_kokusimusou_win(hand).into_iter() {
-            let ctx = YakuContext::new(
-                *hand,
-                ph,
-                winning_tile,
-                prevalent_wind,
-                seat_wind,
-                is_drawn,
-                yaku_flags.clone(),
-            );
-            wins.push(ctx);
-        }
+        ));
     }
 
     if wins.is_empty() {
@@ -308,14 +285,14 @@ pub fn evaluate_hand(
 }
 
 pub struct WinningTile {
-    tile: Tile,       // 和了牌
-    has_yaku: bool,   // 出和了可能な役があるかどうか
-    is_furiten: bool, // フリテンの有無
+    tile: Tile,     // 和了牌
+    has_yaku: bool, // 出和了可能な役があるかどうか
 }
 
 pub struct Tenpai {
     discard_tile: Tile,              // 聴牌になる打牌
     winning_tiles: Vec<WinningTile>, // 聴牌になる和了牌のリスト
+    is_furiten: bool,                // フリテンの有無
 }
 
 // 聴牌になる打牌を各々の上がり牌に対するスコア(翻数)やフリテンの情報を添えて返却
@@ -325,52 +302,70 @@ pub fn evaluate_hand_tenpai_discards(
     melds: &Vec<Meld>,
     prevalent_wind: Index,
     seat_wind: Index,
+    discards: &Vec<Discard>,
 ) -> Vec<Tenpai> {
-    vec![]
-}
+    let mut comb: Vec<(Tile, Tile)> = vec![]; // (打牌, 和了牌)の組み合わせ
+    for (d, wts) in calc_discards_to_normal_tenpai(hand).into_iter() {
+        for wt in wts.into_iter() {
+            comb.push((d, wt));
+        }
+    }
+    for (d, wts) in calc_discards_to_chiitoitsu_tenpai(hand).into_iter() {
+        for wt in wts.into_iter() {
+            comb.push((d, wt));
+        }
+    }
+    for (d, wts) in calc_discards_to_kokushimusou_tenpai(hand).into_iter() {
+        for wt in wts.into_iter() {
+            comb.push((d, wt));
+        }
+    }
+    comb.sort();
+    comb.dedup();
 
-// ドラ表示牌のリストを受け取ってドラ評価値のテーブルを返却
-fn create_dora_table(doras: &Vec<Tile>) -> TileTable {
-    let mut dt = TileTable::default();
-    for d in doras {
-        let ni = if d.is_hornor() {
-            match d.1 {
-                WN => WE,
-                DR => DW,
-                i => i + 1,
-            }
-        } else {
-            match d.1 {
-                9 => 1,
-                0 => 6,
-                _ => d.1 + 1,
-            }
+    let yf = YakuFlags::default();
+    let mut res: Vec<Tenpai> = vec![];
+    for (d, wt) in comb {
+        if res.is_empty() || res.last().unwrap().discard_tile != d {
+            res.push(Tenpai {
+                discard_tile: d,
+                winning_tiles: vec![],
+                is_furiten: false,
+            })
+        }
+
+        let mut h = *hand;
+        dec_tile(&mut h, d);
+        inc_tile(&mut h, wt);
+        let sc = evaluate_hand(
+            &h,
+            melds,
+            &vec![],
+            &vec![],
+            wt,
+            false,
+            false,
+            prevalent_wind,
+            seat_wind,
+            &yf,
+        );
+        let wt_info = WinningTile {
+            tile: wt,
+            has_yaku: sc.is_some(),
         };
-        dt[d.0][ni] += 1;
-    }
 
-    dt
-}
-
-// ドラ(赤5を含む)の数を勘定
-fn count_dora(hand: &TileTable, melds: &Vec<Meld>, doras: &Vec<Tile>) -> usize {
-    let dt = create_dora_table(doras);
-    let mut n_dora = 0;
-
-    for ti in 0..TYPE {
-        for ni in 1..TNUM {
-            n_dora += dt[ti][ni] * hand[ti][ni];
+        let tenpai = res.last_mut().unwrap();
+        tenpai.winning_tiles.push(wt_info);
+        if !tenpai.is_furiten {
+            for d2 in discards {
+                if d2.tile.to_normal() == wt.to_normal() {
+                    tenpai.is_furiten = true;
+                }
+            }
         }
     }
 
-    for m in melds {
-        for t in &m.tiles {
-            let t = t.to_normal();
-            n_dora += dt[t.0][t.1];
-        }
-    }
-
-    n_dora
+    res
 }
 
 fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
@@ -385,3 +380,6 @@ fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
     }
     true
 }
+
+#[test]
+fn test_tenpai() {}

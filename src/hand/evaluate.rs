@@ -1,6 +1,5 @@
 use super::parse::*;
 use super::point::*;
-use super::win::*;
 use super::yaku::*;
 use crate::model::*;
 use crate::tool::common::*;
@@ -284,90 +283,6 @@ pub fn evaluate_hand(
     results.pop()
 }
 
-pub struct WinningTile {
-    tile: Tile,     // 和了牌
-    has_yaku: bool, // 出和了可能な役があるかどうか
-}
-
-pub struct Tenpai {
-    discard_tile: Tile,              // 聴牌になる打牌
-    winning_tiles: Vec<WinningTile>, // 聴牌になる和了牌のリスト
-    is_furiten: bool,                // フリテンの有無
-}
-
-// 聴牌になる打牌を各々の上がり牌に対するスコア(翻数)やフリテンの情報を添えて返却
-// 返り値: [{打牌, [{和了牌, 役の有無, フリテンの有無}]}]
-pub fn evaluate_hand_tenpai_discards(
-    hand: &TileTable,
-    melds: &Vec<Meld>,
-    prevalent_wind: Index,
-    seat_wind: Index,
-    discards: &Vec<Discard>,
-) -> Vec<Tenpai> {
-    let mut comb: Vec<(Tile, Tile)> = vec![]; // (打牌, 和了牌)の組み合わせ
-    for (d, wts) in calc_discards_to_normal_tenpai(hand).into_iter() {
-        for wt in wts.into_iter() {
-            comb.push((d, wt));
-        }
-    }
-    for (d, wts) in calc_discards_to_chiitoitsu_tenpai(hand).into_iter() {
-        for wt in wts.into_iter() {
-            comb.push((d, wt));
-        }
-    }
-    for (d, wts) in calc_discards_to_kokushimusou_tenpai(hand).into_iter() {
-        for wt in wts.into_iter() {
-            comb.push((d, wt));
-        }
-    }
-    comb.sort();
-    comb.dedup();
-
-    let yf = YakuFlags::default();
-    let mut res: Vec<Tenpai> = vec![];
-    for (d, wt) in comb {
-        if res.is_empty() || res.last().unwrap().discard_tile != d {
-            res.push(Tenpai {
-                discard_tile: d,
-                winning_tiles: vec![],
-                is_furiten: false,
-            })
-        }
-
-        let mut h = *hand;
-        dec_tile(&mut h, d);
-        inc_tile(&mut h, wt);
-        let sc = evaluate_hand(
-            &h,
-            melds,
-            &vec![],
-            &vec![],
-            wt,
-            false,
-            false,
-            prevalent_wind,
-            seat_wind,
-            &yf,
-        );
-        let wt_info = WinningTile {
-            tile: wt,
-            has_yaku: sc.is_some(),
-        };
-
-        let tenpai = res.last_mut().unwrap();
-        tenpai.winning_tiles.push(wt_info);
-        if !tenpai.is_furiten {
-            for d2 in discards {
-                if d2.tile.to_normal() == wt.to_normal() {
-                    tenpai.is_furiten = true;
-                }
-            }
-        }
-    }
-
-    res
-}
-
 fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
     if !stg.players[seat].discards.is_empty() {
         return false;
@@ -380,6 +295,3 @@ fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
     }
     true
 }
-
-#[test]
-fn test_tenpai() {}

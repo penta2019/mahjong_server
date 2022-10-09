@@ -65,8 +65,45 @@ impl StageController {
         stg.step += 1;
     }
 
-    pub fn select_action(&mut self, seat: Seat, acts: &Vec<Action>, retry: i32) -> Option<Action> {
-        self.actors[seat].select_action(&self.stage, acts, retry)
+    pub fn select_action(
+        &mut self,
+        seat: Seat,
+        acts: &Vec<Action>,
+        tenpais: &Vec<Tenpai>,
+        retry: i32,
+    ) -> Option<Action> {
+        let res = self.actors[seat].select_action(&self.stage, acts, tenpais, retry);
+
+        // turn operationの際に聴牌情報を参照して和了牌を更新
+        if let Some(act) = &res {
+            use ActionType::*;
+            let pl = &mut self.stage.players[seat];
+            let t = match act.action_type {
+                Discard | Riichi | Kakan | Ankan | Kita => {
+                    // Ankanは手牌から4枚なくなるため例外的ではあるが和了牌が増えることはないので同様に処理
+                    if act.tiles.is_empty() {
+                        pl.drawn.unwrap() // ツモ切りリーチ
+                    } else {
+                        act.tiles[0]
+                    }
+                }
+                _ => Z8,
+            };
+            if t != Z8 && t != pl.drawn.unwrap() {
+                pl.winning_tiles = vec![];
+                for tp in tenpais {
+                    if tp.discard_tile == t {
+                        for wt in &tp.winning_tiles {
+                            pl.winning_tiles.push(wt.tile);
+                        }
+                        pl.is_furiten = tp.is_furiten;
+                        break;
+                    }
+                }
+            }
+        }
+
+        res
     }
 }
 
@@ -201,6 +238,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
 
     stg.discards.push((s, idx));
     pl.discards.push(d);
+    pl.drawn = None;
 
     if pl.is_shown {
         player_dec_tile(pl, t);
@@ -210,33 +248,33 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
         table_edit(stg, t, U, D(s, idx));
     }
 
-    // 和了牌とフリテンの計算
-    let pl = &mut stg.players[s];
-    if pl.is_shown {
-        if pl.drawn != Some(t) {
-            let wt = get_winning_tiles(pl);
-            pl.is_furiten = false;
-            if !wt.is_empty() {
-                let mut tt = TileTable::default();
-                for w in &wt {
-                    tt[w.0][w.1] = 1;
-                }
-                for d in &pl.discards {
-                    let dt = d.tile.to_normal();
-                    if tt[dt.0][dt.1] != 0 {
-                        pl.is_furiten = true;
-                        break;
-                    }
-                }
-            }
-            pl.winning_tiles = wt;
-        } else if pl.winning_tiles.contains(&t) {
-            // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
-            pl.is_furiten = true;
-        }
-    }
+    // // 和了牌とフリテンの計算
+    // let pl = &mut stg.players[s];
+    // if pl.is_shown {
+    //     if pl.drawn != Some(t) {
+    //         let wt = get_winning_tiles(pl);
+    //         pl.is_furiten = false;
+    //         if !wt.is_empty() {
+    //             let mut tt = TileTable::default();
+    //             for w in &wt {
+    //                 tt[w.0][w.1] = 1;
+    //             }
+    //             for d in &pl.discards {
+    //                 let dt = d.tile.to_normal();
+    //                 if tt[dt.0][dt.1] != 0 {
+    //                     pl.is_furiten = true;
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //         pl.winning_tiles = wt;
+    //     } else if pl.winning_tiles.contains(&t) {
+    //         // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
+    //         pl.is_furiten = true;
+    //     }
+    // }
+    // pl.drawn = None;
 
-    pl.drawn = None;
     stg.last_tile = Some((s, ActionType::Discard, t));
 }
 

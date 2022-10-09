@@ -119,3 +119,23 @@ impl fmt::Display for Action {
         Ok(())
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WinningTile {
+    pub tile: Tile,     // 和了牌
+    pub has_yaku: bool, // 出和了可能な役があるかどうか
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tenpai {
+    pub discard_tile: Tile,              // 聴牌になる打牌
+    pub winning_tiles: Vec<WinningTile>, // 聴牌になる和了牌のリスト
+    pub is_furiten: bool,                // フリテンの有無
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub struct PossibleActions {
+    pub actions: Vec<Action>,
+    pub tenpais: Vec<Tenpai>,
+}

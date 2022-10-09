@@ -104,11 +104,18 @@ impl Actor for Endpoint {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, _stg: &Stage, acts: &Vec<Action>, repeat: i32) -> Option<Action> {
+    fn select_action(
+        &mut self,
+        _stg: &Stage,
+        acts: &Vec<Action>,
+        tenpais: &Vec<Tenpai>,
+        repeat: i32,
+    ) -> Option<Action> {
         let mut ret = None;
         let mut d = self.data.lock().unwrap();
         if repeat == 0 {
-            let act_msg = json!({"type": "Action", "actions": json!(acts)});
+            let act_msg =
+                json!({"type": "Action", "actions": json!(acts), "tenpais": json!(tenpais)});
             d.msgs.push((act_msg, true));
         } else {
             ret = d.action.clone();

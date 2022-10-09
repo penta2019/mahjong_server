@@ -451,11 +451,14 @@ impl MahjongEngine {
         // act: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
         let stg = self.get_stage();
         let turn = stg.turn;
-        let acts = calc_possible_turn_actions(stg, &self.melding);
+        let pl = &stg.players[turn];
+        let tenpais =
+            calc_possible_tenpai_discards(pl, get_prevalent_wind(stg), get_seat_wind(stg, turn));
+        let acts = calc_possible_turn_actions(stg, &self.melding, &tenpais);
 
         let mut retry = 0;
         let act = loop {
-            if let Some(act) = self.ctrl.select_action(turn, &acts, retry) {
+            if let Some(act) = self.ctrl.select_action(turn, &acts, &tenpais, retry) {
                 break act;
             }
             retry += 1;
@@ -571,7 +574,7 @@ impl MahjongEngine {
                     // すでにactionを選択済み または Nopのみ
                     continue;
                 }
-                if let Some(act) = self.ctrl.select_action(s, acts, retry) {
+                if let Some(act) = self.ctrl.select_action(s, acts, &vec![], retry) {
                     for act in acts {
                         match act.action_type {
                             Nop => {}

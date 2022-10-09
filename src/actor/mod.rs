@@ -30,7 +30,13 @@ pub trait Actor: Listener + ActorClone + Send {
     // 処理を非同期に行う必要がある場合,Noneを返すことで100ms以内に同じ選択に対して再度この関数が呼び出される.
     // この時,呼び出されるたびにrepeatに1加算される.
     // 各々の選択に対して初回の呼び出しでは retry=0 である.
-    fn select_action(&mut self, stg: &Stage, acts: &Vec<Action>, retry: i32) -> Option<Action>;
+    fn select_action(
+        &mut self,
+        stg: &Stage,
+        acts: &Vec<Action>,
+        tenpais: &Vec<Tenpai>,
+        retry: i32,
+    ) -> Option<Action>;
 
     // Actorの詳細表示用
     fn get_config(&self) -> &Config;

@@ -6,7 +6,11 @@ use crate::tool::common::*;
 // プレイヤーのツモ番に可能な操作をチェックする
 // fn(&Stage) -> Option<Action>
 
-pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<Action> {
+pub fn calc_possible_turn_actions(
+    stg: &Stage,
+    melding: &Option<Action>,
+    tenpais: &Vec<Tenpai>,
+) -> Vec<Action> {
     if let Some(act) = melding {
         match act.action_type {
             ActionType::Chi | ActionType::Pon => {
@@ -24,19 +28,20 @@ pub fn calc_possible_turn_actions(stg: &Stage, melding: &Option<Action>) -> Vec<
     if !stg.players[stg.turn].is_riichi {
         acts.push(Action::new(ActionType::Discard, vec![]));
     }
+    acts.append(&mut check_riichi(stg, tenpais));
+
     if stg.wall_count != 0 {
         acts.append(&mut check_ankan(stg));
         acts.append(&mut check_kakan(stg));
         acts.append(&mut check_kita(stg));
     }
-    acts.append(&mut check_riichi(stg));
     acts.append(&mut check_tsumo(stg));
     acts.append(&mut check_kyushukyuhai(stg));
 
     acts
 }
 
-fn check_riichi(stg: &Stage) -> Vec<Action> {
+fn check_riichi(stg: &Stage, tenpais: &Vec<Tenpai>) -> Vec<Action> {
     if stg.wall_count < 4 {
         return vec![];
     }
@@ -46,17 +51,10 @@ fn check_riichi(stg: &Stage) -> Vec<Action> {
         return vec![];
     }
 
-    let ds1 = calc_discards_to_normal_tenpai(&pl.hand);
-    let ds2 = calc_discards_to_chiitoitsu_tenpai(&pl.hand);
-    let ds3 = calc_discards_to_kokushimusou_tenpai(&pl.hand);
     let mut tiles = vec![];
-    for ds in [ds1, ds2, ds3] {
-        for (d, _) in ds {
-            tiles.push(d);
-        }
+    for tp in tenpais {
+        tiles.push(tp.discard_tile);
     }
-    tiles.sort();
-    tiles.dedup();
 
     if tiles.is_empty() {
         vec![]
@@ -368,4 +366,101 @@ fn calc_restricted_discards(act: &Action) -> Vec<Tile> {
     }
 
     v
+}
+
+// [Tenpai Check]
+// 聴牌になる打牌を各々の上がり牌に対するスコア(翻数)やフリテンの情報を添えて返却
+// 返り値: [{打牌, [{和了牌, 役の有無, フリテンの有無}]}]
+pub fn calc_possible_tenpai_discards(
+    pl: &Player,
+    prevalent_wind: Index,
+    seat_wind: Index,
+) -> Vec<Tenpai> {
+    let mut comb: Vec<(Tile, Tile)> = vec![]; // (打牌, 和了牌)の組み合わせ
+    for (d, wts) in calc_discards_to_normal_tenpai(&pl.hand).into_iter() {
+        for wt in wts.into_iter() {
+            comb.push((d, wt));
+        }
+    }
+    for (d, wts) in calc_discards_to_chiitoitsu_tenpai(&pl.hand).into_iter() {
+        for wt in wts.into_iter() {
+            comb.push((d, wt));
+        }
+    }
+    for (d, wts) in calc_discards_to_kokushimusou_tenpai(&pl.hand).into_iter() {
+        for wt in wts.into_iter() {
+            comb.push((d, wt));
+        }
+    }
+    comb.sort();
+    comb.dedup();
+
+    let yf = YakuFlags::default();
+    let mut res: Vec<Tenpai> = vec![];
+    for (d, wt) in comb {
+        if res.is_empty() || res.last().unwrap().discard_tile != d {
+            res.push(Tenpai {
+                discard_tile: d,
+                winning_tiles: vec![],
+                is_furiten: false,
+            })
+        }
+
+        let mut h = pl.hand;
+        dec_tile(&mut h, d);
+        inc_tile(&mut h, wt);
+        let sc = evaluate_hand(
+            &h,
+            &pl.melds,
+            &vec![],
+            &vec![],
+            wt,
+            false,
+            false,
+            prevalent_wind,
+            seat_wind,
+            &yf,
+        );
+        let wt_info = WinningTile {
+            tile: wt,
+            has_yaku: sc.is_some(),
+        };
+
+        let tenpai = res.last_mut().unwrap();
+        tenpai.winning_tiles.push(wt_info);
+        if !tenpai.is_furiten {
+            tenpai.is_furiten = d.to_normal() == wt; // 和了形からの打牌は必ずフリテン
+            for d2 in &pl.discards {
+                if d2.tile.to_normal() == wt {
+                    tenpai.is_furiten = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    res
+}
+
+#[test]
+fn test_tenpai_discards() {
+    let tiles = tiles_from_string("m11235s123999p123").unwrap();
+    println!("{:?}", tiles);
+    let mut pl = Player::default();
+    pl.hand = tiles_to_tile_table(&tiles);
+    pl.melds = vec![];
+    pl.discards = tiles_from_string("p1")
+        .unwrap()
+        .iter()
+        .map(|t| Discard {
+            step: 0,
+            tile: *t,
+            drawn: false,
+            meld: None,
+        })
+        .collect();
+    let prevalent_wind = WE;
+    let seat_wind = WE;
+    let tenpais = calc_possible_tenpai_discards(&pl, prevalent_wind, seat_wind);
+    println!("{:#?}", tenpais);
 }

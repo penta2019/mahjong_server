@@ -612,7 +612,8 @@ impl MahjongEngine {
             n_priority += n_pon;
             if n_priority == 0 && pon != None {
                 let (s, act) = pon.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone(), false));
+                let is_pao = check_pao_for_selected_action(self.get_stage(), s, &act);
+                self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
             }

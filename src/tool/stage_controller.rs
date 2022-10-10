@@ -248,33 +248,6 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
         table_edit(stg, t, U, D(s, idx));
     }
 
-    // // 和了牌とフリテンの計算
-    // let pl = &mut stg.players[s];
-    // if pl.is_shown {
-    //     if pl.drawn != Some(t) {
-    //         let wt = get_winning_tiles(pl);
-    //         pl.is_furiten = false;
-    //         if !wt.is_empty() {
-    //             let mut tt = TileTable::default();
-    //             for w in &wt {
-    //                 tt[w.0][w.1] = 1;
-    //             }
-    //             for d in &pl.discards {
-    //                 let dt = d.tile.to_normal();
-    //                 if tt[dt.0][dt.1] != 0 {
-    //                     pl.is_furiten = true;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //         pl.winning_tiles = wt;
-    //     } else if pl.winning_tiles.contains(&t) {
-    //         // 和了牌をツモ切り(役無しまたは点数状況で和了れない場合など)
-    //         pl.is_furiten = true;
-    //     }
-    // }
-    // pl.drawn = None;
-
     stg.last_tile = Some((s, ActionType::Discard, t));
 }
 
@@ -288,6 +261,10 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
     let s = event.seat;
     stg.turn = s;
     let pl = &mut stg.players[s];
+    if event.is_pao {
+        pl.pao = Some(stg.turn);
+    }
+
     let mut idx; // Vec<Meld>のインデックス
     match event.meld_type {
         MeldType::Chi | MeldType::Pon | MeldType::Minkan => {

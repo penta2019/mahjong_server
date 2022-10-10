@@ -368,7 +368,6 @@ fn calc_restricted_discards(act: &Action) -> Vec<Tile> {
     v
 }
 
-// [Tenpai Check]
 // 聴牌になる打牌を各々の上がり牌に対するスコア(翻数)やフリテンの情報を添えて返却
 // 返り値: [{打牌, [{和了牌, 役の有無, フリテンの有無}]}]
 pub fn calc_possible_tenpai_discards(
@@ -440,6 +439,36 @@ pub fn calc_possible_tenpai_discards(
     }
 
     res
+}
+
+// 鳴き操作を適用前のStageに対して責任払いがその操作により発生するかどうかを判定
+pub fn check_pao_for_selected_action(stg: &Stage, seat: Seat, act: &Action) -> bool {
+    let pl = &stg.players[seat];
+    let t = act.tiles[0];
+
+    // 大三元
+    if t.is_doragon() {
+        let mut cnt = 0;
+        for m in &pl.melds {
+            if m.tiles[0].is_doragon() {
+                cnt += 1;
+            }
+        }
+        return cnt == 2;
+    }
+
+    // 大四喜
+    if t.is_wind() {
+        let mut cnt = 0;
+        for m in &pl.melds {
+            if m.tiles[0].is_wind() {
+                cnt += 1;
+            }
+        }
+        return cnt == 3;
+    }
+
+    false
 }
 
 #[test]

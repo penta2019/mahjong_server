@@ -89,7 +89,7 @@ impl StageController {
                 }
                 _ => Z8,
             };
-            if t != Z8 && t != pl.drawn.unwrap() {
+            if t != Z8 && Some(t) != pl.drawn {
                 pl.winning_tiles = vec![];
                 for tp in tenpais {
                     if tp.discard_tile == t {

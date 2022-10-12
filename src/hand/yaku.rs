@@ -289,12 +289,7 @@ pub struct YakuDefine {
 impl YakuDefine {
     pub fn get_from_id(id: usize) -> Option<&'static YakuDefine> {
         assert!(id != 10 && id != 11); // 自風, 場風は特定不能
-        for y in YAKU_LIST {
-            if y.id == id {
-                return Some(y);
-            }
-        }
-        None
+        YAKU_LIST.iter().find(|&y| y.id == id)
     }
 }
 

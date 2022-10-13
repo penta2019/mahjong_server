@@ -180,7 +180,6 @@ impl TenhouSerializer {
             Event::Win(e) => {
                 k.result = "和了".to_string();
                 k.ura_doras = tiles_to_tenhou(&e.ura_doras);
-                // for (seat, points, ctx) in &e.contexts {
                 for ctx in &e.contexts {
                     let score_ctx = &ctx.score_context;
                     k.result_detail

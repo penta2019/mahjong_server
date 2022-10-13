@@ -139,7 +139,7 @@ impl Listener for Endpoint {
                     let mut hands = e.hands.clone();
                     for s in 0..SEAT {
                         if !self.debug && s != self.seat {
-                            hands[s].fill(Tile(TZ, UK));
+                            hands[s].fill(Z8);
                         }
                     }
                     let e2 = Event::New(EventNew {
@@ -154,7 +154,7 @@ impl Listener for Endpoint {
                 }
                 Event::Deal(e) => {
                     let t = if !self.debug && self.seat != e.seat {
-                        Tile(TZ, UK)
+                        Z8
                     } else {
                         e.tile
                     };

@@ -157,9 +157,5 @@ pub fn as_enumerate(v: &Value) -> impl Iterator<Item = (usize, &Value)> {
 }
 
 pub fn as_vec<T>(f: impl Fn(&Value) -> T, v: &Value) -> Vec<T> {
-    let mut vec: Vec<T> = Vec::new();
-    for e in as_array(v) {
-        vec.push(f(e));
-    }
-    vec
+    as_array(v).iter().map(f).collect()
 }

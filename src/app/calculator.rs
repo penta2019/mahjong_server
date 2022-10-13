@@ -278,15 +278,8 @@ impl Calculator {
         for exp_meld in &exp_melds {
             self.melds.push(meld_from_string(exp_meld)?);
         }
-
-        if self.is_drawn {
-            self.yaku_flags.menzentsumo = true;
-            for m in &self.melds {
-                if m.meld_type != MeldType::Ankan {
-                    self.yaku_flags.menzentsumo = false;
-                }
-            }
-        }
+        self.yaku_flags.menzentsumo =
+            self.is_drawn && self.melds.iter().all(|m| m.meld_type == MeldType::Ankan);
 
         Ok(())
     }

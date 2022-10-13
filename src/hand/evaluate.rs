@@ -15,7 +15,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
     }
 
     let mut yf = YakuFlags {
-        menzentsumo: true,
+        menzentsumo: pl.melds.iter().all(|m| m.meld_type == MeldType::Ankan),
         riichi: pl.is_riichi && !pl.is_daburii,
         dabururiichi: pl.is_daburii,
         ippatsu: pl.is_ippatsu,
@@ -25,11 +25,6 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
         tiihou: false, // TODO
         ..Default::default()
     };
-    for m in &pl.melds {
-        if m.meld_type != MeldType::Ankan {
-            yf.menzentsumo = false;
-        }
-    }
     if check_tenhou_tiihou(stg, stg.turn) {
         if is_dealer(stg, stg.turn) {
             yf.tenhou = true;

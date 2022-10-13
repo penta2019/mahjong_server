@@ -213,7 +213,6 @@ impl MjaiEndpoint {
     }
 
     fn notify_win(&mut self, stg: &Stage, event: &EventWin) {
-        // for (seat, deltas, ctx) in &event.contexts {
         for ctx in &event.contexts {
             self.add_record(MjaiEvent::hora(
                 ctx.seat,
@@ -266,12 +265,10 @@ impl Actor for MjaiEndpoint {
         // possible_actionを追加
         {
             let mut d = self.data.lock().unwrap();
-            let mut mjai_acts = vec![];
-            for act in acts {
-                if let Some(v) = MjaiAction::from_action(stg, self.seat, act) {
-                    mjai_acts.push(v);
-                }
-            }
+            let mjai_acts: Vec<MjaiAction> = acts
+                .iter()
+                .filter_map(|a| MjaiAction::from_action(stg, self.seat, a))
+                .collect();
             d.record.last_mut().unwrap()["possible_actions"] =
                 serde_json::to_value(mjai_acts).unwrap();
             d.selected_action = None;

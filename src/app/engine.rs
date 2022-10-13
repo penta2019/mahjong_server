@@ -650,27 +650,35 @@ impl MahjongEngine {
         let mut need_dealer_change = false; // 親の交代
         match self.round_result.as_ref().unwrap() {
             RoundResult::Tsumo => {
+                let score_ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
+                let (mut deal_in, mut non_dealer, mut dealer) = score_ctx.points;
+
+                let pl = &stg.players[turn];
                 let mut d_scores = [0; SEAT]; // 得点変動
 
-                let score_ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
-                let (_, mut non_dealer, mut dealer) = score_ctx.points;
+                if let Some(pao) = pl.pao {
+                    // 責任払い
+                    deal_in += honba_sticks as i32 * 300;
+                    d_scores[pao] -= deal_in;
+                    d_scores[turn] += deal_in;
+                } else {
+                    // 積み棒
+                    non_dealer += honba_sticks as i32 * 100;
+                    dealer += honba_sticks as i32 * 100;
 
-                // 積み棒
-                non_dealer += honba_sticks as i32 * 100;
-                dealer += honba_sticks as i32 * 100;
-
-                for s in 0..SEAT {
-                    if s != turn {
-                        if !is_dealer(stg, s) {
-                            // 子の支払い
-                            d_scores[s] -= non_dealer;
-                            d_scores[turn] += non_dealer;
-                        } else {
-                            // 親の支払い
-                            d_scores[s] -= dealer;
-                            d_scores[turn] += dealer;
-                        }
-                    };
+                    for s in 0..SEAT {
+                        if s != turn {
+                            if !is_dealer(stg, s) {
+                                // 子の支払い
+                                d_scores[s] -= non_dealer;
+                                d_scores[turn] += non_dealer;
+                            } else {
+                                // 親の支払い
+                                d_scores[s] -= dealer;
+                                d_scores[turn] += dealer;
+                            }
+                        };
+                    }
                 }
 
                 // 供託
@@ -684,7 +692,6 @@ impl MahjongEngine {
                     need_dealer_change = true;
                 }
 
-                let pl = &stg.players[turn];
                 let mut h = pl.hand;
                 let wt = pl.drawn.unwrap();
                 // 和了牌は手牌から外す
@@ -728,22 +735,36 @@ impl MahjongEngine {
                 let mut total_d_scores = [0; SEAT];
                 for &s in seats {
                     let score_ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
-                    let (total, _, _) = score_ctx.points;
+                    let (deal_in, _, _) = score_ctx.points;
+
+                    let pl = &stg.players[s];
                     let mut d_scores = [0; SEAT]; // 得点変動
-                    d_scores[turn] -= total; // 直撃を受けたプレイヤー
-                    d_scores[s] += total; // 和了ったプレイヤー
+
+                    if let Some(pao) = pl.pao {
+                        // 責任払いが発生している場合,ロンの半分ずつの支払い
+                        d_scores[turn] -= deal_in / 2;
+                        d_scores[pao] -= deal_in / 2;
+                    } else {
+                        d_scores[turn] -= deal_in; // 直撃を受けたプレイヤー
+                    };
+                    d_scores[s] += deal_in; // 和了ったプレイヤー
 
                     // 積み棒&供託(上家取り)
                     if s == s0 {
-                        d_scores[turn] -= honba_sticks as i32 * 300;
+                        if let Some(pao) = pl.pao {
+                            // 積み棒は責任払い優先
+                            d_scores[pao] -= honba_sticks as i32 * 300;
+                        } else {
+                            d_scores[turn] -= honba_sticks as i32 * 300;
+                        }
                         d_scores[s] += honba_sticks as i32 * 300;
                         d_scores[s] += riichi_sticks as i32 * 1000;
                     }
+
                     for s in 0..SEAT {
                         total_d_scores[s] += d_scores[s];
                     }
 
-                    let pl = &stg.players[s];
                     let win_ctx = WinContext {
                         seat: s,
                         hand: tiles_from_tile_table(&pl.hand),

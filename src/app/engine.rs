@@ -428,7 +428,7 @@ impl MahjongEngine {
                     }
                     self.check_suukansanra_needed();
                 }
-                Kita => {
+                Nukidora => {
                     let k = self.draw_kita_tile();
                     self.handle_event(Event::deal(turn, k));
                 }
@@ -448,7 +448,7 @@ impl MahjongEngine {
 
     fn do_turn_operation(&mut self) {
         // ツモ番のActionの要求
-        // act: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Kita
+        // act: Discard, Ankan, Kakan, Riichi, Tsumo, Kyushukyuhai, Nukidora
         let stg = self.get_stage();
         let turn = stg.turn;
         let pl = &stg.players[turn];
@@ -524,9 +524,9 @@ impl MahjongEngine {
             Kyushukyuhai => {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kyushukyuhai));
             }
-            Kita => {
+            Nukidora => {
                 self.melding = Some(act);
-                self.handle_event(Event::kita(turn, false));
+                self.handle_event(Event::nukidora(turn, false));
             }
             _ => panic!("action {} not found in {}", act, vec_to_string(&acts)),
         };

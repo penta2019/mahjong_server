@@ -149,7 +149,7 @@ pub type TileTable = [TileRow; TYPE];
 pub enum TileState {
     H(Seat),        // Hand
     M(Seat, Index), // Meld
-    K(Seat, Index), // Kita
+    K(Seat, Index), // Nukidora
     D(Seat, Index), // Discard
     R,              // doRa
     U,              // Unknown

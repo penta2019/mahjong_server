@@ -8,7 +8,7 @@ pub enum Event {
     Deal(EventDeal),       // ツモ
     Discard(EventDiscard), // 打牌
     Meld(EventMeld),       // 鳴き
-    Kita(EventKita),       // 北抜き
+    Nukidora(EventKita),   // 北抜き
     Dora(EventDora),       // 新ドラ
     Win(EventWin),         // 局終了 (和了)
     Draw(EventDraw),       // 局終了 (流局)
@@ -72,8 +72,8 @@ impl Event {
     }
 
     #[inline]
-    pub fn kita(seat: Seat, is_drawn: bool) -> Self {
-        Self::Kita(EventKita { seat, is_drawn })
+    pub fn nukidora(seat: Seat, is_drawn: bool) -> Self {
+        Self::Nukidora(EventKita { seat, is_drawn })
     }
 
     #[inline]

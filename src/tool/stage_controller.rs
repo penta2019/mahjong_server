@@ -46,7 +46,7 @@ impl StageController {
             Event::Deal(e) => event_deal(stg, e),
             Event::Discard(e) => event_discard(stg, e),
             Event::Meld(e) => event_meld(stg, e),
-            Event::Kita(e) => event_kita(stg, e),
+            Event::Nukidora(e) => event_kita(stg, e),
             Event::Dora(e) => event_dora(stg, e),
             Event::Win(e) => event_win(stg, e),
             Event::Draw(e) => event_draw(stg, e),
@@ -79,7 +79,7 @@ impl StageController {
             use ActionType::*;
             let pl = &mut self.stage.players[seat];
             let t = match act.action_type {
-                Discard | Riichi | Kakan | Ankan | Kita => {
+                Discard | Riichi | Kakan | Ankan | Nukidora => {
                     // Ankanは手牌から4枚なくなるため例外的ではあるが和了牌が増えることはないので同様に処理
                     if act.tiles.is_empty() {
                         pl.drawn.unwrap() // ツモ切りリーチ
@@ -345,7 +345,7 @@ fn event_kita(stg: &mut Stage, event: &EventKita) {
     let t = Tile(TZ, WN); // z4
     let pl = &mut stg.players[s];
     let idx = pl.kitas.len();
-    let k = Kita {
+    let k = Nukidora {
         step: stg.step,
         seat: s,
         drawn: event.is_drawn,
@@ -360,7 +360,7 @@ fn event_kita(stg: &mut Stage, event: &EventKita) {
     }
 
     stg.players[s].kitas.push(k);
-    stg.last_tile = Some((s, ActionType::Kita, t));
+    stg.last_tile = Some((s, ActionType::Nukidora, t));
 }
 
 fn event_dora(stg: &mut Stage, event: &EventDora) {

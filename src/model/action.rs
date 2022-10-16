@@ -16,7 +16,7 @@ pub enum ActionType {
     Kakan,        // 加槓
     Tsumo,        // ツモ
     Kyushukyuhai, // 九種九牌
-    Kita,         // 北抜き
+    Nukidora,     // 北抜き
 
     // Call Actions (配列は鳴きにより手牌から消失する牌のリスト)
     Chi,    // チー
@@ -82,8 +82,8 @@ impl Action {
     }
 
     #[inline]
-    pub fn kita() -> Self {
-        Self::new(ActionType::Kita, vec![Tile(TZ, WN)])
+    pub fn nukidora() -> Self {
+        Self::new(ActionType::Nukidora, vec![Tile(TZ, WN)])
     }
 
     #[inline]

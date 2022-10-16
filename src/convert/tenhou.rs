@@ -173,7 +173,7 @@ impl TenhouSerializer {
                     k.players[e.seat].discards.push(json!(meld.concat()));
                 }
             },
-            Event::Kita(_) => panic!(),
+            Event::Nukidora(_) => panic!(),
             Event::Dora(e) => {
                 k.doras.push(tile_to_tenhou(e.tile));
             }

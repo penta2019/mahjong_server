@@ -80,7 +80,7 @@ pub struct Player {
     pub hand: TileTable,        // 手牌(4x10の配列)
     pub drawn: Option<Tile>,    // ツモ牌
     pub melds: Vec<Meld>,       // 鳴き一覧
-    pub kitas: Vec<Kita>,       // 北抜き vecの中身はすべてTile(TZ, TN)
+    pub kitas: Vec<Nukidora>,   // 北抜き vecの中身はすべてTile(TZ, TN)
     pub riichi: Option<Index>,  // リーチ宣言牌のdiscardsにおけるindex
     pub discards: Vec<Discard>, // 捨て牌一覧
     pub pao: Option<Seat>,      // 責任払い, 役満を確定する副露を許したプレイヤーの座席
@@ -126,7 +126,7 @@ impl fmt::Display for Player {
         let melds = vec_to_string(&self.melds);
         writeln!(
             f,
-            "seat: {}, score: {}, riichi: {:?}, kita: {}, drawn: {}",
+            "seat: {}, score: {}, riichi: {:?}, nukidora: {}, drawn: {}",
             self.seat,
             self.score,
             self.riichi,
@@ -159,13 +159,13 @@ impl fmt::Display for Discard {
 }
 
 #[derive(Debug, Serialize)]
-pub struct Kita {
+pub struct Nukidora {
     pub step: usize,
     pub seat: Seat,
     pub drawn: bool,
 }
 
-impl fmt::Display for Kita {
+impl fmt::Display for Nukidora {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "z4")
     }

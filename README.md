@@ -233,7 +233,7 @@ Discardに渡されるリストは鳴きの後に捨てることが出来ない�
 
 * 打牌: p1(1筒)を捨てる
 ```
-seat: 0, score: 25000, riichi: None, kita: 0, drawn: s3
+seat: 0, score: 25000, riichi: None, nukidora: 0, drawn: s3
 furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
 hand:  m1 m3 m4 m6 m8 p1 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
@@ -248,7 +248,7 @@ discards:  s7
 
 * 鳴き: 上家が捨てたp3をp4,p5でチー
 ```
-seat: 0, score: 25000, riichi: None, kita: 0, drawn: None
+seat: 0, score: 25000, riichi: None, nukidora: 0, drawn: None
 furiten: false, furiten_other: false, rinshan: false, winning_tiles: []
 hand:  m1 m3 m4 m6 m8 p4 p5 s1 s2 s3 s5 s5 s6
 melds: 
@@ -281,7 +281,7 @@ pub enum Action {
     Tsumo,         // ツモ
     Ron,           // ロン
     Kyushukyuhai,  // 九種九牌
-    Kita,          // 北抜き
+    Nukidora,          // 北抜き
 }
 ```
 

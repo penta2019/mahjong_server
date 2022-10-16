@@ -362,7 +362,7 @@ impl Mahjongsoul {
             Kyushukyuhai => {
                 format!("action_jiuzhongjiupai()")
             }
-            Kita => {
+            Nukidora => {
                 format!("action_babei()")
             }
             Chi => {
@@ -521,7 +521,7 @@ impl Mahjongsoul {
         let s = as_usize(&data["seat"]);
         let m = as_bool(&data["moqie"]);
 
-        self.handle_event(Event::kita(s, m));
+        self.handle_event(Event::nukidora(s, m));
     }
 
     fn handler_hule(&mut self, data: &Value) {
@@ -797,7 +797,7 @@ fn parse_possible_action(v: &Value, stg: &Stage) -> (Vec<Action>, Vec<Index>) {
             }
             11 => {
                 // 北抜き
-                push(Action::kita(), 0);
+                push(Action::nukidora(), 0);
             }
             _ => panic!(),
         }

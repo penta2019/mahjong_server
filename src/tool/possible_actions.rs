@@ -187,7 +187,7 @@ fn check_kita(stg: &Stage) -> Vec<Action> {
 
     let mut acts = vec![];
     if stg.players[stg.turn].hand[TZ][WN] != 0 {
-        acts.push(Action::kita());
+        acts.push(Action::nukidora());
     }
 
     acts

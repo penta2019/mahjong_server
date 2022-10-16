@@ -387,7 +387,7 @@ impl MjaiAction {
                 actor: seat,
                 reason: "kyushukyuhai".to_string(),
             },
-            ActionType::Kita => panic!(),
+            ActionType::Nukidora => panic!(),
             ActionType::Chi => {
                 let (target_seat, _, target_tile) = stg.last_tile.unwrap();
                 Self::Chi {

@@ -51,8 +51,8 @@ impl Listener for EventPrinter {
                 println!("Meld");
                 println!("{}", pl);
             }
-            Kita(_) => {
-                println!("Kita");
+            Nukidora(_) => {
+                println!("Nukidora");
                 println!("{}", pl);
             }
             Dora(e) => {

@@ -343,7 +343,7 @@ impl Listener for MjaiEndpoint {
             Event::Deal(e) => self.notify_deal(stg, e),
             Event::Discard(e) => self.notify_discard(stg, e),
             Event::Meld(e) => self.notify_meld(stg, e),
-            Event::Kita(e) => self.notify_kita(stg, e),
+            Event::Nukidora(e) => self.notify_kita(stg, e),
             Event::Dora(e) => self.notify_dora(stg, e),
             Event::Win(e) => self.notify_win(stg, e),
             Event::Draw(e) => self.notify_draw(stg, e),

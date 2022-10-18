@@ -1,9 +1,9 @@
 use crate::actor::Actor;
+use crate::etc::misc::rank_by_rank_vec;
 use crate::hand::*;
 use crate::listener::Listener;
 use crate::model::*;
-use crate::tool::common::*;
-use crate::util::misc::rank_by_rank_vec;
+use crate::util::common::*;
 
 use TileState::*;
 

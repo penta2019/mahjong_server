@@ -1,5 +1,5 @@
 use super::*;
-use crate::util::misc::prompt;
+use crate::etc::misc::prompt;
 
 use crate::error;
 

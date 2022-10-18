@@ -1,5 +1,5 @@
 use super::*;
-use crate::tool::common::count_tile;
+use crate::util::common::count_tile;
 
 pub struct TiitoitsuBotBuilder;
 

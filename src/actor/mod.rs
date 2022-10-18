@@ -9,9 +9,9 @@ mod tiitoitsu;
 // use crate::controller::{Actor, Config, Listener};
 use std::fmt;
 
+use crate::etc::variant::*;
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::variant::*;
 
 use crate::error;
 

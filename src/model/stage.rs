@@ -1,5 +1,5 @@
 use super::*;
-use crate::util::misc::vec_to_string;
+use crate::etc::misc::vec_to_string;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Rule {

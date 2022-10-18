@@ -12,10 +12,10 @@
 mod actor;
 mod app;
 mod convert;
+mod etc;
 mod hand;
 mod listener;
 mod model;
-mod tool;
 mod util;
 
 fn main() {

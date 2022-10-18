@@ -1,5 +1,5 @@
+use crate::etc::misc::vec_count;
 use crate::model::*;
-use crate::util::misc::vec_count;
 
 #[inline]
 pub fn is_dealer(stg: &Stage, seat: Seat) -> bool {

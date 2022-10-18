@@ -2,7 +2,7 @@ use super::parse::*;
 use super::point::*;
 use super::yaku::*;
 use crate::model::*;
-use crate::tool::common::*;
+use crate::util::common::*;
 
 pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<ScoreContext> {
     let pl = &stg.players[stg.turn];

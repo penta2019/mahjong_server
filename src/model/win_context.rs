@@ -20,8 +20,6 @@ pub struct ScoreContext {
     pub title: String,    // 倍満, 跳満, ...
 }
 
-// TODO: yakuman_countをis_yakumanに変更してfanを通常の翻数と役満倍率で兼用 (要検討)
-
 // 和了情報
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WinContext {
@@ -32,6 +30,7 @@ pub struct WinContext {
     pub is_dealer: bool,             // 親番フラグ
     pub is_drawn: bool,              // ツモフラグ
     pub is_riichi: bool,             // 立直フラグ
+    pub pao: Option<Seat>,           // 責任払い
     pub delta_scores: [Point; SEAT], // この和了による点数変動 (ダブロン時の他の和了者の点数は含まない)
     pub score_context: ScoreContext, // スコア計算に関する情報
 }

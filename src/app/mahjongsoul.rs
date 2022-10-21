@@ -611,6 +611,7 @@ impl Mahjongsoul {
                 is_dealer,
                 is_drawn,
                 is_riichi,
+                pao: None,
                 delta_scores: [0; SEAT], // 和了毎のスコア内訳は不明
                 score_context: score_ctx,
             };
@@ -627,7 +628,17 @@ impl Mahjongsoul {
             d_scores[s] = as_i32(score);
         }
 
-        self.handle_event(Event::win(ctxs, doras, ura_doras, scores, d_scores));
+        self.handle_event(Event::win(
+            stg.round,
+            stg.dealer,
+            stg.honba_sticks,
+            stg.riichi_sticks,
+            doras,
+            ura_doras,
+            scores,
+            d_scores,
+            ctxs,
+        ));
     }
 
     fn handler_liuju(&mut self, data: &Value) {

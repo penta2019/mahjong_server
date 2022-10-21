@@ -707,16 +707,21 @@ impl MahjongEngine {
                     is_dealer: is_dealer(stg, turn),
                     is_drawn: true,
                     is_riichi: pl.riichi.is_some(),
+                    pao: pl.pao,
                     delta_scores: d_scores,
                     score_context: score_ctx,
                 };
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(
-                    vec![win_ctx],
+                    stg.round,
+                    stg.dealer,
+                    stg.honba_sticks,
+                    stg.riichi_sticks,
                     stg.doras.clone(),
                     ura_doras,
                     get_scores(stg),
                     d_scores,
+                    vec![win_ctx],
                 ));
             }
             RoundResult::Ron(seats) => {
@@ -773,6 +778,7 @@ impl MahjongEngine {
                         is_dealer: is_dealer(stg, s),
                         is_drawn: false,
                         is_riichi: pl.riichi.is_some(),
+                        pao: pl.pao,
                         delta_scores: d_scores,
                         score_context: score_ctx,
                     };
@@ -790,11 +796,15 @@ impl MahjongEngine {
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
                 self.handle_event(Event::win(
-                    ctxs,
+                    stg.round,
+                    stg.dealer,
+                    stg.honba_sticks,
+                    stg.riichi_sticks,
                     stg.doras.clone(),
                     ura_doras,
                     get_scores(stg),
                     total_d_scores,
+                    ctxs,
                 ));
             }
             RoundResult::Draw(type_) => {

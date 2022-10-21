@@ -29,6 +29,7 @@ impl Event {
         honba_sticks: usize,
         riichi_sticks: usize,
         doras: Vec<Tile>,
+        names: [String; SEAT],
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
         wall_count: usize,
@@ -40,6 +41,7 @@ impl Event {
             honba_sticks,
             riichi_sticks,
             doras,
+            names,
             scores,
             hands,
             wall_count,
@@ -89,6 +91,7 @@ impl Event {
         riichi_sticks: usize,
         doras: Vec<Tile>,
         ura_doras: Vec<Tile>,
+        names: [String; SEAT],
         scores: [Point; SEAT],
         delta_scores: [Point; SEAT],
         contexts: Vec<WinContext>,
@@ -100,6 +103,7 @@ impl Event {
             riichi_sticks,
             doras,
             ura_doras,
+            names,
             scores,
             delta_scores,
             contexts,
@@ -138,6 +142,7 @@ pub struct EventNew {
     pub honba_sticks: usize,      // 本場
     pub riichi_sticks: usize,     // 供託(リーチ棒)
     pub doras: Vec<Tile>,         // ドラ表示牌
+    pub names: [String; SEAT],    // プレイヤー名
     pub scores: [Score; SEAT],    // 各プレイヤーの所持点
     pub hands: [Vec<Tile>; SEAT], // 各プレイヤーの手牌(親:14枚, 子:13枚)
     pub wall_count: usize,        // 牌山残り枚数
@@ -186,6 +191,7 @@ pub struct EventWin {
     pub riichi_sticks: usize,
     pub doras: Vec<Tile>,            // ドラ表示牌
     pub ura_doras: Vec<Tile>,        // 裏ドラ表示牌
+    pub names: [String; SEAT],       // プレイヤー名
     pub scores: [Point; SEAT],       // 変化前のスコア
     pub delta_scores: [Point; SEAT], // scores + delta_scores = new_scores
     pub contexts: Vec<WinContext>,

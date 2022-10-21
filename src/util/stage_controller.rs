@@ -32,6 +32,21 @@ impl StageController {
         &self.stage
     }
 
+    pub fn get_names(&self) -> [String; SEAT] {
+        let mut names = [
+            "".to_string(),
+            "".to_string(),
+            "".to_string(),
+            "".to_string(),
+        ];
+        for s in 0..SEAT {
+            for actor in &self.actors {
+                names[s] = actor.get_name();
+            }
+        }
+        names
+    }
+
     pub fn handle_event(&mut self, event: &Event) {
         if let Event::New(_) = event {
             for s in 0..SEAT {

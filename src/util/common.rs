@@ -182,14 +182,14 @@ pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
             'z' => ti = 3,
             '+' => {
                 if froms.is_empty() {
-                    return Err("invalid '+' suffix".into());
+                    return Err("invalid '+' suffix".to_string());
                 }
                 let last = froms.len() - 1;
                 froms[last] = from % SEAT;
             }
             '0'..='9' => {
                 if ti == undef {
-                    return Err("tile number befor tile type".into());
+                    return Err("tile number befor tile type".to_string());
                 }
 
                 from += 1;

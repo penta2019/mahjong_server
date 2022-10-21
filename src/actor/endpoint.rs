@@ -146,6 +146,7 @@ impl Listener for Endpoint {
                         rule: e.rule.clone(),
                         hands,
                         doras: e.doras.clone(),
+                        names: e.names.clone(),
                         ..*e
                     });
                     let mut val = json!(e2);

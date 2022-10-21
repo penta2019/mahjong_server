@@ -40,6 +40,10 @@ pub trait Actor: Listener + ActorClone + Send {
 
     // Actorの詳細表示用
     fn get_config(&self) -> &Config;
+
+    fn get_name(&self) -> String {
+        "NoName".to_string()
+    }
 }
 
 impl fmt::Debug for dyn Actor {

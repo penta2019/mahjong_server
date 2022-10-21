@@ -413,6 +413,8 @@ impl Mahjongsoul {
             minimal_1st_score: 30000,
         };
 
+        let names = get_names(self.seat);
+
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["scores"]) {
             scores[s] = as_i32(score);
@@ -443,6 +445,7 @@ impl Mahjongsoul {
             honba_sticks,
             riichi_sticks,
             doras,
+            names,
             scores,
             hands,
             wall + 1,
@@ -619,6 +622,7 @@ impl Mahjongsoul {
             ctxs.push(win_ctx);
         }
 
+        let names = get_names(self.seat);
         let mut scores = [0; SEAT];
         for (s, score) in as_enumerate(&data["old_scores"]) {
             scores[s] = as_i32(score);
@@ -635,6 +639,7 @@ impl Mahjongsoul {
             stg.riichi_sticks,
             doras,
             ura_doras,
+            names,
             scores,
             d_scores,
             ctxs,
@@ -700,6 +705,17 @@ impl Mahjongsoul {
             nm_scores,
         ));
     }
+}
+
+fn get_names(self_seat: Seat) -> [String; SEAT] {
+    let mut names = [
+        "player".to_string(),
+        "player".to_string(),
+        "player".to_string(),
+        "player".to_string(),
+    ];
+    names[self_seat] = "you".to_string();
+    names
 }
 
 fn tile_from_mjsoul_str(s: &str) -> Tile {

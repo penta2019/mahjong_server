@@ -1,5 +1,6 @@
 use super::*;
 use crate::etc::misc::vec_to_string;
+use crate::util::common::tiles_from_tile_table;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Rule {
@@ -103,25 +104,12 @@ pub struct Player {
 
 impl fmt::Display for Player {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut hand = vec![];
-        for ti in 0..TYPE {
-            for ni in 1..TNUM {
-                let e = self.hand[ti][ni];
-                for c in 0..e {
-                    if ti != TZ && ni == 5 && c == 0 && self.hand[ti][0] == 1 {
-                        hand.push(Tile(ti, 0)); // 赤5
-                    } else {
-                        hand.push(Tile(ti, ni));
-                    }
-                }
-            }
-        }
         let drawn = if let Some(d) = self.drawn {
             d.to_string()
         } else {
             "None".to_string()
         };
-        let hand = vec_to_string(&hand);
+        let hand = vec_to_string(&tiles_from_tile_table(&self.hand));
         let discards = vec_to_string(&self.discards);
         let melds = vec_to_string(&self.melds);
         writeln!(

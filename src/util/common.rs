@@ -54,15 +54,12 @@ pub fn tiles_from_tile_table(tt: &TileTable) -> Vec<Tile> {
     let mut hand = vec![];
     for ti in 0..TYPE {
         for ni in 1..TNUM {
-            // 赤5
-            if ni == 5 {
-                for _ in 0..tt[ti][0] {
-                    hand.push(Tile(ti, 0));
+            for c in 0..tt[ti][ni] {
+                if ti != TZ && ni == 5 && c < tt[ti][0] {
+                    hand.push(Tile(ti, 0)); // 赤5
+                } else {
+                    hand.push(Tile(ti, ni));
                 }
-            }
-
-            for _ in 0..tt[ti][ni] {
-                hand.push(Tile(ti, ni));
             }
         }
     }
@@ -243,4 +240,13 @@ pub fn wind_from_char(c: char) -> Result<Index, String> {
         'N' => 4,
         _ => return Err(format!("invalid wind symbol: {}", c)),
     })
+}
+
+#[test]
+fn test_tiletable() {
+    let hand_str = "p34777s1230567z66";
+    let hand = tiles_from_string(&hand_str).unwrap();
+    let tt = tiles_to_tile_table(&hand);
+    let hand2 = tiles_from_tile_table(&tt);
+    assert_eq!(hand, hand2);
 }

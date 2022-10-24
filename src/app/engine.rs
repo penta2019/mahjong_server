@@ -877,14 +877,31 @@ impl MahjongEngine {
                             }
                         }
 
-                        let event =
-                            Event::draw(DrawType::Kouhaiheikyoku, hands, d_scores, nm_scores);
+                        let event = Event::draw(
+                            DrawType::Kouhaiheikyoku,
+                            stg.round,
+                            stg.dealer,
+                            self.ctrl.get_names(),
+                            get_scores(stg),
+                            d_scores,
+                            nm_scores,
+                            hands,
+                        );
                         self.handle_event(event);
                         need_dealer_change = !tenpais[dealer];
                     }
                     _ => {
                         let hands = [vec![], vec![], vec![], vec![]]; // TODO
-                        let event = Event::draw(*type_, hands, [0; SEAT], [0; SEAT]);
+                        let event = Event::draw(
+                            *type_,
+                            stg.round,
+                            stg.dealer,
+                            self.ctrl.get_names(),
+                            get_scores(stg),
+                            [0; SEAT],
+                            [0; SEAT],
+                            hands,
+                        );
                         self.handle_event(event);
                     }
                 }

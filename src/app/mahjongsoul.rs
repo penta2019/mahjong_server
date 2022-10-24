@@ -647,10 +647,14 @@ impl Mahjongsoul {
     }
 
     fn handler_liuju(&mut self, data: &Value) {
+        let stg = self.ctrl.get_stage();
         let mut type_ = DrawType::Unknown;
+        let names = get_names(self.seat);
         let mut hands = [vec![], vec![], vec![], vec![]];
+        let scores = get_scores(stg);
         let d_scores = [0; 4];
         let nm_scores = [0; 4];
+
         match as_usize(&data["type"]) {
             1 => {
                 // 九種九牌
@@ -677,12 +681,20 @@ impl Mahjongsoul {
             _ => {}
         }
 
-        self.handle_event(Event::draw(type_, hands, d_scores, nm_scores));
+        self.handle_event(Event::draw(
+            type_, stg.round, stg.dealer, names, scores, d_scores, nm_scores, hands,
+        ));
     }
 
     fn handler_notile(&mut self, data: &Value) {
+        let stg = self.ctrl.get_stage();
+        let type_ = DrawType::Kouhaiheikyoku;
+        let names = get_names(self.seat);
+        let mut hands = [vec![], vec![], vec![], vec![]];
+        let scores = get_scores(stg);
         let mut d_scores = [0; SEAT];
         let nm_scores = [0; 4]; // TODO
+
         if let Some(ds) = &data["scores"][0]["delta_scores"].as_array() {
             for (s, score) in ds.iter().enumerate() {
                 d_scores[s] = as_i32(score);
@@ -690,7 +702,6 @@ impl Mahjongsoul {
         }
 
         let mut tenpais = [false; SEAT];
-        let mut hands = [vec![], vec![], vec![], vec![]];
         for (s, player) in as_enumerate(&data["players"]) {
             tenpais[s] = as_bool(&player["tingpai"]);
             if tenpais[s] {
@@ -699,10 +710,7 @@ impl Mahjongsoul {
         }
 
         self.handle_event(Event::draw(
-            DrawType::Kouhaiheikyoku,
-            hands,
-            d_scores,
-            nm_scores,
+            type_, stg.round, stg.dealer, names, scores, d_scores, nm_scores, hands,
         ));
     }
 }

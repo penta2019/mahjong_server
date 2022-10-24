@@ -113,15 +113,23 @@ impl Event {
     #[inline]
     pub fn draw(
         draw_type: DrawType,
-        hands: [Vec<Tile>; SEAT],
+        round: usize,
+        dealer: usize,
+        names: [String; SEAT],
+        scores: [Point; SEAT],
         delta_scores: [Point; SEAT],
         nagashimangan_scores: [Point; SEAT],
+        hands: [Vec<Tile>; SEAT],
     ) -> Self {
         Self::Draw(EventDraw {
             draw_type,
-            hands,
+            round,
+            dealer,
+            names,
+            scores,
             delta_scores,
             nagashimangan_scores,
+            hands,
         })
     }
 
@@ -199,10 +207,15 @@ pub struct EventWin {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventDraw {
+    // EventWin同様に流局表示に必要な情報をすべて含める
     pub draw_type: DrawType,
-    pub hands: [Vec<Tile>; SEAT], // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
-    pub delta_scores: [Point; SEAT], // 聴牌,流し満貫による点数変動
+    pub round: usize,
+    pub dealer: usize,
+    pub names: [String; SEAT],               // プレイヤー名
+    pub scores: [Point; SEAT],               // 変化前のスコア
+    pub delta_scores: [Point; SEAT],         // 聴牌,流し満貫による点数変動
     pub nagashimangan_scores: [Point; SEAT], // 流し満貫のスコア (該当者がいない場合すべて0)
+    pub hands: [Vec<Tile>; SEAT],            // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

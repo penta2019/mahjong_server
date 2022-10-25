@@ -727,20 +727,20 @@ impl MahjongEngine {
                 ));
             }
             RoundResult::Ron(seats) => {
-                // 放銃者から一番近い和了プレイヤーの探索(上家取り)
-                let mut s0 = SEAT;
-                for s1 in turn + 1..turn + SEAT {
-                    let s2 = s1 % SEAT;
-                    if seats.contains(&s2) {
-                        s0 = s2;
+                // 放銃者から一番近いプレイヤー順にソート
+                let mut seats_sorted = vec![];
+                for s in turn + 1..turn + SEAT {
+                    let s = s % SEAT;
+                    if seats.contains(&s) {
+                        seats_sorted.push(s);
                         break;
                     }
                 }
-                assert!(s0 != SEAT);
 
+                let mut is_first = true; // 上家取り
                 let mut ctxs = vec![];
                 let mut total_d_scores = [0; SEAT];
-                for &s in seats {
+                for s in seats_sorted {
                     let score_ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
                     let (deal_in, _, _) = score_ctx.points;
 
@@ -757,7 +757,8 @@ impl MahjongEngine {
                     d_scores[s] += deal_in; // 和了ったプレイヤー
 
                     // 積み棒&供託(上家取り)
-                    if s == s0 {
+                    if is_first {
+                        is_first = false;
                         if let Some(pao) = pl.pao {
                             // 積み棒は責任払い優先
                             d_scores[pao] -= honba_sticks as i32 * 300;

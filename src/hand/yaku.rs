@@ -317,6 +317,18 @@ macro_rules! yaku {
 }
 
 const YAKU_LIST: &[YakuDefine] = &[
+    // 条件役
+    yaku!(2, "立直", is_riichi, 1, 0, 0),
+    yaku!(18, "両立直", is_dabururiichi, 2, 0, 0),
+    yaku!(30, "一発", is_ippatsu, 1, 0, 0),
+    yaku!(1, "門前清自摸和", is_menzentsumo, 1, 0, 0),
+    yaku!(5, "海底摸月", is_haiteiraoyue, 1, 1, 0),
+    yaku!(6, "河底撈魚", is_houteiraoyui, 1, 1, 0),
+    yaku!(4, "嶺上開花", is_rinshankaihou, 1, 1, 0),
+    yaku!(3, "槍槓", is_chankan, 1, 1, 0),
+    yaku!(35, "天和", is_tenhou, 0, 0, 1),
+    yaku!(36, "地和", is_tiihou, 0, 0, 1),
+    // 普通役
     yaku!(11, "場風 東", is_bakaze_e, 1, 1, 0),
     yaku!(11, "場風 南", is_bakaze_s, 1, 1, 0),
     yaku!(11, "場風 西", is_bakaze_w, 1, 1, 0),
@@ -328,8 +340,8 @@ const YAKU_LIST: &[YakuDefine] = &[
     yaku!(7, "役牌 白", is_haku, 1, 1, 0),
     yaku!(8, "役牌 發", is_hatsu, 1, 1, 0),
     yaku!(9, "役牌 中", is_chun, 1, 1, 0),
-    yaku!(12, "断幺九", is_tanyaochuu, 1, 1, 0),
     yaku!(14, "平和", is_pinfu, 1, 0, 0),
+    yaku!(12, "断幺九", is_tanyaochuu, 1, 1, 0),
     yaku!(13, "一盃口", is_iipeikou, 1, 0, 0),
     yaku!(28, "二盃口", is_ryanpeikou, 3, 0, 0),
     yaku!(16, "一気通貫", is_ikkitsuukan, 2, 1, 0),
@@ -359,17 +371,7 @@ const YAKU_LIST: &[YakuDefine] = &[
     yaku!(42, "国士無双", is_kokushimusou, 0, 0, 1),
     yaku!(49, "国士無双１３面", is_kokushimusoujuusanmenmachi, 0, 0, 2),
     yaku!(25, "七対子", is_chiitoitsu, 2, 0, 0),
-    // 特殊条件
-    yaku!(1, "門前清自摸和", is_menzentsumo, 1, 0, 0),
-    yaku!(2, "立直", is_riichi, 1, 0, 0),
-    yaku!(18, "両立直", is_dabururiichi, 2, 0, 0),
-    yaku!(30, "一発", is_ippatsu, 1, 0, 0),
-    yaku!(5, "海底摸月", is_haiteiraoyue, 1, 1, 0),
-    yaku!(6, "河底撈魚", is_houteiraoyui, 1, 1, 0),
-    yaku!(4, "嶺上開花", is_rinshankaihou, 1, 1, 0),
-    yaku!(3, "槍槓", is_chankan, 1, 1, 0),
-    yaku!(35, "天和", is_tenhou, 0, 0, 1),
-    yaku!(36, "地和", is_tiihou, 0, 0, 1),
+    // ドラ
     yaku!(31, "ドラ", skip, 1, 1, 0),
     yaku!(32, "赤ドラ", skip, 1, 1, 0),
     yaku!(33, "裏ドラ", skip, 1, 1, 0),
@@ -389,6 +391,58 @@ const YAKU_LIST: &[YakuDefine] = &[
 //     九蓮宝燈, 純正九蓮宝燈
 //     国士無双, 国士無双十三面待ち
 
+// [条件役]
+// リーチ
+fn is_riichi(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.riichi && !ctx.yaku_flags.dabururiichi
+}
+
+// ダブルリーチ
+fn is_dabururiichi(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.dabururiichi
+}
+
+// 一発
+fn is_ippatsu(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.ippatsu
+}
+
+// 門前自摸
+fn is_menzentsumo(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.menzentsumo
+}
+
+// 海底撈月
+fn is_haiteiraoyue(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.haiteiraoyue
+}
+
+// 河底撈魚
+fn is_houteiraoyui(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.houteiraoyui
+}
+
+// 嶺上開花
+fn is_rinshankaihou(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.rinshankaihou
+}
+
+// 槍槓
+fn is_chankan(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.chankan
+}
+
+// 天和
+fn is_tenhou(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.tenhou
+}
+
+// 地和
+fn is_tiihou(ctx: &YakuContext) -> bool {
+    ctx.yaku_flags.tiihou
+}
+
+// [普通役]
 // 場風
 fn is_bakaze_e(ctx: &YakuContext) -> bool {
     ctx.prevalent_wind == WE && ctx.yakuhai_check[WE] == 1
@@ -432,30 +486,6 @@ fn is_chun(ctx: &YakuContext) -> bool {
     ctx.yakuhai_check[DR] == 1
 }
 
-// 断么九
-fn is_tanyaochuu(ctx: &YakuContext) -> bool {
-    if ctx.parsed_hand.is_empty() {
-        return false; // 国士対策
-    }
-
-    for SetPair(tp, t) in &ctx.parsed_hand {
-        match tp {
-            Chi | Shuntsu => {
-                if t.1 == 1 || t.1 == 7 {
-                    return false;
-                }
-            }
-            _ => {
-                if t.is_end() {
-                    return false;
-                }
-            }
-        }
-    }
-
-    true
-}
-
 // 平和
 fn is_pinfu(ctx: &YakuContext) -> bool {
     if ctx.counts.shuntsu != 4 {
@@ -489,6 +519,30 @@ fn is_pinfu(ctx: &YakuContext) -> bool {
     }
 
     false
+}
+
+// 断么九
+fn is_tanyaochuu(ctx: &YakuContext) -> bool {
+    if ctx.parsed_hand.is_empty() {
+        return false; // 国士対策
+    }
+
+    for SetPair(tp, t) in &ctx.parsed_hand {
+        match tp {
+            Chi | Shuntsu => {
+                if t.1 == 1 || t.1 == 7 {
+                    return false;
+                }
+            }
+            _ => {
+                if t.is_end() {
+                    return false;
+                }
+            }
+        }
+    }
+
+    true
 }
 
 // 一盃口
@@ -816,58 +870,7 @@ fn is_chiitoitsu(ctx: &YakuContext) -> bool {
     ctx.parsed_hand.len() == 7
 }
 
-// 門前自摸
-fn is_menzentsumo(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.menzentsumo
-}
-
-// リーチ
-fn is_riichi(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.riichi && !ctx.yaku_flags.dabururiichi
-}
-
-// ダブルリーチ
-fn is_dabururiichi(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.dabururiichi
-}
-
-// 一発
-fn is_ippatsu(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.ippatsu
-}
-
-// 海底撈月
-fn is_haiteiraoyue(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.haiteiraoyue
-}
-
-// 河底撈魚
-fn is_houteiraoyui(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.houteiraoyui
-}
-
-// 嶺上開花
-fn is_rinshankaihou(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.rinshankaihou
-}
-
-// 槍槓
-fn is_chankan(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.chankan
-}
-
-// 天和
-fn is_tenhou(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.tenhou
-}
-
-// 地和
-fn is_tiihou(ctx: &YakuContext) -> bool {
-    ctx.yaku_flags.tiihou
-}
-
 // [共通処理]
-
 // 九蓮宝燈(純正を含む)
 fn is_chuurenpoutou2(ctx: &YakuContext) -> bool {
     if ctx.is_open {

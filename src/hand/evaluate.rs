@@ -274,7 +274,7 @@ pub fn evaluate_hand(
     }
 
     // 和了形に複数の解釈が可能な場合,最も得点の高いものを採用
-    results.sort_by_key(|r| r.points.0);
+    results.sort_by_key(|r| (r.points.0, r.fan, r.fu));
     results.pop()
 }
 

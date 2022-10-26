@@ -418,9 +418,9 @@ fn update_after_discard_completed(stg: &mut Stage) {
             ActionType::Discard | ActionType::Kakan => {
                 for s2 in 0..SEAT {
                     let pl = &mut stg.players[s2];
-                    if s2 != s && pl.winning_tiles.contains(&t) {
-                        if pl.is_riichi {
-                            pl.is_furiten = true; // リーチ時の見逃しは局終了までフリテンとなる
+                    if pl.winning_tiles.contains(&t) {
+                        if s2 == s || pl.is_riichi {
+                            pl.is_furiten = true; // 自分で和了牌を捨てた場合と見逃しした場合はフリテン
                         } else {
                             pl.is_furiten_other = true;
                         }

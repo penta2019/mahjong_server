@@ -892,7 +892,18 @@ impl MahjongEngine {
                         need_dealer_change = !tenpais[dealer];
                     }
                     _ => {
-                        let hands = [vec![], vec![], vec![], vec![]]; // TODO
+                        let open_seats: Vec<Seat> = match type_ {
+                            DrawType::Kouhaiheikyoku | DrawType::Unknown => panic!(),
+                            DrawType::Suufuurenda | DrawType::Suukansanra => vec![],
+                            DrawType::Kyushukyuhai => vec![turn],
+                            DrawType::Sanchaho => (0..SEAT).filter(|&s| s != turn).collect(),
+                            DrawType::Suuchariichi => (0..SEAT).collect(),
+                        };
+                        let mut hands = [vec![], vec![], vec![], vec![]];
+                        for s in open_seats {
+                            hands[s] = tiles_from_tile_table(&stg.players[s].hand);
+                        }
+
                         let event = Event::draw(
                             *type_,
                             stg.round,

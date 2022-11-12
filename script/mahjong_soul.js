@@ -43,18 +43,20 @@ msc.inject_log = function (path) {
     }
 
     function func1(...args) {
+        let res = func0.bind(this)(...args);
         if (conf.level >= 1) {
             if (conf.callback) {
                 try {
                     conf.callback(this, ...args);
                 } catch (e) {
-                    msc.log_error(e.toString());
+                    console.log(e.stack);
                 }
             }
             if (conf.level >= 2) {
                 console.groupCollapsed(`[MSC] ${conf.count++} ${path}`);
-                console.log("this", this); 1
+                console.log("this", this);
                 console.log("args", args);
+                console.log("return", res);
                 if (conf.level >= 3) {
                     console.trace();
                 }
@@ -63,8 +65,7 @@ msc.inject_log = function (path) {
         } else {
             conf.count = 0;
         }
-
-        return func0.bind(this)(...args);
+        return res;
     };
     eval(`${path} = ${func1}`);
     return conf;

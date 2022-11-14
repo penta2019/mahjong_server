@@ -33,7 +33,6 @@ msc.log_error = function (...args) {
 };
 
 msc.inject_log = function (path) {
-    let conf = { level: 0, count: 0, callback: null };
     let func0 = eval(path);
     if (func0 == undefined) {
         throw `inject_log: ${path} is not defined`;
@@ -42,31 +41,29 @@ msc.inject_log = function (path) {
         throw `inject_log: ${path} is not a function`;
     }
 
+    let conf = { level: 0, count: 0, callback: null };
     function func1(...args) {
+        if (conf.level >= 1 && conf.callback) {
+            try {
+                conf.callback(this, ...args);
+            } catch (e) {
+                console.log(e.stack);
+            }
+        }
         let res = func0.bind(this)(...args);
-        if (conf.level >= 1) {
-            if (conf.callback) {
-                try {
-                    conf.callback(this, ...args);
-                } catch (e) {
-                    console.log(e.stack);
-                }
+        if (conf.level >= 2) {
+            console.groupCollapsed(`[MSC] ${conf.count++} ${path}`);
+            console.log("this", this);
+            console.log("args", args);
+            console.log("return", res);
+            if (conf.level >= 3) {
+                console.trace();
             }
-            if (conf.level >= 2) {
-                console.groupCollapsed(`[MSC] ${conf.count++} ${path}`);
-                console.log("this", this);
-                console.log("args", args);
-                console.log("return", res);
-                if (conf.level >= 3) {
-                    console.trace();
-                }
-                console.groupEnd();
-            }
-        } else {
-            conf.count = 0;
+            console.groupEnd();
         }
         return res;
     };
+
     eval(`${path} = ${func1}`);
     return conf;
 };
@@ -493,25 +490,25 @@ msc.Server = class {
         }
 
         let pm = net.ProtobufManager.lookupType("lq." + action.name);
-        let data = {
+        let data = pm.decode(window.view.DesktopMgr.EnDecode(new Uint8Array(action.data)));
+        let act = {
             step: action.step,
             name: action.name,
-            data: JSON.parse(JSON.stringify(pm.decode(action.data))),
-            // dataをdeep-copyしないと後から追加した変数(mode)がstringifyで何故か消える
+            data: JSON.parse(JSON.stringify(data)), // dataをdeep-copyしないと後から追加した変数(mode)がstringifyで何故か消える
         };
-        if (action.name == "ActionNewRound") {
+        if (act.name == "ActionNewRound") {
             // 1: 四人東, 2: 四人南
-            data.data.mode = window.view.DesktopMgr.Inst.game_config.mode.mode;
+            act.data.mode = window.view.DesktopMgr.Inst.game_config.mode.mode;
         }
 
-        msc.log_debug("(Server) mjaction:", data);
-        this.action_store.push(data);
+        msc.log_debug("(Server) mjaction:", act);
+        this.action_store.push(act);
         let s = this.channel_settings.mjaction;
         if (s.enable) {
-            this.send({ id: s.id, type: "message", data: data });
+            this.send({ id: s.id, type: "message", data: act });
         }
 
-        switch (action.name) {
+        switch (act.name) {
             case "ActionNewRound":
                 msc.enable_action = true;
                 break;

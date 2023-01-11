@@ -176,15 +176,15 @@ msc.UiController = class {
         }, 500);
     }
 
-    action_dapai(tile, is_drawn = false) { // 打牌(e.g. 一萬: 1m, 東: 1z, 中: 7z)
+    action_dapai(tile, is_drop = false) { // 打牌(e.g. 一萬: 1m, 東: 1z, 中: 7z)
         let vp = window.view.ViewPlayer_Me.Inst;
         if (!vp.can_discard) return;
         let type = window.mjcore.E_MJPai[tile[1]];
         let index = tile[0] == 0 ? 5 : tile[0];
         let dora = tile[0] == 0;
 
-        // is_drawn == trueの時はツモ切り優先で牌を右側から探索
-        let hand = is_drawn ? vp.hand.slice().reverse() : vp.hand;
+        // is_drop == trueの時はツモ切り優先で牌を右側から探索
+        let hand = is_drop ? vp.hand.slice().reverse() : vp.hand;
 
         for (let t of hand) {
             let v = t.val
@@ -215,9 +215,9 @@ msc.UiController = class {
         this.choose_detail_if_visible(choose_idx);
     }
 
-    action_lizhi(tile, is_drawn = false) { // リーチ
+    action_lizhi(tile, is_drop = false) { // リーチ
         this.btn_click(this.get_op_ui().op_btns.btn_lizhi);
-        setTimeout(() => { this.action_dapai(tile, is_drawn); }, 500);
+        setTimeout(() => { this.action_dapai(tile, is_drop); }, 500);
     }
 
     action_zimo() { // ツモ

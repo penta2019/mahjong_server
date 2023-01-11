@@ -104,7 +104,7 @@ struct Calculator {
     doras: Vec<Tile>,
     ura_doras: Vec<Tile>,
     winning_tile: Tile,
-    is_drawn: bool,
+    is_drop: bool,
     is_dealer: bool,
     prevalent_wind: Index,
     seat_wind: Index,
@@ -125,7 +125,7 @@ impl Calculator {
             doras: vec![],
             ura_doras: vec![],
             winning_tile: Z8,
-            is_drawn: true,
+            is_drop: true,
             is_dealer: true,
             prevalent_wind: 1,
             seat_wind: 1,
@@ -171,7 +171,7 @@ impl Calculator {
             &self.doras,
             &self.ura_doras,
             self.winning_tile,
-            self.is_drawn,
+            self.is_drop,
             self.is_dealer,
             self.prevalent_wind,
             self.seat_wind,
@@ -257,7 +257,7 @@ impl Calculator {
         for exp in input.split(',') {
             if exp_hand.is_empty() {
                 if exp.ends_with('+') {
-                    self.is_drawn = false;
+                    self.is_drop = false;
                 }
                 exp_hand = exp.replace('+', "");
             } else {
@@ -279,7 +279,7 @@ impl Calculator {
             self.melds.push(meld_from_string(exp_meld)?);
         }
         self.yaku_flags.menzentsumo =
-            self.is_drawn && self.melds.iter().all(|m| m.meld_type == MeldType::Ankan);
+            self.is_drop && self.melds.iter().all(|m| m.meld_type == MeldType::Ankan);
 
         Ok(())
     }

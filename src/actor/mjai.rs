@@ -167,7 +167,7 @@ impl MjaiEndpoint {
             self.add_record(MjaiEvent::reach(event.seat));
         }
 
-        self.add_record(MjaiEvent::dahai(event.seat, event.tile, event.is_drawn));
+        self.add_record(MjaiEvent::dahai(event.seat, event.tile, event.is_drop));
 
         if event.is_riichi {
             self.try_riichi = Some(event.seat);

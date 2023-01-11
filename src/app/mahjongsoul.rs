@@ -408,7 +408,7 @@ impl Mahjongsoul {
 
         let rule = Rule {
             round: mode,
-            sanma: false,
+            is_sanma: false,
             initial_score: 25000,
             minimal_1st_score: 30000,
         };
@@ -538,7 +538,7 @@ impl Mahjongsoul {
             let winning_tile = tile_from_mjsoul(&win["hu_tile"]);
             let is_dealer = as_bool(&win["qinjia"]);
             let is_riichi = as_bool(&win["liqi"]);
-            let is_drawn = as_bool(&win["zimo"]);
+            let is_drop = as_bool(&win["zimo"]);
 
             let count = as_usize(&win["count"]);
             let is_yakuman = as_bool(&win["yiman"]);
@@ -612,7 +612,7 @@ impl Mahjongsoul {
                 winning_tile,
                 melds: stg.players[s].melds.clone(),
                 is_dealer,
-                is_drawn,
+                is_drop,
                 is_riichi,
                 pao: None,
                 delta_scores: [0; SEAT], // 和了毎のスコア内訳は不明

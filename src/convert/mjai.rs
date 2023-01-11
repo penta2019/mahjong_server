@@ -168,11 +168,11 @@ impl MjaiEvent {
         }
     }
 
-    pub fn dahai(seat: Seat, tile: Tile, is_drawn: bool) -> Self {
+    pub fn dahai(seat: Seat, tile: Tile, is_drop: bool) -> Self {
         Self::Dahai {
             actor: seat,
             pai: tile_to_mjai(tile),
-            tsumogiri: is_drawn,
+            tsumogiri: is_drop,
         }
     }
 

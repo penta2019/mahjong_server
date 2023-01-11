@@ -5,7 +5,7 @@ use crate::util::common::tiles_from_tile_table;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Rule {
     pub round: usize,             // ゲーム設定 (1: 4人東, 2: 4人南)
-    pub sanma: bool,              // 三麻フラグ(未実装, 常にfalse)
+    pub is_sanma: bool,           // 三麻フラグ(未実装, 常にfalse)
     pub initial_score: Score,     // 初期スコア (3麻:25000)
     pub minimal_1st_score: Score, // ゲームが終了して1位が確定するのに必要なスコア (4麻:30000)
 }
@@ -136,7 +136,7 @@ impl fmt::Display for Player {
 pub struct Discard {
     pub step: usize,
     pub tile: Tile,
-    pub drawn: bool,                 // ツモ切りフラグ
+    pub is_drop: bool,               // ツモ切りフラグ
     pub meld: Option<(Seat, Index)>, // 鳴きが入った場合にセット
 }
 
@@ -150,7 +150,7 @@ impl fmt::Display for Discard {
 pub struct Nukidora {
     pub step: usize,
     pub seat: Seat,
-    pub drawn: bool,
+    pub is_drop: bool,
 }
 
 impl fmt::Display for Nukidora {

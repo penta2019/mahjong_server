@@ -12,7 +12,7 @@ pub struct YakuContext {
     parsed_hand: ParsedHand, // 鳴きを含むすべての面子
     pair_tile: Tile,         // 雀頭の牌
     winning_tile: Tile,      // 上がり牌
-    is_drawn: bool,          // ツモ和了
+    is_drop: bool,           // ツモ和了
     is_open: bool,           // 鳴きの有無
     prevalent_wind: Tnum,    // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Tnum,         // 自風 (同上)
@@ -29,7 +29,7 @@ impl YakuContext {
         winning_tile: Tile,
         prevalent_wind: Tnum,
         seat_wind: Tnum,
-        is_drawn: bool,
+        is_drop: bool,
         yaku_flags: YakuFlags,
     ) -> Self {
         let pair_tile = get_pair(&parsed_hand);
@@ -44,7 +44,7 @@ impl YakuContext {
             parsed_hand,
             pair_tile,
             winning_tile,
-            is_drawn,
+            is_drop,
             is_open,
             prevalent_wind,
             seat_wind,
@@ -96,7 +96,7 @@ impl YakuContext {
 
     pub fn calc_fu(&self) -> usize {
         if is_pinfu(self) {
-            return if self.is_drawn { 20 } else { 30 };
+            return if self.is_drop { 20 } else { 30 };
         }
         if is_chiitoitsu(self) {
             return 25;
@@ -106,7 +106,7 @@ impl YakuContext {
         let mut fu = 20;
 
         // 和了り方
-        fu += if self.is_drawn {
+        fu += if self.is_drop {
             2 // ツモ
         } else if !self.is_open {
             10 // 門前ロン
@@ -725,7 +725,7 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
     let mut cnt = 0;
     for SetPair(tp, t) in &ctx.parsed_hand {
         if let Koutsu = tp {
-            if !ctx.is_drawn && ctx.winning_tile == *t {
+            if !ctx.is_drop && ctx.winning_tile == *t {
                 continue;
             }
             cnt += 1;
@@ -737,7 +737,7 @@ fn is_sanankou(ctx: &YakuContext) -> bool {
 
 // 四暗刻
 fn is_suuankou(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile && ctx.is_drawn
+    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile && ctx.is_drop
 }
 
 // 四暗刻単騎

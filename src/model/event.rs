@@ -54,11 +54,11 @@ impl Event {
     }
 
     #[inline]
-    pub fn discard(seat: Seat, tile: Tile, is_drawn: bool, is_riichi: bool) -> Self {
+    pub fn discard(seat: Seat, tile: Tile, is_drop: bool, is_riichi: bool) -> Self {
         Self::Discard(EventDiscard {
             seat,
             tile,
-            is_drawn,
+            is_drop,
             is_riichi,
         })
     }
@@ -74,8 +74,8 @@ impl Event {
     }
 
     #[inline]
-    pub fn nukidora(seat: Seat, is_drawn: bool) -> Self {
-        Self::Nukidora(EventKita { seat, is_drawn })
+    pub fn nukidora(seat: Seat, is_drop: bool) -> Self {
+        Self::Nukidora(EventKita { seat, is_drop })
     }
 
     #[inline]
@@ -166,7 +166,7 @@ pub struct EventDeal {
 pub struct EventDiscard {
     pub seat: Seat,
     pub tile: Tile,
-    pub is_drawn: bool,  // ツモ切り
+    pub is_drop: bool,   // ツモ切り
     pub is_riichi: bool, // リーチ宣言
 }
 
@@ -181,7 +181,7 @@ pub struct EventMeld {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventKita {
     pub seat: Seat,
-    pub is_drawn: bool,
+    pub is_drop: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

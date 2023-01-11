@@ -181,7 +181,7 @@ fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
 }
 
 fn check_kita(stg: &Stage) -> Vec<Action> {
-    if !stg.rule.sanma {
+    if !stg.rule.is_sanma {
         return vec![];
     }
 
@@ -484,7 +484,7 @@ fn test_tenpai_discards() {
         .map(|t| Discard {
             step: 0,
             tile: *t,
-            drawn: false,
+            is_drop: false,
             meld: None,
         })
         .collect();

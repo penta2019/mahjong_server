@@ -34,7 +34,7 @@ impl EngineApp {
             seed: 0,
             rule: Rule {
                 round: 1,
-                sanma: false,
+                is_sanma: false,
                 initial_score: 25000,
                 minimal_1st_score: 30000,
             },
@@ -331,7 +331,7 @@ impl MahjongEngine {
         }
 
         // オーラスで親が所定の点数より高くかつ1位の場合はゲーム終了
-        let last_dealer = if rule.sanma { 2 } else { 3 };
+        let last_dealer = if rule.is_sanma { 2 } else { 3 };
         if stg.round == rule.round - 1 && stg.dealer == last_dealer {
             let pl = &stg.players[last_dealer];
             if pl.rank == 0 && pl.score >= rule.minimal_1st_score {
@@ -706,7 +706,7 @@ impl MahjongEngine {
                     winning_tile: wt,
                     melds: pl.melds.clone(),
                     is_dealer: is_dealer(stg, turn),
-                    is_drawn: true,
+                    is_drop: true,
                     is_riichi: pl.riichi.is_some(),
                     pao: pl.pao,
                     delta_scores: d_scores,
@@ -779,7 +779,7 @@ impl MahjongEngine {
                         winning_tile: stg.last_tile.unwrap().2,
                         melds: pl.melds.clone(),
                         is_dealer: is_dealer(stg, s),
-                        is_drawn: false,
+                        is_drop: false,
                         is_riichi: pl.riichi.is_some(),
                         pao: pl.pao,
                         delta_scores: d_scores,

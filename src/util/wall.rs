@@ -2,7 +2,8 @@ use rand::prelude::*;
 
 use crate::model::*;
 
-pub fn create_wall(seed: u64) -> Vec<Tile> {
+pub fn create_wall(seed: u64, n_red5: usize) -> Vec<Tile> {
+    assert!(n_red5 <= 4);
     let mut wall = Vec::new();
     for ti in 0..TYPE {
         for ni in 1..TNUM {
@@ -10,7 +11,11 @@ pub fn create_wall(seed: u64) -> Vec<Tile> {
                 break;
             }
             for n in 0..TILE {
-                let ni2 = if ti != TZ && ni == 5 && n == 0 { 0 } else { ni }; // 赤5
+                let ni2 = if ti != TZ && ni == 5 && n < n_red5 {
+                    0
+                } else {
+                    ni
+                }; // 赤5
                 wall.push(Tile(ti, ni2));
             }
         }
@@ -23,7 +28,8 @@ pub fn create_wall(seed: u64) -> Vec<Tile> {
 
 // デバッグ用に作為的な牌山を生成　指定がない場所はシード値に従ってランダムに生成
 #[allow(dead_code)]
-pub fn create_wall_debug(seed: u64) -> Vec<Tile> {
+pub fn create_wall_debug(seed: u64, n_red5: usize) -> Vec<Tile> {
+    assert!(n_red5 <= 4);
     let dora = vec![]; // 最大5
     let ura_dora = vec![]; // 最大5
     let replacement = vec![]; // 最大4
@@ -39,12 +45,12 @@ pub fn create_wall_debug(seed: u64) -> Vec<Tile> {
     let deal = vec!["m1", "m0"]; // ツモ山 最初の牌は親番の14枚目
 
     let mut tt: TileTable = [[4; 10]; 4];
-    tt[TM][5] = 3;
-    tt[TM][0] = 1;
-    tt[TP][5] = 3;
-    tt[TP][0] = 1;
-    tt[TS][5] = 3;
-    tt[TS][0] = 1;
+    tt[TM][5] = 4 - n_red5;
+    tt[TM][0] = n_red5;
+    tt[TP][5] = 4 - n_red5;
+    tt[TP][0] = n_red5;
+    tt[TS][5] = 4 - n_red5;
+    tt[TS][0] = n_red5;
     tt[TZ][0] = 0;
     tt[TZ][8] = 0;
     tt[TZ][9] = 0;
@@ -111,7 +117,7 @@ fn move_tiles(source: &mut Vec<Tile>, target: &mut Vec<Tile>, count: usize) {
 
 #[test]
 fn test_debug_wall() {
-    let wall = create_wall_debug(0);
+    let wall = create_wall_debug(0, 1);
     for (i, t) in wall.iter().enumerate() {
         println!("{:2}: {}", i, t);
     }

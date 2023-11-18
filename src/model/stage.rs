@@ -4,10 +4,12 @@ use crate::util::common::tiles_from_tile_table;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Rule {
-    pub round: usize,             // ゲーム設定 (1: 4人東, 2: 4人南)
-    pub is_sanma: bool,           // 三麻フラグ(未実装, 常にfalse)
-    pub initial_score: Score,     // 初期スコア (3麻:25000)
-    pub minimal_1st_score: Score, // ゲームが終了して1位が確定するのに必要なスコア (4麻:30000)
+    pub round: usize,            // ゲーム設定 (1: 4人東, 2: 4人南)
+    pub is_sanma: bool,          // 三麻フラグ(未実装, 常にfalse)
+    pub initial_score: Score,    // 初期スコア (4麻:25000)
+    pub settlement_score: Score, // ゲームが終了して1位が確定するのに必要なスコア (4麻:30000)
+    pub red5: usize,             // 赤ドラの枚数 (0~4) 一般的なルールでは1
+    pub bust: bool,              // 飛びのアリなし
 }
 
 #[derive(Debug, Default, Serialize)]

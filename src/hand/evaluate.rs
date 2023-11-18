@@ -154,7 +154,7 @@ pub fn evaluate_hand(
     doras: &Vec<Tile>,      // ドラ表示牌 (注:ドラそのものではない)
     ura_doras: &Vec<Tile>,  // 裏ドラ表示牌 リーチしていない場合は空
     winning_tile: Tile,     // 上がり牌
-    is_drop: bool,          // ツモ和了
+    is_drawn: bool,         // ツモ和了
     is_dealer: bool,        // 親番
     prevalent_wind: Index,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Index,       // 自風 (同上)
@@ -181,7 +181,7 @@ pub fn evaluate_hand(
             winning_tile,
             prevalent_wind,
             seat_wind,
-            is_drop,
+            is_drawn,
             yaku_flags.clone(),
         ));
     }
@@ -253,7 +253,7 @@ pub fn evaluate_hand(
         }
         let points = get_points(is_dealer, fu, fan, yakuman);
         let title = get_score_title(fu, fan, yakuman);
-        let score = if is_drop {
+        let score = if is_drawn {
             if is_dealer {
                 points.1 * 3
             } else {

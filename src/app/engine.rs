@@ -36,7 +36,9 @@ impl EngineApp {
                 round: 1,
                 is_sanma: false,
                 initial_score: 25000,
-                minimal_1st_score: 30000,
+                settlement_score: 30000,
+                red5: 1,
+                bust: true,
             },
             n_game: 0,
             n_thread: 16,
@@ -54,17 +56,21 @@ impl EngineApp {
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-s" => app.seed = next_value(&mut it, "-s"),
-                "-r" => app.rule.round = next_value(&mut it, "-r"),
-                "-g" => app.n_game = next_value(&mut it, "-g"),
-                "-t" => app.n_thread = next_value(&mut it, "-t"),
+                "-s" => app.seed = next_value(&mut it, s),
+                "-r-round" => app.rule.round = next_value(&mut it, s),
+                "-r-init" => app.rule.initial_score = next_value(&mut it, s),
+                "-r-settle" => app.rule.settlement_score = next_value(&mut it, s),
+                "-r-red5" => app.rule.red5 = next_value(&mut it, s),
+                "-r-bust" => app.rule.bust = next_value(&mut it, s),
+                "-g" => app.n_game = next_value(&mut it, s),
+                "-t" => app.n_thread = next_value(&mut it, s),
                 "-w" => app.write = true,
                 "-w-tenhou" => app.write_tenhou = true,
                 "-d" => app.debug = true,
-                "-0" => app.names[0] = next_value(&mut it, "-0"),
-                "-1" => app.names[1] = next_value(&mut it, "-1"),
-                "-2" => app.names[2] = next_value(&mut it, "-2"),
-                "-3" => app.names[3] = next_value(&mut it, "-3"),
+                "-0" => app.names[0] = next_value(&mut it, s),
+                "-1" => app.names[1] = next_value(&mut it, s),
+                "-2" => app.names[2] = next_value(&mut it, s),
+                "-3" => app.names[3] = next_value(&mut it, s),
                 opt => {
                     error!("unknown option: {}", opt);
                     std::process::exit(0);
@@ -79,6 +85,8 @@ impl EngineApp {
                 app.seed
             );
         }
+
+        assert!(app.rule.bust); // TODO: 飛びなしルール実装
 
         app
     }
@@ -334,7 +342,7 @@ impl MahjongEngine {
         let last_dealer = if rule.is_sanma { 2 } else { 3 };
         if stg.round == rule.round - 1 && stg.dealer == last_dealer {
             let pl = &stg.players[last_dealer];
-            if pl.rank == 0 && pl.score >= rule.minimal_1st_score {
+            if pl.rank == 0 && pl.score >= rule.settlement_score {
                 return true;
             }
         }
@@ -342,7 +350,7 @@ impl MahjongEngine {
         // round延長時の対戦終了判定 (親が1位以外でオーラスが終了した場合も含む)
         if next_round == rule.round {
             for pl in &stg.players {
-                if pl.score >= rule.minimal_1st_score {
+                if pl.score >= rule.settlement_score {
                     return true;
                 }
             }
@@ -380,7 +388,7 @@ impl MahjongEngine {
         self.replacement_wall = vec![];
 
         // 山の初期化
-        self.wall = create_wall(self.rng.next_u64());
+        self.wall = create_wall(self.rng.next_u64(), self.rule.red5);
 
         // 王牌
         self.dora_wall = self.draw_tiles(5); // 槓ドラ

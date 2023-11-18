@@ -44,8 +44,8 @@ impl MahjongsoulApp {
                 "-s" => app.sleep = true,
                 "-w" => app.write = true,
                 "-wr" => app.write_raw = true,
-                "-msc-port" => app.msc_port = next_value(&mut it, "-msc-port"),
-                "-0" => app.actor_name = next_value(&mut it, "-0"),
+                "-msc-port" => app.msc_port = next_value(&mut it, s),
+                "-0" => app.actor_name = next_value(&mut it, s),
                 opt => {
                     error!("unknown option: {}", opt);
                     exit(0);
@@ -410,7 +410,9 @@ impl Mahjongsoul {
             round: mode,
             is_sanma: false,
             initial_score: 25000,
-            minimal_1st_score: 30000,
+            settlement_score: 30000,
+            red5: 1,
+            bust: true,
         };
 
         let names = get_names(self.seat);

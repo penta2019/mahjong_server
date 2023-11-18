@@ -37,8 +37,8 @@ impl ReplayApp {
         let mut it = args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
-                "-f" => app.file_path = next_value(&mut it, "-f"),
-                "-s" => app.skip = next_value(&mut it, "-s"),
+                "-f" => app.file_path = next_value(&mut it, s),
+                "-s" => app.skip = next_value(&mut it, s),
                 "-d" => app.debug = true,
                 opt => {
                     error!("unknown option: {}", opt);

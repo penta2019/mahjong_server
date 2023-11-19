@@ -1,5 +1,6 @@
 use super::*;
 use crate::etc::misc::prompt;
+use crate::util::common::*;
 
 use crate::error;
 
@@ -51,7 +52,7 @@ impl Actor for Manual {
         println!("{}", &stg.players[self.seat]);
         println!();
         if stg.turn == self.seat {
-            println!("[Turn Action] select tile or action");
+            println!("[Turn Action] select action or discard tile");
         } else {
             println!("[Call Action] select action");
         }
@@ -79,16 +80,10 @@ impl Actor for Manual {
                         continue;
                     }
 
-                    let ti = match c {
-                        'm' => TM,
-                        'p' => TP,
-                        's' => TS,
-                        'z' => TZ,
-                        _ => panic!(),
-                    };
-                    let ni: Tnum = match chars.next().unwrap().to_digit(10) {
-                        Some(n) => n as usize,
-                        _ => {
+                    let ti = tile_type_from_char(c).unwrap();
+                    let ni = match tile_number_from_char(chars.next().unwrap()) {
+                        Ok(n) => n,
+                        Err(_) => {
                             error!("invalid tile symbol");
                             continue;
                         }

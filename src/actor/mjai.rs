@@ -296,7 +296,8 @@ impl Actor for MjaiEndpoint {
         }
 
         let d = &mut self.data.lock().unwrap();
-        let mjai_act = std::mem::replace(&mut d.selected_action, None).unwrap();
+
+        let mjai_act = d.selected_action.take().unwrap();
 
         if d.is_riichi {
             d.is_riichi = false;

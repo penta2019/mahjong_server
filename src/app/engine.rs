@@ -612,14 +612,14 @@ impl MahjongEngine {
                 return;
             }
             n_priority += n_minkan;
-            if n_priority == 0 && minkan != None {
+            if n_priority == 0 && minkan.is_some() {
                 let (s, act) = minkan.unwrap();
                 self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone(), false));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_pon;
-            if n_priority == 0 && pon != None {
+            if n_priority == 0 && pon.is_some() {
                 let (s, act) = pon.unwrap();
                 let is_pao = check_pao_for_selected_action(self.get_stage(), s, &act);
                 self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone(), is_pao));
@@ -627,7 +627,7 @@ impl MahjongEngine {
                 break;
             }
             n_priority += n_chi;
-            if n_priority == 0 && chi != None {
+            if n_priority == 0 && chi.is_some() {
                 let (s, act) = chi.unwrap();
                 self.handle_event(Event::meld(s, MeldType::Chi, act.tiles.clone(), false));
                 self.melding = Some(act);

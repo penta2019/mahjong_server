@@ -38,7 +38,7 @@ impl TcpConnection {
         let (tx, rx) = mpsc::channel();
         let conn = Self { stream: None, rx };
 
-        let listener = TcpListener::bind(&addr).unwrap();
+        let listener = TcpListener::bind(addr).unwrap();
         thread::spawn(move || {
             for request in listener.incoming() {
                 match request {

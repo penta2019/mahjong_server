@@ -1,6 +1,7 @@
 use serde::{de, ser};
 
 use super::*;
+use crate::util::common::{tile_number_from_char, tile_type_from_char};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)
@@ -8,16 +9,10 @@ pub const Z8: Tile = Tile(TZ, UK); // unknown tile
 
 impl Tile {
     pub fn from_symbol(s: &str) -> Self {
-        let b = s.as_bytes();
-        let n = b[1] - b'0';
-        let t = match b[0] as char {
-            'm' => 0,
-            'p' => 1,
-            's' => 2,
-            'z' => 3,
-            _ => panic!("invalid Tile type"),
-        };
-        Self(t, n as usize)
+        let cs: Vec<char> = s.chars().collect();
+        let t = tile_type_from_char(cs[0]).unwrap();
+        let n = tile_number_from_char(cs[1]).unwrap();
+        Self(t, n)
     }
 
     // 赤5の場合,通常の5を返却. それ以外の場合はコピーをそのまま返却.
@@ -87,20 +82,20 @@ impl fmt::Debug for Tile {
 
 impl PartialOrd for Tile {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.0 != other.0 {
-            return Some(self.0.cmp(&other.0));
-        }
-
-        // 赤5は4.5に変換して比較
-        let a = if self.1 == 0 { 4.5 } else { self.1 as f32 };
-        let b = if other.1 == 0 { 4.5 } else { other.1 as f32 };
-        a.partial_cmp(&b)
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Tile {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        if self.0 != other.0 {
+            return self.0.cmp(&other.0);
+        }
+
+        // 赤5は4.5に変換して比較
+        let a = if self.1 == 0 { 4.5 } else { self.1 as f32 };
+        let b = if other.1 == 0 { 4.5 } else { other.1 as f32 };
+        a.partial_cmp(&b).unwrap()
     }
 }
 
@@ -144,7 +139,7 @@ pub type TileRow = [usize; TNUM];
 pub type TileTable = [TileRow; TYPE];
 
 // [TileState]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(tag = "t", content = "c")]
 pub enum TileState {
     H(Seat),        // Hand
@@ -152,16 +147,11 @@ pub enum TileState {
     K(Seat, Index), // Nukidora
     D(Seat, Index), // Discard
     R,              // doRa
-    U,              // Unknown
+    #[default]
+    U, // Unknown
 }
 
 use TileState::*;
-
-impl Default for TileState {
-    fn default() -> Self {
-        U
-    }
-}
 
 impl fmt::Display for TileState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

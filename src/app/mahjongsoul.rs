@@ -729,16 +729,10 @@ fn get_names(self_seat: Seat) -> [String; SEAT] {
 }
 
 fn tile_from_mjsoul_str(s: &str) -> Tile {
-    let b = s.as_bytes();
-    let n = b[0] - b'0';
-    let t = match b[1] as char {
-        'm' => 0,
-        'p' => 1,
-        's' => 2,
-        'z' => 3,
-        _ => panic!("invalid Tile type"),
-    };
-    Tile(t, n as usize)
+    let cs: Vec<char> = s.chars().collect();
+    let t = tile_type_from_char(cs[1]).unwrap();
+    let n = tile_number_from_char(cs[0]).unwrap();
+    Tile(t, n)
 }
 
 fn tile_from_mjsoul(v: &Value) -> Tile {

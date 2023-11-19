@@ -232,7 +232,7 @@ pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
         n_end += n;
         match n {
             0 => {
-                if wt != None {
+                if wt.is_some() {
                     // 二枚目が見つかった時点で聴牌していない
                     return true;
                 }

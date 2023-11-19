@@ -143,10 +143,7 @@ pub fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
     let mut ti = undef;
     for c in exp.chars() {
         match c {
-            'm' => ti = 0,
-            'p' => ti = 1,
-            's' => ti = 2,
-            'z' => ti = 3,
+            'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(c).unwrap(),
             '0'..='9' => {
                 if ti == undef {
                     return Err(format!("tile number befor tile type"));
@@ -162,6 +159,10 @@ pub fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
     Ok(tiles)
 }
 
+// pub fn tiles_to_string(tiles: &Vec<Tile>) -> String {
+//     "".into()
+// }
+
 pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
     let undef: usize = 255;
     let seat = 0; // 点数計算する上で座席の番号は関係ないので0で固定
@@ -173,10 +174,7 @@ pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
     let mut froms = vec![];
     for c in exp.chars() {
         match c {
-            'm' => ti = 0,
-            'p' => ti = 1,
-            's' => ti = 2,
-            'z' => ti = 3,
+            'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(c).unwrap(),
             '+' => {
                 if froms.is_empty() {
                     return Err("invalid '+' suffix".to_string());
@@ -230,6 +228,26 @@ pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
         tiles,
         froms,
     })
+}
+
+#[inline]
+pub fn tile_type_from_char(c: char) -> Result<Type, String> {
+    match c {
+        'm' => Ok(TM),
+        'p' => Ok(TP),
+        's' => Ok(TS),
+        'z' => Ok(TZ),
+        _ => Err("invalid tile symbol".to_string()),
+    }
+}
+
+#[inline]
+pub fn tile_number_from_char(c: char) -> Result<Tnum, String> {
+    if let Some(i) = c.to_digit(10) {
+        Ok(i as Tnum)
+    } else {
+        Err("invalid tile number".to_string())
+    }
 }
 
 pub fn wind_from_char(c: char) -> Result<Index, String> {

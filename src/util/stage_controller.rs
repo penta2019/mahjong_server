@@ -231,7 +231,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
         event.is_drop
     };
     if event.is_riichi {
-        assert!(pl.riichi == None);
+        assert!(pl.riichi.is_none());
         pl.riichi = Some(pl.discards.len());
         pl.is_riichi = true;
         pl.is_ippatsu = true;
@@ -247,7 +247,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
     let d = Discard {
         step: stg.step,
         tile: t,
-        is_drop: is_drop,
+        is_drop,
         meld: None,
     };
 

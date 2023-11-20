@@ -106,12 +106,10 @@ impl Connection for TcpConnection {
     }
 }
 
-// TCP
-// メッセージを'\n'で区切るのでメッセージ自体に'\n'は含めることはできない
-type WsStream = websocket::sync::Client<TcpStream>;
+// websocket
 pub struct WsConnection {
-    stream: Option<WsStream>,
-    rx: mpsc::Receiver<WsStream>,
+    stream: Option<tungstenite::protocol::WebSocket<TcpStream>>,
+    rx: mpsc::Receiver<TcpStream>,
 }
 
 impl WsConnection {
@@ -119,10 +117,13 @@ impl WsConnection {
         let (tx, rx) = mpsc::channel();
         let conn = Self { stream: None, rx };
 
-        let listener = websocket::sync::Server::bind(addr).unwrap();
+        let listener = TcpListener::bind(addr).unwrap();
         thread::spawn(move || {
-            for request in listener.filter_map(Result::ok) {
-                tx.send(request.accept().unwrap()).unwrap();
+            for request in listener.incoming() {
+                match request {
+                    Ok(stream) => tx.send(stream).unwrap(),
+                    Err(e) => error!("ws error: {}", e),
+                }
             }
         });
 
@@ -133,9 +134,7 @@ impl WsConnection {
 impl Connection for WsConnection {
     fn send(&mut self, msg: &str) {
         if let Some(stream) = self.stream.as_mut() {
-            stream
-                .send_message(&websocket::OwnedMessage::Text(msg.to_string()))
-                .ok();
+            stream.send(msg.into()).ok();
         }
     }
 
@@ -143,8 +142,12 @@ impl Connection for WsConnection {
         if let Ok(stream) = self.rx.try_recv() {
             if self.stream.is_none() {
                 stream.set_nonblocking(true).unwrap();
+
                 info!("ws connection opened from: {}", stream.peer_addr().unwrap());
-                self.stream = Some(stream);
+                match tungstenite::accept(stream) {
+                    Ok(s) => self.stream = Some(s),
+                    Err(e) => error!("ws upgrade error: {}", e),
+                }
 
                 return Message::Open;
             } else {
@@ -158,19 +161,17 @@ impl Connection for WsConnection {
 
         let stream = self.stream.as_mut().unwrap();
         loop {
-            use websocket::OwnedMessage;
-            match stream.recv_message() {
+            use tungstenite::protocol::Message as WsMessage;
+            match stream.read() {
                 Ok(msg) => match msg {
-                    OwnedMessage::Close(_) => {
-                        let msg = OwnedMessage::Close(None);
-                        stream.send_message(&msg).ok();
+                    WsMessage::Close(_) => {
+                        stream.send(WsMessage::Close(None)).ok();
                         break;
                     }
-                    OwnedMessage::Ping(ping) => {
-                        let msg = OwnedMessage::Pong(ping);
-                        stream.send_message(&msg).ok();
+                    WsMessage::Ping(ping) => {
+                        stream.send(WsMessage::Pong(ping)).ok();
                     }
-                    OwnedMessage::Text(text) => {
+                    WsMessage::Text(text) => {
                         return Message::Text(text);
                     }
                     _ => {
@@ -178,12 +179,14 @@ impl Connection for WsConnection {
                     }
                 },
                 Err(e) => {
-                    use websocket::WebSocketError;
-                    match e {
-                        WebSocketError::NoDataAvailable => return Message::NoMessage,
-                        WebSocketError::IoError(_) => return Message::NoMessage, // for set_nonblocking
-                        _ => error!("{}", e),
+                    use tungstenite::error::Error as WsError;
+                    if let WsError::Io(e) = &e {
+                        if e.kind() == std::io::ErrorKind::WouldBlock {
+                            return Message::NoMessage;
+                        }
                     }
+
+                    error!("ws error: {:?}", e);
                     break;
                 }
             }
@@ -197,7 +200,7 @@ impl Connection for WsConnection {
 
 // #[test]
 // fn conn() {
-//     use crate::util::misc::*;
+//     use crate::etc::misc::*;
 //     let mut conn = WsConnection::new("127.0.0.1:12345");
 //     loop {
 //         let msg = conn.recv();
@@ -205,6 +208,6 @@ impl Connection for WsConnection {
 //         if let Message::Text(t) = msg {
 //             conn.send(&t);
 //         }
-//         sleep_ms(100);
+//         sleep(0.1);
 //     }
 // }

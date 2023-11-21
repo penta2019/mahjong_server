@@ -293,8 +293,10 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             idx = pl.melds.len();
             let mut tiles = event.consumed.clone();
             let mut froms = vec![s; tiles.len()];
-            tiles.push(lt.2);
-            froms.push(lt.0);
+            // 昇順になるように鳴いてきた牌を追加
+            let pos = tiles.iter().position(|t| &lt.2 < t).unwrap_or(tiles.len());
+            tiles.insert(pos, lt.2);
+            froms.insert(pos, lt.0);
             let m = Meld {
                 step: stg.step,
                 meld_type: event.meld_type,

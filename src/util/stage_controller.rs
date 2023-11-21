@@ -217,18 +217,18 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
         assert!(count_tile(&pl.hand, t) > 0, "{} not found in hand", t);
     }
 
-    let is_drop = if pl.is_shown {
+    let is_drawn = if pl.is_shown {
         if pl.drawn == Some(t) {
             if pl.hand[t.0][t.1] == 1 {
                 true
             } else {
-                event.is_drop
+                event.is_drawn
             }
         } else {
             false
         }
     } else {
-        event.is_drop
+        event.is_drawn
     };
     if event.is_riichi {
         assert!(pl.riichi.is_none());
@@ -247,7 +247,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
     let d = Discard {
         step: stg.step,
         tile: t,
-        is_drop,
+        is_drawn,
         meld: None,
     };
 
@@ -297,7 +297,6 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             froms.push(lt.0);
             let m = Meld {
                 step: stg.step,
-                seat: s,
                 meld_type: event.meld_type,
                 tiles,
                 froms,
@@ -314,7 +313,6 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
             let froms = vec![s; tiles.len()];
             let m = Meld {
                 step: stg.step,
-                seat: s,
                 meld_type: MeldType::Ankan,
                 tiles,
                 froms,
@@ -362,8 +360,7 @@ fn event_kita(stg: &mut Stage, event: &EventKita) {
     let idx = pl.kitas.len();
     let k = Nukidora {
         step: stg.step,
-        seat: s,
-        is_drop: event.is_drop,
+        is_drawn: event.is_drawn,
     };
 
     if pl.is_shown {

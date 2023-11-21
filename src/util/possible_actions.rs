@@ -484,7 +484,7 @@ fn test_tenpai_discards() {
         .map(|t| Discard {
             step: 0,
             tile: *t,
-            is_drop: false,
+            is_drawn: false,
             meld: None,
         })
         .collect();

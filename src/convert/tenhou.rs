@@ -116,7 +116,7 @@ impl TenhouSerializer {
                 k.players[e.seat].drawns.push(json!(tile_to_tenhou(e.tile)));
             }
             Event::Discard(e) => {
-                let d = if e.is_drop {
+                let d = if e.is_drawn {
                     60
                 } else {
                     tile_to_tenhou(e.tile)
@@ -196,7 +196,7 @@ impl TenhouSerializer {
                         }
                         .to_string()
                     };
-                    if ctx.is_drop {
+                    if ctx.is_drawn {
                         if score_ctx.points.2 == 0 {
                             detail.push(json!(format!("{}{}点∀", title, score_ctx.points.1)));
                         } else {

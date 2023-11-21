@@ -36,7 +36,7 @@ pub enum MjaiEvent {
         pai: String,
     },
     Dahai {
-        actor: usize,
+        actor: Seat,
         pai: String,
         tsumogiri: bool,
     },
@@ -168,11 +168,11 @@ impl MjaiEvent {
         }
     }
 
-    pub fn dahai(seat: Seat, tile: Tile, is_drop: bool) -> Self {
+    pub fn dahai(seat: Seat, tile: Tile, is_drawn: bool) -> Self {
         Self::Dahai {
             actor: seat,
             pai: tile_to_mjai(tile),
-            tsumogiri: is_drop,
+            tsumogiri: is_drawn,
         }
     }
 

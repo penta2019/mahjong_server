@@ -49,15 +49,33 @@ impl Actor for Manual {
     ) -> Option<Action> {
         assert!(retry == 0);
 
-        println!("{}", &stg.players[self.seat]);
-        println!();
+        let pl = &stg.players[self.seat];
+        let mut hand = pl.hand;
+        if let Some(t) = pl.drawn {
+            dec_tile(&mut hand, t);
+        }
+        let mut hand_str = tiles_to_string(&tiles_from_tile_table(&hand));
         if stg.turn == self.seat {
             println!("[Turn Action] select action or discard tile");
+            if let Some(t) = pl.drawn {
+                hand_str.push_str(&format!(" {}", &t.to_string()));
+            }
         } else {
             println!("[Call Action] select action");
+            hand_str.push_str(&format!(" ({})", stg.last_tile.unwrap().2));
         }
-        for (idx, act) in acts.iter().enumerate() {
-            println!("{} => {}", idx, act);
+        for m in &pl.melds {
+            hand_str.push_str(&format!(",{}", &meld_to_string(m, pl.seat)));
+        }
+        println!("{}", hand_str);
+
+        for (i, act) in acts.iter().enumerate() {
+            let i = if act.action_type == Discard {
+                "_".to_string()
+            } else {
+                i.to_string()
+            };
+            println!("{} => {}", i, act);
         }
 
         let mut riichi = false;

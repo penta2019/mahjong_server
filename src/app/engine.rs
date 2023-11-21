@@ -293,16 +293,6 @@ impl MahjongEngine {
         }
     }
 
-    #[inline]
-    fn get_stage(&self) -> &Stage {
-        self.ctrl.get_stage()
-    }
-
-    #[inline]
-    fn handle_event(&mut self, event: Event) {
-        self.ctrl.handle_event(&event);
-    }
-
     fn run(&mut self) {
         self.do_event_begin();
         while !self.is_game_end() {
@@ -324,6 +314,16 @@ impl MahjongEngine {
             self.do_event_win_draw();
         }
         self.do_event_end();
+    }
+
+    #[inline]
+    fn get_stage(&self) -> &Stage {
+        self.ctrl.get_stage()
+    }
+
+    #[inline]
+    fn handle_event(&mut self, event: Event) {
+        self.ctrl.handle_event(&event);
     }
 
     fn is_game_end(&self) -> bool {
@@ -714,7 +714,7 @@ impl MahjongEngine {
                     winning_tile: wt,
                     melds: pl.melds.clone(),
                     is_dealer: is_dealer(stg, turn),
-                    is_drop: true,
+                    is_drawn: true,
                     is_riichi: pl.riichi.is_some(),
                     pao: pl.pao,
                     delta_scores: d_scores,
@@ -787,7 +787,7 @@ impl MahjongEngine {
                         winning_tile: stg.last_tile.unwrap().2,
                         melds: pl.melds.clone(),
                         is_dealer: is_dealer(stg, s),
-                        is_drop: false,
+                        is_drawn: false,
                         is_riichi: pl.riichi.is_some(),
                         pao: pl.pao,
                         delta_scores: d_scores,

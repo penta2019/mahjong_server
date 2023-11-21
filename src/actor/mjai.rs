@@ -44,7 +44,7 @@ impl ActorBuilder for MjaiEndpointBuilder {
 
 pub struct MjaiEndpoint {
     config: Config,
-    seat: usize,
+    seat: Seat,
     data: Arc<Mutex<SharedData>>,
     try_riichi: Option<Seat>,
     is_new_game: bool,
@@ -167,7 +167,7 @@ impl MjaiEndpoint {
             self.add_record(MjaiEvent::reach(event.seat));
         }
 
-        self.add_record(MjaiEvent::dahai(event.seat, event.tile, event.is_drop));
+        self.add_record(MjaiEvent::dahai(event.seat, event.tile, event.is_drawn));
 
         if event.is_riichi {
             self.try_riichi = Some(event.seat);

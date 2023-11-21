@@ -138,7 +138,7 @@ impl fmt::Display for Player {
 pub struct Discard {
     pub step: usize,
     pub tile: Tile,
-    pub is_drop: bool,               // ツモ切りフラグ
+    pub is_drawn: bool,              // ツモ切りフラグ
     pub meld: Option<(Seat, Index)>, // 鳴きが入った場合にセット
 }
 
@@ -151,8 +151,7 @@ impl fmt::Display for Discard {
 #[derive(Debug, Serialize)]
 pub struct Nukidora {
     pub step: usize,
-    pub seat: Seat,
-    pub is_drop: bool,
+    pub is_drawn: bool, // ツモってきた牌かどうか
 }
 
 impl fmt::Display for Nukidora {
@@ -173,7 +172,6 @@ pub enum MeldType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Meld {
     pub step: usize,
-    pub seat: Seat,
     pub meld_type: MeldType,
     pub tiles: Vec<Tile>,
     pub froms: Vec<Seat>,

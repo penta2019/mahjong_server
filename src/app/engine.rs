@@ -614,7 +614,8 @@ impl MahjongEngine {
             n_priority += n_minkan;
             if n_priority == 0 && minkan.is_some() {
                 let (s, act) = minkan.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone(), false));
+                let is_pao = check_pao_for_selected_action(self.get_stage(), s, &act);
+                self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
             }
@@ -665,6 +666,7 @@ impl MahjongEngine {
                 let pl = &stg.players[turn];
                 let mut d_scores = [0; SEAT]; // 得点変動
 
+                // TODO: 大四喜と四槓子の包の同時発生, 包を含む2倍以上の役満時の点数計算
                 if let Some(pao) = pl.pao {
                     // 責任払い
                     deal_in += honba_sticks as i32 * 300;

@@ -468,6 +468,18 @@ pub fn check_pao_for_selected_action(stg: &Stage, seat: Seat, act: &Action) -> b
         return cnt == 3;
     }
 
+    // 四槓子
+    if act.action_type == ActionType::Minkan {
+        let mut cnt = 0;
+        for m in &pl.melds {
+            match m.meld_type {
+                MeldType::Ankan | MeldType::Kakan | MeldType::Minkan => cnt += 1,
+                _ => {}
+            }
+        }
+        return cnt == 3;
+    }
+
     false
 }
 

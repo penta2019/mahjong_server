@@ -6,6 +6,21 @@ use crate::model::*;
 
 use SetPairType::*;
 
+// 特殊形&特殊条件の役
+#[derive(Debug, Default, Clone)]
+pub struct YakuFlags {
+    pub menzentsumo: bool,
+    pub riichi: bool,
+    pub dabururiichi: bool,
+    pub ippatsu: bool,
+    pub haiteiraoyue: bool,
+    pub houteiraoyui: bool,
+    pub rinshankaihou: bool,
+    pub chankan: bool,
+    pub tenhou: bool,
+    pub tiihou: bool,
+}
+
 #[derive(Debug)]
 pub struct YakuContext {
     hand: TileTable,         // 元々の手牌(鳴きは含まない) 国士, 九蓮宝燈の判定などに使用
@@ -191,21 +206,6 @@ struct Counts {
     kantsu_total: usize,  // minkan + ankan
     tis: [Type; TYPE],    // tile Type Indices counts
     nis: [Tnum; TNUM],    // tile Number Indices counts(字牌は除外)
-}
-
-// 特殊形&特殊条件の役
-#[derive(Debug, Default, Clone)]
-pub struct YakuFlags {
-    pub menzentsumo: bool,
-    pub riichi: bool,
-    pub dabururiichi: bool,
-    pub ippatsu: bool,
-    pub haiteiraoyue: bool,
-    pub houteiraoyui: bool,
-    pub rinshankaihou: bool,
-    pub chankan: bool,
-    pub tenhou: bool,
-    pub tiihou: bool,
 }
 
 fn get_pair(ph: &ParsedHand) -> Tile {

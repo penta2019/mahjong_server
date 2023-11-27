@@ -21,8 +21,8 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
         ippatsu: pl.is_ippatsu,
         haiteiraoyue: stg.wall_count == 0,
         rinshankaihou: pl.is_rinshan,
-        tenhou: false, // TODO
-        tiihou: false, // TODO
+        tenhou: false,
+        tiihou: false,
         ..Default::default()
     };
     if check_tenhou_tiihou(stg, stg.turn) {

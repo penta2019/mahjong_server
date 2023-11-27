@@ -245,7 +245,7 @@ struct MahjongEngine {
     kan_dora: Option<Tile>,  // 加槓・明槓の打牌後の槓ドラ更新用
     n_deal: usize,           // 牌山(嶺上牌を除く)からツモを行った回数
     n_kan: usize,            // 槓した回数
-    n_kita: usize,           // 北抜きの回数
+    n_nukidora: usize,       // 北抜きの回数
     is_suukansanra: bool,    // 四槓散了の処理フラグ
     round_result: Option<RoundResult>,
     next_round_info: NextRoundInfo,
@@ -284,7 +284,7 @@ impl MahjongEngine {
             kan_dora: None,
             n_deal: 0,
             n_kan: 0,
-            n_kita: 0,
+            n_nukidora: 0,
             is_suukansanra: false,
             wall: vec![],
             dora_wall: vec![],
@@ -377,7 +377,7 @@ impl MahjongEngine {
         // count
         self.n_kan = 0;
         self.n_deal = 0;
-        self.n_kita = 0;
+        self.n_nukidora = 0;
         // game end
         self.is_suukansanra = false;
         self.round_result = None;
@@ -438,7 +438,7 @@ impl MahjongEngine {
                     self.check_suukansanra_needed();
                 }
                 Nukidora => {
-                    let k = self.draw_kita_tile();
+                    let k = self.draw_nukidora_tile();
                     self.handle_event(Event::deal(turn, k));
                 }
                 _ => panic!(),
@@ -971,14 +971,14 @@ impl MahjongEngine {
     }
 
     fn draw_kan_tile(&mut self) -> (Tile, Tile) {
-        let (c, k) = (self.n_kan, self.n_kita);
+        let (c, k) = (self.n_kan, self.n_nukidora);
         self.n_kan += 1;
         (self.replacement_wall[c + k], self.dora_wall[c + 1]) // (replacement_tile, dora_tile)
     }
 
-    fn draw_kita_tile(&mut self) -> Tile {
-        let (c, k) = (self.n_kan, self.n_kita);
-        self.n_kita += 1;
+    fn draw_nukidora_tile(&mut self) -> Tile {
+        let (c, k) = (self.n_kan, self.n_nukidora);
+        self.n_nukidora += 1;
         self.replacement_wall[c + k]
     }
 

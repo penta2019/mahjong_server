@@ -78,17 +78,17 @@ impl fmt::Display for Stage {
 
 #[derive(Debug, Default, Serialize)]
 pub struct Player {
-    pub seat: Seat,             // 座席番号(場・局が変わってもゲーム終了まで不変)
-    pub score: Score,           // 得点
-    pub hand: TileTable,        // 手牌(4x10の配列)
-    pub drawn: Option<Tile>,    // ツモ牌
-    pub melds: Vec<Meld>,       // 鳴き一覧
-    pub kitas: Vec<Nukidora>,   // 北抜き vecの中身はすべてTile(TZ, TN)
-    pub riichi: Option<Index>,  // リーチ宣言牌のdiscardsにおけるindex
-    pub discards: Vec<Discard>, // 捨て牌一覧
-    pub pao: Option<Seat>,      // 責任払い, 役満を確定する副露を許したプレイヤーの座席
-    pub is_shown: bool,         // 手牌が見えるかどうか 見えない場合,手牌はすべてz8(=unknown)
-    pub rank: usize,            // 現在の順位
+    pub seat: Seat,               // 座席番号(場・局が変わってもゲーム終了まで不変)
+    pub score: Score,             // 得点
+    pub hand: TileTable,          // 手牌(4x10の配列)
+    pub drawn: Option<Tile>,      // ツモ牌
+    pub melds: Vec<Meld>,         // 鳴き一覧
+    pub nukidoras: Vec<Nukidora>, // 北抜き vecの中身はすべてTile(TZ, TN)
+    pub riichi: Option<Index>,    // リーチ宣言牌のdiscardsにおけるindex
+    pub discards: Vec<Discard>,   // 捨て牌一覧
+    pub pao: Option<Seat>,        // 責任払い, 役満を確定する副露を許したプレイヤーの座席
+    pub is_shown: bool,           // 手牌が見えるかどうか 見えない場合,手牌はすべてz8(=unknown)
+    pub rank: usize,              // 現在の順位
 
     // 聴牌 (is_shown = trueの時のみ有効)
     pub winning_tiles: Vec<Tile>, // 聴牌時の和了牌
@@ -120,7 +120,7 @@ impl fmt::Display for Player {
             self.seat,
             self.score,
             self.riichi,
-            self.kitas.len(),
+            self.nukidoras.len(),
             drawn,
         )?;
         writeln!(

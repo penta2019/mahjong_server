@@ -33,7 +33,7 @@ pub fn calc_possible_turn_actions(
     if stg.wall_count != 0 {
         acts.append(&mut check_ankan(stg));
         acts.append(&mut check_kakan(stg));
-        acts.append(&mut check_kita(stg));
+        acts.append(&mut check_nukidora(stg));
     }
     acts.append(&mut check_tsumo(stg));
     acts.append(&mut check_kyushukyuhai(stg));
@@ -180,7 +180,7 @@ fn check_kyushukyuhai(stg: &Stage) -> Vec<Action> {
     vec![Action::kyushukyuhai()]
 }
 
-fn check_kita(stg: &Stage) -> Vec<Action> {
+fn check_nukidora(stg: &Stage) -> Vec<Action> {
     if !stg.rule.is_sanma {
         return vec![];
     }

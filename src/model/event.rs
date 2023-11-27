@@ -3,16 +3,16 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {
-    Begin(EventBegin),     // ゲーム開始
-    New(EventNew),         // 局開始
-    Deal(EventDeal),       // ツモ
-    Discard(EventDiscard), // 打牌
-    Meld(EventMeld),       // 鳴き
-    Nukidora(EventKita),   // 北抜き
-    Dora(EventDora),       // 新ドラ
-    Win(EventWin),         // 局終了 (和了)
-    Draw(EventDraw),       // 局終了 (流局)
-    End(EventEnd),         // ゲーム終了
+    Begin(EventBegin),       // ゲーム開始
+    New(EventNew),           // 局開始
+    Deal(EventDeal),         // ツモ
+    Discard(EventDiscard),   // 打牌
+    Meld(EventMeld),         // 鳴き
+    Nukidora(EventNukidora), // 北抜き
+    Dora(EventDora),         // 新ドラ
+    Win(EventWin),           // 局終了 (和了)
+    Draw(EventDraw),         // 局終了 (流局)
+    End(EventEnd),           // ゲーム終了
 }
 
 impl Event {
@@ -75,7 +75,7 @@ impl Event {
 
     #[inline]
     pub fn nukidora(seat: Seat, is_drawn: bool) -> Self {
-        Self::Nukidora(EventKita { seat, is_drawn })
+        Self::Nukidora(EventNukidora { seat, is_drawn })
     }
 
     #[inline]
@@ -179,7 +179,7 @@ pub struct EventMeld {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EventKita {
+pub struct EventNukidora {
     pub seat: Seat,
     pub is_drawn: bool,
 }

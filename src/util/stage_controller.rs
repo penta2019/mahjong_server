@@ -61,7 +61,7 @@ impl StageController {
             Event::Deal(e) => event_deal(stg, e),
             Event::Discard(e) => event_discard(stg, e),
             Event::Meld(e) => event_meld(stg, e),
-            Event::Nukidora(e) => event_kita(stg, e),
+            Event::Nukidora(e) => event_nukidora(stg, e),
             Event::Dora(e) => event_dora(stg, e),
             Event::Win(e) => event_win(stg, e),
             Event::Draw(e) => event_draw(stg, e),
@@ -355,11 +355,11 @@ fn event_meld(stg: &mut Stage, event: &EventMeld) {
     }
 }
 
-fn event_kita(stg: &mut Stage, event: &EventKita) {
+fn event_nukidora(stg: &mut Stage, event: &EventNukidora) {
     let s = event.seat;
     let t = Tile(TZ, WN); // z4
     let pl = &mut stg.players[s];
-    let idx = pl.kitas.len();
+    let idx = pl.nukidoras.len();
     let k = Nukidora {
         step: stg.step,
         is_drawn: event.is_drawn,
@@ -373,7 +373,7 @@ fn event_kita(stg: &mut Stage, event: &EventKita) {
         table_edit(stg, t, U, K(s, idx));
     }
 
-    stg.players[s].kitas.push(k);
+    stg.players[s].nukidoras.push(k);
     stg.last_tile = Some((s, ActionType::Nukidora, t));
 }
 

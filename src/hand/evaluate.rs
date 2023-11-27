@@ -25,7 +25,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
         tiihou: false,
         ..Default::default()
     };
-    if check_tenhou_tiihou(stg, stg.turn) {
+    if is_no_meld_turn1(stg, stg.turn) {
         if is_dealer(stg, stg.turn) {
             yf.tenhou = true;
         } else {
@@ -110,7 +110,7 @@ pub fn evaluate_hand_ron(
         }
         _ => panic!(),
     }
-    if check_tenhou_tiihou(stg, stg.turn) {
+    if is_no_meld_turn1(stg, stg.turn) {
         if is_dealer(stg, stg.turn) {
             yf.tenhou = true;
         } else {
@@ -276,17 +276,4 @@ pub fn evaluate_hand(
     // 和了形に複数の解釈が可能な場合,最も得点の高いものを採用
     results.sort_by_key(|r| (r.points.0, r.fan, r.fu));
     results.pop()
-}
-
-fn check_tenhou_tiihou(stg: &Stage, seat: Seat) -> bool {
-    if !stg.players[seat].discards.is_empty() {
-        return false;
-    } else {
-        for s in 0..SEAT {
-            if !stg.players[s].melds.is_empty() {
-                return false;
-            }
-        }
-    }
-    true
 }

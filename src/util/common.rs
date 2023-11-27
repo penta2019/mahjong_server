@@ -24,6 +24,17 @@ pub fn get_scores(stg: &Stage) -> [Score; SEAT] {
     scores
 }
 
+// ダブル立直, 天和, 地和の判定用
+pub fn is_no_meld_turn1(stg: &Stage, seat: Seat) -> bool {
+    if !stg.players[seat].discards.is_empty() {
+        false
+    } else {
+        stg.players
+            .iter()
+            .all(|pl| pl.melds.is_empty() && pl.nukidoras.is_empty())
+    }
+}
+
 pub fn count_tile(tt: &TileTable, t: Tile) -> usize {
     if t.1 == 5 {
         tt[t.0][t.1] - tt[t.0][0]

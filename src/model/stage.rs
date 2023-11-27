@@ -83,7 +83,7 @@ pub struct Player {
     pub hand: TileTable,          // 手牌(4x10の配列)
     pub drawn: Option<Tile>,      // ツモ牌
     pub melds: Vec<Meld>,         // 鳴き一覧
-    pub nukidoras: Vec<Nukidora>, // 北抜き vecの中身はすべてTile(TZ, TN)
+    pub nukidoras: Vec<Nukidora>, // 北抜き
     pub riichi: Option<Index>,    // リーチ宣言牌のdiscardsにおけるindex
     pub discards: Vec<Discard>,   // 捨て牌一覧
     pub pao: Option<Seat>,        // 責任払い, 役満を確定する副露を許したプレイヤーの座席

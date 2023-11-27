@@ -205,8 +205,7 @@ fn event_deal(stg: &mut Stage, event: &EventDeal) {
 fn event_discard(stg: &mut Stage, event: &EventDiscard) {
     let s = event.seat;
     let t = event.tile;
-    let no_meld = stg.players.iter().all(|pl| pl.melds.is_empty());
-
+    let is_turn1 = is_no_meld_turn1(stg, s);
     stg.turn = s;
     let pl = &mut stg.players[s];
     pl.is_rinshan = false;
@@ -235,7 +234,7 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
         pl.riichi = Some(pl.discards.len());
         pl.is_riichi = true;
         pl.is_ippatsu = true;
-        if no_meld && pl.discards.is_empty() {
+        if is_turn1 {
             pl.is_daburii = true;
         }
         stg.last_riichi = Some(s);

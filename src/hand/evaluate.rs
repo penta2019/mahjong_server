@@ -169,7 +169,7 @@ pub fn evaluate_hand(
 
     let mut wins = vec![]; // 和了形のリスト (無役を含む)
     let pm = parse_melds(melds);
-    for mut ph in phs.into_iter() {
+    for mut ph in phs {
         ph.append(&mut pm.clone());
         match ph.len() {
             0 | 5 | 7 => {} // 国士, 通常, 七対子

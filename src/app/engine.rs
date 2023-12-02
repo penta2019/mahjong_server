@@ -576,6 +576,9 @@ impl MahjongEngine {
         let mut pon: Meld = None;
         let mut chi: Meld = None;
         let mut retry = 0;
+
+        // すべてのActionがキャンセルされるか,または選択されたAction以上の
+        // 優先度を持つActionがすべてキャンセルされる(=Actionが確定する)までloopする
         loop {
             for s in 0..SEAT {
                 let acts = &acts_list[s];
@@ -583,6 +586,10 @@ impl MahjongEngine {
                     // すでにactionを選択済み または Nopのみ
                     continue;
                 }
+
+                // select_actionは非同期処理が必要なActorの場合は基本的にNoneを返す
+                // その場合,Someが返ってくるかより優先度の高いActionが確定するまで
+                // 数十ミリ秒置きに繰り返しselect_actonを呼び出してポーリングする
                 if let Some(act) = self.ctrl.select_action(s, acts, &[], retry) {
                     for act in acts {
                         match act.action_type {
@@ -636,7 +643,7 @@ impl MahjongEngine {
             }
 
             if n_priority == 0 {
-                break;
+                break; // すべてのActionがキャンセルされた場合はここに到達
             }
             retry += 1;
             sleep(0.01);
@@ -1001,7 +1008,7 @@ impl MahjongEngine {
         }
 
         let t0 = discards[0];
-        if !(t0.is_wind()) {
+        if !t0.is_wind() {
             return;
         }
         for s in 1..SEAT {

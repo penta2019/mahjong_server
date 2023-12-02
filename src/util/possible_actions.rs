@@ -203,7 +203,7 @@ pub fn calc_possible_call_actions(stg: &Stage, can_meld: bool) -> [Vec<Action>; 
     for s in 0..SEAT {
         acts_list[s].push(Action::nop());
     }
-    // 打牌以外, 牌山なし , 四槓散了(can_meld)の場合は鳴き操作不可
+    // 打牌以外(加槓, 暗槓など), 牌山なし , 四槓散了(!can_meld)の場合は鳴き操作不可
     if stg.last_tile.unwrap().1 == ActionType::Discard && stg.wall_count != 0 && can_meld {
         for (s, act) in check_chi(stg) {
             acts_list[s].push(act);

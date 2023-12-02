@@ -24,7 +24,7 @@ pub struct Stage {
     pub wall_count: usize,                           // 牌山の残り枚数
     pub doras: Vec<Tile>,                            // ドラ表示牌
     pub discards: Vec<(Seat, Index)>,                // プレイヤー全員の捨て牌
-    pub last_tile: Option<(Seat, ActionType, Tile)>, // 他家に鳴き又はロンされる可能性のある牌(捨て牌,槍槓)
+    pub last_tile: Option<(Seat, ActionType, Tile)>, // 他家に鳴き又はロンされる可能性のある牌(捨て牌,加槓,暗槓)
     pub last_riichi: Option<Seat>,                   // リーチがロンされずに成立した場合の供託更新用
     pub players: [Player; SEAT],                     // 各プレイヤー情報
     pub tile_states: [[[TileState; TILE]; TNUM]; TYPE],

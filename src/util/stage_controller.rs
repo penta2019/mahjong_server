@@ -83,8 +83,8 @@ impl StageController {
     pub fn select_action(
         &mut self,
         seat: Seat,
-        acts: &Vec<Action>,
-        tenpais: &Vec<Tenpai>,
+        acts: &[Action],
+        tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         let res = self.actors[seat].select_action(&self.stage, acts, tenpais, retry);
@@ -442,7 +442,7 @@ fn update_scores(stg: &mut Stage, points: &[Point; SEAT]) {
         stg.players[s].score += points[s];
     }
 
-    let scores = stg.players.iter().map(|pl| pl.score).collect();
+    let scores: Vec<i32> = stg.players.iter().map(|pl| pl.score).collect();
     let ranks = rank_by_rank_vec(&scores);
     for s in 0..SEAT {
         stg.players[s].rank = ranks[s];

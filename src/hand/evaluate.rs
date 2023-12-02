@@ -4,7 +4,7 @@ use super::yaku::*;
 use crate::model::*;
 use crate::util::common::*;
 
-pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<ScoreContext> {
+pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &[Tile]) -> Option<ScoreContext> {
     let pl = &stg.players[stg.turn];
     if !pl.is_shown {
         return None;
@@ -59,11 +59,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &Vec<Tile>) -> Option<Sco
     None
 }
 
-pub fn evaluate_hand_ron(
-    stg: &Stage,
-    ura_dora_wall: &Vec<Tile>,
-    seat: Seat,
-) -> Option<ScoreContext> {
+pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &[Tile], seat: Seat) -> Option<ScoreContext> {
     if seat == stg.turn {
         return None;
     }
@@ -150,9 +146,9 @@ pub fn evaluate_hand_ron(
 // この関数は本場数の得点を計算しない.
 pub fn evaluate_hand(
     hand: &TileTable,       // 手牌(鳴き以外, ロンの場合でも和了牌を含む)
-    melds: &Vec<Meld>,      // 鳴き
-    doras: &Vec<Tile>,      // ドラ表示牌 (注:ドラそのものではない)
-    ura_doras: &Vec<Tile>,  // 裏ドラ表示牌 リーチしていない場合は空
+    melds: &[Meld],         // 鳴き
+    doras: &[Tile],         // ドラ表示牌 (注:ドラそのものではない)
+    ura_doras: &[Tile],     // 裏ドラ表示牌 リーチしていない場合は空
     winning_tile: Tile,     // 上がり牌
     is_drawn: bool,         // ツモ和了
     is_dealer: bool,        // 親番

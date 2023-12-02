@@ -4,7 +4,6 @@
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::single_match)]
-#![allow(clippy::ptr_arg)]
 #![allow(clippy::too_many_arguments)]
 
 mod actor;

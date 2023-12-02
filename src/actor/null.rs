@@ -30,8 +30,8 @@ impl Actor for Null {
     fn select_action(
         &mut self,
         _stg: &Stage,
-        _acts: &Vec<Action>,
-        _tenpais: &Vec<Tenpai>,
+        _acts: &[Action],
+        _tenpais: &[Tenpai],
         _repeat: i32,
     ) -> Option<Action> {
         panic!();

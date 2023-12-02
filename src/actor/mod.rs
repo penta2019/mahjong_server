@@ -33,8 +33,8 @@ pub trait Actor: Listener + ActorClone + Send {
     fn select_action(
         &mut self,
         stg: &Stage,
-        acts: &Vec<Action>,
-        tenpais: &Vec<Tenpai>,
+        acts: &[Action],
+        tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action>;
 

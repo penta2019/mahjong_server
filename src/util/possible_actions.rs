@@ -9,7 +9,7 @@ use crate::util::common::*;
 pub fn calc_possible_turn_actions(
     stg: &Stage,
     melding: &Option<Action>,
-    tenpais: &Vec<Tenpai>,
+    tenpais: &[Tenpai],
 ) -> Vec<Action> {
     if let Some(act) = melding {
         match act.action_type {
@@ -41,7 +41,7 @@ pub fn calc_possible_turn_actions(
     acts
 }
 
-fn check_riichi(stg: &Stage, tenpais: &Vec<Tenpai>) -> Vec<Action> {
+fn check_riichi(stg: &Stage, tenpais: &[Tenpai]) -> Vec<Action> {
     if stg.wall_count < 4 {
         return vec![];
     }
@@ -64,7 +64,7 @@ fn check_riichi(stg: &Stage, tenpais: &Vec<Tenpai>) -> Vec<Action> {
 }
 
 fn check_tsumo(stg: &Stage) -> Vec<Action> {
-    if evaluate_hand_tsumo(stg, &vec![]).is_some() {
+    if evaluate_hand_tsumo(stg, &[]).is_some() {
         vec![Action::tsumo()]
     } else {
         vec![]
@@ -314,7 +314,7 @@ fn check_minkan(stg: &Stage) -> Vec<(Seat, Action)> {
 fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
     let mut acts = vec![];
     for s in 0..SEAT {
-        if evaluate_hand_ron(stg, &vec![], s).is_some() {
+        if evaluate_hand_ron(stg, &[], s).is_some() {
             acts.push((s, Action::ron()));
         }
     }
@@ -411,8 +411,8 @@ pub fn calc_possible_tenpai_discards(
         let sc = evaluate_hand(
             &h,
             &pl.melds,
-            &vec![],
-            &vec![],
+            &[],
+            &[],
             wt,
             false,
             false,

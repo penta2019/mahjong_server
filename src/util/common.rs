@@ -77,7 +77,7 @@ pub fn tiles_from_tile_table(tt: &TileTable) -> Vec<Tile> {
     hand
 }
 
-pub fn tiles_to_tile_table(tiles: &Vec<Tile>) -> TileTable {
+pub fn tiles_to_tile_table(tiles: &[Tile]) -> TileTable {
     let mut tt = TileTable::default();
     for &t in tiles {
         inc_tile(&mut tt, t);
@@ -86,7 +86,7 @@ pub fn tiles_to_tile_table(tiles: &Vec<Tile>) -> TileTable {
 }
 
 // ドラ表示牌のリストを受け取ってドラ評価値のテーブルを返却
-pub fn create_dora_table(doras: &Vec<Tile>) -> TileTable {
+pub fn create_dora_table(doras: &[Tile]) -> TileTable {
     let mut dt = TileTable::default();
     for d in doras {
         let ni = if d.is_hornor() {
@@ -109,7 +109,7 @@ pub fn create_dora_table(doras: &Vec<Tile>) -> TileTable {
 }
 
 // ドラ表示牌によるのドラの数を勘定
-pub fn count_dora(hand: &TileTable, melds: &Vec<Meld>, doras: &Vec<Tile>) -> usize {
+pub fn count_dora(hand: &TileTable, melds: &[Meld], doras: &[Tile]) -> usize {
     let dt = create_dora_table(doras);
     let mut n_dora = 0;
 
@@ -170,7 +170,7 @@ pub fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
     Ok(tiles)
 }
 
-pub fn tiles_to_string(tiles: &Vec<Tile>) -> String {
+pub fn tiles_to_string(tiles: &[Tile]) -> String {
     let mut res = String::new();
     let mut last_ti = 255;
     for t in tiles {

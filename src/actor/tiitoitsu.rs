@@ -40,8 +40,8 @@ impl Actor for TiitoitsuBot {
     fn select_action(
         &mut self,
         stg: &Stage,
-        acts: &Vec<Action>,
-        _tenpais: &Vec<Tenpai>,
+        acts: &[Action],
+        _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);

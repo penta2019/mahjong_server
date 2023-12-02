@@ -43,8 +43,8 @@ impl Actor for RandomDiscard {
     fn select_action(
         &mut self,
         stg: &Stage,
-        _acts: &Vec<Action>,
-        _tenpais: &Vec<Tenpai>,
+        _acts: &[Action],
+        _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);

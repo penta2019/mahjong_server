@@ -95,14 +95,14 @@ pub fn create_wall_debug(seed: u64, n_red5: usize) -> Vec<Tile> {
     wall
 }
 
-fn subtract_tile_table(tt: &mut TileTable, tiles: &Vec<&str>) {
+fn subtract_tile_table(tt: &mut TileTable, tiles: &[&str]) {
     for tn in tiles {
         let t = Tile::from_symbol(tn);
         tt[t.0][t.1] -= 1;
     }
 }
 
-fn append_tiles_from_symbol(v: &mut Vec<Tile>, tiles: &Vec<&str>) {
+fn append_tiles_from_symbol(v: &mut Vec<Tile>, tiles: &[&str]) {
     for tn in tiles {
         let t = Tile::from_symbol(tn);
         v.push(t);

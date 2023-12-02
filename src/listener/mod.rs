@@ -14,7 +14,7 @@ pub use event_writer::{EventWriter, TenhouEventWriter};
 
 pub trait Listener: Send {
     fn notify_event(&mut self, _stg: &Stage, _event: &Event) {}
-    // fn notify_actions(&mut self, _stg: &Stage, actions: &Vec<UserAction>) {}
+    // fn notify_actions(&mut self, _stg: &Stage, actions: &[UserAction]) {}
 }
 
 impl fmt::Debug for dyn Listener {

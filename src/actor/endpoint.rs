@@ -107,8 +107,8 @@ impl Actor for Endpoint {
     fn select_action(
         &mut self,
         _stg: &Stage,
-        acts: &Vec<Action>,
-        tenpais: &Vec<Tenpai>,
+        acts: &[Action],
+        tenpais: &[Tenpai],
         repeat: i32,
     ) -> Option<Action> {
         let mut ret = None;

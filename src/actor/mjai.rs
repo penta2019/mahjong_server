@@ -199,7 +199,7 @@ impl MjaiEndpoint {
                 } else {
                     t
                 };
-                MjaiEvent::kakan(event.seat, &event.consumed, &vec![t, t, t0])
+                MjaiEvent::kakan(event.seat, &event.consumed, &[t, t, t0])
             }
         });
     }
@@ -256,8 +256,8 @@ impl Actor for MjaiEndpoint {
     fn select_action(
         &mut self,
         stg: &Stage,
-        acts: &Vec<Action>,
-        _tenpais: &Vec<Tenpai>,
+        acts: &[Action],
+        _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);

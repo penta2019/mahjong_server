@@ -71,16 +71,16 @@ pub fn write_to_file(file_path: &String, data: &String) {
 //     v.remove(v.iter().position(|x| x == e).unwrap());
 // }
 
-pub fn vec_count<T: PartialEq>(v: &Vec<T>, e: &T) -> usize {
+pub fn vec_count<T: PartialEq>(v: &[T], e: &T) -> usize {
     v.iter().filter(|&n| n == e).count()
 }
 
-pub fn vec_to_string<T: fmt::Display>(v: &Vec<T>) -> String {
+pub fn vec_to_string<T: fmt::Display>(v: &[T]) -> String {
     let vs: Vec<String> = v.iter().map(|x| format!("{}", x)).collect();
     "[".to_string() + &vs.join(", ") + "]"
 }
 
-pub fn cartesian_product<T>(vv: &Vec<Vec<T>>) -> Vec<Vec<&T>> {
+pub fn cartesian_product<T>(vv: &[Vec<T>]) -> Vec<Vec<&T>> {
     let lens: Vec<usize> = vv.iter().map(|l| l.len()).collect();
     let mut idxs = vec![0; vv.len()];
     let mut i = idxs.len() - 1;
@@ -111,7 +111,7 @@ pub fn cartesian_product<T>(vv: &Vec<Vec<T>>) -> Vec<Vec<&T>> {
 
 // 最も数字の大きい値のindexから順に格納した配列を返却
 // 同じ値が複数ある場合, 先に入っていた要素のindexが先になる
-pub fn rank_by_index_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
+pub fn rank_by_index_vec<T: Ord + Clone>(v: &[T]) -> Vec<usize> {
     let mut i_n: Vec<(usize, &T)> = v.iter().enumerate().collect();
     i_n.sort_by(|a, b| {
         if a.1 != b.1 {
@@ -124,7 +124,7 @@ pub fn rank_by_index_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
 }
 
 // 値が大きい順に並べた時に各要素が何番目であるかを示す配列を返却
-pub fn rank_by_rank_vec<T: Ord + Clone>(v: &Vec<T>) -> Vec<usize> {
+pub fn rank_by_rank_vec<T: Ord + Clone>(v: &[T]) -> Vec<usize> {
     let mut res = vec![0; v.len()];
     for (r, &i) in rank_by_index_vec(v).iter().enumerate() {
         res[i] = r;
@@ -148,7 +148,7 @@ pub fn as_bool(v: &Value) -> bool {
     v.as_bool().unwrap()
 }
 
-pub fn as_array(v: &Value) -> &Vec<Value> {
+pub fn as_array(v: &Value) -> &[Value] {
     v.as_array().unwrap()
 }
 

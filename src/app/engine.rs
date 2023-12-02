@@ -583,7 +583,7 @@ impl MahjongEngine {
                     // すでにactionを選択済み または Nopのみ
                     continue;
                 }
-                if let Some(act) = self.ctrl.select_action(s, acts, &vec![], retry) {
+                if let Some(act) = self.ctrl.select_action(s, acts, &[], retry) {
                     for act in acts {
                         match act.action_type {
                             Nop => {}

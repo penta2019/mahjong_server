@@ -138,7 +138,7 @@ impl MjaiEvent {
         dealer: usize,
         honba_sticks: usize,
         riichi_sticks: usize,
-        doras: &Vec<Tile>,
+        doras: &[Tile],
         hands: &[Vec<Tile>; SEAT],
         scores: &[Score; SEAT],
     ) -> Self {
@@ -190,7 +190,7 @@ impl MjaiEvent {
         }
     }
 
-    pub fn chi(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
+    pub fn chi(seat: Seat, consumed: &[Tile], tile: Tile, target: Seat) -> Self {
         Self::Chi {
             actor: seat,
             pai: tile_to_mjai(tile),
@@ -199,7 +199,7 @@ impl MjaiEvent {
         }
     }
 
-    pub fn pon(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
+    pub fn pon(seat: Seat, consumed: &[Tile], tile: Tile, target: Seat) -> Self {
         Self::Pon {
             actor: seat,
             pai: tile_to_mjai(tile),
@@ -208,7 +208,7 @@ impl MjaiEvent {
         }
     }
 
-    pub fn daiminkan(seat: Seat, consumed: &Vec<Tile>, tile: Tile, target: Seat) -> Self {
+    pub fn daiminkan(seat: Seat, consumed: &[Tile], tile: Tile, target: Seat) -> Self {
         Self::Daiminkan {
             actor: seat,
             pai: tile_to_mjai(tile),
@@ -217,14 +217,14 @@ impl MjaiEvent {
         }
     }
 
-    pub fn ankan(seat: Seat, consumed: &Vec<Tile>) -> Self {
+    pub fn ankan(seat: Seat, consumed: &[Tile]) -> Self {
         Self::Ankan {
             actor: seat,
             consumed: tiles_to_mjai(consumed),
         }
     }
 
-    pub fn kakan(seat: Seat, consumed: &Vec<Tile>, pon_tiles: &Vec<Tile>) -> Self {
+    pub fn kakan(seat: Seat, consumed: &[Tile], pon_tiles: &[Tile]) -> Self {
         Self::Kakan {
             actor: seat,
             pai: tile_to_mjai(consumed[0]),
@@ -242,7 +242,7 @@ impl MjaiEvent {
         seat: Seat,
         target: Seat,
         tile: Tile,
-        ura_doras: &Vec<Tile>,
+        ura_doras: &[Tile],
         context: &ScoreContext,
         deltas: &[Point; SEAT],
         scores: &[Score; SEAT],
@@ -500,11 +500,11 @@ pub fn tile_from_mjai(sym: &str) -> Tile {
     }
 }
 
-fn tiles_to_mjai(v: &Vec<Tile>) -> Vec<String> {
+fn tiles_to_mjai(v: &[Tile]) -> Vec<String> {
     v.iter().map(|&t| tile_to_mjai(t)).collect()
 }
 
-fn tiles_from_mjai(v: &Vec<String>) -> Vec<Tile> {
+fn tiles_from_mjai(v: &[String]) -> Vec<Tile> {
     let mut v2: Vec<Tile> = v.iter().map(|t| tile_from_mjai(t)).collect();
     v2.sort();
     v2

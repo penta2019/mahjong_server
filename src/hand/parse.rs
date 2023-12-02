@@ -22,7 +22,7 @@ pub struct SetPair(pub SetPairType, pub Tile);
 pub type ParsedHand = Vec<SetPair>;
 
 // 鳴きをSetPairに変換したリストを返却
-pub fn parse_melds(melds: &Vec<Meld>) -> ParsedHand {
+pub fn parse_melds(melds: &[Meld]) -> ParsedHand {
     let mut res = vec![];
 
     for m in melds {

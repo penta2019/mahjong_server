@@ -310,6 +310,10 @@ impl MahjongEngine {
                 if self.round_result.is_some() {
                     break;
                 }
+                self.check_abortive_draw();
+                if self.round_result.is_some() {
+                    break;
+                }
             }
             self.do_event_win_draw();
         }
@@ -616,7 +620,7 @@ impl MahjongEngine {
             let mut n_priority = n_rons;
             if n_priority == 0 && !rons.is_empty() {
                 self.round_result = Some(RoundResult::Ron(rons));
-                return;
+                break;
             }
             n_priority += n_minkan;
             if n_priority == 0 && minkan.is_some() {
@@ -647,13 +651,6 @@ impl MahjongEngine {
             }
             retry += 1;
             sleep(0.01);
-        }
-
-        // 途中流局の確認
-        if self.round_result.is_none() {
-            self.check_suufuurenda();
-            self.check_suukansanra();
-            self.check_suuchariichi();
         }
     }
 
@@ -989,6 +986,12 @@ impl MahjongEngine {
         self.replacement_wall[c + k]
     }
 
+    fn check_abortive_draw(&mut self) {
+        self.check_suufuurenda();
+        self.check_suukansanra();
+        self.check_suuchariichi();
+    }
+
     fn check_suufuurenda(&mut self) {
         let stg = self.get_stage();
         if stg.wall_count != 66 {
@@ -996,28 +999,16 @@ impl MahjongEngine {
         }
 
         let mut discards = vec![];
-        for s in 0..SEAT {
-            let pl = &stg.players[s];
-            if !pl.melds.is_empty() {
-                return;
-            }
-            if pl.discards.is_empty() {
+        for pl in &stg.players {
+            if !pl.melds.is_empty() || pl.discards.is_empty() {
                 return;
             }
             discards.push(pl.discards[0].tile);
         }
 
-        let t0 = discards[0];
-        if !t0.is_wind() {
-            return;
+        if discards.len() == 1 && discards[0].is_wind() {
+            self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
         }
-        for s in 1..SEAT {
-            if t0 != discards[s] {
-                return;
-            }
-        }
-
-        self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
     }
 
     fn check_suukansanra(&mut self) {

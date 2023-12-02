@@ -1,4 +1,4 @@
-use std::fmt::Write as _;
+use std::fmt::Write;
 use std::fs::File;
 use std::io::{self, BufRead};
 
@@ -143,18 +143,18 @@ impl Calculator {
         let input = input.replace(' ', "");
         let input = input.split('#').collect::<Vec<&str>>()[0]; // コメント削除
         let exps: Vec<&str> = input.split('/').collect();
-
-        if let Some(exp) = exps.get(1) {
-            self.parse_stage_info(exp)?; // 副露のパースに座席情報が必要なので最初に実行
+        let len = exps.len();
+        if len > 1 {
+            self.parse_stage_info(exps[1])?; // 副露のパースに座席情報が必要なので最初に実行
         };
-        if let Some(exp) = exps.get(0) {
-            self.parse_hand_meld(exp)?;
+        if len > 0 {
+            self.parse_hand_meld(exps[0])?;
         };
-        if let Some(exp) = exps.get(2) {
-            self.parse_yaku_flags(exp)?;
+        if len > 2 {
+            self.parse_yaku_flags(exps[2])?;
         };
-        if let Some(exp) = exps.get(3) {
-            self.parse_score_verify(exp)?;
+        if len > 3 {
+            self.parse_score_verify(exps[3])?;
         }
 
         if self.detail {
@@ -230,10 +230,11 @@ impl Calculator {
 
     fn parse_stage_info(&mut self, input: &str) -> Result<(), String> {
         let exps: Vec<&str> = input.split(',').collect();
-        if let Some(exp) = exps.get(0) {
-            let chars: Vec<char> = exp.chars().collect();
+        let len = exps.len();
+        if len > 0 {
+            let chars: Vec<char> = exps[0].chars().collect();
             if chars.len() != 2 {
-                return Err(format!("stage info len is not 2: {}", exp));
+                return Err(format!("stage info len is not 2: {}", exps[0]));
             }
             let prevalent_wind = wind_from_char(chars[0])?;
             let seat_wind = wind_from_char(chars[1])?;
@@ -242,11 +243,11 @@ impl Calculator {
             self.seat_wind = seat_wind;
             self.is_dealer = seat_wind == 1;
         }
-        if let Some(exp) = exps.get(1) {
-            self.doras = tiles_from_string(exp)?;
+        if len > 1 {
+            self.doras = tiles_from_string(exps[1])?;
         }
-        if let Some(exp) = exps.get(2) {
-            self.ura_doras = tiles_from_string(exp)?;
+        if len > 2 {
+            self.ura_doras = tiles_from_string(exps[2])?;
         }
         Ok(())
     }

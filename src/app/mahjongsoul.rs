@@ -330,13 +330,14 @@ impl Mahjongsoul {
             sleep(sleep_sec - ellapsed);
         }
 
+        let nil = "";
         let action = match tp {
             Nop => {
                 if stg.turn == self.seat {
                     let t = stg.players[self.seat].drawn.unwrap();
                     format!("action_dapai(\"{}\", {})", tile_to_mjsoul(t), true)
                 } else {
-                    format!("action_cancel()")
+                    format!("action_cancel({})", nil)
                 }
             }
             Discard => {
@@ -357,13 +358,13 @@ impl Mahjongsoul {
                 format!("action_lizhi(\"{}\", {})", tile_to_mjsoul(t), m)
             }
             Tsumo => {
-                format!("action_zimo()")
+                format!("action_zimo({})", nil)
             }
             Kyushukyuhai => {
-                format!("action_jiuzhongjiupai()")
+                format!("action_jiuzhongjiupai({})", nil)
             }
             Nukidora => {
-                format!("action_babei()")
+                format!("action_babei({})", nil)
             }
             Chi => {
                 format!("action_chi({})", arg_idx)
@@ -375,7 +376,7 @@ impl Mahjongsoul {
                 format!("action_gang({})", arg_idx)
             }
             Ron => {
-                format!("action_hu()")
+                format!("action_hu({})", nil)
             }
         };
 

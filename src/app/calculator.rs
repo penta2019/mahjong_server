@@ -64,7 +64,7 @@ impl CalculatorApp {
         }
     }
 
-    fn run_from_file(&self, file_path: &str) -> std::io::Result<()> {
+    fn run_from_file(&self, file_path: &str) -> Res {
         let file = File::open(file_path)?;
         let lines = io::BufReader::new(file).lines();
         for exp in lines.flatten() {
@@ -80,10 +80,10 @@ impl CalculatorApp {
         Ok(())
     }
 
-    fn process_expression(&self, exp: &str) -> Result<(), String> {
+    fn process_expression(&self, exp: &str) -> Res {
         let mut calculator = Calculator::new(self.detail);
         calculator.parse(exp)?;
-        calculator.run()?;
+        calculator.run();
         Ok(())
     }
 }
@@ -137,7 +137,7 @@ impl Calculator {
         }
     }
 
-    fn parse(&mut self, input: &str) -> Result<(), String> {
+    fn parse(&mut self, input: &str) -> Res {
         println!("> {}", input);
 
         let input = input.replace(' ', "");
@@ -164,7 +164,7 @@ impl Calculator {
         Ok(())
     }
 
-    fn run(&self) -> Result<Verify, String> {
+    fn run(&self) -> Verify {
         if let Some(ctx) = evaluate_hand(
             &self.hand,
             &self.melds,
@@ -211,7 +211,7 @@ impl Calculator {
                 Verify::Skip
             };
             println!("verify: {:?}", verify);
-            Ok(verify)
+            verify
         } else {
             println!("not win hand");
             let verify = if self.verify {
@@ -224,17 +224,17 @@ impl Calculator {
                 Verify::Skip
             };
             println!("verify: {:?}", verify);
-            Ok(verify)
+            verify
         }
     }
 
-    fn parse_stage_info(&mut self, input: &str) -> Result<(), String> {
+    fn parse_stage_info(&mut self, input: &str) -> Res {
         let exps: Vec<&str> = input.split(',').collect();
         let len = exps.len();
         if len > 0 {
             let chars: Vec<char> = exps[0].chars().collect();
             if chars.len() != 2 {
-                return Err(format!("stage info len is not 2: {}", exps[0]));
+                Err(format!("stage info len is not 2: {}", exps[0]))?;
             }
             let prevalent_wind = wind_from_char(chars[0])?;
             let seat_wind = wind_from_char(chars[1])?;
@@ -252,7 +252,7 @@ impl Calculator {
         Ok(())
     }
 
-    fn parse_hand_meld(&mut self, input: &str) -> Result<(), String> {
+    fn parse_hand_meld(&mut self, input: &str) -> Res {
         let mut exp_hand = "".to_string();
         let mut exp_melds = vec![];
         for exp in input.split(',') {
@@ -285,7 +285,7 @@ impl Calculator {
         Ok(())
     }
 
-    fn parse_yaku_flags(&mut self, input: &str) -> Result<(), String> {
+    fn parse_yaku_flags(&mut self, input: &str) -> Res {
         for y in input.split(',') {
             match y {
                 "立直" => self.yaku_flags.riichi = true,
@@ -298,20 +298,20 @@ impl Calculator {
                 "天和" => self.yaku_flags.tenhou = true,
                 "地和" => self.yaku_flags.tiihou = true,
                 "" => {}
-                _ => return Err(format!("invalid conditional yaku: {}", y)),
+                _ => Err(format!("invalid conditional yaku: {}", y))?,
             }
         }
         Ok(())
     }
 
-    fn parse_score_verify(&mut self, input: &str) -> Result<(), String> {
+    fn parse_score_verify(&mut self, input: &str) -> Res {
         let exps: Vec<&str> = input.split(',').collect();
         if exps.len() != 3 {
-            return Err(format!("invalid score verify info: {}", input));
+            Err(format!("invalid score verify info: {}", input))?;
         }
-        self.fu = exps[0].parse::<usize>().map_err(|e| e.to_string())?;
-        self.fan = exps[1].parse::<usize>().map_err(|e| e.to_string())?;
-        self.score = exps[2].parse::<Score>().map_err(|e| e.to_string())?;
+        self.fu = exps[0].parse::<usize>()?;
+        self.fan = exps[1].parse::<usize>()?;
+        self.score = exps[2].parse::<Score>()?;
         self.verify = true;
         Ok(())
     }
@@ -341,8 +341,8 @@ fn test_calculator() {
             println!("> {}", exp);
         } else {
             let mut calculator = Calculator::new(false);
-            assert_eq!(Ok(()), calculator.parse(&e));
-            assert_ne!(Verify::Error, calculator.run().unwrap());
+            calculator.parse(&e).unwrap();
+            assert_ne!(Verify::Error, calculator.run());
         }
     }
 }

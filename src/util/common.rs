@@ -1,4 +1,4 @@
-use crate::etc::misc::vec_count;
+use crate::etc::misc::{vec_count, Res};
 use crate::model::*;
 
 #[inline]
@@ -148,7 +148,7 @@ pub fn tiles_with_red5(tt: &TileTable, t: Tile) -> Vec<Tile> {
     vec![t, Tile(ti, 0)] // 通常5と赤5の両方がある場合
 }
 
-pub fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
+pub fn tiles_from_string(exp: &str) -> Res<Vec<Tile>> {
     let mut tiles = vec![];
     let undef: usize = 255;
     let mut ti = undef;
@@ -157,13 +157,13 @@ pub fn tiles_from_string(exp: &str) -> Result<Vec<Tile>, String> {
             'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(c).unwrap(),
             '0'..='9' => {
                 if ti == undef {
-                    return Err(format!("tile number befor tile type"));
+                    Err("tile number befor tile type")?;
                 }
                 let ni = c.to_digit(10).unwrap() as usize;
                 tiles.push(Tile(ti, ni));
             }
             _ => {
-                return Err(format!("invalid char: '{}'", c));
+                Err(format!("invalid char: '{}'", c))?;
             }
         }
     }
@@ -183,7 +183,7 @@ pub fn tiles_to_string(tiles: &[Tile]) -> String {
     res
 }
 
-pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
+pub fn meld_from_string(exp: &str) -> Res<Meld> {
     let undef: usize = 255;
     let seat = 0; // 点数計算する上で座席の番号は関係ないので0で固定
     let mut ti = undef;
@@ -197,14 +197,14 @@ pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
             'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(c).unwrap(),
             '+' => {
                 if froms.is_empty() {
-                    return Err("invalid '+' suffix".to_string());
+                    Err("invalid '+' suffix")?;
                 }
                 let last = froms.len() - 1;
                 froms[last] = from % SEAT;
             }
             '0'..='9' => {
                 if ti == undef {
-                    return Err("tile number befor tile type".to_string());
+                    Err("tile number befor tile type")?;
                 }
 
                 from += 1;
@@ -214,7 +214,7 @@ pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
                 froms.push(seat);
             }
             _ => {
-                return Err(format!("invalid char: '{}'", c));
+                Err(format!("invalid char: '{}'", c))?;
             }
         }
     }
@@ -238,7 +238,7 @@ pub fn meld_from_string(exp: &str) -> Result<Meld, String> {
             MeldType::Minkan
         }
     } else {
-        return Err(format!("invalid meld: '{}'", exp));
+        Err(format!("invalid meld: '{}'", exp))?
     };
 
     Ok(Meld {
@@ -278,13 +278,13 @@ pub fn meld_to_string(m: &Meld, s: Seat) -> String {
 }
 
 #[inline]
-pub fn tile_type_from_char(c: char) -> Result<Type, String> {
+pub fn tile_type_from_char(c: char) -> Res<Type> {
     match c {
         'm' => Ok(TM),
         'p' => Ok(TP),
         's' => Ok(TS),
         'z' => Ok(TZ),
-        _ => Err("invalid tile symbol".to_string()),
+        _ => Err("invalid tile symbol".to_string())?,
     }
 }
 
@@ -300,11 +300,11 @@ pub fn tile_type_to_char(ti: Type) -> char {
 }
 
 #[inline]
-pub fn tile_number_from_char(c: char) -> Result<Tnum, String> {
+pub fn tile_number_from_char(c: char) -> Res<Tnum> {
     if let Some(i) = c.to_digit(10) {
         Ok(i as Tnum)
     } else {
-        Err("invalid tile number".to_string())
+        Err("invalid tile number".to_string())?
     }
 }
 
@@ -313,13 +313,13 @@ pub fn tile_number_to_char(ni: Tnum) -> char {
     std::char::from_digit(ni as u32, 10).unwrap()
 }
 
-pub fn wind_from_char(c: char) -> Result<Index, String> {
+pub fn wind_from_char(c: char) -> Res<Index> {
     Ok(match c {
         'E' => 1,
         'S' => 2,
         'W' => 3,
         'N' => 4,
-        _ => return Err(format!("invalid wind symbol: {}", c)),
+        _ => Err(format!("invalid wind symbol: {}", c))?,
     })
 }
 

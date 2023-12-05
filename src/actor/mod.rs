@@ -11,6 +11,7 @@ mod tiitoitsu;
 // use crate::controller::{Actor, Config, Listener};
 use std::fmt;
 
+use crate::etc::misc::Res;
 use crate::etc::variant::*;
 use crate::listener::Listener;
 use crate::model::*;
@@ -141,7 +142,7 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
     std::process::exit(0);
 }
 
-fn parse_as(target: &Variant, value: &str) -> Result<Variant, Box<dyn std::error::Error>> {
+fn parse_as(target: &Variant, value: &str) -> Res<Variant> {
     Ok(match target {
         Variant::Int(_) => Variant::Int(value.parse::<i32>()?),
         Variant::Float(_) => Variant::Float(value.parse::<f32>()?),

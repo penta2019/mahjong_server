@@ -518,7 +518,7 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
     }
 
     if buf.is_empty() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, ""));
+        Err(io::Error::new(io::ErrorKind::InvalidInput, ""))?;
     }
     serde_json::from_str(&buf[..buf.len() - 1]).map_err(|e| e.into())
 }

@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::str::FromStr;
-use std::{fmt, fs, io};
+use std::{fmt, fs};
 
 use serde_json::Value;
 
@@ -52,10 +52,10 @@ pub fn error_exit<T: fmt::Display, U>(t: T) -> U {
     exit(1);
 }
 
-pub fn get_paths(dir: &Path) -> io::Result<Vec<PathBuf>> {
+pub fn get_paths(dir: &Path) -> Res<Vec<PathBuf>> {
     let mut entries = fs::read_dir(dir)?
         .map(|res| res.map(|e| e.path()))
-        .collect::<Result<Vec<_>, io::Error>>()?;
+        .collect::<Result<Vec<_>, _>>()?;
     entries.sort();
     Ok(entries)
 }

@@ -91,7 +91,7 @@ impl MahjongsoulApp {
                                 last_event_ts = unixtime_now();
                             }
                         }
-                        _ => {}
+                        _x => {}
                     }
                 }
                 _ => {}

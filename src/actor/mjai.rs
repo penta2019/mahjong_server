@@ -86,11 +86,8 @@ impl MjaiEndpoint {
                         let data = data.clone();
                         thread::spawn(move || {
                             info!("new connection {:?}", stream);
-                            match stream_handler(&mut stream, data, true) {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    error!("{:?}", e);
-                                }
+                            if let Err(e) = stream_handler(&mut stream, data, true) {
+                                error!("{:?}", e);
                             }
                             info!("connection closed");
                             *is_connected.lock().unwrap() = false;

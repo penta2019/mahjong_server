@@ -254,7 +254,7 @@ fn count_iipeikou(ph: &ParsedHand) -> usize {
                     n += 1;
                 }
             }
-            _ => {}
+            _x => {}
         }
     }
 
@@ -514,7 +514,7 @@ fn is_pinfu(ctx: &YakuContext) -> bool {
                     }
                 }
             }
-            _ => {}
+            _x => {}
         }
     }
 

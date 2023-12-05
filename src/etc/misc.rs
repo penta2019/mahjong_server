@@ -7,6 +7,8 @@ use serde_json::Value;
 
 use crate::error;
 
+pub type Res<T = ()> = Result<T, Box<dyn std::error::Error>>;
+
 pub fn next_value<T>(it: &mut std::slice::Iter<'_, std::string::String>, opt: &str) -> T
 where
     T: FromStr,

@@ -1,3 +1,5 @@
+// Listernerトレイトを継承する構造体のモジュール
+
 mod debug;
 mod event_printer;
 mod event_sender;

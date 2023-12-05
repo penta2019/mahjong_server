@@ -1,3 +1,5 @@
+// 麻雀のデータモデル
+
 mod action;
 mod define;
 mod event;

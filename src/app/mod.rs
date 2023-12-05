@@ -1,3 +1,5 @@
+// mainから直接呼び出すアプリケーションの動作モード(E, C, R, Jなど)のモジュール
+
 mod calculator;
 mod engine;
 mod mahjongsoul;

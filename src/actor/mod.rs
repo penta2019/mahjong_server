@@ -1,3 +1,5 @@
+// Actorトレイトを継承して打牌の判断を行う構造体のモジュール(AI,プレイヤー,botなど)
+
 mod endpoint;
 mod manual;
 mod mjai;
@@ -139,11 +141,11 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
     std::process::exit(0);
 }
 
-fn parse_as(target: &Variant, value: &str) -> Result<Variant, String> {
+fn parse_as(target: &Variant, value: &str) -> Result<Variant, Box<dyn std::error::Error>> {
     Ok(match target {
-        Variant::Int(_) => Variant::Int(value.parse::<i32>().map_err(|e| e.to_string())?),
-        Variant::Float(_) => Variant::Float(value.parse::<f32>().map_err(|e| e.to_string())?),
-        Variant::Bool(_) => Variant::Bool(value.parse::<bool>().map_err(|e| e.to_string())?),
-        Variant::String(_) => Variant::String(value.parse::<String>().map_err(|e| e.to_string())?),
+        Variant::Int(_) => Variant::Int(value.parse::<i32>()?),
+        Variant::Float(_) => Variant::Float(value.parse::<f32>()?),
+        Variant::Bool(_) => Variant::Bool(value.parse::<bool>()?),
+        Variant::String(_) => Variant::String(value.parse::<String>()?),
     })
 }

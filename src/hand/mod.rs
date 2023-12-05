@@ -1,3 +1,5 @@
+// 手牌の役や点数計算を行うモジュール
+
 mod evaluate;
 mod parse;
 mod point;

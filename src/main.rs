@@ -1,4 +1,3 @@
-#![warn(rust_2018_idioms)]
 // 構造的な意味合いや一貫性を保つために以下のclippy警告は無効化
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::needless_range_loop)]

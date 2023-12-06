@@ -4,8 +4,8 @@ use crate::actor::*;
 use crate::control::common::*;
 use crate::control::possible_actions::*;
 use crate::control::stage_controller::StageController;
-use crate::control::wall::*;
-use crate::hand::*;
+use crate::control::wall::create_wall;
+use crate::hand::{evaluate_hand_ron, evaluate_hand_tsumo};
 use crate::listener::*;
 use crate::model::*;
 use crate::util::connection::TcpConnection;
@@ -474,8 +474,10 @@ impl MahjongEngine {
             if let Some(act) = self.ctrl.select_action(turn, &acts, &tenpais, retry) {
                 break act;
             }
+            if retry > 0 {
+                sleep(0.01);
+            }
             retry += 1;
-            sleep(0.01);
         };
 
         let tp = act.action_type;
@@ -649,8 +651,11 @@ impl MahjongEngine {
             if n_priority == 0 {
                 break; // すべてのActionがキャンセルされた場合はここに到達
             }
+
+            if retry > 0 {
+                sleep(0.01);
+            }
             retry += 1;
-            sleep(0.01);
         }
     }
 

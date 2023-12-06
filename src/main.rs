@@ -6,8 +6,8 @@
 
 mod actor;
 mod app;
+mod control;
 mod convert;
-mod etc;
 mod hand;
 mod listener;
 mod model;

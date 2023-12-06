@@ -2,10 +2,10 @@ use std::fmt::Write;
 use std::fs::File;
 use std::io::{self, BufRead};
 
-use crate::etc::misc::*;
+use crate::control::common::*;
 use crate::hand::{evaluate_hand, YakuFlags};
 use crate::model::*;
-use crate::util::common::*;
+use crate::util::misc::*;
 
 use crate::error;
 

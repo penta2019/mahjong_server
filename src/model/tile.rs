@@ -1,7 +1,7 @@
 use serde::{de, ser};
 
 use super::*;
-use crate::util::common::{tile_number_from_char, tile_type_from_char};
+use crate::control::common::{tile_number_from_char, tile_type_from_char};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)

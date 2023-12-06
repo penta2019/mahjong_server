@@ -1,6 +1,6 @@
 use super::*;
-use crate::etc::misc::prompt;
-use crate::util::common::*;
+use crate::control::common::*;
+use crate::util::misc::prompt;
 
 use crate::error;
 

@@ -1,6 +1,6 @@
 use super::*;
-use crate::etc::misc::vec_to_string;
-use crate::util::common::tiles_from_tile_table;
+use crate::control::common::tiles_from_tile_table;
+use crate::util::misc::vec_to_string;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Rule {

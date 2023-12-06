@@ -1,15 +1,15 @@
 use rand::prelude::*;
 
 use crate::actor::*;
-use crate::etc::connection::TcpConnection;
-use crate::etc::misc::*;
+use crate::control::common::*;
+use crate::control::possible_actions::*;
+use crate::control::stage_controller::StageController;
+use crate::control::wall::*;
 use crate::hand::*;
 use crate::listener::*;
 use crate::model::*;
-use crate::util::common::*;
-use crate::util::possible_actions::*;
-use crate::util::stage_controller::StageController;
-use crate::util::wall::*;
+use crate::util::connection::TcpConnection;
+use crate::util::misc::*;
 
 use crate::{error, warn};
 

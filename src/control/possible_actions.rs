@@ -1,6 +1,6 @@
+use crate::control::common::*;
 use crate::hand::*;
 use crate::model::*;
-use crate::util::common::*;
 
 // [Turn Action Check]
 // プレイヤーのツモ番に可能な操作をチェックする

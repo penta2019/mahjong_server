@@ -3,10 +3,10 @@
 use std::path::{Path, PathBuf};
 
 use crate::actor::{create_actor, Actor};
-use crate::etc::misc::*;
+use crate::control::stage_controller::StageController;
 use crate::listener::{Debug, EventPrinter, Listener};
 use crate::model::*;
-use crate::util::stage_controller::StageController;
+use crate::util::misc::*;
 
 use crate::error;
 

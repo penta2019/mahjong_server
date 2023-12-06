@@ -1,6 +1,7 @@
-// 麻雀のゲーム進行に必要な各種処理を行うモジュール
+// 麻雀やコアロジックと関係のない汎用モジュール
 
-pub mod common;
-pub mod possible_actions;
-pub mod stage_controller;
-pub mod wall;
+pub mod connection;
+pub mod log;
+pub mod misc;
+pub mod unused;
+pub mod variant;

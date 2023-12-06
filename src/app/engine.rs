@@ -497,15 +497,18 @@ impl MahjongEngine {
                 self.handle_event(Event::discard(turn, t, true, false));
             }
             Discard => {
-                // 打牌: ツモ切り以外
+                // 打牌: 明示的なツモ切り以外
                 let t = cs[0];
+                let d = stg.players[turn].drawn.unwrap();
+                // 捨牌がツモってきた牌でかつ手牌に1枚しかないときは自動的にツモ切りフラグを追加
+                let m = t == d && count_tile(&stg.players[turn].hand, t) == 1;
                 assert!(!acts
                     .iter()
                     .find(|a| a.action_type == Discard)
                     .unwrap()
                     .tiles
                     .contains(&t));
-                self.handle_event(Event::discard(turn, t, false, false))
+                self.handle_event(Event::discard(turn, t, m, false))
             }
             Riichi => {
                 let pl = &stg.players[turn];

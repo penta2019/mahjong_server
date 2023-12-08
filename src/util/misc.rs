@@ -1,7 +1,4 @@
-use std::path::{Path, PathBuf};
-use std::process::exit;
-use std::str::FromStr;
-use std::{fmt, fs};
+use std::fmt;
 
 use serde_json::Value;
 
@@ -11,7 +8,7 @@ pub type Res<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
 pub fn next_value<T>(it: &mut std::slice::Iter<'_, std::string::String>, opt: &str) -> T
 where
-    T: FromStr,
+    T: std::str::FromStr,
     T::Err: fmt::Display,
 {
     let n = it
@@ -49,18 +46,18 @@ pub fn flush() {
 
 pub fn error_exit<T: fmt::Display, U>(t: T) -> U {
     error!("{}", t);
-    exit(1);
+    std::process::exit(1);
 }
 
-pub fn get_paths(dir: &Path) -> Res<Vec<PathBuf>> {
-    let mut entries = fs::read_dir(dir)?
+pub fn get_paths(dir: &std::path::Path) -> Res<Vec<std::path::PathBuf>> {
+    let mut entries = std::fs::read_dir(dir)?
         .map(|res| res.map(|e| e.path()))
         .collect::<Result<Vec<_>, _>>()?;
     entries.sort();
     Ok(entries)
 }
 
-pub fn write_to_file(file_path: &String, data: &String) {
+pub fn write_to_file(file_path: &str, data: &str) {
     use std::io::Write;
     let path = std::path::Path::new(file_path);
     let prefix = path.parent().unwrap();

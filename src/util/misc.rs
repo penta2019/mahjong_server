@@ -57,13 +57,14 @@ pub fn get_paths(dir: &std::path::Path) -> Res<Vec<std::path::PathBuf>> {
     Ok(entries)
 }
 
-pub fn write_to_file(file_path: &str, data: &str) {
+pub fn write_to_file(file_path: &str, data: &str) -> Res {
     use std::io::Write;
     let path = std::path::Path::new(file_path);
-    let prefix = path.parent().unwrap();
-    std::fs::create_dir_all(prefix).unwrap();
-    let mut f = std::fs::File::create(path).unwrap();
-    write!(f, "{}", data).unwrap();
+    let prefix = path.parent().ok_or("invalid path")?;
+    std::fs::create_dir_all(prefix)?;
+    let mut f = std::fs::File::create(path)?;
+    write!(f, "{}", data)?;
+    Ok(())
 }
 
 // pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {

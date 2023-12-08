@@ -44,7 +44,7 @@ impl Listener for EventWriter {
 
         self.record.push(json!(event));
         if write {
-            write_to_file(
+            let _ = write_to_file(
                 &format!("data/{}/{:02}.json", self.start_time, self.round_index),
                 &serde_json::to_string_pretty(&json!(self.record)).unwrap(),
             );
@@ -95,7 +95,8 @@ impl Listener for TenhouEventWriter {
                     self.start_time, self.round_index
                 ),
                 &self.serializer.serialize(),
-            );
+            )
+            .ok();
             self.round_index += 1;
         }
     }

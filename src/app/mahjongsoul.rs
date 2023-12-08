@@ -193,7 +193,7 @@ impl Mahjongsoul {
         }
 
         if self.write_raw && write {
-            write_to_file(
+            let _ = write_to_file(
                 &format!("data_raw/{}/{:2}.json", self.start_time, self.round_index),
                 &serde_json::to_string_pretty(&json!(self.events)).unwrap(),
             );

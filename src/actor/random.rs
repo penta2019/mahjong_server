@@ -36,7 +36,7 @@ impl RandomDiscard {
 }
 
 impl Actor for RandomDiscard {
-    fn init(&mut self, seat: Seat) {
+    fn init(&mut self, _stage: StageRef, seat: Seat) {
         self.seat = seat;
     }
 

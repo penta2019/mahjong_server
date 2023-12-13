@@ -233,7 +233,7 @@ impl Mahjongsoul {
             }
 
             // seatが確定し時点でactorを設定
-            self.actor.init(self.seat); // TODO: これがないとMjaiが不正なseatを送信ことがある
+            // self.actor.init(self.seat); // TODO: これがないとMjaiが不正なseatを送信ことがある
             self.ctrl.swap_actor(self.seat, &mut self.actor);
         }
 

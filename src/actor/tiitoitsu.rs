@@ -20,6 +20,7 @@ impl ActorBuilder for TiitoitsuBotBuilder {
 pub struct TiitoitsuBot {
     config: Config,
     seat: Seat,
+    stage: Option<StageRef>,
 }
 
 // 七対子Bot 試作
@@ -28,23 +29,26 @@ impl TiitoitsuBot {
         Self {
             config,
             seat: NO_SEAT,
+            stage: None,
         }
     }
 }
 
 impl Actor for TiitoitsuBot {
-    fn init(&mut self, seat: Seat) {
+    fn init(&mut self, stage: StageRef, seat: Seat) {
         self.seat = seat;
+        self.stage = Some(stage);
     }
 
     fn select_action(
         &mut self,
-        stg: &Stage,
+        _stg: &Stage,
         acts: &[Action],
         _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);
+        let stg = self.stage.as_ref().unwrap().lock();
 
         let pl = &stg.players[self.seat];
 
@@ -64,7 +68,7 @@ impl Actor for TiitoitsuBot {
                             return Some(Action::discard(t));
                         }
                         1 => {
-                            ones.push((count_left_tile(stg, self.seat, t), t));
+                            ones.push((count_left_tile(&stg, self.seat, t), t));
                         }
                         _ => panic!(),
                     }

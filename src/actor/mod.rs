@@ -11,6 +11,7 @@ mod tiitoitsu;
 // use crate::controller::{Actor, Config, Listener};
 use std::fmt;
 
+use crate::control::stage_controller::StageRef;
 use crate::listener::Listener;
 use crate::model::*;
 use crate::util::misc::Res;
@@ -27,7 +28,7 @@ pub struct Config {
 // Actor trait
 pub trait Actor: Listener + ActorClone + Send {
     // 局開始時の初期化処理
-    fn init(&mut self, _seat: Seat) {}
+    fn init(&mut self, _stage: StageRef, _seat: Seat) {}
 
     // 可能なアクションの選択
     // 処理を非同期に行う必要がある場合,Noneを返すことで100ms以内に同じ選択に対して再度この関数が呼び出される.

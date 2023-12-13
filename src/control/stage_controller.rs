@@ -10,16 +10,17 @@ use crate::util::misc::rank_by_rank_vec;
 use TileState::*;
 
 // 外部(Actorなど)からStageを参照するための読み取り専用構造体
-// pub struct StageRef {
-//     stage: Arc<RwLock<Stage>>,
-// }
+#[derive(Clone)]
+pub struct StageRef {
+    stage: Arc<RwLock<Stage>>,
+}
 
-// impl StageRef {
-//     #[inline]
-//     pub fn lock(&self) -> RwLockReadGuard<Stage> {
-//         self.stage.try_read().unwrap()
-//     }
-// }
+impl StageRef {
+    #[inline]
+    pub fn lock(&self) -> RwLockReadGuard<Stage> {
+        self.stage.try_read().unwrap()
+    }
+}
 
 #[derive(Debug)]
 pub struct StageController {
@@ -65,7 +66,10 @@ impl StageController {
     pub fn handle_event(&mut self, event: &Event) {
         if let Event::New(_) = event {
             for s in 0..SEAT {
-                self.actors[s].init(s);
+                let stgref = StageRef {
+                    stage: self.stage.clone(),
+                };
+                self.actors[s].init(stgref, s);
             }
         }
 

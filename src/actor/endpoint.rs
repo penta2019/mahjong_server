@@ -99,7 +99,7 @@ impl Clone for Endpoint {
 }
 
 impl Actor for Endpoint {
-    fn init(&mut self, seat: Seat) {
+    fn init(&mut self, _stage: StageRef, seat: Seat) {
         *self.data.lock().unwrap() = SharedData::default();
         self.seat = seat;
     }

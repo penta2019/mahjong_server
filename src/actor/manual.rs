@@ -36,7 +36,7 @@ impl Manual {
 }
 
 impl Actor for Manual {
-    fn init(&mut self, seat: Seat) {
+    fn init(&mut self, _stage: StageRef, seat: Seat) {
         self.seat = seat;
     }
 

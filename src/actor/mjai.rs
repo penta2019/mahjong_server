@@ -246,7 +246,7 @@ impl Clone for MjaiEndpoint {
 }
 
 impl Actor for MjaiEndpoint {
-    fn init(&mut self, seat: Seat) {
+    fn init(&mut self, _stage: StageRef, seat: Seat) {
         self.seat = seat;
     }
 

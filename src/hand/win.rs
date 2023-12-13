@@ -143,6 +143,7 @@ pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
 // [和了牌判定]
 // 和了牌のリストを返却
 // 聴牌していない場合は空のリストを返却
+// この関数郡は赤5を考慮しない
 
 // 通常形
 pub fn calc_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {

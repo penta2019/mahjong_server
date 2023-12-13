@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock, RwLockReadGuard};
+
 use crate::actor::Actor;
 use crate::control::common::*;
 use crate::hand::*;
@@ -7,16 +9,28 @@ use crate::util::misc::rank_by_rank_vec;
 
 use TileState::*;
 
+// 外部(Actorなど)からStageを参照するための読み取り専用構造体
+// pub struct StageRef {
+//     stage: Arc<RwLock<Stage>>,
+// }
+
+// impl StageRef {
+//     #[inline]
+//     pub fn lock(&self) -> RwLockReadGuard<Stage> {
+//         self.stage.try_read().unwrap()
+//     }
+// }
+
 #[derive(Debug)]
 pub struct StageController {
-    stage: Stage,
+    stage: Arc<RwLock<Stage>>,
     actors: [Box<dyn Actor>; SEAT],
     listeners: Vec<Box<dyn Listener>>,
 }
 
 impl StageController {
     pub fn new(actors: [Box<dyn Actor>; SEAT], listeners: Vec<Box<dyn Listener>>) -> Self {
-        let stage = Stage::default();
+        let stage = Arc::new(RwLock::new(Stage::default()));
         Self {
             stage,
             actors,
@@ -28,8 +42,9 @@ impl StageController {
         std::mem::swap(&mut self.actors[seat], actor);
     }
 
-    pub fn get_stage(&self) -> &Stage {
-        &self.stage
+    #[inline]
+    pub fn get_stage(&self) -> RwLockReadGuard<Stage> {
+        self.stage.try_read().unwrap()
     }
 
     pub fn get_names(&self) -> [String; SEAT] {
@@ -54,30 +69,36 @@ impl StageController {
             }
         }
 
-        let stg = &mut self.stage;
-        match event {
-            Event::Begin(e) => event_begin(stg, e),
-            Event::New(e) => event_new(stg, e),
-            Event::Deal(e) => event_deal(stg, e),
-            Event::Discard(e) => event_discard(stg, e),
-            Event::Meld(e) => event_meld(stg, e),
-            Event::Nukidora(e) => event_nukidora(stg, e),
-            Event::Dora(e) => event_dora(stg, e),
-            Event::Win(e) => event_win(stg, e),
-            Event::Draw(e) => event_draw(stg, e),
-            Event::End(e) => event_end(stg, e),
+        {
+            // stageのRwLockReadGuardを獲得しているActorがある場合ここでブロックされる
+            // これはActorがStageRefから獲得したGuardをドロップし忘れた場合や
+            // 非同期で動作しているActorの反応を待たずに他の高優先度のactionが選択された場合に起こる
+            let stg = &mut self.stage.write().unwrap();
+            match event {
+                Event::Begin(e) => event_begin(stg, e),
+                Event::New(e) => event_new(stg, e),
+                Event::Deal(e) => event_deal(stg, e),
+                Event::Discard(e) => event_discard(stg, e),
+                Event::Meld(e) => event_meld(stg, e),
+                Event::Nukidora(e) => event_nukidora(stg, e),
+                Event::Dora(e) => event_dora(stg, e),
+                Event::Win(e) => event_win(stg, e),
+                Event::Draw(e) => event_draw(stg, e),
+                Event::End(e) => event_end(stg, e),
+            }
+            update_after_turn_action(stg, event);
+            stg.step += 1;
         }
 
+        let stg = self.stage.try_read().unwrap();
         // Actorより先にListenrsにイベントを通知
         // Debug(Listener)などが一時停止する可能性があるため, またActorが特定のイベントでクラッシュする際にイベントを前もって補足するため
         for a in &mut self.listeners {
-            a.notify_event(stg, event);
+            a.notify_event(&stg, event);
         }
         for a in &mut self.actors {
-            a.notify_event(stg, event);
+            a.notify_event(&stg, event);
         }
-
-        stg.step += 1;
     }
 
     pub fn select_action(
@@ -87,38 +108,7 @@ impl StageController {
         tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
-        let res = self.actors[seat].select_action(&self.stage, acts, tenpais, retry);
-
-        // turn operationの際に聴牌情報を参照して和了牌を更新
-        if let Some(act) = &res {
-            use ActionType::*;
-            let pl = &mut self.stage.players[seat];
-            let t = match act.action_type {
-                Discard | Riichi | Kakan | Ankan | Nukidora => {
-                    // Ankanは手牌から4枚なくなるため例外的ではあるが和了牌が増えることはないので同様に処理
-                    if act.tiles.is_empty() {
-                        pl.drawn.unwrap() // ツモ切りリーチ
-                    } else {
-                        act.tiles[0]
-                    }
-                }
-                _ => Z8,
-            };
-            if t != Z8 && Some(t) != pl.drawn {
-                pl.winning_tiles = vec![];
-                for tp in tenpais {
-                    if tp.discard_tile == t {
-                        for wt in &tp.winning_tiles {
-                            pl.winning_tiles.push(wt.tile);
-                        }
-                        pl.is_furiten = tp.is_furiten;
-                        break;
-                    }
-                }
-            }
-        }
-
-        res
+        self.actors[seat].select_action(&self.stage.read().unwrap(), acts, tenpais, retry)
     }
 }
 
@@ -252,7 +242,6 @@ fn event_discard(stg: &mut Stage, event: &EventDiscard) {
 
     stg.discards.push((s, idx));
     pl.discards.push(d);
-    pl.drawn = None;
 
     if pl.is_shown {
         player_dec_tile(pl, t);
@@ -407,6 +396,37 @@ fn disable_ippatsu(stg: &mut Stage) {
     for s in 0..SEAT {
         stg.players[s].is_ippatsu = false;
     }
+}
+
+fn update_after_turn_action(stg: &mut Stage, event: &Event) {
+    // turn action時にツモってきた牌と捨て牌が異なる場合,和了牌を更新
+    // 暗槓,加槓,北抜きも実質的に河に一枚捨てるのと同じことに注意
+
+    let (seat, tile) = match event {
+        Event::Discard(e) => (e.seat, e.tile),
+        Event::Meld(e) => match e.meld_type {
+            MeldType::Ankan => (e.seat, Z8), // 待ちが変わる可能性があるため常に和了牌を更新
+            MeldType::Kakan => (e.seat, e.consumed[0]),
+            _ => return,
+        },
+        Event::Nukidora(e) => (e.seat, Tile(TZ, WN)),
+        _ => return,
+    };
+
+    let pl = &mut stg.players[seat];
+    if pl.is_shown {
+        // クライアントとして動作している場合,他家の手配は見えない
+        if pl.drawn.is_none() || pl.drawn.unwrap().to_normal() != tile.to_normal() {
+            pl.winning_tiles = get_winning_tiles(pl);
+            for d in &pl.discards {
+                if pl.winning_tiles.contains(&d.tile.to_normal()) {
+                    pl.is_furiten = true;
+                    break;
+                }
+            }
+        }
+    }
+    pl.drawn = None;
 }
 
 fn update_after_discard_completed(stg: &mut Stage) {

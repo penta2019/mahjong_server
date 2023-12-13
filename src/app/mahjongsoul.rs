@@ -171,7 +171,7 @@ impl Mahjongsoul {
     }
 
     #[inline]
-    fn get_stage(&self) -> &Stage {
+    fn get_stage(&self) -> std::sync::RwLockReadGuard<Stage> {
         self.ctrl.get_stage()
     }
 
@@ -260,7 +260,7 @@ impl Mahjongsoul {
 
             let acts = data["operation"].clone();
             if acts != json!(null) && acts["operation_list"] != json!(null) {
-                (self.acts, self.acts_idxs) = parse_possible_action(&acts, self.get_stage());
+                (self.acts, self.acts_idxs) = parse_possible_action(&acts, &self.get_stage());
                 self.retry = 0;
                 self.action_ts = unixtime_now();
             } else {
@@ -380,14 +380,14 @@ impl Mahjongsoul {
             }
         };
 
+        drop(stg);
         self.acts = vec![];
         Some(json!(format!("msc.ui.{}", action)))
     }
 
     fn update_doras(&mut self, data: &Value) {
-        let stg = self.get_stage();
         if let Value::Array(doras) = &data["doras"] {
-            if doras.len() > stg.doras.len() {
+            if doras.len() > self.get_stage().doras.len() {
                 let t = tile_from_mjsoul(doras.last().unwrap());
                 self.handle_event(Event::dora(t));
             }
@@ -531,7 +531,7 @@ impl Mahjongsoul {
     }
 
     fn handler_hule(&mut self, data: &Value) {
-        let stg = self.ctrl.get_stage();
+        let stg = self.get_stage();
         let mut doras = vec![];
         let mut ura_doras = vec![];
         let mut ctxs = vec![];
@@ -575,14 +575,14 @@ impl Mahjongsoul {
                     10 => {
                         // 自風
                         yakus.push(Yaku {
-                            name: format!("自風 {}", jp_wind[get_seat_wind(stg, s)]),
+                            name: format!("自風 {}", jp_wind[get_seat_wind(&stg, s)]),
                             fan: 1,
                         });
                     }
                     11 => {
                         // 場風
                         yakus.push(Yaku {
-                            name: format!("場風 {}", jp_wind[get_prevalent_wind(stg)]),
+                            name: format!("場風 {}", jp_wind[get_prevalent_wind(&stg)]),
                             fan: 1,
                         });
                     }
@@ -635,7 +635,7 @@ impl Mahjongsoul {
             d_scores[s] = as_i32(score);
         }
 
-        self.handle_event(Event::win(
+        let event = Event::win(
             stg.round,
             stg.dealer,
             stg.honba_sticks,
@@ -646,15 +646,17 @@ impl Mahjongsoul {
             scores,
             d_scores,
             ctxs,
-        ));
+        );
+        drop(stg);
+        self.handle_event(event);
     }
 
     fn handler_liuju(&mut self, data: &Value) {
-        let stg = self.ctrl.get_stage();
+        let stg = self.get_stage();
         let mut type_ = DrawType::Unknown;
         let names = get_names(self.seat);
         let mut hands = [vec![], vec![], vec![], vec![]];
-        let scores = get_scores(stg);
+        let scores = get_scores(&stg);
         let d_scores = [0; 4];
         let nm_scores = [0; 4];
 
@@ -684,17 +686,19 @@ impl Mahjongsoul {
             _ => {}
         }
 
-        self.handle_event(Event::draw(
+        let event = Event::draw(
             type_, stg.round, stg.dealer, names, scores, d_scores, nm_scores, hands,
-        ));
+        );
+        drop(stg);
+        self.handle_event(event);
     }
 
     fn handler_notile(&mut self, data: &Value) {
-        let stg = self.ctrl.get_stage();
+        let stg = self.get_stage();
         let type_ = DrawType::Kouhaiheikyoku;
         let names = get_names(self.seat);
         let mut hands = [vec![], vec![], vec![], vec![]];
-        let scores = get_scores(stg);
+        let scores = get_scores(&stg);
         let mut d_scores = [0; SEAT];
         let nm_scores = [0; 4]; // TODO
 
@@ -712,9 +716,11 @@ impl Mahjongsoul {
             }
         }
 
-        self.handle_event(Event::draw(
+        let event = Event::draw(
             type_, stg.round, stg.dealer, names, scores, d_scores, nm_scores, hands,
-        ));
+        );
+        drop(stg);
+        self.handle_event(event);
     }
 }
 

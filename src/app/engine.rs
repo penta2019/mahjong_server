@@ -321,7 +321,7 @@ impl MahjongEngine {
     }
 
     #[inline]
-    fn get_stage(&self) -> &Stage {
+    fn get_stage(&self) -> std::sync::RwLockReadGuard<Stage> {
         self.ctrl.get_stage()
     }
 
@@ -427,6 +427,9 @@ impl MahjongEngine {
     fn do_event_deal(&mut self) {
         let stg = self.get_stage();
         let turn = stg.turn;
+        let wall_count = stg.wall_count;
+        drop(stg);
+
         if let Some(Action { action_type, .. }) = self.melding {
             match action_type {
                 Pon | Chi => {}
@@ -448,7 +451,7 @@ impl MahjongEngine {
                 _ => panic!(),
             }
         } else {
-            if stg.wall_count > 0 {
+            if wall_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
                 self.handle_event(Event::deal(s, t));
@@ -466,8 +469,9 @@ impl MahjongEngine {
         let turn = stg.turn;
         let pl = &stg.players[turn];
         let tenpais =
-            calc_possible_tenpai_discards(pl, get_prevalent_wind(stg), get_seat_wind(stg, turn));
-        let acts = calc_possible_turn_actions(stg, &self.melding, &tenpais);
+            calc_possible_tenpai_discards(pl, get_prevalent_wind(&stg), get_seat_wind(&stg, turn));
+        let acts = calc_possible_turn_actions(&stg, &self.melding, &tenpais);
+        drop(stg);
 
         let mut retry = 0;
         let act = loop {
@@ -488,29 +492,36 @@ impl MahjongEngine {
             Discard | Riichi => {}             // 後で個別にチェック
             _ => assert!(acts.contains(&act)), // 選択されたActionが有効であることを検証
         }
-
-        let stg = self.get_stage();
         match tp {
             Nop => {
                 // 打牌: ツモ切り
-                let t = stg.players[turn].drawn.unwrap();
+                let t = self.get_stage().players[turn].drawn.unwrap();
                 self.handle_event(Event::discard(turn, t, true, false));
             }
             Discard => {
                 // 打牌: 明示的なツモ切り以外
+                let stg = self.get_stage();
+                let pl = &stg.players[turn];
                 let t = cs[0];
-                let d = stg.players[turn].drawn.unwrap();
+
                 // 捨牌がツモってきた牌でかつ手牌に1枚しかないときは自動的にツモ切りフラグを追加
-                let m = t == d && count_tile(&stg.players[turn].hand, t) == 1;
+                let m = if let Some(d) = pl.drawn {
+                    t == d && count_tile(&pl.hand, t) == 1
+                } else {
+                    false
+                };
+
                 assert!(!acts
                     .iter()
                     .find(|a| a.action_type == Discard)
                     .unwrap()
                     .tiles
                     .contains(&t));
+                drop(stg);
                 self.handle_event(Event::discard(turn, t, m, false))
             }
             Riichi => {
+                let stg = self.get_stage();
                 let pl = &stg.players[turn];
                 let (t, m) = if cs.is_empty() {
                     // 明示的なツモ切りリーチ
@@ -526,6 +537,7 @@ impl MahjongEngine {
                     .unwrap()
                     .tiles
                     .contains(&t));
+                drop(stg);
                 self.handle_event(Event::discard(turn, t, m, true));
             }
             Ankan => {
@@ -558,7 +570,7 @@ impl MahjongEngine {
     fn do_call_operation(&mut self) {
         // 順番以外のプレイヤーにActionを要求
         // act: Nop, Chi, Pon, Minkan, Ron
-        let mut acts_list = calc_possible_call_actions(self.get_stage(), !self.is_suukansanra);
+        let mut acts_list = calc_possible_call_actions(&self.get_stage(), !self.is_suukansanra);
 
         // プレイヤー全体でのアクション数をカウント
         let mut n_rons = 0;
@@ -630,7 +642,7 @@ impl MahjongEngine {
             n_priority += n_minkan;
             if n_priority == 0 && minkan.is_some() {
                 let (s, act) = minkan.unwrap();
-                let is_pao = check_pao_for_selected_action(self.get_stage(), s, &act);
+                let is_pao = check_pao_for_selected_action(&self.get_stage(), s, &act);
                 self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
@@ -638,7 +650,7 @@ impl MahjongEngine {
             n_priority += n_pon;
             if n_priority == 0 && pon.is_some() {
                 let (s, act) = pon.unwrap();
-                let is_pao = check_pao_for_selected_action(self.get_stage(), s, &act);
+                let is_pao = check_pao_for_selected_action(&self.get_stage(), s, &act);
                 self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
@@ -672,7 +684,7 @@ impl MahjongEngine {
         let mut need_dealer_change = false; // 親の交代
         match self.round_result.as_ref().unwrap() {
             RoundResult::Tsumo => {
-                let score_ctx = evaluate_hand_tsumo(stg, &self.ura_dora_wall).unwrap();
+                let score_ctx = evaluate_hand_tsumo(&stg, &self.ura_dora_wall).unwrap();
                 let (mut deal_in, mut non_dealer, mut dealer) = score_ctx.points;
 
                 let pl = &stg.players[turn];
@@ -691,7 +703,7 @@ impl MahjongEngine {
 
                     for s in 0..SEAT {
                         if s != turn {
-                            if !is_dealer(stg, s) {
+                            if !is_dealer(&stg, s) {
                                 // 子の支払い
                                 d_scores[s] -= non_dealer;
                                 d_scores[turn] += non_dealer;
@@ -710,7 +722,7 @@ impl MahjongEngine {
                 // stage情報
                 riichi_sticks = 0;
                 // 和了が子の場合　積み棒をリセットして親交代
-                if !is_dealer(stg, turn) {
+                if !is_dealer(&stg, turn) {
                     honba_sticks = 0;
                     need_dealer_change = true;
                 }
@@ -727,7 +739,7 @@ impl MahjongEngine {
                     hand: tiles_from_tile_table(&h),
                     winning_tile: wt,
                     melds: pl.melds.clone(),
-                    is_dealer: is_dealer(stg, turn),
+                    is_dealer: is_dealer(&stg, turn),
                     is_drawn: true,
                     is_riichi: pl.riichi.is_some(),
                     pao: pl.pao,
@@ -735,7 +747,8 @@ impl MahjongEngine {
                     score_context: score_ctx,
                 };
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.handle_event(Event::win(
+                let scores = get_scores(&stg);
+                let event = Event::win(
                     stg.round,
                     stg.dealer,
                     stg.honba_sticks,
@@ -743,10 +756,12 @@ impl MahjongEngine {
                     stg.doras.clone(),
                     ura_doras,
                     self.ctrl.get_names(),
-                    get_scores(stg),
+                    scores,
                     d_scores,
                     vec![win_ctx],
-                ));
+                );
+                drop(stg);
+                self.handle_event(event);
             }
             RoundResult::Ron(seats) => {
                 // 放銃者から一番近いプレイヤー順にソート
@@ -763,7 +778,7 @@ impl MahjongEngine {
                 let mut ctxs = vec![];
                 let mut total_d_scores = [0; SEAT];
                 for s in seats_sorted {
-                    let score_ctx = evaluate_hand_ron(stg, &self.ura_dora_wall, s).unwrap();
+                    let score_ctx = evaluate_hand_ron(&stg, &self.ura_dora_wall, s).unwrap();
                     let (deal_in, _, _) = score_ctx.points;
 
                     let pl = &stg.players[s];
@@ -800,7 +815,7 @@ impl MahjongEngine {
                         hand: tiles_from_tile_table(&pl.hand),
                         winning_tile: stg.last_tile.unwrap().2,
                         melds: pl.melds.clone(),
-                        is_dealer: is_dealer(stg, s),
+                        is_dealer: is_dealer(&stg, s),
                         is_drawn: false,
                         is_riichi: pl.riichi.is_some(),
                         pao: pl.pao,
@@ -813,14 +828,14 @@ impl MahjongEngine {
                 // stage情報
                 riichi_sticks = 0;
                 // 子の和了がある場合は積み棒をリセット
-                if seats.iter().any(|&s| !is_dealer(stg, s)) {
+                if seats.iter().any(|&s| !is_dealer(&stg, s)) {
                     honba_sticks = 0;
                 }
                 // 和了が子しかいない場合は親交代
-                need_dealer_change = seats.iter().all(|&s| !is_dealer(stg, s));
+                need_dealer_change = seats.iter().all(|&s| !is_dealer(&stg, s));
 
                 let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                self.handle_event(Event::win(
+                let event = Event::win(
                     stg.round,
                     stg.dealer,
                     stg.honba_sticks,
@@ -828,10 +843,12 @@ impl MahjongEngine {
                     stg.doras.clone(),
                     ura_doras,
                     self.ctrl.get_names(),
-                    get_scores(stg),
+                    get_scores(&stg),
                     total_d_scores,
                     ctxs,
-                ));
+                );
+                drop(stg);
+                self.handle_event(event);
             }
             RoundResult::Draw(type_) => {
                 match type_ {
@@ -863,7 +880,7 @@ impl MahjongEngine {
                             // 流し満貫スコア集計
                             for s_nm in 0..SEAT {
                                 if stg.players[s_nm].is_nagashimangan {
-                                    if is_dealer(stg, s_nm) {
+                                    if is_dealer(&stg, s_nm) {
                                         nm_scores[s_nm] = 12000;
                                         for s in 0..SEAT {
                                             if s_nm != s {
@@ -874,7 +891,7 @@ impl MahjongEngine {
                                         nm_scores[s_nm] = 8000;
                                         for s in 0..SEAT {
                                             if s_nm != s {
-                                                if is_dealer(stg, s) {
+                                                if is_dealer(&stg, s) {
                                                     d_scores[s] -= 4000;
                                                 } else {
                                                     d_scores[s] -= 2000;
@@ -905,11 +922,12 @@ impl MahjongEngine {
                             stg.round,
                             stg.dealer,
                             self.ctrl.get_names(),
-                            get_scores(stg),
+                            get_scores(&stg),
                             d_scores,
                             nm_scores,
                             hands,
                         );
+                        drop(stg);
                         self.handle_event(event);
                         need_dealer_change = !tenpais[dealer];
                     }
@@ -931,11 +949,12 @@ impl MahjongEngine {
                             stg.round,
                             stg.dealer,
                             self.ctrl.get_names(),
-                            get_scores(stg),
+                            get_scores(&stg),
                             [0; SEAT],
                             [0; SEAT],
                             hands,
                         );
+                        drop(stg);
                         self.handle_event(event);
                     }
                 }
@@ -952,15 +971,14 @@ impl MahjongEngine {
             }
         }
 
-        let stg = self.ctrl.get_stage();
-
+        let scores = get_scores(&self.get_stage());
         // stage情報更新
         self.next_round_info = NextRoundInfo {
             round,
             dealer,
             honba_sticks,
             riichi_sticks,
-            scores: get_scores(stg),
+            scores,
         };
 
         self.round_result = None;
@@ -1015,6 +1033,7 @@ impl MahjongEngine {
         }
 
         if discards.len() == 1 && discards[0].is_wind() {
+            drop(stg);
             self.round_result = Some(RoundResult::Draw(DrawType::Suufuurenda));
         }
     }
@@ -1037,8 +1056,9 @@ impl MahjongEngine {
         }
 
         // 四槓子の聴牌判定 (四槓子の際は四槓散了にならない)
+        let stg = self.get_stage();
         for s in 0..SEAT {
-            for m in &self.get_stage().players[s].melds {
+            for m in &stg.players[s].melds {
                 let mut k = 0;
                 match m.meld_type {
                     MeldType::Ankan | MeldType::Kakan | MeldType::Minkan => k += 1,
@@ -1048,8 +1068,9 @@ impl MahjongEngine {
                     if k == 4 {
                         return;
                     } else {
+                        drop(stg);
                         self.is_suukansanra = true;
-                        break;
+                        return;
                     };
                 }
             }

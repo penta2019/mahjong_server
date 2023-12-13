@@ -22,7 +22,7 @@ pub struct Null {
 
 impl Null {
     pub fn from_config(config: Config) -> Self {
-        Null { config }
+        Self { config }
     }
 }
 

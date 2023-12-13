@@ -19,8 +19,8 @@ impl ActorBuilder for TiitoitsuBotBuilder {
 #[derive(Clone)]
 pub struct TiitoitsuBot {
     config: Config,
-    seat: Seat,
     stage: Option<StageRef>,
+    seat: Seat,
 }
 
 // 七対子Bot 試作
@@ -28,16 +28,16 @@ impl TiitoitsuBot {
     pub fn from_config(config: Config) -> Self {
         Self {
             config,
-            seat: NO_SEAT,
             stage: None,
+            seat: NO_SEAT,
         }
     }
 }
 
 impl Actor for TiitoitsuBot {
     fn init(&mut self, stage: StageRef, seat: Seat) {
-        self.seat = seat;
         self.stage = Some(stage);
+        self.seat = seat;
     }
 
     fn select_action(

@@ -1,5 +1,4 @@
 // Actorトレイトを継承して打牌の判断を行う構造体のモジュール(AI,プレイヤー,botなど)
-
 mod endpoint;
 mod manual;
 mod mjai;

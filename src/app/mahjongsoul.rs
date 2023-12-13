@@ -13,6 +13,8 @@ use crate::error;
 
 use ActionType::*;
 
+const MSC_PORT: u32 = 52000;
+
 // [App]
 #[derive(Debug)]
 pub struct MahjongsoulApp {
@@ -33,7 +35,7 @@ impl MahjongsoulApp {
             sleep: false,
             write: false,
             write_raw: false,
-            msc_port: super::MSC_PORT,
+            msc_port: MSC_PORT,
             actor_name: "".to_string(),
         };
 

@@ -22,32 +22,36 @@ impl ActorBuilder for RandomDiscardBuilder {
 pub struct RandomDiscard {
     config: Config,
     rng: rand::rngs::StdRng,
+    stage: Option<StageRef>,
     seat: Seat,
 }
 
 impl RandomDiscard {
     pub fn from_config(config: Config) -> Self {
-        RandomDiscard {
+        Self {
             config,
             rng: rand::SeedableRng::seed_from_u64(0),
+            stage: None,
             seat: NO_SEAT,
         }
     }
 }
 
 impl Actor for RandomDiscard {
-    fn init(&mut self, _stage: StageRef, seat: Seat) {
+    fn init(&mut self, stage: StageRef, seat: Seat) {
+        self.stage = Some(stage);
         self.seat = seat;
     }
 
     fn select_action(
         &mut self,
-        stg: &Stage,
+        _stg: &Stage,
         _acts: &[Action],
         _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);
+        let stg = self.stage.as_ref().unwrap().lock();
 
         if stg.turn != self.seat {
             return Some(Action::nop());

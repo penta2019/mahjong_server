@@ -22,7 +22,7 @@ pub struct Nop {
 
 impl Nop {
     pub fn from_config(config: Config) -> Self {
-        Nop { config }
+        Self { config }
     }
 }
 

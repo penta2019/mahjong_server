@@ -23,6 +23,7 @@ impl ActorBuilder for ManualBuilder {
 #[derive(Clone)]
 pub struct Manual {
     config: Config,
+    stage: Option<StageRef>,
     seat: Seat,
 }
 
@@ -30,13 +31,15 @@ impl Manual {
     pub fn from_config(config: Config) -> Self {
         Self {
             config,
+            stage: None,
             seat: NO_SEAT,
         }
     }
 }
 
 impl Actor for Manual {
-    fn init(&mut self, _stage: StageRef, seat: Seat) {
+    fn init(&mut self, stage: StageRef, seat: Seat) {
+        self.stage = Some(stage);
         self.seat = seat;
     }
 

@@ -19,7 +19,7 @@ impl ActorBuilder for TiitoitsuBotBuilder {
 #[derive(Clone)]
 pub struct TiitoitsuBot {
     config: Config,
-    stage: Option<StageRef>,
+    stage: StageRef,
     seat: Seat,
 }
 
@@ -28,7 +28,7 @@ impl TiitoitsuBot {
     pub fn from_config(config: Config) -> Self {
         Self {
             config,
-            stage: None,
+            stage: StageRef::default(),
             seat: NO_SEAT,
         }
     }
@@ -36,19 +36,18 @@ impl TiitoitsuBot {
 
 impl Actor for TiitoitsuBot {
     fn init(&mut self, stage: StageRef, seat: Seat) {
-        self.stage = Some(stage);
+        self.stage = stage;
         self.seat = seat;
     }
 
     fn select_action(
         &mut self,
-        _stg: &Stage,
         acts: &[Action],
         _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);
-        let stg = self.stage.as_ref().unwrap().lock();
+        let stg = self.stage.lock().unwrap();
 
         let pl = &stg.players[self.seat];
 

@@ -5,20 +5,22 @@ use crate::control::common::*;
 use crate::hand::*;
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::misc::rank_by_rank_vec;
+use crate::util::misc::{rank_by_rank_vec, Res};
 
 use TileState::*;
 
-// 外部(Actorなど)からStageを参照するための読み取り専用構造体
-#[derive(Clone)]
+// 外部(Actorなど)からStageを参照するための読み取り専用オブジェクト
+#[derive(Clone, Default)]
 pub struct StageRef {
-    stage: Arc<RwLock<Stage>>,
+    stage: Option<Arc<RwLock<Stage>>>,
 }
 
 impl StageRef {
     #[inline]
-    pub fn lock(&self) -> RwLockReadGuard<Stage> {
-        self.stage.try_read().unwrap()
+    pub fn lock(&self) -> Res<RwLockReadGuard<Stage>> {
+        let r = self.stage.as_ref().ok_or_else(|| "null StageRef")?;
+        Ok(r.try_read().map_err(|e| e.to_string())?)
+        // Ok(r.try_read()?) // ライフタイムエラーが出るが原因不明
     }
 }
 
@@ -67,7 +69,7 @@ impl StageController {
         if let Event::New(_) = event {
             for s in 0..SEAT {
                 let stgref = StageRef {
-                    stage: self.stage.clone(),
+                    stage: Some(self.stage.clone()),
                 };
                 self.actors[s].init(stgref, s);
             }
@@ -112,7 +114,7 @@ impl StageController {
         tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
-        self.actors[seat].select_action(&self.stage.read().unwrap(), acts, tenpais, retry)
+        self.actors[seat].select_action(acts, tenpais, retry)
     }
 }
 

@@ -29,7 +29,6 @@ impl Null {
 impl Actor for Null {
     fn select_action(
         &mut self,
-        _stg: &Stage,
         _acts: &[Action],
         _tenpais: &[Tenpai],
         _repeat: i32,

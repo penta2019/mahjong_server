@@ -23,7 +23,7 @@ impl ActorBuilder for ManualBuilder {
 #[derive(Clone)]
 pub struct Manual {
     config: Config,
-    stage: Option<StageRef>,
+    stage: StageRef,
     seat: Seat,
 }
 
@@ -31,7 +31,7 @@ impl Manual {
     pub fn from_config(config: Config) -> Self {
         Self {
             config,
-            stage: None,
+            stage: StageRef::default(),
             seat: NO_SEAT,
         }
     }
@@ -39,19 +39,19 @@ impl Manual {
 
 impl Actor for Manual {
     fn init(&mut self, stage: StageRef, seat: Seat) {
-        self.stage = Some(stage);
+        self.stage = stage;
         self.seat = seat;
     }
 
     fn select_action(
         &mut self,
-        stg: &Stage,
+        // stg: &Stage,
         acts: &[Action],
         _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);
-
+        let stg = self.stage.lock().unwrap();
         let pl = &stg.players[self.seat];
         let mut hand = pl.hand;
         if let Some(t) = pl.drawn {

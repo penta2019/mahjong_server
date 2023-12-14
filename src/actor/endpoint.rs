@@ -106,7 +106,6 @@ impl Actor for Endpoint {
 
     fn select_action(
         &mut self,
-        _stg: &Stage,
         acts: &[Action],
         tenpais: &[Tenpai],
         repeat: i32,

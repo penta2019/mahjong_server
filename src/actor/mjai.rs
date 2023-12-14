@@ -44,7 +44,7 @@ impl ActorBuilder for MjaiEndpointBuilder {
 
 pub struct MjaiEndpoint {
     config: Config,
-    stage: Option<StageRef>,
+    stage: StageRef,
     seat: Seat,
     data: Arc<Mutex<SharedData>>,
     try_riichi: Option<Seat>,
@@ -61,7 +61,7 @@ impl MjaiEndpoint {
         let data = Arc::new(Mutex::new(SharedData::default()));
         let obj = Self {
             config,
-            stage: None,
+            stage: StageRef::default(),
             seat: NO_SEAT,
             data: data.clone(),
             try_riichi: None,
@@ -254,13 +254,12 @@ impl Actor for MjaiEndpoint {
 
     fn select_action(
         &mut self,
-        _stg: &Stage,
         acts: &[Action],
         _tenpais: &[Tenpai],
         retry: i32,
     ) -> Option<Action> {
         assert!(retry == 0);
-        let stg = self.stage.as_ref().unwrap().lock();
+        let stg = self.stage.lock().unwrap();
 
         // possible_actionを追加
         {

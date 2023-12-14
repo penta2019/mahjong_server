@@ -29,7 +29,6 @@ impl Nop {
 impl Actor for Nop {
     fn select_action(
         &mut self,
-        _stg: &Stage,
         _acts: &[Action],
         _tenpais: &[Tenpai],
         _repeat: i32,

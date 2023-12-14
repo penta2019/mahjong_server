@@ -27,19 +27,17 @@ pub struct Config {
 // Actor trait
 pub trait Actor: Listener + ActorClone + Send {
     // 局開始時の初期化処理
+    // 卓情報の参照は_stageを構造体変数に保存しておいてselect_actionが呼ばれた時に
+    // StageRef.lockで読み込み専用のRwReadGuardを獲得して行う.
+    // StageRef.lockは別スレッドから実行する場合は稀に失敗することがある.
+    // アクションを選択し終わった後は確実にRwReadGuardをdropすること.
     fn init(&mut self, _stage: StageRef, _seat: Seat) {}
 
     // 可能なアクションの選択
     // 処理を非同期に行う必要がある場合,Noneを返すことで100ms以内に同じ選択に対して再度この関数が呼び出される.
     // この時,呼び出されるたびにretryに1加算される. なお,2回目(retry=1)の呼び出しはsleepを挟まずに即時行われる.
     // 各々の選択に対して初回の呼び出しでは retry=0 である.
-    fn select_action(
-        &mut self,
-        stg: &Stage,
-        acts: &[Action],
-        tenpais: &[Tenpai],
-        retry: i32,
-    ) -> Option<Action>;
+    fn select_action(&mut self, acts: &[Action], tenpais: &[Tenpai], retry: i32) -> Option<Action>;
 
     // Actorの詳細表示用
     fn get_config(&self) -> &Config;

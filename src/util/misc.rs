@@ -19,7 +19,8 @@ where
 }
 
 pub fn sleep(sec: f64) {
-    std::thread::sleep(std::time::Duration::from_millis((sec * 1000.0) as u64));
+    let d = std::time::Duration::from_micros((sec * 1000000.0) as u64);
+    std::thread::sleep(d);
 }
 
 pub fn unixtime_now() -> f64 {

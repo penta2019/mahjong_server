@@ -278,9 +278,7 @@ impl Mahjongsoul {
             return None;
         }
 
-        let act = self
-            .ctrl
-            .select_action(self.seat, &self.acts, &[], self.retry); // TODO
+        let act = self.ctrl.select_action(self.seat, &self.acts, &[]); // TODO
         self.retry += 1;
 
         act.as_ref()?; // None なら return

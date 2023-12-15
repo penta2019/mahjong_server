@@ -11,6 +11,8 @@ use crate::control::common::get_scores;
 use crate::convert::mjai::*;
 use crate::util::misc::*;
 
+use SelectedAction::*;
+
 use crate::{error, info};
 
 #[derive(Debug, Default)]
@@ -252,13 +254,7 @@ impl Actor for MjaiEndpoint {
         self.seat = seat;
     }
 
-    fn select_action(
-        &mut self,
-        acts: &[Action],
-        _tenpais: &[Tenpai],
-        retry: i32,
-    ) -> Option<Action> {
-        assert!(retry == 0);
+    fn select_action(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
 
         // possible_actionを追加
@@ -290,7 +286,7 @@ impl Actor for MjaiEndpoint {
                     error!("timeout_count exceeded");
                     std::process::exit(1);
                 }
-                return Some(Action::nop());
+                return Sync(Action::nop());
             }
         }
 
@@ -301,7 +297,7 @@ impl Actor for MjaiEndpoint {
         if d.is_riichi {
             d.is_riichi = false;
             if let MjaiAction::Dahai { pai, .. } = mjai_act {
-                return Some(Action::riichi(tile_from_mjai(&pai)));
+                return Sync(Action::riichi(tile_from_mjai(&pai)));
             } else {
                 panic!();
             }
@@ -313,7 +309,7 @@ impl Actor for MjaiEndpoint {
             ActionType::Discard => {
                 if self.seat != stg.turn {
                     error!("invalid discard action");
-                    return Some(Action::nop());
+                    return Sync(Action::nop());
                 }
             }
             _ => {
@@ -323,11 +319,11 @@ impl Actor for MjaiEndpoint {
                         act,
                         vec_to_string(acts)
                     );
-                    return Some(Action::nop());
+                    return Sync(Action::nop());
                 }
             }
         }
-        Some(act)
+        Sync(act)
     }
 
     fn get_config(&self) -> &Config {

@@ -27,12 +27,7 @@ impl Null {
 }
 
 impl Actor for Null {
-    fn select_action(
-        &mut self,
-        _acts: &[Action],
-        _tenpais: &[Tenpai],
-        _repeat: i32,
-    ) -> Option<Action> {
+    fn select_action(&mut self, _acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         panic!();
     }
 

@@ -29,10 +29,10 @@ fn main() {
             // Engine (bot対戦シミュレーションモード)
             app::EngineApp::new(args2).run();
         }
-        "J" => {
-            // Jantama (雀魂botモード)
-            app::MahjongsoulApp::new(args2).run();
-        }
+        // "J" => {
+        //     // Jantama (雀魂botモード)
+        //     app::MahjongsoulApp::new(args2).run();
+        // }
         "R" => {
             // Replay (牌譜リプレイモード)
             app::ReplayApp::new(args2).run();

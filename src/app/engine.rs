@@ -370,7 +370,7 @@ impl MahjongEngine {
     }
 
     fn do_event_begin(&mut self) {
-        self.handle_event(Event::Begin(EventBegin {}));
+        self.handle_event(Event::begin());
     }
 
     fn do_event_new(&mut self) {
@@ -473,15 +473,9 @@ impl MahjongEngine {
         let acts = calc_possible_turn_actions(&stg, &self.melding, &tenpais);
         drop(stg);
 
-        let mut retry = 0;
-        let act = loop {
-            if let Some(act) = self.ctrl.select_action(turn, &acts, &tenpais, retry) {
-                break act;
-            }
-            if retry > 0 {
-                sleep(0.01);
-            }
-            retry += 1;
+        let act = match self.ctrl.select_action(turn, &acts, &tenpais) {
+            SelectedAction::Sync(a) => a,
+            SelectedAction::Async(_) => todo!(),
         };
 
         let tp = act.action_type;
@@ -570,7 +564,7 @@ impl MahjongEngine {
     fn do_call_operation(&mut self) {
         // 順番以外のプレイヤーにActionを要求
         // act: Nop, Chi, Pon, Minkan, Ron
-        let mut acts_list = calc_possible_call_actions(&self.get_stage(), !self.is_suukansanra);
+        let acts_list = calc_possible_call_actions(&self.get_stage(), !self.is_suukansanra);
 
         // プレイヤー全体でのアクション数をカウント
         let mut n_rons = 0;
@@ -596,24 +590,26 @@ impl MahjongEngine {
         let mut minkan: Meld = None;
         let mut pon: Meld = None;
         let mut chi: Meld = None;
-        let mut retry = 0;
+        for s in 0..SEAT {
+            let acts = &acts_list[s];
+            if acts.len() <= 1 {
+                // すでにactionを選択済み または Nopのみ
+                continue;
+            }
 
-        // すべてのActionがキャンセルされるか,または選択されたAction以上の
-        // 優先度を持つActionがすべてキャンセルされる(=Actionが確定する)までloopする
-        loop {
-            for s in 0..SEAT {
-                let acts = &acts_list[s];
-                if acts.len() <= 1 {
-                    // すでにactionを選択済み または Nopのみ
-                    continue;
-                }
+            match self.ctrl.select_action(s, acts, &[]) {
+                SelectedAction::Sync(a) => {
+                    match a.action_type {
+                        Nop => {}
+                        Chi => chi = Some((s, a)),
+                        Pon => pon = Some((s, a)),
+                        Minkan => minkan = Some((s, a)),
+                        Ron => rons.push(s),
+                        _ => panic!("action {} not found in {}", a, vec_to_string(acts)),
+                    }
 
-                // select_actionは非同期処理が必要なActorの場合は基本的にNoneを返す
-                // その場合,Someが返ってくるかより優先度の高いActionが確定するまで
-                // 数十ミリ秒置きに繰り返しselect_actonを呼び出してポーリングする
-                if let Some(act) = self.ctrl.select_action(s, acts, &[], retry) {
-                    for act in acts {
-                        match act.action_type {
+                    for a in acts {
+                        match a.action_type {
                             Nop => {}
                             Chi => n_chi -= 1,
                             Pon => n_pon -= 1,
@@ -622,18 +618,12 @@ impl MahjongEngine {
                             _ => panic!(),
                         }
                     }
-                    match act.action_type {
-                        Nop => {}
-                        Chi => chi = Some((s, act)),
-                        Pon => pon = Some((s, act)),
-                        Minkan => minkan = Some((s, act)),
-                        Ron => rons.push(s),
-                        _ => panic!("action {} not found in {}", act, vec_to_string(acts)),
-                    }
-                    acts_list[s] = vec![];
                 }
+                SelectedAction::Async(_) => todo!(),
             }
+        }
 
+        loop {
             let mut n_priority = n_rons;
             if n_priority == 0 && !rons.is_empty() {
                 self.round_result = Some(RoundResult::Ron(rons));
@@ -666,11 +656,6 @@ impl MahjongEngine {
             if n_priority == 0 {
                 break; // すべてのActionがキャンセルされた場合はここに到達
             }
-
-            if retry > 0 {
-                sleep(0.01);
-            }
-            retry += 1;
         }
     }
 

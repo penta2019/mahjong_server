@@ -7,8 +7,8 @@ mod null;
 mod random;
 mod tiitoitsu;
 
-// use crate::controller::{Actor, Config, Listener};
 use std::fmt;
+use std::future::Future;
 
 use crate::control::stage_controller::StageRef;
 use crate::listener::Listener;
@@ -24,6 +24,11 @@ pub struct Config {
     pub args: Vec<Arg>,
 }
 
+pub enum SelectedAction {
+    Sync(Action),
+    Async(Box<dyn Future<Output = Action>>),
+}
+
 // Actor trait
 pub trait Actor: Listener + ActorClone + Send {
     // 局開始時の初期化処理
@@ -37,7 +42,7 @@ pub trait Actor: Listener + ActorClone + Send {
     // 処理を非同期に行う必要がある場合,Noneを返すことで100ms以内に同じ選択に対して再度この関数が呼び出される.
     // この時,呼び出されるたびにretryに1加算される. なお,2回目(retry=1)の呼び出しはsleepを挟まずに即時行われる.
     // 各々の選択に対して初回の呼び出しでは retry=0 である.
-    fn select_action(&mut self, acts: &[Action], tenpais: &[Tenpai], retry: i32) -> Option<Action>;
+    fn select_action(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> SelectedAction;
 
     // Actorの詳細表示用
     fn get_config(&self) -> &Config;

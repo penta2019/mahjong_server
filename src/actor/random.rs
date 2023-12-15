@@ -3,6 +3,8 @@ use rand::Rng;
 use super::*;
 use crate::control::common::count_tile;
 
+use SelectedAction::*;
+
 pub struct RandomDiscardBuilder;
 
 impl ActorBuilder for RandomDiscardBuilder {
@@ -43,17 +45,11 @@ impl Actor for RandomDiscard {
         self.seat = seat;
     }
 
-    fn select_action(
-        &mut self,
-        _acts: &[Action],
-        _tenpais: &[Tenpai],
-        retry: i32,
-    ) -> Option<Action> {
-        assert!(retry == 0);
+    fn select_action(&mut self, _acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
 
         if stg.turn != self.seat {
-            return Some(Action::nop());
+            return Sync(Action::nop());
         }
 
         let pl = &stg.players[self.seat];
@@ -64,7 +60,7 @@ impl Actor for RandomDiscard {
                     let t = Tile(ti, ni);
                     let c = count_tile(&pl.hand, t);
                     if c > n {
-                        return Some(Action::discard(Tile(ti, ni)));
+                        return Sync(Action::discard(Tile(ti, ni)));
                     } else {
                         n -= c;
                     }

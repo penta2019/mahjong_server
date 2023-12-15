@@ -2,10 +2,10 @@
 
 mod calculator;
 mod engine;
-mod mahjongsoul;
+// mod mahjongsoul;
 mod replay;
 
 pub use calculator::CalculatorApp;
 pub use engine::EngineApp;
-pub use mahjongsoul::MahjongsoulApp;
+// pub use mahjongsoul::MahjongsoulApp;
 pub use replay::ReplayApp;

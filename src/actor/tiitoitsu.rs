@@ -1,6 +1,8 @@
 use super::*;
 use crate::control::common::count_tile;
 
+use SelectedAction::*;
+
 pub struct TiitoitsuBotBuilder;
 
 impl ActorBuilder for TiitoitsuBotBuilder {
@@ -40,13 +42,7 @@ impl Actor for TiitoitsuBot {
         self.seat = seat;
     }
 
-    fn select_action(
-        &mut self,
-        acts: &[Action],
-        _tenpais: &[Tenpai],
-        retry: i32,
-    ) -> Option<Action> {
-        assert!(retry == 0);
+    fn select_action(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
 
         let pl = &stg.players[self.seat];
@@ -54,7 +50,7 @@ impl Actor for TiitoitsuBot {
         if stg.turn == self.seat {
             // turn
             if acts.contains(&Action::tsumo()) {
-                return Some(Action::tsumo());
+                return Sync(Action::tsumo());
             }
 
             let mut ones = vec![]; // 手牌に1枚のみある牌(left_count, Tile)
@@ -64,7 +60,7 @@ impl Actor for TiitoitsuBot {
                     match count_tile(&pl.hand, t) {
                         0 | 2 => {}
                         3 | 4 => {
-                            return Some(Action::discard(t));
+                            return Sync(Action::discard(t));
                         }
                         1 => {
                             ones.push((count_left_tile(&stg, self.seat, t), t));
@@ -77,16 +73,16 @@ impl Actor for TiitoitsuBot {
             // 1枚の牌で最も残り枚数が少ない牌から切る
             ones.sort();
             if !ones.is_empty() {
-                return Some(Action::discard(ones[0].1));
+                return Sync(Action::discard(ones[0].1));
             }
         } else {
             // call
             if acts.contains(&Action::ron()) {
-                return Some(Action::ron());
+                return Sync(Action::ron());
             }
         }
 
-        Some(Action::nop())
+        Sync(Action::nop())
     }
 
     fn get_config(&self) -> &Config {

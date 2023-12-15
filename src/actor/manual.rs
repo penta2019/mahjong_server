@@ -4,8 +4,10 @@ use crate::util::misc::prompt;
 
 use crate::error;
 
-pub struct ManualBuilder;
 use ActionType::*;
+use SelectedAction::*;
+
+pub struct ManualBuilder;
 
 impl ActorBuilder for ManualBuilder {
     fn get_default_config(&self) -> Config {
@@ -43,14 +45,7 @@ impl Actor for Manual {
         self.seat = seat;
     }
 
-    fn select_action(
-        &mut self,
-        // stg: &Stage,
-        acts: &[Action],
-        _tenpais: &[Tenpai],
-        retry: i32,
-    ) -> Option<Action> {
-        assert!(retry == 0);
+    fn select_action(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
         let pl = &stg.players[self.seat];
         let mut hand = pl.hand;
@@ -124,7 +119,7 @@ impl Actor for Manual {
                         if let Some(a) = acts.iter().find(|a| a.action_type == Riichi) {
                             if a.tiles.contains(&t) {
                                 println!();
-                                return Some(Action::riichi(t));
+                                return Sync(Action::riichi(t));
                             } else {
                                 error!("invalid Riichi tile");
                             }
@@ -135,7 +130,7 @@ impl Actor for Manual {
                         if let Some(a) = acts.iter().find(|a| a.action_type == Discard) {
                             if !a.tiles.contains(&t) {
                                 println!();
-                                return Some(Action::discard(t));
+                                return Sync(Action::discard(t));
                             } else {
                                 error!("restricted tile after Chi or Pon");
                             }
@@ -180,7 +175,7 @@ impl Actor for Manual {
                         }
                         _ => {
                             println!();
-                            return Some(acts[n].clone());
+                            return Sync(acts[n].clone());
                         }
                     }
                 }

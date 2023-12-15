@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 
-use crate::actor::Actor;
+use crate::actor::{Actor, SelectedAction};
 use crate::control::common::*;
 use crate::hand::*;
 use crate::listener::Listener;
@@ -112,9 +112,8 @@ impl StageController {
         seat: Seat,
         acts: &[Action],
         tenpais: &[Tenpai],
-        retry: i32,
-    ) -> Option<Action> {
-        self.actors[seat].select_action(acts, tenpais, retry)
+    ) -> SelectedAction {
+        self.actors[seat].select_action(acts, tenpais)
     }
 }
 

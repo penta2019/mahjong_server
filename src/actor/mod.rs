@@ -88,13 +88,13 @@ trait ActorBuilder {
 
 pub fn create_actor(exp: &str) -> Box<dyn Actor> {
     let builders: Vec<Box<dyn ActorBuilder>> = vec![
-        Box::new(null::NullBuilder {}),
-        Box::new(nop::NopBuilder {}),
-        Box::new(endpoint::EndpointBuilder {}),
-        Box::new(random::RandomDiscardBuilder {}),
-        Box::new(manual::ManualBuilder {}),
-        Box::new(mjai::MjaiEndpointBuilder {}),
-        Box::new(tiitoitsu::TiitoitsuBotBuilder {}),
+        Box::new(null::NullBuilder),
+        Box::new(nop::NopBuilder),
+        Box::new(endpoint::EndpointBuilder),
+        Box::new(random::RandomDiscardBuilder),
+        Box::new(manual::ManualBuilder),
+        Box::new(mjai::MjaiEndpointBuilder),
+        Box::new(tiitoitsu::TiitoitsuBotBuilder),
     ];
 
     let name: &str;

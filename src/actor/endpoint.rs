@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::task::{Context, Poll, Waker};
 use std::thread;
 
 use serde_json::{json, Value};
@@ -13,10 +14,10 @@ pub struct EndpointBuilder;
 
 #[derive(Debug, Default)]
 struct SharedData {
-    send_request: bool,
     msgs: Vec<(Value, bool)>, // [(message, is_action)]
     cursor: usize,
     action: Option<Action>,
+    waker: Option<Waker>,
 }
 
 impl ActorBuilder for EndpointBuilder {
@@ -37,7 +38,7 @@ impl ActorBuilder for EndpointBuilder {
 
 pub struct Endpoint {
     config: Config,
-    data: Arc<Mutex<SharedData>>,
+    shared: Arc<Mutex<SharedData>>,
     seat: Seat,
     debug: bool,
 }
@@ -52,40 +53,36 @@ impl Endpoint {
         let arc1 = arc0.clone();
 
         thread::spawn(move || loop {
-            loop {
-                let mut d = arc1.lock().unwrap();
-                d.send_request = false;
-                match conn.recv() {
-                    Message::Open => d.cursor = 0,
-                    Message::Text(act) => {
-                        // println!("{}", act);
-                        match serde_json::from_str::<Action>(&act) {
-                            Ok(a) => d.action = Some(a),
-                            Err(e) => error!("{}: {}", e, act),
-                        }
+            sleep(0.01); // 負荷軽減&Lock解除時間
+            let mut d = arc1.lock().unwrap();
+            match conn.recv() {
+                Message::Open => d.cursor = 0,
+                Message::Text(act) => match serde_json::from_str::<Action>(&act) {
+                    Ok(a) => {
+                        d.action = Some(a);
+                        d.waker.take().unwrap().wake();
                     }
-                    Message::NoMessage => {
-                        while d.cursor < d.msgs.len() {
-                            let (msg, is_action) = &d.msgs[d.cursor];
-                            if *is_action && d.cursor != d.msgs.len() - 1 {
-                                // メッセージがアクションでかつ最後のメッセージでない場合は失効済みなので送信しない
-                            } else {
-                                conn.send(&msg.to_string());
-                            }
-                            d.cursor += 1;
+                    Err(e) => error!("{}: {}", e, act),
+                },
+                Message::NoMessage => {
+                    while d.cursor < d.msgs.len() {
+                        let (msg, is_action) = &d.msgs[d.cursor];
+                        if *is_action && d.cursor != d.msgs.len() - 1 {
+                            // メッセージがアクションでかつ最後のメッセージでない場合は失効済みなので送信しない
+                        } else {
+                            conn.send(&msg.to_string());
                         }
-                        break;
+                        d.cursor += 1;
                     }
-                    Message::Close => {}
-                    Message::NoConnection => break,
                 }
+                Message::Close => {}
+                Message::NoConnection => {}
             }
-            sleep(0.01);
         });
 
         Self {
             config,
-            data: arc0,
+            shared: arc0,
             seat: NO_SEAT,
             debug,
         }
@@ -100,24 +97,19 @@ impl Clone for Endpoint {
 
 impl Actor for Endpoint {
     fn init(&mut self, _stage: StageRef, seat: Seat) {
-        *self.data.lock().unwrap() = SharedData::default();
+        *self.shared.lock().unwrap() = SharedData::default();
         self.seat = seat;
     }
 
     fn select_action(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> SelectedAction {
-        todo!()
-        // let mut ret = None;
-        // let mut d = self.data.lock().unwrap();
-        // if repeat == 0 {
-        //     let act_msg =
-        //         json!({"type": "Action", "actions": json!(acts), "tenpais": json!(tenpais)});
-        //     d.msgs.push((act_msg, true));
-        // } else {
-        //     ret = d.action.clone();
-        // }
-        // d.action = None;
+        let mut shared = self.shared.lock().unwrap();
+        let act_msg = json!({"type": "Action", "actions": json!(acts), "tenpais": json!(tenpais)});
+        shared.msgs.push((act_msg, true));
+        shared.action = None;
 
-        // ret
+        Box::pin(SelectFuture {
+            shared: self.shared.clone(),
+        })
     }
 
     fn get_config(&self) -> &Config {
@@ -127,44 +119,54 @@ impl Actor for Endpoint {
 
 impl Listener for Endpoint {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
-        {
-            let mut d = self.data.lock().unwrap();
-            let val = match event {
-                Event::New(e) => {
-                    let mut hands = e.hands.clone();
-                    for s in 0..SEAT {
-                        if !self.debug && s != self.seat {
-                            hands[s].fill(Z8);
-                        }
+        let mut d = self.shared.lock().unwrap();
+        let val = match event {
+            Event::New(e) => {
+                let mut hands = e.hands.clone();
+                for s in 0..SEAT {
+                    if !self.debug && s != self.seat {
+                        hands[s].fill(Z8);
                     }
-                    let e2 = Event::New(EventNew {
-                        rule: e.rule.clone(),
-                        hands,
-                        doras: e.doras.clone(),
-                        names: e.names.clone(),
-                        ..*e
-                    });
-                    let mut val = json!(e2);
-                    val["seat"] = json!(self.seat);
-                    val
                 }
-                Event::Deal(e) => {
-                    let t = if !self.debug && self.seat != e.seat {
-                        Z8
-                    } else {
-                        e.tile
-                    };
-                    let e2 = Event::Deal(EventDeal { tile: t, ..*e });
-                    json!(e2)
-                }
-                _ => json!(event),
-            };
-            d.msgs.push((val, false));
-            d.send_request = true;
+                let e2 = Event::New(EventNew {
+                    rule: e.rule.clone(),
+                    hands,
+                    doras: e.doras.clone(),
+                    names: e.names.clone(),
+                    ..*e
+                });
+                let mut val = json!(e2);
+                val["seat"] = json!(self.seat);
+                val
+            }
+            Event::Deal(e) => {
+                let t = if !self.debug && self.seat != e.seat {
+                    Z8
+                } else {
+                    e.tile
+                };
+                let e2 = Event::Deal(EventDeal { tile: t, ..*e });
+                json!(e2)
+            }
+            _ => json!(event),
+        };
+        d.msgs.push((val, false));
+    }
+}
+
+pub struct SelectFuture {
+    shared: Arc<Mutex<SharedData>>,
+}
+
+impl Future for SelectFuture {
+    type Output = Action;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut shared = self.shared.lock().unwrap();
+        if shared.action.is_none() {
+            shared.waker = Some(cx.waker().clone());
+            return Poll::Pending;
         }
 
-        while self.data.lock().unwrap().send_request {
-            sleep(0.01); // pushしたデータが処理されるまで待機
-        }
+        Poll::Ready(shared.action.take().unwrap())
     }
 }

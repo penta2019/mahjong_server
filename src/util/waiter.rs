@@ -2,6 +2,9 @@ use std::mem;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable, Waker};
+use std::time::Duration;
+
+use crate::util::misc::Res;
 
 #[derive(Debug)]
 pub struct Waiter {
@@ -11,6 +14,10 @@ pub struct Waiter {
 impl Waiter {
     pub fn wait(&self) {
         self.recv.recv().unwrap();
+    }
+
+    pub fn wait_timeout(&self, timeout: Duration) -> Res {
+        Ok(self.recv.recv_timeout(timeout)?)
     }
 }
 

@@ -10,6 +10,8 @@ fn silence_unused_warning() {
     let _ = crate::listener::EventPrinter::new;
     let _ = crate::listener::StageSender::new;
 
+    let _ = crate::util::waiter::Waiter::wait_timeout;
+
     // for J mode
     let _ = crate::util::connection::WsConnection::new;
     let _ = crate::util::misc::as_usize;

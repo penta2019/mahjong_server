@@ -102,7 +102,7 @@ impl MahjongsoulApp {
             // 0.1秒以上次のデータが来なかった時,リアルタイムのデータとみなす
             if unixtime_now() - last_event_ts > 0.1 {
                 if let Some(e) = last_event {
-                    game.apply(&e); // mjai側の仕様上select_actionを行う直前にeventを送信する必要がある
+                    game.apply(&e); // mjai側の仕様上アクションの選択を行う直前にeventを送信する必要がある
                     last_event = None;
                 }
                 if last_event.is_none() && !self.read_only {
@@ -137,7 +137,7 @@ struct Mahjongsoul {
     acts: Vec<Action>,
     acts_idxs: Vec<usize>,
     retry: i32,
-    action_ts: f64, // select_actionのpollを開始した時刻
+    action_ts: f64, // selectのpollを開始した時刻
 }
 
 impl Mahjongsoul {
@@ -278,7 +278,7 @@ impl Mahjongsoul {
             return None;
         }
 
-        let act = self.ctrl.select_action(self.seat, &self.acts, &[]); // TODO
+        let act = self.ctrl.query_action(self.seat, &self.acts, &[]); // TODO
         self.retry += 1;
 
         act.as_ref()?; // None なら return

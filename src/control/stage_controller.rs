@@ -107,13 +107,13 @@ impl StageController {
         }
     }
 
-    pub fn select_action(
+    pub fn query_action(
         &mut self,
         seat: Seat,
         acts: &[Action],
         tenpais: &[Tenpai],
     ) -> SelectedAction {
-        self.actors[seat].select_action(acts, tenpais)
+        self.actors[seat].select(acts, tenpais)
     }
 }
 

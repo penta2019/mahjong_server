@@ -40,7 +40,7 @@ impl Actor for TiitoitsuBot {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
 
         let pl = &stg.players[self.seat];

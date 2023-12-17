@@ -252,7 +252,7 @@ impl Actor for MjaiEndpoint {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
 
         // possible_actionを追加
@@ -401,7 +401,7 @@ fn stream_handler(
         if cursor + 1 < len {
             send(&data.lock().unwrap().record[cursor])?;
         } else if cursor < len {
-            // select_actionがpossible_actionsを追加する可能性があるので待機
+            // selectがpossible_actionsを追加する可能性があるので待機
             // data.lock()が開放されている必要があることに注意
             sleep(0.1);
 

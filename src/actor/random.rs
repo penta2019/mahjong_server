@@ -43,7 +43,7 @@ impl Actor for RandomDiscard {
         self.seat = seat;
     }
 
-    fn select_action(&mut self, _acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, _acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
 
         if stg.turn != self.seat {

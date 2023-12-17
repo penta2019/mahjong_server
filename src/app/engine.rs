@@ -485,7 +485,7 @@ impl MahjongEngine {
         drop(stg);
 
         let mut cx = Context::from_waker(&self.waker);
-        let mut selected_acton = self.ctrl.select_action(turn, &acts, &tenpais);
+        let mut selected_acton = self.ctrl.query_action(turn, &acts, &tenpais);
         let act = loop {
             match Pin::new(&mut selected_acton).poll(&mut cx) {
                 Poll::Ready(act) => {
@@ -612,7 +612,7 @@ impl MahjongEngine {
         let mut selected_actions = vec![];
         for s in 0..SEAT {
             if acts_list[s].len() > 1 {
-                selected_actions.push((s, self.ctrl.select_action(s, &acts_list[s], &[])));
+                selected_actions.push((s, self.ctrl.query_action(s, &acts_list[s], &[])));
             }
         }
 

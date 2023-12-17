@@ -47,7 +47,7 @@ impl Actor for Manual {
     // この関数は標準入力でブロッキングする.
     // これは複数のManual Actorを使用する場合に入力を区別するための仕様である.
     // テスト用のActorなので許容するが,この挙動は本来は望ましくない
-    fn select_action(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
         let stg = self.stage.lock().unwrap();
         let pl = &stg.players[self.seat];
         let mut hand = pl.hand;

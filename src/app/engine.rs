@@ -1,3 +1,8 @@
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::mpsc;
+use std::task::{Context, Poll, Waker};
+
 use rand::prelude::*;
 
 use crate::actor::*;
@@ -10,6 +15,7 @@ use crate::listener::*;
 use crate::model::*;
 use crate::util::connection::TcpConnection;
 use crate::util::misc::*;
+use crate::util::waiter::{waiter_waker, Waiter};
 
 use crate::{error, warn};
 
@@ -140,7 +146,6 @@ impl EngineApp {
     }
 
     fn run_multiple_game(&mut self, actors: [Box<dyn Actor>; 4]) {
-        use std::sync::mpsc;
         use std::{thread, time};
 
         let mut n_game = 0;
@@ -254,6 +259,9 @@ struct MahjongEngine {
     dora_wall: Vec<Tile>,        // ドラ表示牌
     ura_dora_wall: Vec<Tile>,    // 裏ドラ
     replacement_wall: Vec<Tile>, // 嶺上牌
+    // 非同期制御
+    waiter: Waiter,
+    waker: Waker,
 }
 
 impl MahjongEngine {
@@ -272,6 +280,7 @@ impl MahjongEngine {
             riichi_sticks: 0,
             scores: [rule.initial_score; SEAT],
         };
+        let (waiter, waker) = waiter_waker();
 
         Self {
             seed,
@@ -290,6 +299,8 @@ impl MahjongEngine {
             dora_wall: vec![],
             ura_dora_wall: vec![],
             replacement_wall: vec![],
+            waiter,
+            waker,
         }
     }
 
@@ -473,9 +484,16 @@ impl MahjongEngine {
         let acts = calc_possible_turn_actions(&stg, &self.melding, &tenpais);
         drop(stg);
 
-        let act = match self.ctrl.select_action(turn, &acts, &tenpais) {
-            SelectedAction::Sync(a) => a,
-            SelectedAction::Async(_) => todo!(),
+        let mut cx = Context::from_waker(&self.waker);
+        let mut selected_acton = self.ctrl.select_action(turn, &acts, &tenpais);
+        let act = loop {
+            match Pin::new(&mut selected_acton).poll(&mut cx) {
+                Poll::Ready(act) => {
+                    break act;
+                }
+                Poll::Pending => {}
+            }
+            self.waiter.wait();
         };
 
         let tp = act.action_type;
@@ -584,46 +602,58 @@ impl MahjongEngine {
             }
         }
 
-        // query action
+        // 選択済みのアクション
         type Meld = Option<(Seat, Action)>;
         let mut rons = vec![];
         let mut minkan: Meld = None;
         let mut pon: Meld = None;
         let mut chi: Meld = None;
+
+        let mut selected_actions = vec![];
         for s in 0..SEAT {
-            let acts = &acts_list[s];
-            if acts.len() <= 1 {
-                // すでにactionを選択済み または Nopのみ
-                continue;
-            }
-
-            match self.ctrl.select_action(s, acts, &[]) {
-                SelectedAction::Sync(a) => {
-                    match a.action_type {
-                        Nop => {}
-                        Chi => chi = Some((s, a)),
-                        Pon => pon = Some((s, a)),
-                        Minkan => minkan = Some((s, a)),
-                        Ron => rons.push(s),
-                        _ => panic!("action {} not found in {}", a, vec_to_string(acts)),
-                    }
-
-                    for a in acts {
-                        match a.action_type {
-                            Nop => {}
-                            Chi => n_chi -= 1,
-                            Pon => n_pon -= 1,
-                            Minkan => n_minkan -= 1,
-                            Ron => n_rons -= 1,
-                            _ => panic!(),
-                        }
-                    }
-                }
-                SelectedAction::Async(_) => todo!(),
+            if acts_list[s].len() > 1 {
+                selected_actions.push((s, self.ctrl.select_action(s, &acts_list[s], &[])));
             }
         }
 
+        let mut cx = Context::from_waker(&self.waker);
+        let mut selected_actors = vec![];
         loop {
+            for (s, f) in &mut selected_actions {
+                if !selected_actors.contains(s) {
+                    match Pin::new(f).poll(&mut cx) {
+                        Poll::Ready(a) => {
+                            let s = *s;
+                            match a.action_type {
+                                Nop => {}
+                                Chi => chi = Some((s, a)),
+                                Pon => pon = Some((s, a)),
+                                Minkan => minkan = Some((s, a)),
+                                Ron => rons.push(s),
+                                _ => panic!(
+                                    "action {} not found in {}",
+                                    a,
+                                    vec_to_string(&acts_list[s])
+                                ),
+                            }
+
+                            for a in &acts_list[s] {
+                                match a.action_type {
+                                    Nop => {}
+                                    Chi => n_chi -= 1,
+                                    Pon => n_pon -= 1,
+                                    Minkan => n_minkan -= 1,
+                                    Ron => n_rons -= 1,
+                                    _ => panic!(),
+                                }
+                            }
+                            selected_actors.push(s);
+                        }
+                        Poll::Pending => {}
+                    }
+                }
+            }
+
             let mut n_priority = n_rons;
             if n_priority == 0 && !rons.is_empty() {
                 self.round_result = Some(RoundResult::Ron(rons));
@@ -656,6 +686,8 @@ impl MahjongEngine {
             if n_priority == 0 {
                 break; // すべてのActionがキャンセルされた場合はここに到達
             }
+
+            self.waiter.wait();
         }
     }
 

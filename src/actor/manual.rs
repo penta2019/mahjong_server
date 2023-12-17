@@ -5,7 +5,6 @@ use crate::util::misc::prompt;
 use crate::error;
 
 use ActionType::*;
-use SelectedAction::*;
 
 pub struct ManualBuilder;
 
@@ -119,7 +118,7 @@ impl Actor for Manual {
                         if let Some(a) = acts.iter().find(|a| a.action_type == Riichi) {
                             if a.tiles.contains(&t) {
                                 println!();
-                                return Sync(Action::riichi(t));
+                                return ready(Action::riichi(t));
                             } else {
                                 error!("invalid Riichi tile");
                             }
@@ -130,7 +129,7 @@ impl Actor for Manual {
                         if let Some(a) = acts.iter().find(|a| a.action_type == Discard) {
                             if !a.tiles.contains(&t) {
                                 println!();
-                                return Sync(Action::discard(t));
+                                return ready(Action::discard(t));
                             } else {
                                 error!("restricted tile after Chi or Pon");
                             }
@@ -175,7 +174,7 @@ impl Actor for Manual {
                         }
                         _ => {
                             println!();
-                            return Sync(acts[n].clone());
+                            return ready(acts[n].clone());
                         }
                     }
                 }

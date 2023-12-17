@@ -11,8 +11,6 @@ use crate::control::common::get_scores;
 use crate::convert::mjai::*;
 use crate::util::misc::*;
 
-use SelectedAction::*;
-
 use crate::{error, info};
 
 #[derive(Debug, Default)]
@@ -286,7 +284,7 @@ impl Actor for MjaiEndpoint {
                     error!("timeout_count exceeded");
                     std::process::exit(1);
                 }
-                return Sync(Action::nop());
+                return ready(Action::nop());
             }
         }
 
@@ -297,7 +295,7 @@ impl Actor for MjaiEndpoint {
         if d.is_riichi {
             d.is_riichi = false;
             if let MjaiAction::Dahai { pai, .. } = mjai_act {
-                return Sync(Action::riichi(tile_from_mjai(&pai)));
+                return ready(Action::riichi(tile_from_mjai(&pai)));
             } else {
                 panic!();
             }
@@ -309,7 +307,7 @@ impl Actor for MjaiEndpoint {
             ActionType::Discard => {
                 if self.seat != stg.turn {
                     error!("invalid discard action");
-                    return Sync(Action::nop());
+                    return ready(Action::nop());
                 }
             }
             _ => {
@@ -319,11 +317,11 @@ impl Actor for MjaiEndpoint {
                         act,
                         vec_to_string(acts)
                     );
-                    return Sync(Action::nop());
+                    return ready(Action::nop());
                 }
             }
         }
-        Sync(act)
+        ready(act)
     }
 
     fn get_config(&self) -> &Config {

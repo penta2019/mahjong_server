@@ -1,7 +1,5 @@
 use super::*;
 
-use SelectedAction::*;
-
 pub struct NopBuilder;
 
 impl ActorBuilder for NopBuilder {
@@ -30,7 +28,7 @@ impl Nop {
 
 impl Actor for Nop {
     fn select_action(&mut self, _acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
-        Sync(Action::nop())
+        ready(Action::nop())
     }
 
     fn get_config(&self) -> &Config {

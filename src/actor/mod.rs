@@ -9,6 +9,7 @@ mod tiitoitsu;
 
 use std::fmt;
 use std::future::Future;
+use std::pin::Pin;
 
 use crate::control::stage_controller::StageRef;
 use crate::listener::Listener;
@@ -24,9 +25,10 @@ pub struct Config {
     pub args: Vec<Arg>,
 }
 
-pub enum SelectedAction {
-    Sync(Action),
-    Async(Box<dyn Future<Output = Action>>),
+pub type SelectedAction = Pin<Box<dyn Future<Output = Action>>>;
+
+pub fn ready(act: Action) -> SelectedAction {
+    Box::pin(std::future::ready(act))
 }
 
 // Actor trait

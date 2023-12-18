@@ -18,7 +18,7 @@ pub struct StageRef {
 impl StageRef {
     #[inline]
     pub fn lock(&self) -> Res<RwLockReadGuard<Stage>> {
-        let r = self.stage.as_ref().ok_or_else(|| "null StageRef")?;
+        let r = self.stage.as_ref().ok_or("null StageRef")?;
         Ok(r.try_read().map_err(|e| e.to_string())?)
         // Ok(r.try_read()?) // ライフタイムエラーが出るが原因不明
     }
@@ -114,6 +114,10 @@ impl StageController {
         tenpais: &[Tenpai],
     ) -> SelectedAction {
         self.actors[seat].select(acts, tenpais)
+    }
+
+    pub fn expire_action(&mut self, seat: Seat) {
+        self.actors[seat].expire();
     }
 }
 

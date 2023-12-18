@@ -1,5 +1,3 @@
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::mpsc;
 use std::task::{Context, Poll, Waker};
 
@@ -499,7 +497,7 @@ impl MahjongEngine {
         let mut cx = Context::from_waker(&self.waker);
         let mut selected_acton = self.ctrl.query_action(turn, &acts, &tenpais);
         let act = loop {
-            match Pin::new(&mut selected_acton).poll(&mut cx) {
+            match selected_acton.as_mut().poll(&mut cx) {
                 Poll::Ready(act) => {
                     break act;
                 }
@@ -633,7 +631,7 @@ impl MahjongEngine {
         loop {
             for (s, f) in &mut selected_actions {
                 if !selected_actors.contains(s) {
-                    match Pin::new(f).poll(&mut cx) {
+                    match f.as_mut().poll(&mut cx) {
                         Poll::Ready(a) => {
                             let s = *s;
                             match a.action_type {
@@ -700,6 +698,13 @@ impl MahjongEngine {
             }
 
             self.waiter.wait();
+        }
+
+        // アクションをまだ選択していないActorがあったら失効通知を送る
+        for (s, _) in selected_actions {
+            if !selected_actors.contains(&s) {
+                self.ctrl.expire_action(s);
+            }
         }
     }
 

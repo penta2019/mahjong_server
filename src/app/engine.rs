@@ -26,6 +26,7 @@ use ActionType::*;
 pub struct EngineApp {
     seed: u64,
     rule: Rule,
+    pause: f64,
     n_game: u32,
     n_thread: u32,
     write: bool,
@@ -46,6 +47,7 @@ impl EngineApp {
                 red5: 1,
                 bust: true,
             },
+            pause: 0.0,
             n_game: 0,
             n_thread: 16,
             write: false,
@@ -68,6 +70,7 @@ impl EngineApp {
                 "-r-settle" => app.rule.settlement_score = next_value(&mut it, s),
                 "-r-red5" => app.rule.red5 = next_value(&mut it, s),
                 "-r-bust" => app.rule.bust = next_value(&mut it, s),
+                "-p" => app.pause = next_value(&mut it, s),
                 "-g" => app.n_game = next_value(&mut it, s),
                 "-t" => app.n_thread = next_value(&mut it, s),
                 "-w" => app.write = true,
@@ -141,7 +144,8 @@ impl EngineApp {
             listeners.push(Box::new(Debug::new()));
         }
 
-        let mut game = MahjongEngine::new(self.seed, self.rule.clone(), actors, listeners);
+        let mut game =
+            MahjongEngine::new(self.seed, self.rule.clone(), self.pause, actors, listeners);
         game.run();
     }
 
@@ -175,10 +179,11 @@ impl EngineApp {
                 }
 
                 let rule = self.rule.clone();
+                let pause = self.pause;
                 let tx2 = tx.clone();
                 thread::spawn(move || {
                     let start = time::Instant::now();
-                    let mut game = MahjongEngine::new(seed, rule, shuffled_actors, vec![]);
+                    let mut game = MahjongEngine::new(seed, rule, pause, shuffled_actors, vec![]);
                     game.run();
                     tx2.send((shuffle_table, game, start.elapsed())).unwrap();
                 });
@@ -243,6 +248,7 @@ struct NextRoundInfo {
 struct MahjongEngine {
     seed: u64,               // 牌山生成用の乱数のシード値
     rng: rand::rngs::StdRng, // 乱数 (牌山生成)
+    pause: f64,              // ツモ前の一時停止時間
     // ゲーム制御
     rule: Rule,
     ctrl: StageController,
@@ -268,6 +274,7 @@ impl MahjongEngine {
     fn new(
         seed: u64,
         rule: Rule,
+        pause: f64,
         actors: [Box<dyn Actor>; SEAT],
         listeners: Vec<Box<dyn Listener>>,
     ) -> Self {
@@ -285,6 +292,7 @@ impl MahjongEngine {
         Self {
             seed,
             rng,
+            pause,
             rule,
             ctrl,
             melding: None,
@@ -436,6 +444,10 @@ impl MahjongEngine {
     }
 
     fn do_event_deal(&mut self) {
+        if self.pause != 0.0 {
+            sleep(self.pause);
+        }
+
         let stg = self.get_stage();
         let turn = stg.turn;
         let wall_count = stg.wall_count;

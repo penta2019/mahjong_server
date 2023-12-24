@@ -620,17 +620,18 @@ impl MahjongEngine {
         let mut chi: Meld = None;
 
         let mut selected_actions = vec![];
+        let mut completed_actors = vec![];
         for s in 0..SEAT {
             if acts_list[s].len() > 1 {
                 selected_actions.push((s, self.ctrl.query_action(s, &acts_list[s], &[])));
             }
         }
 
+        let mut event = None;
         let mut cx = Context::from_waker(&self.waker);
-        let mut selected_actors = vec![];
         loop {
             for (s, f) in &mut selected_actions {
-                if !selected_actors.contains(s) {
+                if !completed_actors.contains(s) {
                     match f.as_mut().poll(&mut cx) {
                         Poll::Ready(a) => {
                             let s = *s;
@@ -657,7 +658,7 @@ impl MahjongEngine {
                                     _ => panic!(),
                                 }
                             }
-                            selected_actors.push(s);
+                            completed_actors.push(s);
                         }
                         Poll::Pending => {}
                     }
@@ -673,7 +674,7 @@ impl MahjongEngine {
             if n_priority == 0 && minkan.is_some() {
                 let (s, act) = minkan.unwrap();
                 let is_pao = check_pao_for_selected_action(&self.get_stage(), s, &act);
-                self.handle_event(Event::meld(s, MeldType::Minkan, act.tiles.clone(), is_pao));
+                event = Some(Event::meld(s, MeldType::Minkan, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
             }
@@ -681,14 +682,14 @@ impl MahjongEngine {
             if n_priority == 0 && pon.is_some() {
                 let (s, act) = pon.unwrap();
                 let is_pao = check_pao_for_selected_action(&self.get_stage(), s, &act);
-                self.handle_event(Event::meld(s, MeldType::Pon, act.tiles.clone(), is_pao));
+                event = Some(Event::meld(s, MeldType::Pon, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_chi;
             if n_priority == 0 && chi.is_some() {
                 let (s, act) = chi.unwrap();
-                self.handle_event(Event::meld(s, MeldType::Chi, act.tiles.clone(), false));
+                event = Some(Event::meld(s, MeldType::Chi, act.tiles.clone(), false));
                 self.melding = Some(act);
                 break;
             }
@@ -701,10 +702,28 @@ impl MahjongEngine {
         }
 
         // アクションをまだ選択していないActorがあったら失効通知を送る
-        for (s, _) in selected_actions {
-            if !selected_actors.contains(&s) {
-                self.ctrl.expire_action(s);
+        for (s, _) in &selected_actions {
+            if !completed_actors.contains(s) {
+                self.ctrl.expire_action(*s);
             }
+        }
+
+        // すべてのFutureが完了するのを待機
+        while selected_actions.len() != completed_actors.len() {
+            for (s, f) in &mut selected_actions {
+                if !completed_actors.contains(s) {
+                    match f.as_mut().poll(&mut cx) {
+                        Poll::Ready(_) => completed_actors.push(*s),
+                        Poll::Pending => (),
+                    }
+                }
+            }
+            self.waiter.wait();
+        }
+
+        // Futureが獲得しているReadGuardがすべて開放されてからイベントを処理
+        if let Some(e) = event {
+            self.handle_event(e);
         }
     }
 

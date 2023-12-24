@@ -18,6 +18,7 @@ struct SharedData {
     cursor: usize,
     action: Option<Action>,
     waker: Option<Waker>,
+    is_expired: bool,
 }
 
 impl ActorBuilder for EndpointBuilder {
@@ -106,10 +107,17 @@ impl Actor for Endpoint {
         let act_msg = json!({"type": "Action", "actions": json!(acts), "tenpais": json!(tenpais)});
         shared.msgs.push((act_msg, true));
         shared.action = None;
+        shared.is_expired = false;
 
         Box::pin(SelectFuture {
             shared: self.shared.clone(),
         })
+    }
+
+    fn expire(&mut self) {
+        let mut shared = self.shared.lock().unwrap();
+        shared.is_expired = true;
+        shared.waker.take().unwrap().wake();
     }
 
     fn get_config(&self) -> &Config {
@@ -162,11 +170,13 @@ impl Future for SelectFuture {
     type Output = Action;
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut shared = self.shared.lock().unwrap();
+        if shared.is_expired {
+            return Poll::Ready(Action::nop());
+        }
         if shared.action.is_none() {
             shared.waker = Some(cx.waker().clone());
             return Poll::Pending;
         }
-
         Poll::Ready(shared.action.take().unwrap())
     }
 }

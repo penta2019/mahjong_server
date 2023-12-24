@@ -79,7 +79,7 @@ impl StageController {
             // stageのRwLockReadGuardを獲得しているActorがある場合ここでブロックされる
             // これはActorがStageRefから獲得したGuardをドロップし忘れた場合や
             // 非同期で動作しているActorの反応を待たずに他の高優先度のactionが選択された場合に起こる
-            let stg = &mut self.stage.write().unwrap();
+            let stg = &mut self.stage.try_write().unwrap();
             match event {
                 Event::Begin(e) => event_begin(stg, e),
                 Event::New(e) => event_new(stg, e),

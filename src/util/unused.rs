@@ -23,4 +23,6 @@ fn silence_unused_warning() {
     let _ = crate::util::misc::as_vec(|e| e.clone(), &serde_json::json!(null));
     let _ = crate::control::stage_controller::StageController::swap_actor;
     let _ = crate::hand::YakuDefine::get_from_id;
+    let _ = crate::hand::get_score_title;
+    let _ = crate::hand::is_kokushimusou_win;
 }

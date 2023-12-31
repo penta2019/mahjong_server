@@ -43,6 +43,7 @@ pub trait Actor: Listener + ActorClone + Send {
     // アクションの選択
     // actsの中から任意のアクションを選択して返すFutureを返す.
     // tenpaisは聴牌可能な時に捨て牌と和了牌の組み合わせを示す.
+    // Rust1.75でasync traitが実装されたがtraitオブジェクトと一緒には使えない.
     fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> SelectedAction;
 
     // アクションの選択の失効通知

@@ -33,7 +33,7 @@ impl EventSender {
                 match conn.recv() {
                     Message::Open => d.cursor = 0,
                     Message::Text(_) => {}
-                    Message::NoMessage => {
+                    Message::Nop => {
                         while d.cursor < d.msgs.len() {
                             conn.send(&d.msgs[d.cursor].to_string());
                             d.cursor += 1;

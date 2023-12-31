@@ -65,7 +65,7 @@ impl Endpoint {
                     }
                     Err(e) => error!("{}: {}", e, act),
                 },
-                Message::NoMessage => {
+                Message::Nop => {
                     while d.cursor < d.msgs.len() {
                         let (msg, is_action) = &d.msgs[d.cursor];
                         if *is_action && d.cursor != d.msgs.len() - 1 {

@@ -10,7 +10,7 @@ use crate::{error, info, warn};
 pub enum Message {
     Open,
     Text(String),
-    NoMessage,
+    Nop,
     Close,
     NoConnection,
 }
@@ -93,7 +93,7 @@ impl Connection for TcpConnection {
             }
             Err(e) => {
                 if e.kind() == std::io::ErrorKind::WouldBlock {
-                    return Message::NoMessage;
+                    return Message::Nop;
                 } else {
                     error!("{}", e);
                 }
@@ -182,7 +182,7 @@ impl Connection for WsConnection {
                     use tungstenite::error::Error as WsError;
                     if let WsError::Io(e) = &e {
                         if e.kind() == std::io::ErrorKind::WouldBlock {
-                            return Message::NoMessage;
+                            return Message::Nop;
                         }
                     }
 

@@ -25,47 +25,38 @@ pub fn waiter_waker() -> (Waiter, Waker) {
     let (sender, receiver) = channel();
     let waiter = Waiter { recv: receiver };
 
-    // 参照カウントの管理をArcにまかせて同じsender(=data)を使い回す
     // Wakerは別スレッドから呼び出される可能性があるのでdataはスレッドセーフである必要がある
     // SenderはSendとSyncを実装しているのでこれを満たす
     let ptr = Arc::into_raw(Arc::new(sender)).cast::<()>();
-    let raw_waker = RawWaker::new(ptr, waker_vtable());
+    let raw_waker = RawWaker::new(ptr, RAW_WAKER_VTABLE);
     let waker = unsafe { Waker::from_raw(raw_waker) };
 
     (waiter, waker)
 }
 
-type D = Sender<()>;
+type S = Sender<()>;
 
 // Virtual Table
-fn waker_vtable() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(vte_clone, vte_wake, vte_wake_by_ref, vte_drop)
-}
+static RAW_WAKER_VTABLE: &RawWakerVTable =
+    &RawWakerVTable::new(vte_clone, vte_wake, vte_wake_by_ref, vte_drop);
 
 unsafe fn vte_clone(data: *const ()) -> RawWaker {
-    // 参照カウントを増やして内部のdataを使いまわす
-    // 元のArcを復元
-    let arc = Arc::<D>::from_raw(data.cast::<D>());
-    // Drop(=参照カウントの減少)を阻止
-    let arc = mem::ManuallyDrop::new(arc);
-    // 参照カウントを増やす
-    let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
-
-    RawWaker::new(data, waker_vtable())
+    let arc = Arc::<S>::from_raw(data.cast::<S>());
+    let ptr = Arc::into_raw(arc.clone()).cast::<()>();
+    let _ = mem::ManuallyDrop::new(arc); // Dropを阻止
+    RawWaker::new(ptr, RAW_WAKER_VTABLE)
 }
 
 unsafe fn vte_wake(data: *const ()) {
-    let arc = Arc::from_raw(data.cast::<D>());
+    let arc = Arc::from_raw(data.cast::<S>());
     arc.send(()).unwrap();
 }
 
 unsafe fn vte_wake_by_ref(data: *const ()) {
-    // 参照なので復元したArcのDropによって参照カウントが減るのを防止
-    let arc = mem::ManuallyDrop::new(Arc::<D>::from_raw(data.cast::<D>()));
+    let arc = mem::ManuallyDrop::new(Arc::<S>::from_raw(data.cast::<S>()));
     arc.send(()).unwrap();
 }
 
 unsafe fn vte_drop(data: *const ()) {
-    // 参照カウントを減らす
-    drop(Arc::<D>::from_raw(data.cast::<D>()))
+    drop(Arc::<S>::from_raw(data.cast::<S>()));
 }

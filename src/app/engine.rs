@@ -627,6 +627,7 @@ impl MahjongEngine {
             }
         }
 
+        // 各プレイヤーのcall oprationを非同期で決定するためのmini executor
         let mut event = None;
         let mut cx = Context::from_waker(&self.waker);
         loop {

@@ -50,10 +50,9 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &[Tile]) -> Option<ScoreC
         get_prevalent_wind(stg),
         get_seat_wind(stg, pl.seat),
         &yf,
-    ) {
-        if !res.yakus.is_empty() {
-            return Some(res);
-        }
+    ) && !res.yakus.is_empty()
+    {
+        return Some(res);
     }
 
     None
@@ -65,10 +64,10 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &[Tile], seat: Seat) -> Opt
     }
 
     let pl = &stg.players[seat];
-    if let Some((_, _, t)) = stg.last_tile {
-        if !pl.winning_tiles.contains(&t.to_normal()) {
-            return None;
-        }
+    if let Some((_, _, t)) = stg.last_tile
+        && !pl.winning_tiles.contains(&t.to_normal())
+    {
+        return None;
     }
     if !pl.is_shown || pl.is_furiten || pl.is_furiten_other {
         return None;
@@ -131,10 +130,9 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &[Tile], seat: Seat) -> Opt
         get_prevalent_wind(stg),
         get_seat_wind(stg, pl.seat),
         &yf,
-    ) {
-        if !res.yakus.is_empty() {
-            return Some(res);
-        }
+    ) && !res.yakus.is_empty()
+    {
+        return Some(res);
     }
 
     None

@@ -5,7 +5,7 @@ use crate::control::common::*;
 use crate::hand::*;
 use crate::listener::Listener;
 use crate::model::*;
-use crate::util::misc::{rank_by_rank_vec, Res};
+use crate::util::misc::{Res, rank_by_rank_vec};
 
 use TileState::*;
 
@@ -17,7 +17,7 @@ pub struct StageRef {
 
 impl StageRef {
     #[inline]
-    pub fn lock(&self) -> Res<RwLockReadGuard<Stage>> {
+    pub fn lock(&self) -> Res<RwLockReadGuard<'_, Stage>> {
         let r = self.stage.as_ref().ok_or("null StageRef")?;
         Ok(r.try_read().map_err(|e| e.to_string())?)
         // Ok(r.try_read()?) // ライフタイムエラーが出るが原因不明
@@ -46,7 +46,7 @@ impl StageController {
     }
 
     #[inline]
-    pub fn get_stage(&self) -> RwLockReadGuard<Stage> {
+    pub fn get_stage(&self) -> RwLockReadGuard<'_, Stage> {
         self.stage.try_read().unwrap()
     }
 
@@ -440,21 +440,16 @@ fn update_after_turn_action(stg: &mut Stage, event: &Event) {
 
 fn update_after_discard_completed(stg: &mut Stage) {
     // 他のプレイヤーの捨て牌,または加槓した牌の見逃しフリテン
-    if let Some((s, tp, t)) = stg.last_tile {
-        match tp {
-            ActionType::Discard | ActionType::Kakan => {
-                for s2 in 0..SEAT {
-                    let pl = &mut stg.players[s2];
-                    if pl.winning_tiles.contains(&t) {
-                        if s2 == s || pl.is_riichi {
-                            pl.is_furiten = true; // 自分で和了牌を捨てた場合と見逃しした場合はフリテン
-                        } else {
-                            pl.is_furiten_other = true;
-                        }
-                    }
+    if let Some((s, ActionType::Discard | ActionType::Kakan, t)) = stg.last_tile {
+        for s2 in 0..SEAT {
+            let pl = &mut stg.players[s2];
+            if pl.winning_tiles.contains(&t) {
+                if s2 == s || pl.is_riichi {
+                    pl.is_furiten = true; // 自分で和了牌を捨てた場合と見逃しした場合はフリテン
+                } else {
+                    pl.is_furiten_other = true;
                 }
             }
-            _ => {}
         }
     }
 

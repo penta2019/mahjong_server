@@ -55,7 +55,7 @@ impl TcpConnection {
 impl Connection for TcpConnection {
     fn send(&mut self, msg: &str) {
         if let Some(stream) = self.stream.as_mut() {
-            stream.write((msg.to_string() + "\n").as_bytes()).ok();
+            stream.write_all((msg.to_string() + "\n").as_bytes()).ok();
         }
     }
 
@@ -180,10 +180,10 @@ impl Connection for WsConnection {
                 },
                 Err(e) => {
                     use tungstenite::error::Error as WsError;
-                    if let WsError::Io(e) = &e {
-                        if e.kind() == std::io::ErrorKind::WouldBlock {
-                            return Message::Nop;
-                        }
+                    if let WsError::Io(e) = &e
+                        && e.kind() == std::io::ErrorKind::WouldBlock
+                    {
+                        return Message::Nop;
                     }
 
                     error!("ws error: {:?}", e);

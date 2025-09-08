@@ -102,10 +102,11 @@ fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
 
     let mut ph2 = vec![];
     for &SetPair(tp, t) in &ph {
-        if let Koutsu = tp {
-            if i <= t.1 && t.1 < i + 3 {
-                continue;
-            }
+        if let Koutsu = tp
+            && i <= t.1
+            && t.1 < i + 3
+        {
+            continue;
         }
         ph2.push(SetPair(tp, t));
     }

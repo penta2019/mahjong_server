@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::actor::{create_actor, Actor};
+use crate::actor::{Actor, create_actor};
 use crate::control::stage_controller::StageController;
 use crate::listener::{Debug, EventPrinter, Listener};
 use crate::model::*;
@@ -100,10 +100,10 @@ impl ReplayApp {
             let contents = std::fs::read_to_string(p).unwrap_or_else(error_exit);
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
-            if let Event::New(e) = &record[0] {
-                if (e.round, e.dealer, e.honba_sticks) < rkh {
-                    continue;
-                }
+            if let Event::New(e) = &record[0]
+                && (e.round, e.dealer, e.honba_sticks) < rkh
+            {
+                continue;
             }
 
             game.run(record);

@@ -1,6 +1,6 @@
 use std::mem;
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::task::{RawWaker, RawWakerVTable, Waker};
 use std::time::Duration;
 
@@ -41,22 +41,22 @@ static RAW_WAKER_VTABLE: &RawWakerVTable =
     &RawWakerVTable::new(vte_clone, vte_wake, vte_wake_by_ref, vte_drop);
 
 unsafe fn vte_clone(data: *const ()) -> RawWaker {
-    let arc = Arc::<S>::from_raw(data.cast::<S>());
+    let arc = unsafe { Arc::<S>::from_raw(data.cast::<S>()) };
     let ptr = Arc::into_raw(arc.clone()).cast::<()>();
     let _ = mem::ManuallyDrop::new(arc); // Dropを阻止
     RawWaker::new(ptr, RAW_WAKER_VTABLE)
 }
 
 unsafe fn vte_wake(data: *const ()) {
-    let arc = Arc::from_raw(data.cast::<S>());
+    let arc = unsafe { Arc::from_raw(data.cast::<S>()) };
     arc.send(()).unwrap();
 }
 
 unsafe fn vte_wake_by_ref(data: *const ()) {
-    let arc = mem::ManuallyDrop::new(Arc::<S>::from_raw(data.cast::<S>()));
+    let arc = mem::ManuallyDrop::new(unsafe { Arc::<S>::from_raw(data.cast::<S>()) });
     arc.send(()).unwrap();
 }
 
 unsafe fn vte_drop(data: *const ()) {
-    drop(Arc::<S>::from_raw(data.cast::<S>()));
+    drop(unsafe { Arc::<S>::from_raw(data.cast::<S>()) });
 }

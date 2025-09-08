@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 
 use crate::control::common::*;
-use crate::hand::{evaluate_hand, YakuFlags};
+use crate::hand::{YakuFlags, evaluate_hand};
 use crate::model::*;
 use crate::util::misc::*;
 
@@ -50,24 +50,24 @@ impl CalculatorApp {
             return;
         }
 
-        if !exp.is_empty() {
-            if let Err(e) = self.process_expression(&exp) {
-                error!("{}", e);
-                return;
-            }
+        if !exp.is_empty()
+            && let Err(e) = self.process_expression(&exp)
+        {
+            error!("{}", e);
+            return;
         }
 
-        if !file_path.is_empty() {
-            if let Err(e) = self.run_from_file(&file_path) {
-                error!("{}", e);
-            }
+        if !file_path.is_empty()
+            && let Err(e) = self.run_from_file(&file_path)
+        {
+            error!("{}", e);
         }
     }
 
     fn run_from_file(&self, file_path: &str) -> Res {
         let file = File::open(file_path)?;
         let lines = io::BufReader::new(file).lines();
-        for exp in lines.flatten() {
+        for exp in lines.map_while(Result::ok) {
             let e = exp.replace(' ', "");
             if e.is_empty() || e.starts_with('#') {
                 // 空行とコメント行はスキップ

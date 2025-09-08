@@ -182,6 +182,7 @@ impl YakuContext {
             }
         }
 
+        #[allow(clippy::manual_div_ceil)] // unstableなので無視
         let fu = (fu + 9) / 10 * 10; // １の位は切り上げ
         if fu == 20 {
             30 // 例外: 喰いピンフ形

@@ -13,7 +13,7 @@ use crate::listener::*;
 use crate::model::*;
 use crate::util::connection::TcpConnection;
 use crate::util::misc::*;
-use crate::util::waiter::{waiter_waker, Waiter};
+use crate::util::waiter::{Waiter, waiter_waker};
 
 use crate::{error, warn};
 
@@ -338,7 +338,7 @@ impl MahjongEngine {
     }
 
     #[inline]
-    fn get_stage(&self) -> std::sync::RwLockReadGuard<Stage> {
+    fn get_stage(&self) -> std::sync::RwLockReadGuard<'_, Stage> {
         self.ctrl.get_stage()
     }
 
@@ -533,12 +533,14 @@ impl MahjongEngine {
                     false
                 };
 
-                assert!(!acts
-                    .iter()
-                    .find(|a| a.action_type == Discard)
-                    .unwrap()
-                    .tiles
-                    .contains(&t));
+                assert!(
+                    !acts
+                        .iter()
+                        .find(|a| a.action_type == Discard)
+                        .unwrap()
+                        .tiles
+                        .contains(&t)
+                );
                 drop(stg);
                 self.handle_event(Event::discard(turn, t, m, false))
             }
@@ -553,12 +555,13 @@ impl MahjongEngine {
                     let m = pl.drawn == Some(t) && pl.hand[t.0][t.1] == 1;
                     (t, m)
                 };
-                assert!(acts
-                    .iter()
-                    .find(|a| a.action_type == Riichi)
-                    .unwrap()
-                    .tiles
-                    .contains(&t));
+                assert!(
+                    acts.iter()
+                        .find(|a| a.action_type == Riichi)
+                        .unwrap()
+                        .tiles
+                        .contains(&t)
+                );
                 drop(stg);
                 self.handle_event(Event::discard(turn, t, m, true));
             }
@@ -672,24 +675,27 @@ impl MahjongEngine {
                 break;
             }
             n_priority += n_minkan;
-            if n_priority == 0 && minkan.is_some() {
-                let (s, act) = minkan.unwrap();
+            if n_priority == 0
+                && let Some((s, act)) = minkan
+            {
                 let is_pao = check_pao_for_selected_action(&self.get_stage(), s, &act);
                 event = Some(Event::meld(s, MeldType::Minkan, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_pon;
-            if n_priority == 0 && pon.is_some() {
-                let (s, act) = pon.unwrap();
+            if n_priority == 0
+                && let Some((s, act)) = pon
+            {
                 let is_pao = check_pao_for_selected_action(&self.get_stage(), s, &act);
                 event = Some(Event::meld(s, MeldType::Pon, act.tiles.clone(), is_pao));
                 self.melding = Some(act);
                 break;
             }
             n_priority += n_chi;
-            if n_priority == 0 && chi.is_some() {
-                let (s, act) = chi.unwrap();
+            if n_priority == 0
+                && let Some((s, act)) = chi
+            {
                 event = Some(Event::meld(s, MeldType::Chi, act.tiles.clone(), false));
                 self.melding = Some(act);
                 break;

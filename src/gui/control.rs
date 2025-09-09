@@ -36,7 +36,7 @@ impl Plugin for ControlPlugin {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 pub struct ControlContext {
     sensitivity: (f32, f32), // (value, percent)
     yaw: f32,
@@ -82,7 +82,7 @@ fn hide_cursor(window: &mut Window, value: bool) {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct FlyCamera;
 
 fn setup(mut commands: Commands, context: Res<ControlContext>) {

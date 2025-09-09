@@ -27,7 +27,7 @@ pub enum MenuState {
     Off,
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource, Debug, Default)]
 struct MenuConfig {
     mouse_sensitivity_slider: Option<Entity>,
 }

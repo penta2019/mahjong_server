@@ -1,54 +1,29 @@
-use bevy::{
-    color::palettes::basic::GREEN, gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady,
-};
+use bevy::{gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady};
+
+use crate::model::Tile;
+
+pub const TILE_WIDTH: f32 = 0.020;
+pub const TILE_HEIGHT: f32 = 0.028;
+pub const TILE_DEPTH: f32 = 0.016;
 
 pub struct TilePlugin;
 
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
-            .add_observer(change_tile_texture);
+        app.add_observer(change_tile_texture);
     }
 }
 
-#[derive(Component)]
-struct TileOverride(String);
+#[derive(Component, Debug)]
+struct GuiTile {
+    tile: Tile,
+}
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    // ライト
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            intensity: 10_000_000.,
-            range: 100.0,
-            shadow_depth_bias: 0.2,
-            ..default()
-        },
-        Transform::from_xyz(8.0, 16.0, 8.0),
-    ));
-
-    // 床
-    commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(50.0, 50.0).subdivisions(10))),
-        MeshMaterial3d(materials.add(Color::from(GREEN))),
-        Transform::from_xyz(0.0, -0.014, 0.0),
-    ));
-
-    for (ti, t) in ["m", "p", "s"].iter().enumerate() {
-        for n in 0..10 {
-            let tile = asset_server.load(GltfAssetLabel::Scene(0).from_asset("tile.glb"));
-            commands.spawn((
-                SceneRoot(tile.clone()),
-                TileOverride(format!("{t}{n}")),
-                Transform::from_xyz(0.02 * n as f32 - 0.1, 0.0, -0.1 * ti as f32),
-            ));
-        }
-    }
+pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Entity {
+    let tile_model = asset_server.load(GltfAssetLabel::Scene(0).from_asset("tile.glb"));
+    commands
+        .spawn((SceneRoot(tile_model), GuiTile { tile }))
+        .id()
 }
 
 fn change_tile_texture(
@@ -57,10 +32,10 @@ fn change_tile_texture(
     asset_server: Res<AssetServer>,
     mut asset_materials: ResMut<Assets<StandardMaterial>>,
     children: Query<&Children>,
-    tile_override: Query<&TileOverride>,
+    gui_tile: Query<&GuiTile>,
     mesh_materials: Query<&GltfMaterialName>,
 ) {
-    let Ok(tile_override) = tile_override.get(trigger.target()) else {
+    let Ok(gui_tile) = gui_tile.get(trigger.target()) else {
         return;
     };
 
@@ -69,7 +44,7 @@ fn change_tile_texture(
             if name.0 != "face" {
                 continue;
             }
-            let texture = asset_server.load(format!("texture/{}.png", tile_override.0));
+            let texture = asset_server.load(format!("texture/{}.png", gui_tile.tile));
             let material = asset_materials.add(StandardMaterial {
                 base_color_texture: Some(texture),
                 ..Default::default()

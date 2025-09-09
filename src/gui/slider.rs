@@ -81,7 +81,7 @@ impl Slider {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 struct SliderConfig {
     is_interacting: bool,
 }

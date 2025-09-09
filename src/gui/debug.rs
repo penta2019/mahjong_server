@@ -20,10 +20,10 @@ impl Plugin for DebugPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 struct Container;
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 enum Info {
     Fps,
     Pos,

@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::convert::tenhou::TenhouSerializer;
 use crate::listener::Listener;
@@ -45,7 +45,7 @@ impl Listener for EventWriter {
         self.record.push(json!(event));
         if write {
             let _ = write_to_file(
-                &format!("data/{}/{:02}.json", self.start_time, self.round_index),
+                &format!("local/log/{}/{:02}.json", self.start_time, self.round_index),
                 &serde_json::to_string_pretty(&json!(self.record)).unwrap(),
             );
             self.record.clear();

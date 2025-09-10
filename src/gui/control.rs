@@ -86,7 +86,7 @@ fn hide_cursor(window: &mut Window, value: bool) {
 pub struct FlyCamera;
 
 fn setup(mut commands: Commands, context: Res<ControlContext>) {
-    let mut transform = Transform::from_xyz(0.0, 0.1, 0.2);
+    let mut transform = Transform::from_xyz(0.0, 0.25, 0.5);
     transform.rotation = context.camera_rotation();
     commands.spawn((Camera3d::default(), transform, FlyCamera, Msaa::Sample4));
 }

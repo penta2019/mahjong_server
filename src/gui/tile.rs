@@ -10,7 +10,7 @@ pub struct TilePlugin;
 
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(change_tile_texture);
+        app.add_observer(amend_tile_texture);
     }
 }
 
@@ -26,7 +26,7 @@ pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Ti
         .id()
 }
 
-fn change_tile_texture(
+fn amend_tile_texture(
     trigger: Trigger<SceneInstanceReady>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -39,6 +39,7 @@ fn change_tile_texture(
         return;
     };
 
+    // 牌のテクスチャを適切なものに張替え
     for descendant in children.iter_descendants(trigger.target()) {
         if let Ok(name) = mesh_materials.get(descendant) {
             if name.0 != "face" {

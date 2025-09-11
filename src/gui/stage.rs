@@ -8,9 +8,10 @@ use bevy::{
 };
 
 use super::tile::*;
-use crate::model::{self, SEAT, Seat};
-
-pub type EventRx = std::sync::mpsc::Receiver<model::Event>;
+use crate::{
+    listener::EventRx,
+    model::{self, SEAT, Seat},
+};
 
 #[derive(Resource, Debug)]
 struct EventReceiver {
@@ -125,7 +126,8 @@ fn setup(
 }
 
 fn read_event(stg: StageQueries, event_reader: ResMut<EventReceiver>) {
-    if let Ok(e) = event_reader.recv.lock().unwrap().recv() {
+    if let Ok(e) = event_reader.recv.lock().unwrap().try_recv() {
+        println!("gui received event: {e:?}");
         handle_event(stg, &e);
     }
 }

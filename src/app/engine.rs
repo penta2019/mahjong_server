@@ -27,6 +27,7 @@ pub struct EngineApp {
     pause: f64,
     n_game: u32,
     n_thread: u32,
+    view: bool,
     write: bool,
     write_tenhou: bool,
     debug: bool,
@@ -48,6 +49,7 @@ impl EngineApp {
             pause: 0.0,
             n_game: 0,
             n_thread: 16,
+            view: false,
             write: false,
             write_tenhou: false,
             debug: false,
@@ -71,6 +73,7 @@ impl EngineApp {
                 "-p" => app.pause = next_value(&mut it, s),
                 "-g" => app.n_game = next_value(&mut it, s),
                 "-t" => app.n_thread = next_value(&mut it, s),
+                "-v" => app.view = true,
                 "-w" => app.write = true,
                 "-w-tenhou" => app.write_tenhou = true,
                 "-d" => app.debug = true,
@@ -98,7 +101,7 @@ impl EngineApp {
         app
     }
 
-    pub fn run(&mut self) {
+    pub fn run(self) {
         println!("seed: {}", self.seed);
 
         let actors = [
@@ -124,7 +127,7 @@ impl EngineApp {
         );
     }
 
-    fn run_single_game(&mut self, actors: [Box<dyn Actor>; 4]) {
+    fn run_single_game(self, actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
 
         // Debug port
@@ -142,12 +145,36 @@ impl EngineApp {
             listeners.push(Box::new(Debug::new()));
         }
 
+        if self.view {
+            #[cfg(feature = "gui")]
+            {
+                let (tx, rx) = mpsc::channel();
+                let gui = crate::gui::Gui::new();
+                listeners.push(Box::new(EventChannel::new(tx)));
+
+                std::thread::spawn(move || {
+                    let mut game = MahjongEngine::new(
+                        self.seed,
+                        self.rule.clone(),
+                        self.pause,
+                        actors,
+                        listeners,
+                    );
+                    game.run();
+                });
+                gui.run(rx);
+                return;
+            }
+            #[cfg(not(feature = "gui"))]
+            panic!("view mode `-v` requires `gui` feature at compile time");
+        }
+
         let mut game =
             MahjongEngine::new(self.seed, self.rule.clone(), self.pause, actors, listeners);
         game.run();
     }
 
-    fn run_multiple_game(&mut self, actors: [Box<dyn Actor>; 4]) {
+    fn run_multiple_game(self, actors: [Box<dyn Actor>; 4]) {
         use std::{thread, time};
 
         let mut n_game = 0;

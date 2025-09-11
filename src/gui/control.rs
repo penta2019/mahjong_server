@@ -1,7 +1,5 @@
 use std::f32::consts::PI;
 
-#[cfg(not(target_arch = "wasm32"))]
-use bevy::pbr::wireframe::WireframeConfig;
 use bevy::{
     input::mouse::MouseMotion,
     prelude::*,
@@ -127,13 +125,8 @@ fn keyboard_handler_global(
     mut next_debug_state: ResMut<NextState<DebugState>>,
     menu_state: Res<State<MenuState>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
-    mut wireframe_config: ResMut<WireframeConfig>,
     mut window: Single<&mut Window>,
 ) {
-    if keys.just_pressed(KeyCode::Space) {
-        wireframe_config.global = !wireframe_config.global;
-    }
-
     if keys.just_pressed(KeyCode::Tab) {
         next_debug_state.set(if **debug_state == DebugState::On {
             DebugState::Off

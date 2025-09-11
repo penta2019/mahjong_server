@@ -1,5 +1,7 @@
 // Listernerトレイトを継承する構造体のモジュール
 mod debug;
+#[allow(unused)]
+mod event_channel;
 mod event_printer;
 mod event_sender;
 mod event_writer;
@@ -9,6 +11,8 @@ use std::fmt;
 use crate::model::*;
 
 pub use debug::Debug;
+#[allow(unused)]
+pub use event_channel::{EventChannel, EventRx, EventTx};
 pub use event_printer::EventPrinter;
 pub use event_sender::{EventSender, StageSender};
 pub use event_writer::{EventWriter, TenhouEventWriter};

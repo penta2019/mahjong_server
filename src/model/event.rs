@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {
     Begin(EventBegin),       // ゲーム開始
@@ -139,10 +139,10 @@ impl Event {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventBegin {}
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventNew {
     pub rule: Rule,               // ゲーム設定
     pub round: usize,             // 場風
@@ -156,13 +156,13 @@ pub struct EventNew {
     pub wall_count: usize,        // 牌山残り枚数
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventDeal {
     pub seat: Seat,
     pub tile: Tile, // ツモ牌
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventDiscard {
     pub seat: Seat,
     pub tile: Tile,
@@ -170,7 +170,7 @@ pub struct EventDiscard {
     pub is_riichi: bool, // リーチ宣言
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventMeld {
     pub seat: Seat,
     pub meld_type: MeldType, // 鳴き種別
@@ -178,18 +178,18 @@ pub struct EventMeld {
     pub is_pao: bool,        // 責任払いが発生するかどうか
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventNukidora {
     pub seat: Seat,
     pub is_drawn: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventDora {
     pub tile: Tile,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventWin {
     // Stageを見れば明らかにわかることであっても和了結果表示に必要な情報はすべてここに含める
     // StageControllerにとって必要なデータはdelta_scoresのみ
@@ -205,7 +205,7 @@ pub struct EventWin {
     pub contexts: Vec<WinContext>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventDraw {
     // EventWin同様に流局表示に必要な情報をすべて含める
     pub draw_type: DrawType,
@@ -218,7 +218,7 @@ pub struct EventDraw {
     pub hands: [Vec<Tile>; SEAT],            // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventEnd {}
 
 // [DrawType]

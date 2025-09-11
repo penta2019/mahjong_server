@@ -2,14 +2,14 @@ use super::*;
 
 pub type Points = (Point, Point, Point); // (ロンの支払い, ツモ・子の支払い, ツモ・親の支払い)
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Yaku {
     pub name: String,
     pub fan: usize,
 }
 
 // 手役評価関数 hand::evaluate::hand_evaluateの返り値
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ScoreContext {
     pub yakus: Vec<Yaku>, // 役一覧(ドラを含む), Vec<(name, fan)>
     pub fu: usize,        // 符数
@@ -21,7 +21,7 @@ pub struct ScoreContext {
 }
 
 // 和了情報
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WinContext {
     pub seat: usize,                 // 和了者
     pub hand: Vec<Tile>,             // 手牌 (和了牌は含まない = 3*n+2-1枚)

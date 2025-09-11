@@ -1,5 +1,3 @@
-use std::sync::mpsc;
-
 use crate::error;
 
 #[derive(Debug)]
@@ -18,10 +16,10 @@ impl ClientApp {
 
     pub fn run(&mut self) {
         assert!(self.args.is_empty());
-
-        let (_, rx) = mpsc::channel(); // TODO
-
         #[cfg(feature = "gui")]
-        crate::gui::Gui::new().run(rx);
+        {
+            let (_, rx) = std::sync::mpsc::channel(); // TODO
+            crate::gui::Gui::new().run(rx);
+        }
     }
 }

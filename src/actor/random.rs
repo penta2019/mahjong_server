@@ -51,7 +51,7 @@ impl Actor for RandomDiscard {
         }
 
         let pl = &stg.players[self.seat];
-        let mut n: usize = self.rng.gen_range(0..13);
+        let mut n: usize = self.rng.random_range(0..13);
         loop {
             for ti in 0..TYPE {
                 for ni in 1..TNUM {

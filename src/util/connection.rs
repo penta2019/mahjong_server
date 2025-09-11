@@ -172,7 +172,9 @@ impl Connection for WsConnection {
                         stream.send(WsMessage::Pong(ping)).ok();
                     }
                     WsMessage::Text(text) => {
-                        return Message::Text(text);
+                        return Message::Text(
+                            String::from_utf8(text.as_bytes().to_owned()).unwrap(),
+                        );
                     }
                     _ => {
                         warn!("ws unhandled message: {:?}", msg);

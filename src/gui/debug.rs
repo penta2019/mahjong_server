@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use super::util::*;
+use crate::gui::control::ControlContext;
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DebugState {
@@ -27,6 +28,8 @@ struct Container;
 enum Info {
     Fps,
     Pos,
+    Yaw,
+    Pitch,
 }
 
 fn setup(mut commands: Commands) {
@@ -46,16 +49,30 @@ fn setup(mut commands: Commands) {
             Visibility::Hidden,
         ))
         .id();
-
-    let fps = commands
-        .spawn((Info::Fps, Text::new("fps: 0"), Node { ..default() }))
-        .id();
-    commands.entity(root).add_child(fps);
-
-    let pos = commands
-        .spawn((Info::Pos, Text::new("pos:"), Node { ..default() }))
-        .id();
-    commands.entity(root).add_child(pos);
+    commands.spawn((
+        ChildOf(root),
+        Info::Fps,
+        Text::new("fps: 0"),
+        Node { ..default() },
+    ));
+    commands.spawn((
+        ChildOf(root),
+        Info::Pos,
+        Text::new("pos:"),
+        Node { ..default() },
+    ));
+    commands.spawn((
+        ChildOf(root),
+        Info::Yaw,
+        Text::new("yaw:"),
+        Node { ..default() },
+    ));
+    commands.spawn((
+        ChildOf(root),
+        Info::Pitch,
+        Text::new("pitch:"),
+        Node { ..default() },
+    ));
 }
 
 fn state_on(mut visibility: Single<&mut Visibility, With<Container>>) {
@@ -70,6 +87,7 @@ fn update(
     time: Res<Time>,
     mut timer: Local<MsecTimer<500>>,
     camera: Single<&Transform, With<super::control::FlyCamera>>,
+    control_context: Res<ControlContext>,
     mut texts: Query<(&mut Text, &Info)>,
 ) {
     let is_update_period = timer.tick(&time);
@@ -86,7 +104,13 @@ fn update(
             }
             Info::Pos => {
                 let t = camera.translation;
-                text.0 = format!("pos: {:.2}, {:.2}, {:.2}", t.x, t.y, t.z);
+                text.0 = format!("pos: ({:.2}, {:.2}, {:.2})", t.x, t.y, t.z);
+            }
+            Info::Yaw => {
+                text.0 = format!("yaw: {:.2}", control_context.yaw());
+            }
+            Info::Pitch => {
+                text.0 = format!("pitch: {:.2}", control_context.pitch());
             }
         }
     }

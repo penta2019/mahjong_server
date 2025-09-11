@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 #[cfg(not(target_arch = "wasm32"))]
 use bevy::pbr::wireframe::WireframeConfig;
 use bevy::{
@@ -20,7 +22,6 @@ impl Plugin for ControlPlugin {
     fn build(&self, app: &mut App) {
         let mut ctx = ControlContext::default();
         ctx.set_mouse_sensitivity(30.0);
-        ctx.pitch = -25.0;
 
         app.insert_state(ControlState::On)
             .insert_resource(ctx)
@@ -51,6 +52,28 @@ impl ControlContext {
 
     pub fn get_mouse_sensitivity(&self) -> f32 {
         self.sensitivity.1
+    }
+
+    pub fn yaw(&self) -> f32 {
+        self.yaw
+    }
+
+    pub fn pitch(&self) -> f32 {
+        self.pitch
+    }
+
+    fn set_yaw(&mut self, mut yaw: f32) {
+        while yaw < -180.0 {
+            yaw += 360.0;
+        }
+        while yaw > 180.0 {
+            yaw -= 360.0;
+        }
+        self.yaw = yaw;
+    }
+
+    fn set_pitch(&mut self, pitch: f32) {
+        self.pitch = pitch.clamp(-89.9, 89.9);
     }
 
     fn camera_rotation(&self) -> Quat {
@@ -85,10 +108,15 @@ fn hide_cursor(window: &mut Window, value: bool) {
 #[derive(Component, Debug)]
 pub struct FlyCamera;
 
-fn setup(mut commands: Commands, context: Res<ControlContext>) {
-    let mut transform = Transform::from_xyz(0.0, 0.25, 0.5);
+fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
+    let camera_pos = Vec3::new(0.0, 0.45, 0.30);
+    let mut transform = Transform::from_translation(camera_pos);
+    // let (yaw, pitch) = calc_yaw_pitch(camera_pos, Vec3::ZERO);
+    // context.set_yaw(yaw.to_degrees());
+    // context.set_pitch(pitch.to_degrees());
+    context.set_pitch(-60.0);
     transform.rotation = context.camera_rotation();
-    commands.spawn((Camera3d::default(), transform, FlyCamera, Msaa::Sample4));
+    commands.spawn((Camera3d::default(), transform, FlyCamera));
 }
 
 fn keyboard_handler_global(
@@ -136,8 +164,12 @@ fn keyboard_handler(
     mut cam_q: Single<&mut Transform, With<Camera>>,
 ) {
     // カメラのローカル基準方向
-    let forward = cam_q.forward().as_vec3(); // -Z 方向（回転を考慮）
-    let right = cam_q.right().as_vec3(); // +X 方向（回転を考慮）
+    let mut forward = cam_q.forward().as_vec3(); // -Z 方向（回転を考慮）
+    forward.y = 0.0;
+    forward = forward.normalize();
+    let mut right = cam_q.right().as_vec3(); // +X 方向（回転を考慮）
+    right.y = 0.0;
+    right = right.normalize();
     let up = Vec3::Y; // ワールド上方向
 
     let mut dir = Vec3::ZERO;
@@ -188,10 +220,10 @@ fn mouse_look_camera(
     }
 
     // 感度を反映
-    context.yaw -= delta.x * context.sensitivity.0;
-    context.pitch -= delta.y * context.sensitivity.0;
-    // ピッチ制限（上下見過ぎ防止）
-    context.pitch = context.pitch.clamp(-89.9, 89.9);
+    let yaw = context.yaw() - delta.x * context.sensitivity.0;
+    context.set_yaw(yaw);
+    let pitch = context.pitch() - delta.y * context.sensitivity.0;
+    context.set_pitch(pitch);
     // 回転を適用
     camera.rotation = context.camera_rotation();
 }
@@ -207,4 +239,13 @@ fn window_focus_handler(
     for event in focus_events.read() {
         hide_cursor(&mut window, event.focused);
     }
+}
+
+fn calc_yaw_pitch(cam_pos: Vec3, target: Vec3) -> (f32, f32) {
+    let dir = (target - cam_pos).normalize();
+
+    let yaw = dir.x.atan2(dir.z) - PI; // Y軸まわり
+    let pitch = dir.y.atan2((dir.x * dir.x + dir.z * dir.z).sqrt()); // X軸まわり
+
+    (yaw, pitch)
 }

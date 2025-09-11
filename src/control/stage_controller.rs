@@ -12,7 +12,7 @@ use TileState::*;
 // 外部(Actorなど)からStageを参照するための読み取り専用オブジェクト
 #[derive(Clone, Default)]
 pub struct StageRef {
-    stage: Option<Arc<RwLock<Stage>>>,
+    stage: Option<Arc<RwLock<Stage>>>, // default実装のためOptionを使用
 }
 
 impl StageRef {

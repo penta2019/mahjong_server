@@ -15,8 +15,8 @@ impl Plugin for TilePlugin {
 }
 
 #[derive(Component, Debug)]
-struct GuiTile {
-    tile: Tile,
+pub struct GuiTile {
+    pub tile: Tile,
 }
 
 pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Entity {

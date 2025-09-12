@@ -52,7 +52,7 @@ pub struct GuiPlayer {
 #[derive(Component, Debug)]
 pub struct GuiHand {
     seat: Seat,
-    tiles: Vec<(Tile, Entity)>,
+    tiles: Vec<(Entity, Tile)>,
 }
 
 #[derive(Component, Debug)]
@@ -168,10 +168,25 @@ fn event_begin(param: StageParam, _event: &model::EventBegin) {
     init_stage(param);
 }
 
-fn event_new(param: StageParam, event: &model::EventNew) {
+fn event_new(mut param: StageParam, event: &model::EventNew) {
+    let commands = &mut param.commands;
     for seat in 0..SEAT {
         for tile in &event.hands[seat] {
-            for (e_hand, hand) in &param.hands {}
+            for (e_hand, mut hand) in &mut param.hands {
+                if hand.seat != seat {
+                    continue;
+                }
+                let e_tile = create_tile(commands, &param.asset_server, *tile);
+                commands.entity(e_tile).insert((
+                    ChildOf(e_hand),
+                    Transform::from_xyz(
+                        TILE_WIDTH * hand.tiles.len() as f32,
+                        TILE_HEIGHT / 2.,
+                        0.01 as f32,
+                    ),
+                ));
+                hand.tiles.push((e_tile, *tile));
+            }
         }
     }
 }

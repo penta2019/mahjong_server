@@ -85,8 +85,8 @@ fn setup() {
 }
 
 fn read_event(param: StageParam, event_reader: ResMut<EventReceiver>) {
-    if let Ok(e) = event_reader.recv.lock().unwrap().try_recv() {
-        handle_event(param, &e);
+    if let Ok(ev) = event_reader.recv.lock().unwrap().try_recv() {
+        handle_event(param, &ev);
     }
 }
 
@@ -152,16 +152,16 @@ fn init_stage(mut param: StageParam) {
 
 fn handle_event(param: StageParam, event: &model::Event) {
     match event {
-        model::Event::Begin(e) => event_begin(param, e),
-        model::Event::New(e) => event_new(param, e),
-        model::Event::Deal(e) => event_deal(param, e),
-        model::Event::Discard(e) => event_discard(param, e),
-        model::Event::Meld(e) => event_meld(param, e),
-        model::Event::Nukidora(e) => event_nukidora(param, e),
-        model::Event::Dora(e) => event_dora(param, e),
-        model::Event::Win(e) => event_win(param, e),
-        model::Event::Draw(e) => event_draw(param, e),
-        model::Event::End(e) => event_end(param, e),
+        model::Event::Begin(ev) => event_begin(param, ev),
+        model::Event::New(ev) => event_new(param, ev),
+        model::Event::Deal(ev) => event_deal(param, ev),
+        model::Event::Discard(ev) => event_discard(param, ev),
+        model::Event::Meld(ev) => event_meld(param, ev),
+        model::Event::Nukidora(ev) => event_nukidora(param, ev),
+        model::Event::Dora(ev) => event_dora(param, ev),
+        model::Event::Win(ev) => event_win(param, ev),
+        model::Event::Draw(ev) => event_draw(param, ev),
+        model::Event::End(ev) => event_end(param, ev),
     }
 }
 

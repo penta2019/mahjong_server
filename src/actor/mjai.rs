@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use super::*;
 use crate::control::common::get_scores;
@@ -332,16 +332,16 @@ impl Actor for MjaiEndpoint {
 impl Listener for MjaiEndpoint {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         match event {
-            Event::Begin(e) => self.notify_begin(stg, e),
-            Event::New(e) => self.notify_new(stg, e),
-            Event::Deal(e) => self.notify_deal(stg, e),
-            Event::Discard(e) => self.notify_discard(stg, e),
-            Event::Meld(e) => self.notify_meld(stg, e),
-            Event::Nukidora(e) => self.notify_nukidora(stg, e),
-            Event::Dora(e) => self.notify_dora(stg, e),
-            Event::Win(e) => self.notify_win(stg, e),
-            Event::Draw(e) => self.notify_draw(stg, e),
-            Event::End(e) => self.notify_end(stg, e),
+            Event::Begin(ev) => self.notify_begin(stg, ev),
+            Event::New(ev) => self.notify_new(stg, ev),
+            Event::Deal(ev) => self.notify_deal(stg, ev),
+            Event::Discard(ev) => self.notify_discard(stg, ev),
+            Event::Meld(ev) => self.notify_meld(stg, ev),
+            Event::Nukidora(ev) => self.notify_nukidora(stg, ev),
+            Event::Dora(ev) => self.notify_dora(stg, ev),
+            Event::Win(ev) => self.notify_win(stg, ev),
+            Event::Draw(ev) => self.notify_draw(stg, ev),
+            Event::End(ev) => self.notify_end(stg, ev),
         }
     }
 }

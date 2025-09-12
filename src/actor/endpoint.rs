@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::thread;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use super::*;
 use crate::util::connection::{Connection, Message, TcpConnection};
@@ -53,31 +53,33 @@ impl Endpoint {
         let arc0 = Arc::new(Mutex::new(SharedData::default()));
         let arc1 = arc0.clone();
 
-        thread::spawn(move || loop {
-            sleep(0.01); // 負荷軽減&Lock解除時間
-            let mut d = arc1.lock().unwrap();
-            match conn.recv() {
-                Message::Open => d.cursor = 0,
-                Message::Text(act) => match serde_json::from_str::<Action>(&act) {
-                    Ok(a) => {
-                        d.action = Some(a);
-                        d.waker.take().unwrap().wake();
-                    }
-                    Err(e) => error!("{}: {}", e, act),
-                },
-                Message::Nop => {
-                    while d.cursor < d.msgs.len() {
-                        let (msg, is_action) = &d.msgs[d.cursor];
-                        if *is_action && d.cursor != d.msgs.len() - 1 {
-                            // メッセージがアクションでかつ最後のメッセージでない場合は失効済みなので送信しない
-                        } else {
-                            conn.send(&msg.to_string());
+        thread::spawn(move || {
+            loop {
+                sleep(0.01); // 負荷軽減&Lock解除時間
+                let mut d = arc1.lock().unwrap();
+                match conn.recv() {
+                    Message::Open => d.cursor = 0,
+                    Message::Text(act) => match serde_json::from_str::<Action>(&act) {
+                        Ok(a) => {
+                            d.action = Some(a);
+                            d.waker.take().unwrap().wake();
                         }
-                        d.cursor += 1;
+                        Err(e) => error!("{}: {}", e, act),
+                    },
+                    Message::Nop => {
+                        while d.cursor < d.msgs.len() {
+                            let (msg, is_action) = &d.msgs[d.cursor];
+                            if *is_action && d.cursor != d.msgs.len() - 1 {
+                                // メッセージがアクションでかつ最後のメッセージでない場合は失効済みなので送信しない
+                            } else {
+                                conn.send(&msg.to_string());
+                            }
+                            d.cursor += 1;
+                        }
                     }
+                    Message::Close => {}
+                    Message::NoConnection => {}
                 }
-                Message::Close => {}
-                Message::NoConnection => {}
             }
         });
 
@@ -129,32 +131,32 @@ impl Listener for Endpoint {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         let mut d = self.shared.lock().unwrap();
         let val = match event {
-            Event::New(e) => {
-                let mut hands = e.hands.clone();
+            Event::New(ev) => {
+                let mut hands = ev.hands.clone();
                 for s in 0..SEAT {
                     if !self.debug && s != self.seat {
                         hands[s].fill(Z8);
                     }
                 }
-                let e2 = Event::New(EventNew {
-                    rule: e.rule.clone(),
+                let ev2 = Event::New(EventNew {
+                    rule: ev.rule.clone(),
                     hands,
-                    doras: e.doras.clone(),
-                    names: e.names.clone(),
-                    ..*e
+                    doras: ev.doras.clone(),
+                    names: ev.names.clone(),
+                    ..*ev
                 });
-                let mut val = json!(e2);
+                let mut val = json!(ev2);
                 val["seat"] = json!(self.seat);
                 val
             }
-            Event::Deal(e) => {
-                let t = if !self.debug && self.seat != e.seat {
+            Event::Deal(ev) => {
+                let t = if !self.debug && self.seat != ev.seat {
                     Z8
                 } else {
-                    e.tile
+                    ev.tile
                 };
-                let e2 = Event::Deal(EventDeal { tile: t, ..*e });
-                json!(e2)
+                let ev2 = Event::Deal(EventDeal { tile: t, ..*ev });
+                json!(ev2)
             }
             _ => json!(event),
         };

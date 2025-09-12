@@ -81,16 +81,16 @@ impl StageController {
             // 非同期で動作しているActorの反応を待たずに他の高優先度のactionが選択された場合に起こる
             let stg = &mut self.stage.try_write().unwrap();
             match event {
-                Event::Begin(e) => event_begin(stg, e),
-                Event::New(e) => event_new(stg, e),
-                Event::Deal(e) => event_deal(stg, e),
-                Event::Discard(e) => event_discard(stg, e),
-                Event::Meld(e) => event_meld(stg, e),
-                Event::Nukidora(e) => event_nukidora(stg, e),
-                Event::Dora(e) => event_dora(stg, e),
-                Event::Win(e) => event_win(stg, e),
-                Event::Draw(e) => event_draw(stg, e),
-                Event::End(e) => event_end(stg, e),
+                Event::Begin(ev) => event_begin(stg, ev),
+                Event::New(ev) => event_new(stg, ev),
+                Event::Deal(ev) => event_deal(stg, ev),
+                Event::Discard(ev) => event_discard(stg, ev),
+                Event::Meld(ev) => event_meld(stg, ev),
+                Event::Nukidora(ev) => event_nukidora(stg, ev),
+                Event::Dora(ev) => event_dora(stg, ev),
+                Event::Win(ev) => event_win(stg, ev),
+                Event::Draw(ev) => event_draw(stg, ev),
+                Event::End(ev) => event_end(stg, ev),
             }
             update_after_turn_action(stg, event);
             stg.step += 1;
@@ -412,13 +412,13 @@ fn update_after_turn_action(stg: &mut Stage, event: &Event) {
     // 暗槓,加槓,北抜きも実質的に河に一枚捨てるのと同じことに注意
 
     let (seat, tile) = match event {
-        Event::Discard(e) => (e.seat, e.tile),
-        Event::Meld(e) => match e.meld_type {
-            MeldType::Ankan => (e.seat, Z8), // 待ちが変わる可能性があるため常に和了牌を更新
-            MeldType::Kakan => (e.seat, e.consumed[0]),
+        Event::Discard(ev) => (ev.seat, ev.tile),
+        Event::Meld(ev) => match ev.meld_type {
+            MeldType::Ankan => (ev.seat, Z8), // 待ちが変わる可能性があるため常に和了牌を更新
+            MeldType::Kakan => (ev.seat, ev.consumed[0]),
             _ => return,
         },
-        Event::Nukidora(e) => (e.seat, Tile(TZ, WN)),
+        Event::Nukidora(ev) => (ev.seat, Tile(TZ, WN)),
         _ => return,
     };
 

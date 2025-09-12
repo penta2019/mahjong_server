@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::model::*;
 
@@ -100,87 +100,89 @@ impl TenhouSerializer {
         let k = &mut self.dealer;
         match event {
             Event::Begin(_) => {}
-            Event::New(e) => {
+            Event::New(ev) => {
                 self.dealer = TenhouRound::default();
                 let k = &mut self.dealer;
-                k.dealer = e.round * 4 + e.dealer;
-                k.honba_sticks = e.honba_sticks;
-                k.riichi_sticks = e.riichi_sticks;
-                k.doras = tiles_to_tenhou(&e.doras);
-                k.scores = e.scores;
+                k.dealer = ev.round * 4 + ev.dealer;
+                k.honba_sticks = ev.honba_sticks;
+                k.riichi_sticks = ev.riichi_sticks;
+                k.doras = tiles_to_tenhou(&ev.doras);
+                k.scores = ev.scores;
                 for s in 0..SEAT {
-                    k.players[s].hand = tiles_to_tenhou(&e.hands[s]);
+                    k.players[s].hand = tiles_to_tenhou(&ev.hands[s]);
                 }
             }
-            Event::Deal(e) => {
-                k.players[e.seat].drawns.push(json!(tile_to_tenhou(e.tile)));
+            Event::Deal(ev) => {
+                k.players[ev.seat]
+                    .drawns
+                    .push(json!(tile_to_tenhou(ev.tile)));
             }
-            Event::Discard(e) => {
-                let d = if e.is_drawn {
+            Event::Discard(ev) => {
+                let d = if ev.is_drawn {
                     60
                 } else {
-                    tile_to_tenhou(e.tile)
+                    tile_to_tenhou(ev.tile)
                 };
-                let d = if e.is_riichi {
+                let d = if ev.is_riichi {
                     json!(format!("r{}", d))
                 } else {
                     json!(d)
                 };
-                k.players[e.seat].discards.push(d);
+                k.players[ev.seat].discards.push(d);
             }
-            Event::Meld(e) => match e.meld_type {
+            Event::Meld(ev) => match ev.meld_type {
                 MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
                     let (seat, _, d) = stg.last_tile.unwrap();
-                    let pos = 3 - (seat + SEAT - e.seat) % SEAT;
-                    let marker = match e.meld_type {
+                    let pos = 3 - (seat + SEAT - ev.seat) % SEAT;
+                    let marker = match ev.meld_type {
                         MeldType::Chi => "c",
                         MeldType::Pon => "p",
                         MeldType::Minkan => "m",
                         _ => panic!(),
                     };
-                    let mut meld: Vec<String> = e
+                    let mut meld: Vec<String> = ev
                         .consumed
                         .iter()
                         .map(|&t| tile_to_tenhou(t).to_string())
                         .collect();
                     meld.insert(pos, format!("{}{}", marker, tile_to_tenhou(d)));
-                    k.players[e.seat].drawns.push(json!(meld.concat()));
+                    k.players[ev.seat].drawns.push(json!(meld.concat()));
                 }
                 MeldType::Kakan => {
-                    let t = e.consumed[0];
+                    let t = ev.consumed[0];
                     let tn = t.to_normal();
-                    for m in &stg.players[e.seat].melds {
+                    for m in &stg.players[ev.seat].melds {
                         if m.tiles[0].to_normal() == tn {
                             let mut meld = "".to_string();
                             for i in 0..3 {
-                                if m.froms[i] != e.seat {
+                                if m.froms[i] != ev.seat {
                                     meld += "k";
                                     meld += &tile_to_tenhou(t).to_string();
                                 }
                                 meld += &tile_to_tenhou(m.tiles[i]).to_string();
                             }
-                            k.players[e.seat].discards.push(json!(meld));
+                            k.players[ev.seat].discards.push(json!(meld));
                         }
                     }
                 }
                 MeldType::Ankan => {
-                    let mut meld: Vec<String> = e
+                    let mut meld: Vec<String> = ev
                         .consumed
                         .iter()
                         .map(|&t| tile_to_tenhou(t).to_string())
                         .collect();
                     meld.insert(3, "a".to_string());
-                    k.players[e.seat].discards.push(json!(meld.concat()));
+                    k.players[ev.seat].discards.push(json!(meld.concat()));
                 }
             },
             Event::Nukidora(_) => panic!(),
-            Event::Dora(e) => {
-                k.doras.push(tile_to_tenhou(e.tile));
+            Event::Dora(ev) => {
+                k.doras.push(tile_to_tenhou(ev.tile));
             }
-            Event::Win(e) => {
+            Event::Win(ev) => {
                 k.result = "和了".to_string();
-                k.ura_doras = tiles_to_tenhou(&e.ura_doras);
-                for ctx in &e.contexts {
+                k.ura_doras = tiles_to_tenhou(&ev.ura_doras);
+                for ctx in &ev.contexts {
                     let score_ctx = &ctx.score_context;
                     k.result_detail
                         .push(ctx.delta_scores.iter().map(|&p| json!(p)).collect());
@@ -214,11 +216,11 @@ impl TenhouSerializer {
                     k.result_detail.push(detail);
                 }
             }
-            Event::Draw(e) => {
+            Event::Draw(ev) => {
                 // TODO
                 k.result = "流局".to_string();
                 k.result_detail
-                    .push(e.delta_scores.iter().map(|&p| json!(p)).collect());
+                    .push(ev.delta_scores.iter().map(|&p| json!(p)).collect());
             }
             Event::End(_) => {}
         }

@@ -35,15 +35,15 @@ impl Listener for EventPrinter {
                 println!("New");
                 println!("{}", stg);
             }
-            Deal(e) => {
-                println!("Deal {}", e.tile);
+            Deal(ev) => {
+                println!("Deal {}", ev.tile);
                 println!("{}", pl);
             }
-            Discard(e) => {
+            Discard(ev) => {
                 println!(
                     "Discard {} {}",
-                    e.tile,
-                    if e.is_riichi { "riichi" } else { "" }
+                    ev.tile,
+                    if ev.is_riichi { "riichi" } else { "" }
                 );
                 println!("{}", pl);
             }
@@ -55,21 +55,21 @@ impl Listener for EventPrinter {
                 println!("Nukidora");
                 println!("{}", pl);
             }
-            Dora(e) => {
-                println!("Dora {}", e.tile);
+            Dora(ev) => {
+                println!("Dora {}", ev.tile);
             }
-            Win(e) => {
+            Win(ev) => {
                 println!("Win");
-                println!("doras: {}", vec_to_string(&e.doras));
-                println!("ura_doras: {}", vec_to_string(&e.ura_doras));
-                println!("{:?}", e.contexts);
-                self.print_score_change(stg, &e.delta_scores);
+                println!("doras: {}", vec_to_string(&ev.doras));
+                println!("ura_doras: {}", vec_to_string(&ev.ura_doras));
+                println!("{:?}", ev.contexts);
+                self.print_score_change(stg, &ev.delta_scores);
                 println!("{}", stg);
             }
-            Draw(e) => {
+            Draw(ev) => {
                 println!("Draw");
                 println!("{}", stg);
-                self.print_score_change(stg, &e.delta_scores);
+                self.print_score_change(stg, &ev.delta_scores);
             }
             End(_) => {
                 println!("End");

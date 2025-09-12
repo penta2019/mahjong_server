@@ -756,8 +756,8 @@ impl MahjongEngine {
         }
 
         // Futureが獲得しているReadGuardがすべて開放されてからイベントを処理
-        if let Some(e) = event {
-            self.handle_event(e);
+        if let Some(ev) = event {
+            self.handle_event(ev);
         }
     }
 

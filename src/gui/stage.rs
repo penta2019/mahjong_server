@@ -10,7 +10,7 @@ use bevy::{
 use super::tile::*;
 use crate::{
     listener::EventRx,
-    model::{self, SEAT, Seat},
+    model::{self, *},
 };
 
 #[derive(Resource, Debug)]
@@ -52,6 +52,7 @@ pub struct GuiPlayer {
 #[derive(Component, Debug)]
 pub struct GuiHand {
     seat: Seat,
+    tiles: Vec<(Tile, Entity)>,
 }
 
 #[derive(Component, Debug)]
@@ -59,81 +60,8 @@ pub struct GuiMelds {
     seat: Seat,
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    // asset_server: Res<AssetServer>,
-) {
-    // Light
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            intensity: 10_000_000.,
-            range: 100.0,
-            shadow_depth_bias: 0.2,
-            ..default()
-        },
-        Transform::from_xyz(8.0, 16.0, 8.0),
-    ));
-
-    // stage
-    let stage = commands
-        .spawn((
-            Transform::from_xyz(0., 0., 0.),
-            Mesh3d(meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
-            MeshMaterial3d(materials.add(Color::from(GREEN))),
-            GuiStage,
-        ))
-        .id();
-
-    // info
-    commands.spawn((
-        ChildOf(stage),
-        Transform::from_xyz(0., 0.001, 0.),
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(0.12, 0.12))),
-        MeshMaterial3d(materials.add(Color::from(BLACK))),
-    ));
-
-    for s in 0..SEAT {
-        let player = commands
-            .spawn((
-                ChildOf(stage),
-                Transform {
-                    rotation: Quat::from_rotation_y(std::f32::consts::FRAC_PI_2 * s as f32),
-                    ..Default::default()
-                },
-                GuiPlayer { seat: s },
-            ))
-            .id();
-
-        let hand = commands
-            .spawn((
-                ChildOf(player),
-                Transform::from_xyz(-0.12, 0., 0.21),
-                GuiHand { seat: s },
-            ))
-            .id();
-
-        // for i in 0..13 {
-        //     let tile = super::tile::create_tile(&mut commands, &asset_server, Tile(model::TM, 5));
-        //     commands.entity(tile).insert((
-        //         ChildOf(hand),
-        //         Transform::from_xyz(TILE_WIDTH * i as f32, TILE_HEIGHT / 2., 0.01 as f32),
-        //     ));
-        // }
-    }
-}
-
-fn read_event(stg: StageQueries, event_reader: ResMut<EventReceiver>) {
-    if let Ok(e) = event_reader.recv.lock().unwrap().try_recv() {
-        println!("gui received event: {e:?}");
-        handle_event(stg, &e);
-    }
-}
-
 #[derive(SystemParam)]
-struct StageQueries<'w, 's> {
+struct StageParam<'w, 's> {
     commands: Commands<'w, 's>,
     meshes: ResMut<'w, Assets<Mesh>>,
     materials: ResMut<'w, Assets<StandardMaterial>>,
@@ -145,37 +73,122 @@ struct StageQueries<'w, 's> {
     tiles: Query<'w, 's, (Entity, &'static mut GuiTile)>,
 }
 
-fn handle_event(stg: StageQueries, event: &model::Event) {
-    match event {
-        model::Event::Begin(e) => event_begin(stg, e),
-        model::Event::New(e) => event_new(stg, e),
-        model::Event::Deal(e) => event_deal(stg, e),
-        model::Event::Discard(e) => event_discard(stg, e),
-        model::Event::Meld(e) => event_meld(stg, e),
-        model::Event::Nukidora(e) => event_nukidora(stg, e),
-        model::Event::Dora(e) => event_dora(stg, e),
-        model::Event::Win(e) => event_win(stg, e),
-        model::Event::Draw(e) => event_draw(stg, e),
-        model::Event::End(e) => event_end(stg, e),
+fn setup() {
+
+    // for i in 0..13 {
+    //     let tile = super::tile::create_tile(&mut commands, &asset_server, Tile(model::TM, 5));
+    //     commands.entity(tile).insert((
+    //         ChildOf(hand),
+    //         Transform::from_xyz(TILE_WIDTH * i as f32, TILE_HEIGHT / 2., 0.01 as f32),
+    //     ));
+    // }
+}
+
+fn read_event(param: StageParam, event_reader: ResMut<EventReceiver>) {
+    if let Ok(e) = event_reader.recv.lock().unwrap().try_recv() {
+        handle_event(param, &e);
     }
 }
 
-fn event_begin(stg: StageQueries, event: &model::EventBegin) {}
+fn init_stage(mut param: StageParam) {
+    for (entity, _) in &param.stage {
+        param.commands.entity(entity).despawn();
+    }
 
-fn event_new(stg: StageQueries, event: &model::EventNew) {}
+    // Light
+    param.commands.spawn((
+        PointLight {
+            shadows_enabled: true,
+            intensity: 10_000_000.,
+            range: 100.0,
+            shadow_depth_bias: 0.2,
+            ..default()
+        },
+        Transform::from_xyz(8.0, 16.0, 8.0),
+    ));
 
-fn event_deal(stg: StageQueries, event: &model::EventDeal) {}
+    // stage
+    let stage = param
+        .commands
+        .spawn((
+            Transform::from_xyz(0., 0., 0.),
+            Mesh3d(param.meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
+            MeshMaterial3d(param.materials.add(Color::from(GREEN))),
+            GuiStage,
+        ))
+        .id();
 
-fn event_discard(stg: StageQueries, event: &model::EventDiscard) {}
+    // info
+    param.commands.spawn((
+        ChildOf(stage),
+        Transform::from_xyz(0., 0.001, 0.),
+        Mesh3d(param.meshes.add(Plane3d::default().mesh().size(0.12, 0.12))),
+        MeshMaterial3d(param.materials.add(Color::from(BLACK))),
+    ));
 
-fn event_meld(stg: StageQueries, event: &model::EventMeld) {}
+    for s in 0..SEAT {
+        let player = param
+            .commands
+            .spawn((
+                ChildOf(stage),
+                Transform {
+                    rotation: Quat::from_rotation_y(std::f32::consts::FRAC_PI_2 * s as f32),
+                    ..Default::default()
+                },
+                GuiPlayer { seat: s },
+            ))
+            .id();
 
-fn event_nukidora(stg: StageQueries, event: &model::EventNukidora) {}
+        param.commands.spawn((
+            ChildOf(player),
+            Transform::from_xyz(-0.12, 0., 0.21),
+            GuiHand {
+                seat: s,
+                tiles: vec![],
+            },
+        ));
+    }
+}
 
-fn event_dora(stg: StageQueries, event: &model::EventDora) {}
+fn handle_event(param: StageParam, event: &model::Event) {
+    match event {
+        model::Event::Begin(e) => event_begin(param, e),
+        model::Event::New(e) => event_new(param, e),
+        model::Event::Deal(e) => event_deal(param, e),
+        model::Event::Discard(e) => event_discard(param, e),
+        model::Event::Meld(e) => event_meld(param, e),
+        model::Event::Nukidora(e) => event_nukidora(param, e),
+        model::Event::Dora(e) => event_dora(param, e),
+        model::Event::Win(e) => event_win(param, e),
+        model::Event::Draw(e) => event_draw(param, e),
+        model::Event::End(e) => event_end(param, e),
+    }
+}
 
-fn event_win(stg: StageQueries, event: &model::EventWin) {}
+fn event_begin(param: StageParam, _event: &model::EventBegin) {
+    init_stage(param);
+}
 
-fn event_draw(stg: StageQueries, event: &model::EventDraw) {}
+fn event_new(param: StageParam, event: &model::EventNew) {
+    for seat in 0..SEAT {
+        for tile in &event.hands[seat] {
+            for (e_hand, hand) in &param.hands {}
+        }
+    }
+}
 
-fn event_end(stg: StageQueries, event: &model::EventEnd) {}
+fn event_deal(param: StageParam, event: &model::EventDeal) {}
+
+fn event_discard(param: StageParam, event: &model::EventDiscard) {}
+
+fn event_meld(param: StageParam, event: &model::EventMeld) {}
+
+fn event_nukidora(param: StageParam, event: &model::EventNukidora) {}
+
+fn event_dora(param: StageParam, event: &model::EventDora) {}
+
+fn event_win(param: StageParam, event: &model::EventWin) {}
+
+fn event_draw(param: StageParam, event: &model::EventDraw) {}
+
+fn event_end(param: StageParam, event: &model::EventEnd) {}

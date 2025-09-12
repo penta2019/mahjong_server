@@ -74,7 +74,6 @@ struct StageParam<'w, 's> {
 }
 
 fn setup() {
-
     // for i in 0..13 {
     //     let tile = super::tile::create_tile(&mut commands, &asset_server, Tile(model::TM, 5));
     //     commands.entity(tile).insert((
@@ -91,8 +90,8 @@ fn read_event(param: StageParam, event_reader: ResMut<EventReceiver>) {
 }
 
 fn init_stage(mut param: StageParam) {
-    for (entity, _) in &param.stage {
-        param.commands.entity(entity).despawn();
+    for (e_stage, _) in &param.stage {
+        param.commands.entity(e_stage).despawn();
     }
 
     // Light

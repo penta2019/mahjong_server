@@ -232,7 +232,7 @@ pub enum Action {
     Tsumo,         // ツモ
     Ron,           // ロン
     Kyushukyuhai,  // 九種九牌
-    Nukidora,          // 北抜き
+    Nukidora,      // 北抜き
 }
 ```
 
@@ -251,11 +251,13 @@ c(_): count(_)
 q(_): query(_)
 e(_): entity(_)
 ev(_): event(_)
-stg: stage  
-ti: Tile type index  
-ni: Tile number index  
-s: seat  
-t: tile  
+stg: stage
+ti: Tile type index
+ni: Tile number index
+a: action
+s: seat
+t: tile
+
 
 ## Module構成
 ![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg)

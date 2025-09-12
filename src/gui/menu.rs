@@ -84,7 +84,7 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
         .id();
     commands.entity(root).add_child(text_entity);
 
-    let sensitivity_container = commands
+    let e_sensitivity_container = commands
         .spawn((
             Node {
                 justify_self: JustifySelf::Stretch,
@@ -96,7 +96,7 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
             // BackgroundColor::from(bevy::color::palettes::basic::AQUA),
         ))
         .id();
-    commands.entity(root).add_child(sensitivity_container);
+    commands.entity(root).add_child(e_sensitivity_container);
 
     let sensitivity_text = commands
         .spawn((
@@ -108,12 +108,12 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
         ))
         .id();
     commands
-        .entity(sensitivity_container)
+        .entity(e_sensitivity_container)
         .add_child(sensitivity_text);
 
     let sensitivity_slider = create_slider(&mut commands, 300.0);
     commands
-        .entity(sensitivity_container)
+        .entity(e_sensitivity_container)
         .add_child(sensitivity_slider);
     config.mouse_sensitivity_slider = Some(sensitivity_slider);
 }
@@ -128,8 +128,8 @@ fn state_on(
     **visibility = Visibility::Visible;
     slider_state.set(SliderState::On);
 
-    for (entity, mut slider) in sliders {
-        if entity == config.mouse_sensitivity_slider.unwrap() {
+    for (e_slider, mut slider) in sliders {
+        if e_slider == config.mouse_sensitivity_slider.unwrap() {
             slider.set(control_context.get_mouse_sensitivity())
         }
     }
@@ -145,8 +145,8 @@ fn state_off(
     **visivility = Visibility::Hidden;
     slider_state.set(SliderState::Off);
 
-    for (entity, slider) in sliders {
-        if entity == config.mouse_sensitivity_slider.unwrap() {
+    for (e_slider, slider) in sliders {
+        if e_slider == config.mouse_sensitivity_slider.unwrap() {
             control_context.set_mouse_sensitivity(slider.get());
         }
     }

@@ -40,8 +40,8 @@ fn amend_tile_texture(
     };
 
     // 牌のテクスチャを適切なものに張替え
-    for descendant in children.iter_descendants(trigger.target()) {
-        if let Ok(name) = mesh_materials.get(descendant) {
+    for e_descendant in children.iter_descendants(trigger.target()) {
+        if let Ok(name) = mesh_materials.get(e_descendant) {
             if name.0 != "face" {
                 continue;
             }
@@ -50,7 +50,9 @@ fn amend_tile_texture(
                 base_color_texture: Some(texture),
                 ..Default::default()
             });
-            commands.entity(descendant).insert(MeshMaterial3d(material));
+            commands
+                .entity(e_descendant)
+                .insert(MeshMaterial3d(material));
         }
     }
 }

@@ -51,16 +51,16 @@ impl CalculatorApp {
         }
 
         if !exp.is_empty()
-            && let Err(e) = self.process_expression(&exp)
+            && let Err(err) = self.process_expression(&exp)
         {
-            error!("{}", e);
+            error!("{}", err);
             return;
         }
 
         if !file_path.is_empty()
-            && let Err(e) = self.run_from_file(&file_path)
+            && let Err(err) = self.run_from_file(&file_path)
         {
-            error!("{}", e);
+            error!("{}", err);
         }
     }
 
@@ -68,12 +68,12 @@ impl CalculatorApp {
         let file = File::open(file_path)?;
         let lines = io::BufReader::new(file).lines();
         for exp in lines.map_while(Result::ok) {
-            let e = exp.replace(' ', "");
-            if e.is_empty() || e.starts_with('#') {
+            let exp2 = exp.replace(' ', "");
+            if exp2.is_empty() || exp2.starts_with('#') {
                 // 空行とコメント行はスキップ
                 println!("> {}", exp);
-            } else if let Err(e) = self.process_expression(&exp) {
-                error!("{}", e);
+            } else if let Err(err) = self.process_expression(&exp) {
+                error!("{}", err);
             }
             println!();
         }
@@ -335,13 +335,13 @@ fn test_calculator() {
     let file = File::open("tests/win_hands.txt").unwrap();
     let lines = io::BufReader::new(file).lines();
     for exp in lines.flatten() {
-        let e = exp.replace(' ', "");
-        if e.is_empty() || e.starts_with('#') {
+        let exp2 = exp.replace(' ', "");
+        if exp2.is_empty() || exp2.starts_with('#') {
             // 空行とコメント行はスキップ
             println!("> {}", exp);
         } else {
             let mut calculator = Calculator::new(false);
-            calculator.parse(&e).unwrap();
+            calculator.parse(&exp2).unwrap();
             assert_ne!(Verify::Error, calculator.run());
         }
     }

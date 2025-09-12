@@ -43,7 +43,7 @@ impl TcpConnection {
             for request in listener.incoming() {
                 match request {
                     Ok(stream) => tx.send(stream).unwrap(),
-                    Err(e) => error!("tcp error: {}", e),
+                    Err(err) => error!("tcp error: {}", err),
                 }
             }
         });
@@ -91,11 +91,11 @@ impl Connection for TcpConnection {
                     return Message::Text(buf);
                 }
             }
-            Err(e) => {
-                if e.kind() == std::io::ErrorKind::WouldBlock {
+            Err(err) => {
+                if err.kind() == std::io::ErrorKind::WouldBlock {
                     return Message::Nop;
                 } else {
-                    error!("{}", e);
+                    error!("{}", err);
                 }
             }
         }
@@ -122,7 +122,7 @@ impl WsConnection {
             for request in listener.incoming() {
                 match request {
                     Ok(stream) => tx.send(stream).unwrap(),
-                    Err(e) => error!("ws error: {}", e),
+                    Err(err) => error!("ws error: {}", err),
                 }
             }
         });
@@ -146,7 +146,7 @@ impl Connection for WsConnection {
                 info!("ws connection opened from: {}", stream.peer_addr().unwrap());
                 match tungstenite::accept(stream) {
                     Ok(s) => self.stream = Some(s),
-                    Err(e) => error!("ws upgrade error: {}", e),
+                    Err(err) => error!("ws upgrade error: {}", err),
                 }
 
                 return Message::Open;
@@ -180,15 +180,15 @@ impl Connection for WsConnection {
                         warn!("ws unhandled message: {:?}", msg);
                     }
                 },
-                Err(e) => {
+                Err(err) => {
                     use tungstenite::error::Error as WsError;
-                    if let WsError::Io(e) = &e
-                        && e.kind() == std::io::ErrorKind::WouldBlock
+                    if let WsError::Io(err) = &err
+                        && err.kind() == std::io::ErrorKind::WouldBlock
                     {
                         return Message::Nop;
                     }
 
-                    error!("ws error: {:?}", e);
+                    error!("ws error: {:?}", err);
                     break;
                 }
             }

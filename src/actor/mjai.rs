@@ -88,15 +88,15 @@ impl MjaiEndpoint {
                         let data = data.clone();
                         thread::spawn(move || {
                             info!("new connection {:?}", stream);
-                            if let Err(e) = stream_handler(&mut stream, data, true) {
-                                error!("{:?}", e);
+                            if let Err(err) = stream_handler(&mut stream, data, true) {
+                                error!("{:?}", err);
                             }
                             info!("connection closed");
                             *is_connected.lock().unwrap() = false;
                         });
                     }
-                    Err(e) => {
-                        error!("{}", e);
+                    Err(err) => {
+                        error!("{}", err);
                     }
                 }
             }
@@ -513,7 +513,7 @@ fn recv_json(stream: &mut TcpStream, debug: bool) -> io::Result<Value> {
     if buf.is_empty() {
         Err(io::Error::new(io::ErrorKind::InvalidInput, ""))?;
     }
-    serde_json::from_str(&buf[..buf.len() - 1]).map_err(|e| e.into())
+    serde_json::from_str(&buf[..buf.len() - 1]).map_err(|err| err.into())
 }
 
 fn check_alive(stream: &mut TcpStream) -> io::Result<()> {

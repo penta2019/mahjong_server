@@ -15,7 +15,7 @@ where
         .next()
         .unwrap_or_else(|| error_exit(format!("{}: value missing", opt)));
     n.parse()
-        .unwrap_or_else(|e| error_exit(format!("{}: {} '{}'", opt, e, n)))
+        .unwrap_or_else(|err| error_exit(format!("{}: {} '{}'", opt, err, n)))
 }
 
 pub fn sleep(sec: f64) {
@@ -32,7 +32,7 @@ pub fn unixtime_now() -> f64 {
 }
 
 pub fn prompt() -> String {
-    use std::io::{stdin, stdout, Write};
+    use std::io::{Write, stdin, stdout};
     print!("> ");
     stdout().flush().unwrap();
     let mut buf = String::new();
@@ -41,7 +41,7 @@ pub fn prompt() -> String {
 }
 
 pub fn flush() {
-    use std::io::{stdout, Write};
+    use std::io::{Write, stdout};
     stdout().flush().unwrap();
 }
 
@@ -52,7 +52,7 @@ pub fn error_exit<T: fmt::Display, U>(t: T) -> U {
 
 pub fn get_paths(dir: &std::path::Path) -> Res<Vec<std::path::PathBuf>> {
     let mut entries = std::fs::read_dir(dir)?
-        .map(|res| res.map(|e| e.path()))
+        .map(|res| res.map(|err| err.path()))
         .collect::<Result<Vec<_>, _>>()?;
     entries.sort();
     Ok(entries)

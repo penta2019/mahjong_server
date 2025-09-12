@@ -64,7 +64,7 @@ impl Endpoint {
                             d.action = Some(a);
                             d.waker.take().unwrap().wake();
                         }
-                        Err(e) => error!("{}: {}", e, act),
+                        Err(err) => error!("{}: {}", err, act),
                     },
                     Message::Nop => {
                         while d.cursor < d.msgs.len() {

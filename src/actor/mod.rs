@@ -138,8 +138,8 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
                 if !a.is_empty() {
                     conf.args[i].value = match parse_as(&conf.args[i].value, a) {
                         Ok(v) => v,
-                        Err(e) => {
-                            error!("{}: {}", e, a);
+                        Err(err) => {
+                            error!("{}: {}", err, a);
                             std::process::exit(0);
                         }
                     };

@@ -19,7 +19,7 @@ impl StageRef {
     #[inline]
     pub fn lock(&self) -> Res<RwLockReadGuard<'_, Stage>> {
         let r = self.stage.as_ref().ok_or("null StageRef")?;
-        Ok(r.try_read().map_err(|e| e.to_string())?)
+        Ok(r.try_read().map_err(|err| err.to_string())?)
         // Ok(r.try_read()?) // ライフタイムエラーが出るが原因不明
     }
 }

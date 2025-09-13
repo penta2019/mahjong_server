@@ -107,14 +107,15 @@ fn hide_cursor(window: &mut Window, value: bool) {
 pub struct FlyCamera;
 
 fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
-    let camera_pos = Vec3::new(0.0, 0.45, 0.30);
-    let mut transform = Transform::from_translation(camera_pos);
+    // let mut tf_camera = Transform::from_translation(Vec3::new(0.0, 0.45, 0.30));
+    let mut tf_camera = Transform::from_translation(Vec3::new(0.0, 0.45, 0.50));
     // let (yaw, pitch) = calc_yaw_pitch(camera_pos, Vec3::ZERO);
     // context.set_yaw(yaw.to_degrees());
     // context.set_pitch(pitch.to_degrees());
-    context.set_pitch(-60.0);
-    transform.rotation = context.camera_rotation();
-    commands.spawn((Camera3d::default(), transform, FlyCamera));
+    // context.set_pitch(-60.0);
+    context.set_pitch(-40.0);
+    tf_camera.rotation = context.camera_rotation();
+    commands.spawn((Camera3d::default(), tf_camera, FlyCamera));
 }
 
 fn keyboard_handler_global(

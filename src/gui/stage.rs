@@ -37,8 +37,14 @@ impl Plugin for StagePlugin {
             recv: Mutex::new(event_rx),
         })
         .add_systems(Startup, setup)
-        .add_systems(Update, read_event);
+        .add_systems(Update, (read_event, animate_move).chain());
     }
+}
+
+#[derive(Component, Debug)]
+pub struct MoveTo {
+    target: Vec3,
+    frame_left: usize,
 }
 
 #[derive(Component, Debug)]
@@ -86,6 +92,19 @@ fn setup() {
 fn read_event(param: StageParam, event_reader: ResMut<EventReceiver>) {
     if let Ok(ev) = event_reader.recv.lock().unwrap().try_recv() {
         handle_event(param, &ev);
+    }
+}
+
+fn animate_move(mut commands: Commands, q_move: Query<(Entity, &mut Transform, &mut MoveTo)>) {
+    for (e, mut tf, mut move_to) in q_move {
+        if move_to.frame_left > 1 {
+            let diff_vec = move_to.target - tf.translation;
+            tf.translation += diff_vec * 1.0 / move_to.frame_left as f32;
+            move_to.frame_left -= 1;
+        } else {
+            tf.translation = move_to.target;
+            commands.entity(e).remove::<MoveTo>();
+        }
     }
 }
 
@@ -164,6 +183,16 @@ fn handle_event(param: StageParam, event: &model::Event) {
     }
 }
 
+fn sort_hand(commands: &mut Commands, hand: &mut GuiHand) {
+    hand.tiles.sort_by(|a, b| a.1.cmp(&b.1));
+    for (i, (e_tile, _)) in hand.tiles.iter().enumerate() {
+        commands.entity(*e_tile).insert(MoveTo {
+            target: Vec3::new(TILE_WIDTH * i as f32, TILE_HEIGHT / 2., 0.01 as f32),
+            frame_left: 10,
+        });
+    }
+}
+
 fn event_begin(param: StageParam, _event: &model::EventBegin) {
     init_stage(param);
 }
@@ -186,6 +215,7 @@ fn event_new(mut param: StageParam, event: &model::EventNew) {
                     ),
                 ));
                 hand.tiles.push((e_tile, *tile));
+                sort_hand(commands, &mut hand);
             }
         }
     }

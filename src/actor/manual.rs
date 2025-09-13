@@ -75,7 +75,11 @@ impl Actor for Manual {
             } else {
                 i.to_string()
             };
-            println!("{} => {}", i, act);
+            if i == "0" {
+                println!("0(default) => {}", act);
+            } else {
+                println!("{} => {}", i, act);
+            }
         }
 
         let mut riichi = false;
@@ -153,7 +157,8 @@ impl Actor for Manual {
                     continue;
                 }
                 '\n' => {
-                    continue;
+                    return ready(acts[0].clone());
+                    // continue;
                 }
                 _ => {
                     let n: usize = match buf.trim().parse() {

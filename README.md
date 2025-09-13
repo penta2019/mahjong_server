@@ -244,20 +244,23 @@ pub enum Action {
 基本的に麻雀英語wikiの表記に従いますが,役の名称はすべて日本語で統一します.
 
 ### 変数名省略
+* general
 n(_): number(_)
 i(_): index(_)
 d(_): delta(_)
 c(_): count(_)
-q(_): query(_)
-e(_): entity(_)
-ev(_): event(_)
+* mahjong
 stg: stage
 ti: Tile type index
 ni: Tile number index
 a: action
 s: seat
 t: tile
-
+* Bevy
+q(_): query(_)
+e(_): entity(_)
+ev(_): event(_)
+tf(_): transform(_)
 
 ## Module構成
 ![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg)

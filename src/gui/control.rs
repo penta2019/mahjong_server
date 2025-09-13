@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use bevy::{
     input::mouse::MouseMotion,
     prelude::*,
@@ -120,7 +118,6 @@ fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
 
 fn keyboard_handler_global(
     keys: Res<ButtonInput<KeyCode>>,
-    // state: Res<State<ControlState>>,
     mut next_state: ResMut<NextState<ControlState>>,
     debug_state: Res<State<DebugState>>,
     mut next_debug_state: ResMut<NextState<DebugState>>,
@@ -235,11 +232,11 @@ fn window_focus_handler(
     }
 }
 
-fn calc_yaw_pitch(cam_pos: Vec3, target: Vec3) -> (f32, f32) {
-    let dir = (target - cam_pos).normalize();
+// fn calc_yaw_pitch(cam_pos: Vec3, target: Vec3) -> (f32, f32) {
+//     let dir = (target - cam_pos).normalize();
 
-    let yaw = dir.x.atan2(dir.z) - PI; // Y軸まわり
-    let pitch = dir.y.atan2((dir.x * dir.x + dir.z * dir.z).sqrt()); // X軸まわり
+//     let yaw = dir.x.atan2(dir.z) - PI; // Y軸まわり
+//     let pitch = dir.y.atan2((dir.x * dir.x + dir.z * dir.z).sqrt()); // X軸まわり
 
-    (yaw, pitch)
-}
+//     (yaw, pitch)
+// }

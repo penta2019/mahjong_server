@@ -2,10 +2,6 @@ use bevy::{gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady};
 
 use crate::model::Tile;
 
-pub const TILE_WIDTH: f32 = 0.020;
-pub const TILE_HEIGHT: f32 = 0.028;
-pub const TILE_DEPTH: f32 = 0.016;
-
 pub struct TilePlugin;
 
 impl Plugin for TilePlugin {
@@ -19,10 +15,20 @@ pub struct GuiTile {
     pub tile: Tile,
 }
 
+impl GuiTile {
+    pub const WIDTH: f32 = 0.020;
+    pub const HEIGHT: f32 = 0.028;
+    pub const DEPTH: f32 = 0.016;
+}
+
 pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Entity {
     let tile_model = asset_server.load(GltfAssetLabel::Scene(0).from_asset("tile.glb"));
     commands
-        .spawn((SceneRoot(tile_model), GuiTile { tile }))
+        .spawn((
+            Name::new(format!("Tile({tile})")),
+            SceneRoot(tile_model),
+            GuiTile { tile },
+        ))
         .id()
 }
 

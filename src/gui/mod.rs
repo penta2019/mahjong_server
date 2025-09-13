@@ -1,10 +1,8 @@
 mod control;
 mod debug;
+mod mahjong;
 mod menu;
-mod player;
 mod slider;
-mod stage;
-mod tile;
 mod util;
 
 use bevy::prelude::*;
@@ -23,8 +21,8 @@ impl Gui {
             .add_plugins(control::ControlPlugin)
             .add_plugins(debug::DebugPlugin)
             .add_plugins(menu::MenuPlugin)
-            .add_plugins(stage::StagePlugin::new(event_rx))
-            .add_plugins(tile::TilePlugin);
+            .add_plugins(mahjong::StagePlugin::new(event_rx))
+            .add_plugins(mahjong::TilePlugin);
 
         app.run();
     }

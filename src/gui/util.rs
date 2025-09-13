@@ -47,3 +47,15 @@ pub fn print_hierarchy(
 
     print_entity_tree(entity, 0, query_names, query_children);
 }
+
+#[allow(unused)]
+pub fn reparent_tranform(
+    child: Entity,
+    new_parent: Entity,
+    globals: &Query<&'static mut GlobalTransform>,
+) -> Transform {
+    let child_global = *globals.get(child).unwrap();
+    let parent_global = *globals.get(new_parent).unwrap();
+    let new_local = parent_global.affine().inverse() * child_global.affine();
+    Transform::from_matrix(new_local.into())
+}

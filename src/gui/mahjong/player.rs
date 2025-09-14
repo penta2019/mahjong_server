@@ -3,31 +3,47 @@ use super::*;
 #[derive(Debug)]
 pub struct GuiPlayer {
     entity: Entity,
-    seat: Seat,
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
 }
 
 impl GuiPlayer {
-    pub fn new(parent: Entity, seat: Seat) -> Self {
-        let e_player = param()
-            .commands
-            .spawn((
-                Name::new(format!("Player[{seat}]")),
-                ChildOf(parent),
-                Transform {
-                    rotation: Quat::from_rotation_y(std::f32::consts::FRAC_PI_2 * seat as f32),
-                    ..Default::default()
-                },
-            ))
-            .id();
+    pub fn new() -> Self {
+        let entity = param().commands.spawn(Name::new("Player")).id();
+
+        let commands = &mut param().commands;
+
+        let hand = GuiHand::new();
+        commands
+            .entity(hand.entity())
+            .insert((ChildOf(entity), Transform::from_xyz(-0.12, 0., 0.21)));
+
+        let discard = GuiDiscard::new();
+        commands.entity(discard.entity()).insert((
+            ChildOf(entity),
+            Transform {
+                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2., 0.074),
+                rotation: Quat::from_rotation_x(-FRAC_PI_2),
+                scale: Vec3::ONE,
+            },
+        ));
+
+        let meld = GuiMeld::new();
+        commands.entity(meld.entity()).insert((
+            ChildOf(entity),
+            Transform {
+                translation: Vec3::new(0., 0., 0.074),
+                rotation: Quat::from_rotation_x(-FRAC_PI_2),
+                scale: Vec3::ONE,
+            },
+        ));
+
         Self {
-            entity: e_player,
-            seat,
-            hand: GuiHand::new(e_player, seat),
-            discard: GuiDiscard::new(e_player, seat),
-            meld: GuiMeld::new(e_player, seat),
+            entity,
+            hand,
+            discard,
+            meld,
         }
     }
 
@@ -47,5 +63,11 @@ impl GuiPlayer {
         let gui_tile = self.hand.take_tile(tile, is_drawn);
         self.discard.push_tile(gui_tile);
         self.hand.align();
+    }
+}
+
+impl HasEntity for GuiPlayer {
+    fn entity(&self) -> Entity {
+        self.entity
     }
 }

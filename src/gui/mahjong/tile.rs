@@ -1,6 +1,6 @@
 use bevy::{gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady};
 
-use super::param;
+use super::{HasEntity, param};
 use crate::model::Tile;
 
 pub struct TilePlugin;
@@ -14,8 +14,8 @@ impl Plugin for TilePlugin {
 
 #[derive(Debug)]
 pub struct GuiTile {
-    pub entity: Entity,
-    pub tile: Tile,
+    entity: Entity,
+    tile: Tile,
 }
 
 impl GuiTile {
@@ -36,6 +36,16 @@ impl GuiTile {
             ))
             .id();
         Self { entity, tile }
+    }
+
+    pub fn tile(&self) -> Tile {
+        self.tile
+    }
+}
+
+impl HasEntity for GuiTile {
+    fn entity(&self) -> Entity {
+        self.entity
     }
 }
 

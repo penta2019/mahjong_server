@@ -97,7 +97,7 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
         }
         MjEvent::Deal(ev) => stage.event_deal(ev),
         MjEvent::Discard(ev) => stage.event_discard(ev),
-        // MjEvent::Meld(ev) => stage.event_meld(ev),
+        MjEvent::Meld(ev) => stage.event_meld(ev),
         // MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
         // MjEvent::Dora(ev) => stage.event_dora(ev),
         // MjEvent::Win(ev) => stage.event_win(ev),
@@ -110,7 +110,6 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
 #[derive(Resource, Debug)]
 struct GuiStage {
     entity: Entity,
-    info: GuiInfo,
     players: Vec<GuiPlayer>,
 }
 
@@ -118,9 +117,6 @@ impl GuiStage {
     fn empty() -> Self {
         GuiStage {
             entity: Entity::PLACEHOLDER,
-            info: GuiInfo {
-                entity: Entity::PLACEHOLDER,
-            },
             players: vec![],
         }
     }
@@ -128,31 +124,31 @@ impl GuiStage {
     fn new() -> Self {
         let param = param();
         let commands = &mut param.commands;
+        let meshes = &mut param.meshes;
+        let materials = &mut param.materials;
 
         // stage
-        let e_stage = commands
+        let entity = commands
             .spawn((
                 Name::new("Stage".to_string()),
                 Transform::from_xyz(0., 0., 0.),
-                Mesh3d(param.meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
-                MeshMaterial3d(param.materials.add(Color::from(GREEN))),
+                Mesh3d(meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
+                MeshMaterial3d(materials.add(Color::from(GREEN))),
             ))
             .id();
 
         // info
-        let e_info = commands
-            .spawn((
-                Name::new("Info".to_string()),
-                ChildOf(e_stage),
-                Transform::from_xyz(0., 0.001, 0.),
-                Mesh3d(param.meshes.add(Plane3d::default().mesh().size(0.12, 0.12))),
-                MeshMaterial3d(param.materials.add(Color::from(BLACK))),
-            ))
-            .id();
+        commands.spawn((
+            Name::new("Info".to_string()),
+            ChildOf(entity),
+            Transform::from_xyz(0., 0.001, 0.),
+            Mesh3d(meshes.add(Plane3d::default().mesh().size(0.12, 0.12))),
+            MeshMaterial3d(materials.add(Color::from(BLACK))),
+        ));
 
         // Light
         commands.spawn((
-            ChildOf(e_stage),
+            ChildOf(entity),
             PointLight {
                 shadows_enabled: true,
                 intensity: 10_000_000.,
@@ -163,17 +159,20 @@ impl GuiStage {
             Transform::from_xyz(8.0, 16.0, 8.0),
         ));
 
-        let mut stage = GuiStage {
-            entity: e_stage,
-            info: GuiInfo { entity: e_info },
-            players: vec![],
-        };
-
+        let mut players = vec![];
         for seat in 0..SEAT {
-            stage.players.push(GuiPlayer::new(e_stage, seat));
+            let player = GuiPlayer::new();
+            commands.entity(player.entity()).insert((
+                ChildOf(entity),
+                Transform {
+                    rotation: Quat::from_rotation_y(std::f32::consts::FRAC_PI_2 * seat as f32),
+                    ..Default::default()
+                },
+            ));
+            players.push(player);
         }
 
-        stage
+        Self { entity, players }
     }
 
     fn event_new(&mut self, event: &EventNew) {
@@ -190,7 +189,7 @@ impl GuiStage {
         self.players[event.seat].discard_tile(event.tile, event.is_drawn, event.is_riichi);
     }
 
-    // fn event_meld(&mut self, event: &EventMeld) {}
+    fn event_meld(&mut self, event: &EventMeld) {}
 
     // fn event_nukidora(&mut self, event: &EventNukidora) {}
 
@@ -205,9 +204,4 @@ impl HasEntity for GuiStage {
     fn entity(&self) -> Entity {
         self.entity
     }
-}
-
-#[derive(Debug)]
-struct GuiInfo {
-    entity: Entity,
 }

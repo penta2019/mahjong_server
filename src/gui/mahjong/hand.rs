@@ -8,17 +8,10 @@ pub struct GuiHand {
 }
 
 impl GuiHand {
-    pub fn new(parent: Entity, seat: Seat) -> Self {
-        let e_hand = param()
-            .commands
-            .spawn((
-                Name::new(format!("Hand[{seat}]")),
-                ChildOf(parent),
-                Transform::from_xyz(-0.12, 0., 0.21),
-            ))
-            .id();
+    pub fn new() -> Self {
+        let entity = param().commands.spawn(Name::new("Hand")).id();
         Self {
-            entity: e_hand,
+            entity,
             tiles: vec![],
             drawn_tile: None,
         }
@@ -29,7 +22,7 @@ impl GuiHand {
             let tile = GuiTile::new(*t);
             param()
                 .commands
-                .entity(tile.entity)
+                .entity(tile.entity())
                 .insert((ChildOf(self.entity), self.tf_tile(false)));
             self.tiles.push(tile);
         }
@@ -39,7 +32,7 @@ impl GuiHand {
         let tile = GuiTile::new(tile);
         param()
             .commands
-            .entity(tile.entity)
+            .entity(tile.entity())
             .insert((ChildOf(self.entity), self.tf_tile(true)));
         self.drawn_tile = Some(tile);
     }
@@ -47,12 +40,12 @@ impl GuiHand {
     pub fn take_tile(&mut self, tile: Tile, is_drawn: bool) -> GuiTile {
         let gui_tile = if is_drawn {
             self.drawn_tile.take().unwrap()
-        } else if let Some(pos) = self.tiles.iter().position(|t| t.tile == tile) {
+        } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == tile) {
             self.tiles.remove(pos)
         } else {
             panic!("{} not found in hand", tile);
         };
-        assert!(gui_tile.tile == tile);
+        assert!(gui_tile.tile() == tile);
 
         if let Some(drawn_tile) = self.drawn_tile.take() {
             self.tiles.push(drawn_tile);
@@ -63,11 +56,11 @@ impl GuiHand {
     }
 
     pub fn align(&mut self) {
-        self.tiles.sort_by_key(|t| t.tile);
+        self.tiles.sort_by_key(|t| t.tile());
         for (i, tile) in self.tiles.iter().enumerate() {
             param()
                 .commands
-                .entity(tile.entity)
+                .entity(tile.entity())
                 .insert(MoveTo::new(Vec3::new(
                     GuiTile::WIDTH * i as f32,
                     GuiTile::HEIGHT / 2.,
@@ -82,5 +75,11 @@ impl GuiHand {
             GuiTile::HEIGHT / 2.,
             GuiTile::DEPTH / 2.,
         )
+    }
+}
+
+impl HasEntity for GuiHand {
+    fn entity(&self) -> Entity {
+        self.entity
     }
 }

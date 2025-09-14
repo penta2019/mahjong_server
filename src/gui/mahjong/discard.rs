@@ -15,21 +15,10 @@ pub struct GuiDiscard {
 impl GuiDiscard {
     const TILES_IN_ROW: usize = 6;
 
-    pub fn new(parent: Entity, seat: Seat) -> Self {
-        let e_discard = param()
-            .commands
-            .spawn((
-                Name::new(format!("Discard[{seat}]")),
-                ChildOf(parent),
-                Transform {
-                    translation: Vec3::new(-0.05, GuiTile::DEPTH / 2., 0.074),
-                    rotation: Quat::from_rotation_x(-FRAC_PI_2),
-                    scale: Vec3::ONE,
-                },
-            ))
-            .id();
+    pub fn new() -> Self {
+        let entity = param().commands.spawn(Name::new("Discard")).id();
         Self {
-            entity: e_discard,
+            entity,
             tiles: vec![],
             riichi_index: None,
         }
@@ -66,14 +55,20 @@ impl GuiDiscard {
             }
         }
 
-        let mut tf = reparent_tranform(gui_tile.entity, self.entity, &param().globals);
+        let mut tf = reparent_tranform(gui_tile.entity(), self.entity, &param().globals);
         tf.rotation = rot;
 
-        param().commands.entity(gui_tile.entity).insert((
+        param().commands.entity(gui_tile.entity()).insert((
             ChildOf(self.entity),
             tf,
             MoveTo::new(pos),
         ));
         self.tiles.push((gui_tile, pos));
+    }
+}
+
+impl HasEntity for GuiDiscard {
+    fn entity(&self) -> Entity {
+        self.entity
     }
 }

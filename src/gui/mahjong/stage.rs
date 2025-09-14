@@ -1,4 +1,7 @@
-use std::sync::Mutex;
+use std::{
+    sync::Mutex,
+    thread::{self, ThreadId},
+};
 
 use bevy::{
     color::palettes::basic::{BLACK, GREEN},
@@ -39,36 +42,6 @@ struct EventReceiver {
     recv: Mutex<EventRx>,
 }
 
-fn process_event(
-    mut stage: ResMut<GuiStage>,
-    mut param: StageParam,
-    event_reader: ResMut<EventReceiver>,
-) {
-    if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
-        let param = &mut param;
-        match &event {
-            MjEvent::Begin(_ev) => {}
-            MjEvent::New(ev) => {
-                // ステージ上のentityを再帰的にすべて削除
-                param.commands.entity(stage.entity()).despawn();
-                // 空のステージを作成
-                *stage = GuiStage::new(param);
-
-                stage.event_new(param, ev);
-            }
-            MjEvent::Deal(ev) => stage.event_deal(param, ev),
-            MjEvent::Discard(ev) => stage.event_discard(param, ev),
-            // MjEvent::Meld(ev) => stage.event_meld(param, ev),
-            // MjEvent::Nukidora(ev) => stage.event_nukidora(param, ev),
-            // MjEvent::Dora(ev) => stage.event_dora(param, ev),
-            // MjEvent::Win(ev) => stage.event_win(param, ev),
-            // MjEvent::Draw(ev) => stage.event_draw(param, ev),
-            MjEvent::End(_ev) => {}
-            _ => {}
-        }
-    }
-}
-
 #[derive(SystemParam)]
 pub struct StageParam<'w, 's> {
     pub commands: Commands<'w, 's>,
@@ -77,8 +50,61 @@ pub struct StageParam<'w, 's> {
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
     // for debug
-    // names: Query<'w, 's, &'static Name>,
-    // children: Query<'w, 's, &'static Children>,
+    pub names: Query<'w, 's, &'static Name>,
+    pub children: Query<'w, 's, &'static Children>,
+}
+
+// StageParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
+// 注意!!!!
+// * process_event以下の関数以外からは呼ばないこと,特にadd_systemsに登録する関数に注意
+// * 戻り値のStageParamの参照を関数から返したり,ローカル変数以外に格納しないこと
+static mut STAGE_PARAM: Option<(*mut (), ThreadId)> = None;
+pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
+    unsafe {
+        let (p, tid) = STAGE_PARAM.unwrap();
+        assert!(tid == thread::current().id());
+        let p = p as *mut StageParam<'w, 's>;
+        &mut *p
+    }
+}
+
+fn process_event(
+    mut param: StageParam,
+    mut stage: ResMut<GuiStage>,
+    event_reader: ResMut<EventReceiver>,
+) {
+    let param = &mut param as *mut StageParam as *mut ();
+    let tid = thread::current().id();
+    unsafe { STAGE_PARAM = Some((param, tid)) };
+
+    if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
+        handle_event(&mut stage, &event);
+    }
+
+    unsafe { STAGE_PARAM = None };
+}
+
+fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
+    match &event {
+        MjEvent::Begin(_ev) => {}
+        MjEvent::New(ev) => {
+            // ステージ上のentityを再帰的にすべて削除
+            param().commands.entity(stage.entity()).despawn();
+            // 空のステージを作成
+            *stage = GuiStage::new();
+
+            stage.event_new(ev);
+        }
+        MjEvent::Deal(ev) => stage.event_deal(ev),
+        MjEvent::Discard(ev) => stage.event_discard(ev),
+        // MjEvent::Meld(ev) => stage.event_meld(ev),
+        // MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
+        // MjEvent::Dora(ev) => stage.event_dora(ev),
+        // MjEvent::Win(ev) => stage.event_win(ev),
+        // MjEvent::Draw(ev) => stage.event_draw(ev),
+        MjEvent::End(_ev) => {}
+        _ => {}
+    }
 }
 
 #[derive(Resource, Debug)]
@@ -99,7 +125,8 @@ impl GuiStage {
         }
     }
 
-    fn new(param: &mut StageParam) -> Self {
+    fn new() -> Self {
+        let param = param();
         let commands = &mut param.commands;
 
         // stage
@@ -143,36 +170,35 @@ impl GuiStage {
         };
 
         for seat in 0..SEAT {
-            stage.players.push(GuiPlayer::new(param, e_stage, seat));
+            stage.players.push(GuiPlayer::new(e_stage, seat));
         }
 
         stage
     }
 
-    fn event_new(&mut self, param: &mut StageParam, event: &EventNew) {
-        let commands = &mut param.commands;
+    fn event_new(&mut self, event: &EventNew) {
         for seat in 0..SEAT {
-            self.players[seat].init_hand(param, &event.hands[seat]);
+            self.players[seat].init_hand(&event.hands[seat]);
         }
     }
 
-    fn event_deal(&mut self, param: &mut StageParam, event: &EventDeal) {
-        self.players[event.seat].deal_tile(param, event.tile);
+    fn event_deal(&mut self, event: &EventDeal) {
+        self.players[event.seat].deal_tile(event.tile);
     }
 
-    fn event_discard(&mut self, param: &mut StageParam, event: &EventDiscard) {
-        self.players[event.seat].discard_tile(param, event.tile, event.is_drawn, event.is_riichi);
+    fn event_discard(&mut self, event: &EventDiscard) {
+        self.players[event.seat].discard_tile(event.tile, event.is_drawn, event.is_riichi);
     }
 
-    // fn event_meld(&mut self, param: &mut StageParam, event: &EventMeld) {}
+    // fn event_meld(&mut self, event: &EventMeld) {}
 
-    // fn event_nukidora(&mut self, param: &mut StageParam, event: &EventNukidora) {}
+    // fn event_nukidora(&mut self, event: &EventNukidora) {}
 
-    // fn event_dora(&mut self, param: &mut StageParam, event: &EventDora) {}
+    // fn event_dora(&mut self, event: &EventDora) {}
 
-    // fn event_win(&mut self, param: &mut StageParam, event: &EventWin) {}
+    // fn event_win(&mut self, event: &EventWin) {}
 
-    // fn event_draw(&mut self, param: &mut StageParam, event: &EventDraw) {}
+    // fn event_draw(&mut self, event: &EventDraw) {}
 }
 
 impl HasEntity for GuiStage {

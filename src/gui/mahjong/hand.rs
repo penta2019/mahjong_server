@@ -8,8 +8,8 @@ pub struct GuiHand {
 }
 
 impl GuiHand {
-    pub fn new(param: &mut StageParam, parent: Entity, seat: Seat) -> Self {
-        let e_hand = param
+    pub fn new(parent: Entity, seat: Seat) -> Self {
+        let e_hand = param()
             .commands
             .spawn((
                 Name::new(format!("Hand[{seat}]")),
@@ -24,10 +24,10 @@ impl GuiHand {
         }
     }
 
-    pub fn init(&mut self, param: &mut StageParam, tiles: &[Tile]) {
+    pub fn init(&mut self, tiles: &[Tile]) {
         for t in tiles {
-            let tile = GuiTile::new(param, *t);
-            param
+            let tile = GuiTile::new(*t);
+            param()
                 .commands
                 .entity(tile.entity)
                 .insert((ChildOf(self.entity), self.tf_tile(false)));
@@ -35,16 +35,16 @@ impl GuiHand {
         }
     }
 
-    pub fn deal_tile(&mut self, param: &mut StageParam, tile: Tile) {
-        let tile = GuiTile::new(param, tile);
-        param
+    pub fn deal_tile(&mut self, tile: Tile) {
+        let tile = GuiTile::new(tile);
+        param()
             .commands
             .entity(tile.entity)
             .insert((ChildOf(self.entity), self.tf_tile(true)));
         self.drawn_tile = Some(tile);
     }
 
-    pub fn take_tile(&mut self, param: &mut StageParam, tile: Tile, is_drawn: bool) -> GuiTile {
+    pub fn take_tile(&mut self, tile: Tile, is_drawn: bool) -> GuiTile {
         let gui_tile = if is_drawn {
             self.drawn_tile.take().unwrap()
         } else if let Some(pos) = self.tiles.iter().position(|t| t.tile == tile) {
@@ -57,15 +57,15 @@ impl GuiHand {
         if let Some(drawn_tile) = self.drawn_tile.take() {
             self.tiles.push(drawn_tile);
         }
-        self.align(param);
+        self.align();
 
         gui_tile
     }
 
-    pub fn align(&mut self, param: &mut StageParam) {
+    pub fn align(&mut self) {
         self.tiles.sort_by_key(|t| t.tile);
         for (i, tile) in self.tiles.iter().enumerate() {
-            param
+            param()
                 .commands
                 .entity(tile.entity)
                 .insert(MoveTo::new(Vec3::new(

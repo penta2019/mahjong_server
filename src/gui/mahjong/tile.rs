@@ -1,6 +1,6 @@
 use bevy::{gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady};
 
-use super::StageParam;
+use super::param;
 use crate::model::Tile;
 
 pub struct TilePlugin;
@@ -23,11 +23,11 @@ impl GuiTile {
     pub const HEIGHT: f32 = 0.028;
     pub const DEPTH: f32 = 0.016;
 
-    pub fn new(param: &mut StageParam, tile: Tile) -> Self {
-        let tile_model = param
+    pub fn new(tile: Tile) -> Self {
+        let tile_model = param()
             .asset_server
             .load(GltfAssetLabel::Scene(0).from_asset("tile.glb"));
-        let entity = param
+        let entity = param()
             .commands
             .spawn((
                 Name::new(format!("Tile({tile})")),

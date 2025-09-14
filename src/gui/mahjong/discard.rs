@@ -15,8 +15,8 @@ pub struct GuiDiscard {
 impl GuiDiscard {
     const TILES_IN_ROW: usize = 6;
 
-    pub fn new(param: &mut StageParam, parent: Entity, seat: Seat) -> Self {
-        let e_discard = param
+    pub fn new(parent: Entity, seat: Seat) -> Self {
+        let e_discard = param()
             .commands
             .spawn((
                 Name::new(format!("Discard[{seat}]")),
@@ -36,10 +36,11 @@ impl GuiDiscard {
     }
 
     pub fn set_riichi(&mut self) {
+        assert!(self.riichi_index.is_none());
         self.riichi_index = Some(self.tiles.len());
     }
 
-    pub fn push_tile(&mut self, param: &mut StageParam, gui_tile: GuiTile) {
+    pub fn push_tile(&mut self, gui_tile: GuiTile) {
         let i_tile = self.tiles.len();
         let mut pos = if let Some((_, last_pos)) = self.tiles.last() {
             if i_tile % GuiDiscard::TILES_IN_ROW == 0 {
@@ -65,13 +66,14 @@ impl GuiDiscard {
             }
         }
 
-        let mut tf = reparent_tranform(gui_tile.entity, self.entity, &param.globals);
+        let mut tf = reparent_tranform(gui_tile.entity, self.entity, &param().globals);
         tf.rotation = rot;
 
-        param
-            .commands
-            .entity(gui_tile.entity)
-            .insert((ChildOf(self.entity), tf, MoveTo::new(pos)));
+        param().commands.entity(gui_tile.entity).insert((
+            ChildOf(self.entity),
+            tf,
+            MoveTo::new(pos),
+        ));
         self.tiles.push((gui_tile, pos));
     }
 }

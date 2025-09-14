@@ -6,8 +6,8 @@ pub struct GuiMeld {
 }
 
 impl GuiMeld {
-    pub fn new(param: &mut StageParam, parent: Entity, seat: Seat) -> Self {
-        let e_meld = param
+    pub fn new(parent: Entity, seat: Seat) -> Self {
+        let e_meld = param()
             .commands
             .spawn((Name::new(format!("Meld[{seat}]")), ChildOf(parent)))
             .id();

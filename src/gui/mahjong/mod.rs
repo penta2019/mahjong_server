@@ -5,7 +5,7 @@ mod player;
 mod stage;
 mod tile;
 
-use std::f32::consts::FRAC_PI_2;
+use std::f32::consts::{FRAC_PI_2, PI};
 
 use bevy::prelude::*;
 
@@ -16,9 +16,9 @@ pub use tile::TilePlugin;
 
 use discard::GuiDiscard;
 use hand::GuiHand;
-use meld::{GuiMeld, GuiMeldItem};
+use meld::GuiMeld;
 use player::GuiPlayer;
-use stage::{StageParam, param};
+use stage::param;
 use tile::{GuiTile, MoveTo};
 
 trait HasEntity {

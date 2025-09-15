@@ -50,8 +50,8 @@ pub struct StageParam<'w, 's> {
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
     // for debug
-    pub names: Query<'w, 's, &'static Name>,
-    pub children: Query<'w, 's, &'static Children>,
+    // pub names: Query<'w, 's, &'static Name>,
+    // pub children: Query<'w, 's, &'static Children>,
 }
 
 // StageParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
@@ -62,6 +62,7 @@ static mut STAGE_PARAM: Option<(*mut (), ThreadId)> = None;
 pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
     unsafe {
         let (p, tid) = STAGE_PARAM.unwrap();
+        // 誤って別スレッドからアクセスして未定義の振る舞いを起こすのを防止
         assert!(tid == thread::current().id());
         let p = p as *mut StageParam<'w, 's>;
         &mut *p
@@ -73,6 +74,7 @@ fn process_event(
     mut stage: ResMut<GuiStage>,
     event_reader: ResMut<EventReceiver>,
 ) {
+    // この関数の実行中にparam()から&mut GuiStageを取得できるよう設定
     let param = &mut param as *mut StageParam as *mut ();
     let tid = thread::current().id();
     unsafe { STAGE_PARAM = Some((param, tid)) };
@@ -81,6 +83,7 @@ fn process_event(
         handle_event(&mut stage, &event);
     }
 
+    // この関数外から呼ばれて未定義の振る舞いを起こすのを防止
     unsafe { STAGE_PARAM = None };
 }
 
@@ -111,6 +114,7 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
 struct GuiStage {
     entity: Entity,
     players: Vec<GuiPlayer>,
+    last_tile: Option<(Seat, ActionType, Tile)>,
 }
 
 impl GuiStage {
@@ -118,6 +122,7 @@ impl GuiStage {
         GuiStage {
             entity: Entity::PLACEHOLDER,
             players: vec![],
+            last_tile: None,
         }
     }
 
@@ -172,7 +177,11 @@ impl GuiStage {
             players.push(player);
         }
 
-        Self { entity, players }
+        Self {
+            entity,
+            players,
+            last_tile: None,
+        }
     }
 
     fn event_new(&mut self, event: &EventNew) {
@@ -187,9 +196,26 @@ impl GuiStage {
 
     fn event_discard(&mut self, event: &EventDiscard) {
         self.players[event.seat].discard_tile(event.tile, event.is_drawn, event.is_riichi);
+        self.last_tile = Some((event.seat, ActionType::Discard, event.tile));
     }
 
-    fn event_meld(&mut self, event: &EventMeld) {}
+    fn event_meld(&mut self, event: &EventMeld) {
+        // 鳴いたプレイヤーから半時計回りに見た牌を捨てたプレイヤーの座席
+        // 自身(0), 下家(1), 対面(2), 上家(3)
+        let mut meld_offset = 0;
+
+        // 他家が捨てた牌
+        let meld_tile = match event.meld_type {
+            MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
+                let target_seat = self.last_tile.unwrap().0;
+                meld_offset = (target_seat + SEAT - event.seat) % SEAT;
+                Some(self.players[target_seat].take_last_discard_tile())
+            }
+            _ => None,
+        };
+
+        self.players[event.seat].meld(&event.consumed, meld_tile, meld_offset);
+    }
 
     // fn event_nukidora(&mut self, event: &EventNukidora) {}
 

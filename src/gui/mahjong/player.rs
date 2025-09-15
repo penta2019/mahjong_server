@@ -33,7 +33,7 @@ impl GuiPlayer {
         commands.entity(meld.entity()).insert((
             ChildOf(entity),
             Transform {
-                translation: Vec3::new(0., 0., 0.074),
+                translation: Vec3::new(0.25, GuiTile::DEPTH / 2., 0.22),
                 rotation: Quat::from_rotation_x(-FRAC_PI_2),
                 scale: Vec3::ONE,
             },
@@ -63,6 +63,19 @@ impl GuiPlayer {
         let gui_tile = self.hand.take_tile(tile, is_drawn);
         self.discard.push_tile(gui_tile);
         self.hand.align();
+    }
+
+    pub fn meld(&mut self, tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
+        let tiles_from_hand: Vec<GuiTile> = tiles
+            .iter()
+            .map(|t| self.hand.take_tile(*t, false))
+            .collect();
+        self.meld.meld(tiles_from_hand, meld_tile, meld_offset);
+        self.hand.align();
+    }
+
+    pub fn take_last_discard_tile(&mut self) -> GuiTile {
+        self.discard.take_last_tile()
     }
 }
 

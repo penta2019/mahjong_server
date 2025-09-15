@@ -51,7 +51,7 @@ impl GuiDiscard {
             }
             // リーチ宣言牌を横に倒す
             if i_tile == riichi_index {
-                rot = Quat::from_axis_angle(Vec3::Z, FRAC_PI_2);
+                rot = Quat::from_rotation_z(FRAC_PI_2);
             }
         }
 
@@ -64,6 +64,10 @@ impl GuiDiscard {
             MoveTo::new(pos),
         ));
         self.tiles.push((gui_tile, pos));
+    }
+
+    pub fn take_last_tile(&mut self) -> GuiTile {
+        self.tiles.pop().unwrap().0
     }
 }
 

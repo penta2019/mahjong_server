@@ -39,9 +39,15 @@ impl GuiHand {
 
     pub fn take_tile(&mut self, tile: Tile, is_drawn: bool) -> GuiTile {
         let gui_tile = if is_drawn {
+            // 牌を明示的にツモ切り
             self.drawn_tile.take().unwrap()
         } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == tile) {
             self.tiles.remove(pos)
+        } else if let Some(drawn_tile) = &self.drawn_tile
+            && drawn_tile.tile() == tile
+        {
+            // ツモ牌を暗黙に手牌から取り除く場合 (加槓,暗槓など)
+            self.drawn_tile.take().unwrap()
         } else {
             panic!("{} not found in hand", tile);
         };
@@ -50,7 +56,6 @@ impl GuiHand {
         if let Some(drawn_tile) = self.drawn_tile.take() {
             self.tiles.push(drawn_tile);
         }
-        self.align();
 
         gui_tile
     }

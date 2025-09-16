@@ -6,12 +6,6 @@ use bevy::{
 
 use super::{debug::DebugState, menu::MenuState};
 
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ControlState {
-    On,
-    Off,
-}
-
 pub struct ControlPlugin;
 
 impl Plugin for ControlPlugin {
@@ -19,22 +13,33 @@ impl Plugin for ControlPlugin {
         let mut ctx = ControlContext::default();
         ctx.set_mouse_sensitivity(30.0);
 
-        app.insert_state(ControlState::On)
+        app.insert_state(FlyState::Off)
             .insert_resource(ctx)
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
                 (
                     keyboard_handler_global,
-                    (keyboard_handler, mouse_look_camera, window_focus_handler)
-                        .run_if(in_state(ControlState::On)),
+                    (
+                        camera_move_by_keyboard,
+                        camera_look_by_mouse,
+                        window_focus_handler,
+                    )
+                        .run_if(in_state(FlyState::On)),
                 ),
             );
     }
 }
 
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum FlyState {
+    On,
+    Off,
+}
+
 #[derive(Resource, Debug)]
 pub struct ControlContext {
+    can_fly: bool,
     sensitivity: (f32, f32), // (value, percent)
     yaw: f32,
     pitch: f32,
@@ -82,6 +87,7 @@ impl ControlContext {
 impl Default for ControlContext {
     fn default() -> Self {
         Self {
+            can_fly: false,
             sensitivity: (0.0, 0.0),
             yaw: 0.0,
             pitch: 0.0,
@@ -89,15 +95,13 @@ impl Default for ControlContext {
     }
 }
 
-fn hide_cursor(window: &mut Window, value: bool) {
-    if value {
-        // ウィンドウがアクティブになったときの処理
-        window.cursor_options.visible = false;
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
-    } else {
-        // ウィンドウが非アクティブになったときの処理
+fn set_cursor_visibility(window: &mut Window, visible: bool) {
+    if visible {
         window.cursor_options.visible = true;
         window.cursor_options.grab_mode = CursorGrabMode::None;
+    } else {
+        window.cursor_options.visible = false;
+        window.cursor_options.grab_mode = CursorGrabMode::Locked;
     }
 }
 
@@ -118,13 +122,24 @@ fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
 
 fn keyboard_handler_global(
     keys: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<ControlState>>,
+    mut context: ResMut<ControlContext>,
+    mut next_fly_state: ResMut<NextState<FlyState>>,
     debug_state: Res<State<DebugState>>,
     mut next_debug_state: ResMut<NextState<DebugState>>,
     menu_state: Res<State<MenuState>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
     mut window: Single<&mut Window>,
 ) {
+    let mut set_fly_state = |enable| {
+        if enable {
+            next_fly_state.set(FlyState::On);
+            set_cursor_visibility(&mut window, false);
+        } else {
+            next_fly_state.set(FlyState::Off);
+            set_cursor_visibility(&mut window, true);
+        }
+    };
+
     if keys.just_pressed(KeyCode::Tab) {
         next_debug_state.set(if **debug_state == DebugState::On {
             DebugState::Off
@@ -133,23 +148,28 @@ fn keyboard_handler_global(
         });
     }
 
+    if keys.just_pressed(KeyCode::Space) {
+        context.can_fly = !context.can_fly;
+        set_fly_state(context.can_fly);
+    }
+
     if keys.just_pressed(KeyCode::Escape) {
         match **menu_state {
             MenuState::On => {
+                // メニューを閉じる State: Disabled -> On, Off -> Off
                 next_menu_state.set(MenuState::Off);
-                next_state.set(ControlState::On);
-                hide_cursor(&mut window, true);
+                set_fly_state(context.can_fly);
             }
             MenuState::Off => {
+                // メニューを開く State: On -> Disabled, Off -> Off
                 next_menu_state.set(MenuState::On);
-                next_state.set(ControlState::Off);
-                hide_cursor(&mut window, false);
+                set_fly_state(false);
             }
         }
     }
 }
 
-fn keyboard_handler(
+fn camera_move_by_keyboard(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     mut cam_q: Single<&mut Transform, With<Camera>>,
@@ -192,7 +212,7 @@ fn keyboard_handler(
     }
 }
 
-fn mouse_look_camera(
+fn camera_look_by_mouse(
     mut mouse_events: EventReader<MouseMotion>,
     mut context: ResMut<ControlContext>,
     mut camera: Single<&mut Transform, With<FlyCamera>>,
@@ -228,7 +248,8 @@ fn window_focus_handler(
     }
 
     for event in focus_events.read() {
-        hide_cursor(&mut window, event.focused);
+        // flyモードのまま他のアプリケーションにフォーカスが移動した場合の処理
+        set_cursor_visibility(&mut window, !event.focused);
     }
 }
 

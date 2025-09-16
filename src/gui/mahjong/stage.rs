@@ -8,9 +8,11 @@ use bevy::{
     ecs::system::SystemParam,
 };
 
-use super::{super::control::CameraEvent, *};
+use super::{
+    super::{control::CameraEvent, util::print_hierarchy},
+    *,
+};
 use crate::{
-    gui::util::print_hierarchy,
     listener::EventRx,
     model::{Event as MjEvent, *},
 };
@@ -53,14 +55,22 @@ pub struct StageParam<'w, 's> {
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
 
     // for debug
-    #[allow(unused)]
     pub names: Query<'w, 's, &'static Name>,
-    #[allow(unused)]
     pub children: Query<'w, 's, &'static Children>,
 }
 
+impl<'w, 's> StageParam<'w, 's> {
+    #[allow(unused)]
+    pub fn print_hierarchy(&self, entity: Entity) {
+        print_hierarchy(entity, &self.names, &self.children);
+    }
+}
+
 fn setup(mut camera: EventWriter<CameraEvent>) {
-    camera.write(CameraEvent::new(Vec3::new(0., 0.5, 0.5), Vec3::ZERO));
+    camera.write(CameraEvent::look(
+        Vec3::new(0., 0.4, 0.4),
+        Vec3::new(0., -0.1, 0.),
+    ));
 }
 
 // StageParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
@@ -120,7 +130,7 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
         MjEvent::Draw(ev) => stage.event_draw(ev),
         MjEvent::End(_ev) => {}
     }
-    // print_hierarchy(stage.entity(), &param().names, &param().children);
+    // param().print_hierarchy(stage.entity());
 }
 
 #[derive(Resource, Debug)]

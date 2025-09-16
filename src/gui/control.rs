@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f32::consts::{FRAC_PI_2, PI, TAU};
 
 use bevy::{
     input::mouse::MouseMotion,
@@ -48,8 +48,8 @@ enum FlyState {
 pub struct ControlContext {
     can_fly: bool,
     sensitivity: (f32, f32), // (value, percent)
-    yaw: f32,                // [-180., 180) 度数法
-    pitch: f32,              // [-89.9, 89.9] 度数法
+    yaw: f32,                // [-PI, PI)
+    pitch: f32,              // (-FRAC_PI_2, FRAC_PI_2)
 }
 
 impl ControlContext {
@@ -71,23 +71,22 @@ impl ControlContext {
     }
 
     fn set_yaw(&mut self, mut yaw: f32) {
-        while yaw < -180.0 {
-            yaw += 360.0;
+        // [-PI, PI)の範囲に収まるように修正
+        while yaw < -PI {
+            yaw += TAU;
         }
-        while yaw > 180.0 {
-            yaw -= 360.0;
+        while yaw >= PI {
+            yaw -= TAU;
         }
         self.yaw = yaw;
     }
 
     fn set_pitch(&mut self, pitch: f32) {
-        self.pitch = pitch.clamp(-89.9, 89.9);
+        self.pitch = pitch.clamp(-FRAC_PI_2 + 0.001, FRAC_PI_2 - 0.001);
     }
 
     fn camera_rotation(&self) -> Quat {
-        let yaw_radians = self.yaw.to_radians();
-        let pitch_radians = self.pitch.to_radians();
-        Quat::from_axis_angle(Vec3::Y, yaw_radians) * Quat::from_axis_angle(Vec3::X, pitch_radians)
+        Quat::from_axis_angle(Vec3::Y, self.yaw) * Quat::from_axis_angle(Vec3::X, self.pitch)
     }
 }
 
@@ -104,23 +103,25 @@ impl Default for ControlContext {
 
 #[derive(Event, Debug)]
 pub struct CameraEvent {
-    pub translation: Vec3,
-    pub yaw: f32,   // [-180., 180) 度数法
-    pub pitch: f32, // [-89.9, 89.9] 度数法
+    translation: Vec3,
+    yaw: f32,   // [-PI, PI)
+    pitch: f32, // (-FRAC_PI_2, FRAC_PI_2)
 }
 
 impl CameraEvent {
-    pub fn new(pos: Vec3, look_at: Vec3) -> Self {
-        let dir = (look_at - pos).normalize();
-
-        let yaw = dir.x.atan2(dir.z) - PI; // Y軸まわり
-        let pitch = dir.y.atan2((dir.x * dir.x + dir.z * dir.z).sqrt()); // X軸まわり
-
+    pub fn new(pos: Vec3, yaw: f32, pitch: f32) -> Self {
         Self {
             translation: pos,
             yaw,
             pitch,
         }
+    }
+
+    pub fn look(pos: Vec3, look_at: Vec3) -> Self {
+        let dir = (look_at - pos).normalize();
+        let yaw = dir.x.atan2(dir.z) - PI; // Y軸まわり
+        let pitch = dir.y.atan2((dir.x * dir.x + dir.z * dir.z).sqrt()); // X軸まわり
+        Self::new(pos, yaw, pitch)
     }
 }
 
@@ -135,10 +136,13 @@ fn set_cursor_visibility(window: &mut Window, visible: bool) {
 }
 
 fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
-    let mut tf_camera = Transform::from_translation(Vec3::new(0., 5., 5.));
-    context.set_pitch(-30.0);
-    tf_camera.rotation = context.camera_rotation();
-    commands.spawn((Camera3d::default(), tf_camera, FlyCamera));
+    context.set_pitch(-30.0_f32.to_radians());
+    let camera = Transform {
+        translation: Vec3::new(0., 1., 1.),
+        rotation: context.camera_rotation(),
+        scale: Vec3::ONE,
+    };
+    commands.spawn((Camera3d::default(), camera, FlyCamera));
 }
 
 fn keyboard_handler_global(
@@ -196,7 +200,6 @@ fn camera_event(
     mut camera: Single<&mut Transform, With<Camera>>,
 ) {
     for ev in reader.read() {
-        println!("{ev:?}");
         camera.translation = ev.translation;
         context.set_yaw(ev.yaw);
         context.set_pitch(ev.pitch);
@@ -266,9 +269,9 @@ fn camera_look_by_mouse(
     }
 
     // 感度を反映
-    let yaw = context.yaw() - delta.x * context.sensitivity.0;
+    let yaw = context.yaw() - (delta.x * context.sensitivity.0).to_radians();
     context.set_yaw(yaw);
-    let pitch = context.pitch() - delta.y * context.sensitivity.0;
+    let pitch = context.pitch() - (delta.y * context.sensitivity.0).to_radians();
     context.set_pitch(pitch);
     // 回転を適用
     camera.rotation = context.camera_rotation();

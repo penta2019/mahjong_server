@@ -29,7 +29,7 @@ impl GuiDiscard {
         self.riichi_index = Some(self.tiles.len());
     }
 
-    pub fn push_tile(&mut self, gui_tile: GuiTile) {
+    pub fn push_tile(&mut self, tile: GuiTile) {
         let i_tile = self.tiles.len();
         let mut pos = if let Some((_, last_pos)) = self.tiles.last() {
             if i_tile % GuiDiscard::TILES_IN_ROW == 0 {
@@ -55,15 +55,14 @@ impl GuiDiscard {
             }
         }
 
-        let mut tf = reparent_tranform(gui_tile.entity(), self.entity, &param().globals);
+        let mut tf = reparent_tranform(tile.entity(), self.entity, &param().globals);
         tf.rotation = rot;
 
-        param().commands.entity(gui_tile.entity()).insert((
-            ChildOf(self.entity),
-            tf,
-            MoveTo::new(pos),
-        ));
-        self.tiles.push((gui_tile, pos));
+        param()
+            .commands
+            .entity(tile.entity())
+            .insert((ChildOf(self.entity), tf, MoveTo::new(pos)));
+        self.tiles.push((tile, pos));
     }
 
     pub fn take_last_tile(&mut self) -> GuiTile {

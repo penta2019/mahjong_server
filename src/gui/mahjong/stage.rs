@@ -101,12 +101,11 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
         MjEvent::Deal(ev) => stage.event_deal(ev),
         MjEvent::Discard(ev) => stage.event_discard(ev),
         MjEvent::Meld(ev) => stage.event_meld(ev),
-        // MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
-        // MjEvent::Dora(ev) => stage.event_dora(ev),
-        // MjEvent::Win(ev) => stage.event_win(ev),
-        // MjEvent::Draw(ev) => stage.event_draw(ev),
+        MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
+        MjEvent::Dora(ev) => stage.event_dora(ev),
+        MjEvent::Win(ev) => stage.event_win(ev),
+        MjEvent::Draw(ev) => stage.event_draw(ev),
         MjEvent::End(_ev) => {}
-        _ => {}
     }
 }
 
@@ -217,13 +216,13 @@ impl GuiStage {
         self.players[event.seat].meld(&event.consumed, meld_tile, meld_offset);
     }
 
-    // fn event_nukidora(&mut self, event: &EventNukidora) {}
+    fn event_nukidora(&mut self, _event: &EventNukidora) {}
 
-    // fn event_dora(&mut self, event: &EventDora) {}
+    fn event_dora(&mut self, _event: &EventDora) {}
 
-    // fn event_win(&mut self, event: &EventWin) {}
+    fn event_win(&mut self, _event: &EventWin) {}
 
-    // fn event_draw(&mut self, event: &EventDraw) {}
+    fn event_draw(&mut self, _event: &EventDraw) {}
 }
 
 impl HasEntity for GuiStage {

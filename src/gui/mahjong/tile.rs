@@ -64,7 +64,7 @@ fn amend_tile_texture(
     q_mesh_materials: Query<&GltfMaterialName>,
 ) {
     let e_tile = trigger.target();
-    let Ok(gui_tile) = q_into_tile.get(e_tile) else {
+    let Ok(tile) = q_into_tile.get(e_tile) else {
         return;
     };
     // テクスチャ張替え用のコンポーネントは以降不要なので削除
@@ -76,7 +76,7 @@ fn amend_tile_texture(
             if name.0 != "face" {
                 continue;
             }
-            let texture = asset_server.load(format!("texture/{}.png", gui_tile.tile));
+            let texture = asset_server.load(format!("texture/{}.png", tile.tile));
             let material = asset_materials.add(StandardMaterial {
                 base_color_texture: Some(texture),
                 ..Default::default()

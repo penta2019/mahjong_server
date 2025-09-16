@@ -17,8 +17,8 @@ impl GuiHand {
         }
     }
 
-    pub fn init(&mut self, tiles: &[Tile]) {
-        for t in tiles {
+    pub fn init(&mut self, m_tiles: &[Tile]) {
+        for t in m_tiles {
             let tile = GuiTile::new(*t);
             param()
                 .commands
@@ -28,8 +28,8 @@ impl GuiHand {
         }
     }
 
-    pub fn deal_tile(&mut self, tile: Tile) {
-        let tile = GuiTile::new(tile);
+    pub fn deal_tile(&mut self, m_tile: Tile) {
+        let tile = GuiTile::new(m_tile);
         param()
             .commands
             .entity(tile.entity())
@@ -37,27 +37,27 @@ impl GuiHand {
         self.drawn_tile = Some(tile);
     }
 
-    pub fn take_tile(&mut self, tile: Tile, is_drawn: bool) -> GuiTile {
-        let gui_tile = if is_drawn {
+    pub fn take_tile(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
+        let tile = if is_drawn {
             // 牌を明示的にツモ切り
             self.drawn_tile.take().unwrap()
-        } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == tile) {
+        } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == m_tile) {
             self.tiles.remove(pos)
         } else if let Some(drawn_tile) = &self.drawn_tile
-            && drawn_tile.tile() == tile
+            && drawn_tile.tile() == m_tile
         {
             // ツモ牌を暗黙に手牌から取り除く場合 (加槓,暗槓など)
             self.drawn_tile.take().unwrap()
         } else {
-            panic!("{} not found in hand", tile);
+            panic!("{} not found in hand", m_tile);
         };
-        assert!(gui_tile.tile() == tile);
+        assert!(tile.tile() == m_tile);
 
         if let Some(drawn_tile) = self.drawn_tile.take() {
             self.tiles.push(drawn_tile);
         }
 
-        gui_tile
+        tile
     }
 
     pub fn align(&mut self) {

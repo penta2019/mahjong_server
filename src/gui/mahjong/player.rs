@@ -47,26 +47,26 @@ impl GuiPlayer {
         }
     }
 
-    pub fn init_hand(&mut self, tiles: &[Tile]) {
-        self.hand.init(tiles);
+    pub fn init_hand(&mut self, m_tiles: &[Tile]) {
+        self.hand.init(m_tiles);
         self.hand.align();
     }
 
-    pub fn deal_tile(&mut self, tile: Tile) {
-        self.hand.deal_tile(tile);
+    pub fn deal_tile(&mut self, m_tile: Tile) {
+        self.hand.deal_tile(m_tile);
     }
 
-    pub fn discard_tile(&mut self, tile: Tile, is_drawn: bool, is_riichi: bool) {
+    pub fn discard_tile(&mut self, m_tile: Tile, is_drawn: bool, is_riichi: bool) {
         if is_riichi {
             self.discard.set_riichi();
         }
-        let gui_tile = self.hand.take_tile(tile, is_drawn);
-        self.discard.push_tile(gui_tile);
+        let tile = self.hand.take_tile(m_tile, is_drawn);
+        self.discard.push_tile(tile);
         self.hand.align();
     }
 
-    pub fn meld(&mut self, tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
-        let tiles_from_hand: Vec<GuiTile> = tiles
+    pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
+        let tiles_from_hand: Vec<GuiTile> = m_tiles
             .iter()
             .map(|t| self.hand.take_tile(*t, false))
             .collect();

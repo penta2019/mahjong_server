@@ -8,8 +8,9 @@ use bevy::{
     ecs::system::SystemParam,
 };
 
-use super::*;
+use super::{super::control::CameraEvent, *};
 use crate::{
+    gui::util::print_hierarchy,
     listener::EventRx,
     model::{Event as MjEvent, *},
 };
@@ -33,6 +34,7 @@ impl Plugin for StagePlugin {
             recv: Mutex::new(event_rx),
         })
         .insert_resource(GuiStage::empty())
+        .add_systems(Startup, setup)
         .add_systems(Update, process_event);
     }
 }
@@ -49,9 +51,16 @@ pub struct StageParam<'w, 's> {
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
+
     // for debug
-    // pub names: Query<'w, 's, &'static Name>,
-    // pub children: Query<'w, 's, &'static Children>,
+    #[allow(unused)]
+    pub names: Query<'w, 's, &'static Name>,
+    #[allow(unused)]
+    pub children: Query<'w, 's, &'static Children>,
+}
+
+fn setup(mut camera: EventWriter<CameraEvent>) {
+    camera.write(CameraEvent::new(Vec3::new(0., 0.5, 0.5), Vec3::ZERO));
 }
 
 // StageParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
@@ -75,9 +84,9 @@ fn process_event(
     event_reader: ResMut<EventReceiver>,
 ) {
     // この関数の実行中にparam()から&mut GuiStageを取得できるよう設定
-    let param = &mut param as *mut StageParam as *mut ();
+    let ptr_param = &mut param as *mut StageParam as *mut ();
     let tid = thread::current().id();
-    unsafe { STAGE_PARAM = Some((param, tid)) };
+    unsafe { STAGE_PARAM = Some((ptr_param, tid)) };
 
     if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
         handle_event(&mut stage, &event);
@@ -92,7 +101,11 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
         MjEvent::Begin(_ev) => {}
         MjEvent::New(ev) => {
             // ステージ上のentityを再帰的にすべて削除
-            param().commands.entity(stage.entity()).despawn();
+            let e_stage = stage.entity();
+            if e_stage != Entity::PLACEHOLDER {
+                param().commands.entity(e_stage).despawn();
+            }
+
             // 空のステージを作成
             *stage = GuiStage::new();
 
@@ -107,6 +120,7 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
         MjEvent::Draw(ev) => stage.event_draw(ev),
         MjEvent::End(_ev) => {}
     }
+    // print_hierarchy(stage.entity(), &param().names, &param().children);
 }
 
 #[derive(Resource, Debug)]

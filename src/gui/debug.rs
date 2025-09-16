@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 
-use super::util::*;
-use crate::gui::control::ControlContext;
+use super::{control::ControlContext, util::*};
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DebugState {

@@ -10,9 +10,9 @@ pub struct GuiPlayer {
 
 impl GuiPlayer {
     pub fn new() -> Self {
-        let entity = param().commands.spawn(Name::new("Player")).id();
-
         let commands = &mut param().commands;
+
+        let entity = commands.spawn(Name::new("Player")).id();
 
         let hand = GuiHand::new();
         commands

@@ -11,7 +11,10 @@ pub struct GuiMeld {
 
 impl GuiMeld {
     pub fn new() -> Self {
-        let entity = param().commands.spawn(Name::new("Meld")).id();
+        let entity = param()
+            .commands
+            .spawn((Name::new("Meld"), Transform::default()))
+            .id();
         Self {
             entity,
             items: vec![],

@@ -9,7 +9,10 @@ pub struct GuiHand {
 
 impl GuiHand {
     pub fn new() -> Self {
-        let entity = param().commands.spawn(Name::new("Hand")).id();
+        let entity = param()
+            .commands
+            .spawn((Name::new("Hand"), Transform::default()))
+            .id();
         Self {
             entity,
             tiles: vec![],

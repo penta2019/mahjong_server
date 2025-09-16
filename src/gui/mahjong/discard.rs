@@ -16,7 +16,10 @@ impl GuiDiscard {
     const TILES_IN_ROW: usize = 6;
 
     pub fn new() -> Self {
-        let entity = param().commands.spawn(Name::new("Discard")).id();
+        let entity = param()
+            .commands
+            .spawn((Name::new("Discard"), Transform::default()))
+            .id();
         Self {
             entity,
             tiles: vec![],

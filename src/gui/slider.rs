@@ -94,24 +94,24 @@ fn is_interacting(config: Res<SliderConfig>) -> bool {
 }
 
 fn slider_changed(
-    mut slider_query: Query<(&mut Slider, &Children), Changed<Slider>>,
-    mut slider_inner_query: Query<&mut Node, (With<SliderInnder>, Without<Slider>)>,
+    mut sliders: Query<(&mut Slider, &Children), Changed<Slider>>,
+    mut inner_sliders: Query<&mut Node, (With<SliderInnder>, Without<Slider>)>,
 ) {
-    for (mut slider, children) in &mut slider_query {
+    for (mut slider, children) in &mut sliders {
         if !slider.dirty {
             continue;
         }
         slider.dirty = false;
-        let mut inner = slider_inner_query.get_mut(children[0]).unwrap();
+        let mut inner = inner_sliders.get_mut(children[0]).unwrap();
         inner.width = Val::Percent(slider.get());
     }
 }
 
 fn slider_interaction(
     mut config: ResMut<SliderConfig>,
-    mut slider_query: Query<(&Interaction, &mut Slider), (Changed<Interaction>, With<Slider>)>,
+    mut sliders: Query<(&Interaction, &mut Slider), (Changed<Interaction>, With<Slider>)>,
 ) {
-    for (interaction, mut slider) in &mut slider_query {
+    for (interaction, mut slider) in &mut sliders {
         match *interaction {
             Interaction::Pressed => {
                 slider.dragging = true;
@@ -130,15 +130,15 @@ fn slider_interaction(
 
 fn slider_interaction_mouse(
     windows: Query<&Window>,
-    mut slider_query: Query<(&GlobalTransform, &mut Slider, &Node, &Children)>,
-    mut slider_inner_query: Query<&mut Node, (With<SliderInnder>, Without<Slider>)>,
+    mut sliders: Query<(&GlobalTransform, &mut Slider, &Node, &Children)>,
+    mut inner_sliders: Query<&mut Node, (With<SliderInnder>, Without<Slider>)>,
 ) {
     let window = windows.single().unwrap();
     let Some(cursor_pos) = window.cursor_position() else {
         return;
     };
 
-    for (transform, mut slider, node, children) in &mut slider_query {
+    for (transform, mut slider, node, children) in &mut sliders {
         if !slider.dragging {
             continue;
         }
@@ -150,7 +150,7 @@ fn slider_interaction_mouse(
         let percent = ((cursor_pos.x - trans.x) / width + 0.5) * 100.0;
         let percent = percent.round().clamp(0.0, 100.0);
         slider.percent = percent;
-        let mut inner = slider_inner_query.get_mut(children[0]).unwrap();
+        let mut inner = inner_sliders.get_mut(children[0]).unwrap();
         inner.width = Val::Percent(percent);
     }
 }

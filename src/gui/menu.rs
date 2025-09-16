@@ -153,13 +153,13 @@ fn state_off(
 }
 
 fn handler_button_interaction(
-    interaction_query: Query<
+    buttons: Query<
         (&Interaction, &mut BackgroundColor, &MenuButton),
         (Changed<Interaction>, With<Button>),
     >,
     mut app_exit_events: EventWriter<AppExit>,
 ) {
-    for (interaction, mut color, button) in interaction_query {
+    for (interaction, mut color, button) in buttons {
         match *interaction {
             Interaction::Pressed => {
                 *color = BackgroundColor(PRESSED_BUTTON);

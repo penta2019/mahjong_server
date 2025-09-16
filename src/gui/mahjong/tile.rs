@@ -59,20 +59,20 @@ fn amend_tile_texture(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut asset_materials: ResMut<Assets<StandardMaterial>>,
-    q_children: Query<&Children>,
-    q_into_tile: Query<&IntoTile>,
-    q_mesh_materials: Query<&GltfMaterialName>,
+    childrens: Query<&Children>,
+    into_tiles: Query<&IntoTile>,
+    gltf_materials: Query<&GltfMaterialName>,
 ) {
     let e_tile = trigger.target();
-    let Ok(tile) = q_into_tile.get(e_tile) else {
+    let Ok(tile) = into_tiles.get(e_tile) else {
         return;
     };
     // テクスチャ張替え用のコンポーネントは以降不要なので削除
     commands.entity(e_tile).remove::<IntoTile>();
 
     // 牌のテクスチャを適切なものに張替え
-    for e_descendant in q_children.iter_descendants(trigger.target()) {
-        if let Ok(name) = q_mesh_materials.get(e_descendant) {
+    for e_descendant in childrens.iter_descendants(trigger.target()) {
+        if let Ok(name) = gltf_materials.get(e_descendant) {
             if name.0 != "face" {
                 continue;
             }
@@ -108,8 +108,8 @@ impl MoveTo {
     }
 }
 
-fn animate_move(mut commands: Commands, q_move: Query<(Entity, &mut Transform, &mut MoveTo)>) {
-    for (e, mut tf, mut move_to) in q_move {
+fn animate_move(mut commands: Commands, move_tos: Query<(Entity, &mut Transform, &mut MoveTo)>) {
+    for (e, mut tf, mut move_to) in move_tos {
         let diff_vec = move_to.target - tf.translation;
         tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
         move_to.frame_left -= 1;

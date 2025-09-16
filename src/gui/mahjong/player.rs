@@ -3,6 +3,7 @@ use super::*;
 #[derive(Debug)]
 pub struct GuiPlayer {
     entity: Entity,
+    tf_hand: Transform,
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
@@ -14,10 +15,11 @@ impl GuiPlayer {
 
         let entity = commands.spawn(Name::new("Player")).id();
 
+        let tf_hand = Transform::from_xyz(-0.12, 0., 0.21);
         let hand = GuiHand::new();
         commands
             .entity(hand.entity())
-            .insert((ChildOf(entity), Transform::from_xyz(-0.12, 0., 0.21)));
+            .insert((ChildOf(entity), tf_hand));
 
         let discard = GuiDiscard::new();
         commands.entity(discard.entity()).insert((
@@ -41,10 +43,28 @@ impl GuiPlayer {
 
         Self {
             entity,
+            tf_hand,
             hand,
             discard,
             meld,
         }
+    }
+
+    pub fn set_player_mode(&mut self, flag: bool) {
+        use super::stage::{CAMERA_LOOK_AT, CAMERA_POS};
+        let tf = if flag {
+            let tf_camera =
+                Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
+            let tf_hand = Transform {
+                translation: Vec3::new(-0.13, -0.13, -0.9),
+                rotation: Quat::from_rotation_x(10.0_f32.to_radians()),
+                scale: Vec3::ONE,
+            };
+            tf_camera * tf_hand
+        } else {
+            self.tf_hand
+        };
+        param().commands.entity(self.hand.entity()).insert(tf);
     }
 
     pub fn init_hand(&mut self, m_tiles: &[Tile]) {

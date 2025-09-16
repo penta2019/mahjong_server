@@ -36,7 +36,6 @@ impl Plugin for StagePlugin {
             recv: Mutex::new(event_rx),
         })
         .insert_resource(GuiStage::empty())
-        .add_systems(Startup, setup)
         .add_systems(Update, process_event);
     }
 }
@@ -53,6 +52,7 @@ pub struct StageParam<'w, 's> {
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
+    pub camera: EventWriter<'w, CameraEvent>,
 
     // for debug
     pub names: Query<'w, 's, &'static Name>,
@@ -66,12 +66,8 @@ impl<'w, 's> StageParam<'w, 's> {
     }
 }
 
-fn setup(mut camera: EventWriter<CameraEvent>) {
-    camera.write(CameraEvent::look(
-        Vec3::new(0., 0.4, 0.4),
-        Vec3::new(0., -0.1, 0.),
-    ));
-}
+pub const CAMERA_POS: Vec3 = Vec3::new(0., 0.8, 0.8);
+pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0., -0.02, 0.);
 
 // StageParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
 // 注意!!!!
@@ -118,6 +114,7 @@ fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
 
             // 空のステージを作成
             *stage = GuiStage::new();
+            stage.set_player(0);
 
             stage.event_new(ev);
         }
@@ -166,6 +163,7 @@ impl GuiStage {
             .id();
 
         // info
+        // 局全体の情報 (得点, リー棒などのプレイヤーごとの情報はGuiPlayerに置く)
         commands.spawn((
             Name::new("Info".to_string()),
             ChildOf(entity),
@@ -175,17 +173,21 @@ impl GuiStage {
         ));
 
         // Light
-        commands.spawn((
-            ChildOf(entity),
-            PointLight {
-                shadows_enabled: true,
-                intensity: 10_000_000.,
-                range: 100.0,
-                shadow_depth_bias: 0.2,
-                ..default()
-            },
-            Transform::from_xyz(8.0, 16.0, 8.0),
-        ));
+        // 斜め4方向から照射
+        for i in 0..4 {
+            commands.spawn((
+                ChildOf(entity),
+                DirectionalLight {
+                    illuminance: 1_000.0,
+                    shadows_enabled: false,
+                    ..default()
+                },
+                Transform::from_translation(
+                    Quat::from_rotation_y(FRAC_PI_2 * i as f32) * Vec3::ONE,
+                )
+                .looking_at(Vec3::new(0., 0.1, 0.), Vec3::new(0., 1., 0.)),
+            ));
+        }
 
         let mut players = vec![];
         for seat in 0..SEAT {
@@ -207,6 +209,14 @@ impl GuiStage {
         }
     }
 
+    fn set_player(&mut self, seat: Seat) {
+        let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
+        param().camera.write(CameraEvent::look(pos, CAMERA_LOOK_AT));
+        for (s, player) in self.players.iter_mut().enumerate() {
+            player.set_player_mode(s == seat);
+        }
+    }
+
     fn event_new(&mut self, event: &EventNew) {
         for seat in 0..SEAT {
             self.players[seat].init_hand(&event.hands[seat]);
@@ -215,6 +225,7 @@ impl GuiStage {
 
     fn event_deal(&mut self, event: &EventDeal) {
         self.players[event.seat].deal_tile(event.tile);
+        // self.set_player(event.seat);
     }
 
     fn event_discard(&mut self, event: &EventDiscard) {

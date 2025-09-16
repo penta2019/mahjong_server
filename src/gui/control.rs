@@ -137,12 +137,20 @@ fn set_cursor_visibility(window: &mut Window, visible: bool) {
 
 fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
     context.set_pitch(-30.0_f32.to_radians());
-    let camera = Transform {
+    let tf_camera = Transform {
         translation: Vec3::new(0., 1., 1.),
         rotation: context.camera_rotation(),
         scale: Vec3::ONE,
     };
-    commands.spawn((Camera3d::default(), camera, FlyCamera));
+    commands.spawn((
+        FlyCamera,
+        Camera3d::default(),
+        Projection::from(PerspectiveProjection {
+            fov: 20.0_f32.to_radians(),
+            ..default()
+        }),
+        tf_camera,
+    ));
 }
 
 fn keyboard_handler_global(

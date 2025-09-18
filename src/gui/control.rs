@@ -144,6 +144,7 @@ fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
     };
     commands.spawn((
         FlyCamera,
+        Camera::default(),
         Camera3d::default(),
         Projection::from(PerspectiveProjection {
             fov: 20.0_f32.to_radians(),

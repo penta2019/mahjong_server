@@ -32,7 +32,7 @@ impl GuiTile {
             .spawn((
                 Name::new(format!("Tile({tile})")),
                 SceneRoot(tile_model),
-                IntoTile { tile },
+                TileTag { tile },
             ))
             .id();
         Self { entity, tile }
@@ -50,8 +50,19 @@ impl HasEntity for GuiTile {
 }
 
 #[derive(Component, Debug)]
-struct IntoTile {
+pub struct TileTag {
     tile: Tile,
+}
+
+#[derive(Component, Debug)]
+pub struct TileMesh {
+    tile_entity: Entity,
+}
+
+impl TileMesh {
+    pub fn tile_entity(&self) -> Entity {
+        self.tile_entity
+    }
 }
 
 fn amend_tile_texture(
@@ -60,7 +71,7 @@ fn amend_tile_texture(
     asset_server: Res<AssetServer>,
     mut asset_materials: ResMut<Assets<StandardMaterial>>,
     childrens: Query<&Children>,
-    into_tiles: Query<&IntoTile>,
+    into_tiles: Query<&TileTag>,
     gltf_materials: Query<&GltfMaterialName>,
 ) {
     let e_tile = trigger.target();
@@ -68,11 +79,16 @@ fn amend_tile_texture(
         return;
     };
     // テクスチャ張替え用のコンポーネントは以降不要なので削除
-    commands.entity(e_tile).remove::<IntoTile>();
+    // commands.entity(e_tile).remove::<TileTag>();
 
     // 牌のテクスチャを適切なものに張替え
-    for e_descendant in childrens.iter_descendants(trigger.target()) {
+    for e_descendant in childrens.iter_descendants(e_tile) {
         if let Ok(name) = gltf_materials.get(e_descendant) {
+            if ["base", "face", "back"].contains(&name.0.as_str()) {
+                commands.entity(e_descendant).insert(TileMesh {
+                    tile_entity: e_tile,
+                });
+            }
             if name.0 != "face" {
                 continue;
             }

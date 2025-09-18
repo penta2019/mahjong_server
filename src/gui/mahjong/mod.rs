@@ -19,7 +19,7 @@ use hand::GuiHand;
 use meld::GuiMeld;
 use player::GuiPlayer;
 use stage::param;
-use tile::{GuiTile, MoveTo};
+use tile::{GuiTile, MoveTo, TileTag};
 
 trait HasEntity {
     fn entity(&self) -> Entity;

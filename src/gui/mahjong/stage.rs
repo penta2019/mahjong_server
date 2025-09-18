@@ -6,13 +6,18 @@ use std::{
 use bevy::{
     color::palettes::basic::{BLACK, GREEN},
     ecs::system::SystemParam,
+    input::mouse::MouseMotion,
 };
 
 use super::{
-    super::{control::CameraEvent, util::print_hierarchy},
+    super::{
+        control::{CameraEvent, FlyCamera},
+        util::print_hierarchy,
+    },
     *,
 };
 use crate::{
+    gui::mahjong::tile::TileMesh,
     listener::EventRx,
     model::{Event as MjEvent, *},
 };
@@ -36,6 +41,7 @@ impl Plugin for StagePlugin {
             recv: Mutex::new(event_rx),
         })
         .insert_resource(GuiStage::empty())
+        .add_systems(Update, handle_mouse_event)
         .add_systems(Update, process_event);
     }
 }
@@ -56,13 +62,13 @@ pub struct StageParam<'w, 's> {
 
     // for debug
     pub names: Query<'w, 's, &'static Name>,
-    pub children: Query<'w, 's, &'static Children>,
+    pub childrens: Query<'w, 's, &'static Children>,
 }
 
 impl<'w, 's> StageParam<'w, 's> {
     #[allow(unused)]
     pub fn print_hierarchy(&self, entity: Entity) {
-        print_hierarchy(entity, &self.names, &self.children);
+        print_hierarchy(entity, &self.names, &self.childrens);
     }
 }
 
@@ -81,6 +87,34 @@ pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
         assert!(tid == thread::current().id());
         let p = p as *mut StageParam<'w, 's>;
         &mut *p
+    }
+}
+
+fn handle_mouse_event(
+    mut mouse_events: EventReader<MouseMotion>,
+    window: Single<&mut Window>,
+    camera: Single<(&mut Camera, &GlobalTransform), With<FlyCamera>>,
+    mut ray_cast: MeshRayCast,
+    tile_meshes: Query<&TileMesh>,
+    tiles: Query<&TileTag>,
+) {
+    let Some(_) = mouse_events.read().next() else {
+        return;
+    };
+    let Some(p_cursor) = window.cursor_position() else {
+        return;
+    };
+
+    let (camera, tf_camera) = &*camera;
+    let Ok(ray) = camera.viewport_to_world(tf_camera, p_cursor) else {
+        return;
+    };
+    for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
+        if let Ok(m) = tile_meshes.get(*entity)
+            && let Ok(t) = tiles.get(m.tile_entity())
+        {
+            println!("{t:?}");
+        }
     }
 }
 

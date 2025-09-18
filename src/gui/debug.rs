@@ -85,7 +85,7 @@ fn state_off(mut visibility: Single<&mut Visibility, With<Container>>) {
 fn update(
     time: Res<Time>,
     mut timer: Local<MsecTimer<500>>,
-    camera: Single<&Transform, With<super::control::FlyCamera>>,
+    camera: Single<&Transform, With<super::control::MainCamera>>,
     control_context: Res<ControlContext>,
     mut texts: Query<(&mut Text, &Info)>,
 ) {

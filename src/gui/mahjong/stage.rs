@@ -11,7 +11,7 @@ use bevy::{
 
 use super::{
     super::{
-        control::{CameraEvent, FlyCamera},
+        control::{CameraEvent, MainCamera},
         util::print_hierarchy,
     },
     *,
@@ -93,7 +93,7 @@ pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
 fn handle_mouse_event(
     mut mouse_events: EventReader<MouseMotion>,
     window: Single<&mut Window>,
-    camera: Single<(&mut Camera, &GlobalTransform), With<FlyCamera>>,
+    camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,
     tile_meshes: Query<&TileMesh>,
     tiles: Query<&TileTag>,

@@ -36,7 +36,7 @@ impl Plugin for ControlPlugin {
 }
 
 #[derive(Component, Debug)]
-pub struct FlyCamera;
+pub struct MainCamera;
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum FlyState {
@@ -143,7 +143,7 @@ fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
         scale: Vec3::ONE,
     };
     commands.spawn((
-        FlyCamera,
+        MainCamera,
         Camera::default(),
         Camera3d::default(),
         Projection::from(PerspectiveProjection {
@@ -206,7 +206,7 @@ fn keyboard_handler_global(
 fn camera_event(
     mut reader: EventReader<CameraEvent>,
     mut context: ResMut<ControlContext>,
-    mut camera: Single<&mut Transform, With<Camera>>,
+    mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
     for ev in reader.read() {
         camera.translation = ev.translation;
@@ -219,7 +219,7 @@ fn camera_event(
 fn camera_move_by_keyboard(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut camera: Single<&mut Transform, With<Camera>>,
+    mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
     // カメラのローカル基準方向
     let mut forward = camera.forward().as_vec3(); // -Z 方向（回転を考慮）
@@ -262,7 +262,7 @@ fn camera_move_by_keyboard(
 fn camera_look_by_mouse(
     mut mouse_events: EventReader<MouseMotion>,
     mut context: ResMut<ControlContext>,
-    mut camera: Single<&mut Transform, With<FlyCamera>>,
+    mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
     if mouse_events.is_empty() {
         return;

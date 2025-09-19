@@ -90,6 +90,23 @@ pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
     }
 }
 
+fn with_param<F: FnOnce()>(param: &mut StageParam, f: F) {
+    // この関数の実行中にparam()から&mut GuiStageを取得できるよう設定
+    let ptr_param = param as *mut StageParam as *mut ();
+    let tid = thread::current().id();
+
+    unsafe {
+        // 同じSystemParamを参照する関数は同時実行されないはずだが念の為
+        #[allow(static_mut_refs)]
+        let safe_to_use = STAGE_PARAM.is_none();
+        assert!(safe_to_use);
+
+        STAGE_PARAM = Some((ptr_param, tid));
+        f();
+        STAGE_PARAM = None;
+    };
+}
+
 fn handle_mouse_event(
     mut mouse_events: EventReader<MouseMotion>,
     window: Single<&mut Window>,
@@ -123,17 +140,11 @@ fn process_event(
     mut stage: ResMut<GuiStage>,
     event_reader: ResMut<EventReceiver>,
 ) {
-    // この関数の実行中にparam()から&mut GuiStageを取得できるよう設定
-    let ptr_param = &mut param as *mut StageParam as *mut ();
-    let tid = thread::current().id();
-    unsafe { STAGE_PARAM = Some((ptr_param, tid)) };
-
-    if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
-        handle_event(&mut stage, &event);
-    }
-
-    // この関数外から呼ばれて未定義の振る舞いを起こすのを防止
-    unsafe { STAGE_PARAM = None };
+    with_param(&mut param, || {
+        if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
+            handle_event(&mut stage, &event);
+        }
+    });
 }
 
 fn handle_event(stage: &mut GuiStage, event: &MjEvent) {

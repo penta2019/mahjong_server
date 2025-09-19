@@ -35,7 +35,7 @@ impl GuiDiscard {
     pub fn push_tile(&mut self, tile: GuiTile) {
         let i_tile = self.tiles.len();
         let mut pos = if let Some((_, last_pos)) = self.tiles.last() {
-            if i_tile % GuiDiscard::TILES_IN_ROW == 0 {
+            if i_tile.is_multiple_of(GuiDiscard::TILES_IN_ROW) {
                 let y = -GuiTile::HEIGHT * (i_tile / GuiDiscard::TILES_IN_ROW) as f32;
                 Vec3::new(0., y, 0.)
             } else {

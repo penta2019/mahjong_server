@@ -18,7 +18,7 @@ use discard::GuiDiscard;
 use hand::GuiHand;
 use meld::GuiMeld;
 use player::GuiPlayer;
-use stage::param;
+use stage::{create_tile, param};
 use tile::{GuiTile, MoveTo, TileTag};
 
 trait HasEntity {

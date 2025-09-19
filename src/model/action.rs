@@ -133,9 +133,10 @@ pub struct Tenpai {
     pub is_furiten: bool,                // フリテンの有無
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub struct PossibleActions {
-    pub actions: Vec<Action>,
-    pub tenpais: Vec<Tenpai>,
-}
+// 用途不明
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// #[serde(tag = "type")]
+// pub struct PossibleActions {
+//     pub actions: Vec<Action>,
+//     pub tenpais: Vec<Tenpai>,
+// }

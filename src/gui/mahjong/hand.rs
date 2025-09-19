@@ -22,7 +22,7 @@ impl GuiHand {
 
     pub fn init(&mut self, m_tiles: &[Tile]) {
         for t in m_tiles {
-            let tile = GuiTile::new(*t);
+            let tile = create_tile(*t);
             param()
                 .commands
                 .entity(tile.entity())
@@ -32,7 +32,7 @@ impl GuiHand {
     }
 
     pub fn deal_tile(&mut self, m_tile: Tile) {
-        let tile = GuiTile::new(m_tile);
+        let tile = create_tile(m_tile);
         param()
             .commands
             .entity(tile.entity())

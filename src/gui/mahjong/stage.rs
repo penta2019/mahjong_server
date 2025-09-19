@@ -75,6 +75,11 @@ impl<'w, 's> StageParam<'w, 's> {
 pub const CAMERA_POS: Vec3 = Vec3::new(0., 0.8, 0.8);
 pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0., -0.02, 0.);
 
+pub fn create_tile(m_tile: Tile) -> GuiTile {
+    let param = param();
+    GuiTile::new(&mut param.commands, &param.asset_server, m_tile)
+}
+
 // StageParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
 // 注意!!!!
 // * process_event以下の関数以外からは呼ばないこと,特にadd_systemsに登録する関数に注意
@@ -113,7 +118,7 @@ fn handle_mouse_event(
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,
     tile_meshes: Query<&TileMesh>,
-    tiles: Query<&TileTag>,
+    tile_tags: Query<&TileTag>,
 ) {
     let Some(_) = mouse_events.read().next() else {
         return;
@@ -128,9 +133,9 @@ fn handle_mouse_event(
     };
     for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
         if let Ok(m) = tile_meshes.get(*entity)
-            && let Ok(t) = tiles.get(m.tile_entity())
+            && let Ok(t) = tile_tags.get(m.tile_entity())
         {
-            println!("{t:?}");
+            // with_param(&mut param, || t.set_highlight(true))
         }
     }
 }

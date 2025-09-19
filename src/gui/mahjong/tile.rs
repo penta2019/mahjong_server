@@ -1,6 +1,6 @@
 use bevy::{gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady};
 
-use super::{HasEntity, param};
+use super::HasEntity;
 use crate::model::Tile;
 
 pub struct TilePlugin;
@@ -23,16 +23,16 @@ impl GuiTile {
     pub const HEIGHT: f32 = 0.028;
     pub const DEPTH: f32 = 0.016;
 
-    pub fn new(tile: Tile) -> Self {
-        let tile_model = param()
-            .asset_server
-            .load(GltfAssetLabel::Scene(0).from_asset("tile.glb"));
-        let entity = param()
-            .commands
+    pub fn new(commands: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Self {
+        let tile_model = asset_server.load(GltfAssetLabel::Scene(0).from_asset("tile.glb"));
+        let entity = commands
             .spawn((
                 Name::new(format!("Tile({tile})")),
                 SceneRoot(tile_model),
-                TileTag { tile },
+                TileTag {
+                    tile,
+                    mesh_materials: vec![],
+                },
             ))
             .id();
         Self { entity, tile }
@@ -52,6 +52,16 @@ impl HasEntity for GuiTile {
 #[derive(Component, Debug)]
 pub struct TileTag {
     tile: Tile,
+    mesh_materials: Vec<Handle<StandardMaterial>>,
+}
+
+impl TileTag {
+    pub fn set_highlight(&self, flag: bool) {
+        // for h in &self.mesh_materials {
+        //     let material = param().materials.get_mut(h).unwrap();
+        //     material.emissive = LinearRgba::new(0.05, 0.025, 0., 0.);
+        // }
+    }
 }
 
 #[derive(Component, Debug)]
@@ -71,11 +81,12 @@ fn amend_tile_texture(
     asset_server: Res<AssetServer>,
     mut asset_materials: ResMut<Assets<StandardMaterial>>,
     childrens: Query<&Children>,
-    into_tiles: Query<&TileTag>,
+    mut tile_tags: Query<&mut TileTag>,
     gltf_materials: Query<&GltfMaterialName>,
+    materials: Query<&MeshMaterial3d<StandardMaterial>>,
 ) {
     let e_tile = trigger.target();
-    let Ok(tile) = into_tiles.get(e_tile) else {
+    let Ok(mut tile_tag) = tile_tags.get_mut(e_tile) else {
         return;
     };
     // テクスチャ張替え用のコンポーネントは以降不要なので削除
@@ -84,22 +95,25 @@ fn amend_tile_texture(
     // 牌のテクスチャを適切なものに張替え
     for e_descendant in childrens.iter_descendants(e_tile) {
         if let Ok(name) = gltf_materials.get(e_descendant) {
+            if name.0 == "face" {
+                let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
+                let material = asset_materials.add(StandardMaterial {
+                    base_color_texture: Some(texture),
+                    ..Default::default()
+                });
+                commands
+                    .entity(e_descendant)
+                    .insert(MeshMaterial3d(material));
+            }
+
             if ["base", "face", "back"].contains(&name.0.as_str()) {
                 commands.entity(e_descendant).insert(TileMesh {
                     tile_entity: e_tile,
                 });
+                tile_tag
+                    .mesh_materials
+                    .push(materials.get(e_descendant).unwrap().0.clone());
             }
-            if name.0 != "face" {
-                continue;
-            }
-            let texture = asset_server.load(format!("texture/{}.png", tile.tile));
-            let material = asset_materials.add(StandardMaterial {
-                base_color_texture: Some(texture),
-                ..Default::default()
-            });
-            commands
-                .entity(e_descendant)
-                .insert(MeshMaterial3d(material));
         }
     }
 }

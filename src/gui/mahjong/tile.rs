@@ -56,11 +56,15 @@ pub struct TileTag {
 }
 
 impl TileTag {
-    pub fn set_highlight(&self, flag: bool) {
-        // for h in &self.mesh_materials {
-        //     let material = param().materials.get_mut(h).unwrap();
-        //     material.emissive = LinearRgba::new(0.05, 0.025, 0., 0.);
-        // }
+    pub fn set_highlight(&self, materials: &mut Assets<StandardMaterial>, flag: bool) {
+        for h in &self.mesh_materials {
+            let material = materials.get_mut(h).unwrap();
+            material.emissive = if flag {
+                LinearRgba::new(0.1, 0.05, 0., 0.)
+            } else {
+                LinearRgba::BLACK
+            };
+        }
     }
 }
 
@@ -83,7 +87,7 @@ fn amend_tile_texture(
     childrens: Query<&Children>,
     mut tile_tags: Query<&mut TileTag>,
     gltf_materials: Query<&GltfMaterialName>,
-    materials: Query<&MeshMaterial3d<StandardMaterial>>,
+    // materials: Query<&MeshMaterial3d<StandardMaterial>>,
 ) {
     let e_tile = trigger.target();
     let Ok(mut tile_tag) = tile_tags.get_mut(e_tile) else {
@@ -93,27 +97,34 @@ fn amend_tile_texture(
     // commands.entity(e_tile).remove::<TileTag>();
 
     // 牌のテクスチャを適切なものに張替え
+    // ハイライト表示を行うために見た目が同じでも牌毎に異なるmaterialを作成
     for e_descendant in childrens.iter_descendants(e_tile) {
         if let Ok(name) = gltf_materials.get(e_descendant) {
-            if name.0 == "face" {
-                let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
-                let material = asset_materials.add(StandardMaterial {
-                    base_color_texture: Some(texture),
+            let material = asset_materials.add(match name.0.as_str() {
+                "face" => {
+                    let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
+                    StandardMaterial {
+                        base_color_texture: Some(texture),
+                        ..Default::default()
+                    }
+                }
+                "base" => StandardMaterial {
+                    base_color: Color::srgb_u8(0xda, 0xd9, 0xd9),
                     ..Default::default()
-                });
-                commands
-                    .entity(e_descendant)
-                    .insert(MeshMaterial3d(material));
-            }
-
-            if ["base", "face", "back"].contains(&name.0.as_str()) {
-                commands.entity(e_descendant).insert(TileMesh {
+                },
+                "back" => StandardMaterial {
+                    base_color: Color::srgb_u8(0x00, 0x00, 0x00),
+                    ..Default::default()
+                },
+                _ => continue,
+            });
+            commands.entity(e_descendant).insert((
+                MeshMaterial3d(material.clone()),
+                TileMesh {
                     tile_entity: e_tile,
-                });
-                tile_tag
-                    .mesh_materials
-                    .push(materials.get(e_descendant).unwrap().0.clone());
-            }
+                },
+            ));
+            tile_tag.mesh_materials.push(material)
         }
     }
 }

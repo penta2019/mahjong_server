@@ -41,6 +41,7 @@ impl Plugin for StagePlugin {
             recv: Mutex::new(event_rx),
         })
         .insert_resource(GuiStage::empty())
+        .add_event::<TileHoverEvent>()
         .add_systems(Update, handle_mouse_event)
         .add_systems(Update, process_event);
     }
@@ -51,6 +52,11 @@ struct EventReceiver {
     recv: Mutex<EventRx>,
 }
 
+#[derive(Event, Debug)]
+struct TileHoverEvent {
+    tile_entity: Option<Entity>,
+}
+
 #[derive(SystemParam)]
 pub struct StageParam<'w, 's> {
     pub commands: Commands<'w, 's>,
@@ -59,6 +65,7 @@ pub struct StageParam<'w, 's> {
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
     pub camera: EventWriter<'w, CameraEvent>,
+    pub tile_tags: Query<'w, 's, &'static TileTag>,
 
     // for debug
     pub names: Query<'w, 's, &'static Name>,
@@ -118,7 +125,7 @@ fn handle_mouse_event(
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,
     tile_meshes: Query<&TileMesh>,
-    tile_tags: Query<&TileTag>,
+    mut tile_hover: EventWriter<TileHoverEvent>,
 ) {
     let Some(_) = mouse_events.read().next() else {
         return;
@@ -126,28 +133,35 @@ fn handle_mouse_event(
     let Some(p_cursor) = window.cursor_position() else {
         return;
     };
-
     let (camera, tf_camera) = &*camera;
     let Ok(ray) = camera.viewport_to_world(tf_camera, p_cursor) else {
         return;
     };
+
     for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
-        if let Ok(m) = tile_meshes.get(*entity)
-            && let Ok(t) = tile_tags.get(m.tile_entity())
-        {
-            // with_param(&mut param, || t.set_highlight(true))
+        if let Ok(m) = tile_meshes.get(*entity) {
+            tile_hover.write(TileHoverEvent {
+                tile_entity: Some(m.tile_entity()),
+            });
+            return;
         }
     }
+    tile_hover.write(TileHoverEvent { tile_entity: None });
 }
 
 fn process_event(
     mut param: StageParam,
     mut stage: ResMut<GuiStage>,
     event_reader: ResMut<EventReceiver>,
+    mut tile_hover: EventReader<TileHoverEvent>,
 ) {
     with_param(&mut param, || {
         if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
             handle_event(&mut stage, &event);
+        }
+
+        for t in tile_hover.read() {
+            stage.set_hover_tile(t.tile_entity);
         }
     });
 }
@@ -185,6 +199,7 @@ struct GuiStage {
     entity: Entity,
     players: Vec<GuiPlayer>,
     last_tile: Option<(Seat, ActionType, Tile)>,
+    last_hover_tile: Option<Entity>,
 }
 
 impl GuiStage {
@@ -193,6 +208,7 @@ impl GuiStage {
             entity: Entity::PLACEHOLDER,
             players: vec![],
             last_tile: None,
+            last_hover_tile: None,
         }
     }
 
@@ -256,6 +272,7 @@ impl GuiStage {
             entity,
             players,
             last_tile: None,
+            last_hover_tile: None,
         }
     }
 
@@ -265,6 +282,26 @@ impl GuiStage {
         for (s, player) in self.players.iter_mut().enumerate() {
             player.set_player_mode(s == seat);
         }
+    }
+
+    fn set_hover_tile(&mut self, tile: Option<Entity>) {
+        if tile == self.last_hover_tile {
+            return;
+        }
+
+        let param = param();
+        if let Some(e_tile) = self.last_hover_tile {
+            if let Ok(tile_tag) = param.tile_tags.get(e_tile) {
+                tile_tag.set_highlight(&mut param.materials, false);
+            }
+        }
+        if let Some(e_tile) = tile {
+            if let Ok(tile_tag) = param.tile_tags.get(e_tile) {
+                tile_tag.set_highlight(&mut param.materials, true);
+            }
+        }
+
+        self.last_hover_tile = tile;
     }
 
     fn event_new(&mut self, event: &EventNew) {

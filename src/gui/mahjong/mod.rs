@@ -17,7 +17,7 @@ pub use tile::TilePlugin;
 use discard::GuiDiscard;
 use hand::GuiHand;
 use meld::GuiMeld;
-use player::GuiPlayer;
+use player::{GuiPlayer, HandMode};
 use stage::{create_tile, param};
 use tile::{GuiTile, MoveTo, TileTag};
 

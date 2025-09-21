@@ -1,9 +1,15 @@
 use super::*;
 
+pub enum HandMode {
+    Camera,
+    Close,
+    Open,
+}
+
 #[derive(Debug)]
 pub struct GuiPlayer {
     entity: Entity,
-    tf_hand: Transform,
+    tf_close_hand: Transform,
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
@@ -15,11 +21,11 @@ impl GuiPlayer {
 
         let entity = commands.spawn(Name::new("Player")).id();
 
-        let tf_hand = Transform::from_xyz(-0.12, 0., 0.21);
+        let tf_close_hand = Transform::from_xyz(-0.12, 0., 0.21);
         let hand = GuiHand::new();
         commands
             .entity(hand.entity())
-            .insert((ChildOf(entity), tf_hand));
+            .insert((ChildOf(entity), tf_close_hand));
 
         let discard = GuiDiscard::new();
         commands.entity(discard.entity()).insert((
@@ -43,26 +49,32 @@ impl GuiPlayer {
 
         Self {
             entity,
-            tf_hand,
+            tf_close_hand,
             hand,
             discard,
             meld,
         }
     }
 
-    pub fn set_player_mode(&mut self, flag: bool) {
+    pub fn set_hand_mode(&mut self, mode: HandMode) {
         use super::stage::{CAMERA_LOOK_AT, CAMERA_POS};
-        let tf = if flag {
-            let tf_camera =
-                Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
-            let tf_hand = Transform {
-                translation: Vec3::new(-0.13, -0.13, -0.9),
-                rotation: Quat::from_rotation_x(10.0_f32.to_radians()),
-                scale: Vec3::ONE,
-            };
-            tf_camera * tf_hand
-        } else {
-            self.tf_hand
+        let tf = match mode {
+            HandMode::Camera => {
+                let tf_camera =
+                    Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
+                let tf_close_hand = Transform {
+                    translation: Vec3::new(-0.13, -0.13, -0.9),
+                    rotation: Quat::from_rotation_x(10.0_f32.to_radians()),
+                    scale: Vec3::ONE,
+                };
+                tf_camera * tf_close_hand
+            }
+            HandMode::Close => self.tf_close_hand,
+            HandMode::Open => {
+                let mut tf = self.tf_close_hand;
+                tf.rotation = Quat::from_rotation_x(-FRAC_PI_2);
+                tf
+            }
         };
         param().commands.entity(self.hand.entity()).insert(tf);
     }

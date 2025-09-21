@@ -91,6 +91,8 @@ pub fn create_tile(m_tile: Tile) -> GuiTile {
 // 注意!!!!
 // * process_event以下の関数以外からは呼ばないこと,特にadd_systemsに登録する関数に注意
 // * 戻り値のStageParamの参照を関数から返したり,ローカル変数以外に格納しないこと
+// * lifetimeを誤魔化しているため,borrow checkerは正しく機能しない
+//      (= 呼び出した関数内で状態が変化する可能性がある)
 static mut STAGE_PARAM: Option<(*mut (), ThreadId)> = None;
 pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
     unsafe {
@@ -102,8 +104,8 @@ pub(super) fn param<'w, 's>() -> &'static mut StageParam<'w, 's> {
     }
 }
 
+// 関数fの実行中にparam()から&mut GuiStageを取得できるよう設定
 fn with_param<F: FnOnce()>(param: &mut StageParam, f: F) {
-    // この関数の実行中にparam()から&mut GuiStageを取得できるよう設定
     let ptr_param = param as *mut StageParam as *mut ();
     let tid = thread::current().id();
 
@@ -200,6 +202,8 @@ struct GuiStage {
     players: Vec<GuiPlayer>,
     last_tile: Option<(Seat, ActionType, Tile)>,
     last_hover_tile: Option<Entity>,
+    camera_seat: Seat,
+    show_hand: bool,
 }
 
 impl GuiStage {
@@ -209,6 +213,8 @@ impl GuiStage {
             players: vec![],
             last_tile: None,
             last_hover_tile: None,
+            camera_seat: 0,
+            show_hand: false,
         }
     }
 
@@ -273,14 +279,23 @@ impl GuiStage {
             players,
             last_tile: None,
             last_hover_tile: None,
+            camera_seat: 0,
+            show_hand: true,
         }
     }
 
     fn set_player(&mut self, seat: Seat) {
+        self.camera_seat = seat;
         let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
         param().camera.write(CameraEvent::look(pos, CAMERA_LOOK_AT));
         for (s, player) in self.players.iter_mut().enumerate() {
-            player.set_player_mode(s == seat);
+            if s == seat {
+                player.set_hand_mode(HandMode::Camera);
+            } else if self.show_hand {
+                player.set_hand_mode(HandMode::Open);
+            } else {
+                player.set_hand_mode(HandMode::Close);
+            }
         }
     }
 
@@ -316,7 +331,6 @@ impl GuiStage {
         }
         self.last_tile = None;
         self.players[event.seat].deal_tile(event.tile);
-        // self.set_player(event.seat);
     }
 
     fn event_discard(&mut self, event: &EventDiscard) {

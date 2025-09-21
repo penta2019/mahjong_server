@@ -290,15 +290,15 @@ impl GuiStage {
         }
 
         let param = param();
-        if let Some(e_tile) = self.last_hover_tile {
-            if let Ok(tile_tag) = param.tile_tags.get(e_tile) {
-                tile_tag.set_highlight(&mut param.materials, false);
-            }
+        if let Some(e_tile) = self.last_hover_tile
+            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+        {
+            tile_tag.set_highlight(&mut param.materials, false);
         }
-        if let Some(e_tile) = tile {
-            if let Ok(tile_tag) = param.tile_tags.get(e_tile) {
-                tile_tag.set_highlight(&mut param.materials, true);
-            }
+        if let Some(e_tile) = tile
+            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+        {
+            tile_tag.set_highlight(&mut param.materials, true);
         }
 
         self.last_hover_tile = tile;
@@ -311,6 +311,10 @@ impl GuiStage {
     }
 
     fn event_deal(&mut self, event: &EventDeal) {
+        if let Some((seat, ActionType::Discard, _)) = self.last_tile {
+            self.players[seat].confirm_discard_tile();
+        }
+        self.last_tile = None;
         self.players[event.seat].deal_tile(event.tile);
         // self.set_player(event.seat);
     }

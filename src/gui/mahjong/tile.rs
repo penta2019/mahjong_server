@@ -8,7 +8,9 @@ pub struct TilePlugin;
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(amend_tile_texture)
-            .add_systems(Update, animate_move);
+            // StageのUpdateと同時実行するとremoveとinsertが重なって
+            // insertしたばかりのMoveToが削除されることがあるのでPostUpdateを使用
+            .add_systems(PostUpdate, animate_move);
     }
 }
 

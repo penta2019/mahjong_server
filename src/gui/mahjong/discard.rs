@@ -61,11 +61,23 @@ impl GuiDiscard {
         let mut tf = reparent_tranform(tile.entity(), self.entity, &param().globals);
         tf.rotation = rot;
 
-        param()
-            .commands
-            .entity(tile.entity())
-            .insert((ChildOf(self.entity), tf, MoveTo::new(pos)));
+        // 捨て牌が通る(鳴きやロンが入らない)まで少しずらしておく
+        let move_to = pos + Vec3::new(GuiTile::WIDTH / 2., -GuiTile::WIDTH / 2., 0.);
+        param().commands.entity(tile.entity()).insert((
+            ChildOf(self.entity),
+            tf,
+            MoveTo::new(move_to),
+        ));
         self.tiles.push((tile, pos));
+    }
+
+    pub fn confirm_last_tile(&mut self) {
+        if let Some((tile, pos)) = self.tiles.last().as_ref() {
+            param()
+                .commands
+                .entity(tile.entity())
+                .insert(MoveTo::new(*pos));
+        }
     }
 
     pub fn take_last_tile(&mut self) -> GuiTile {

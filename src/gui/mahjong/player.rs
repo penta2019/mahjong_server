@@ -85,6 +85,10 @@ impl GuiPlayer {
         self.hand.align();
     }
 
+    pub fn confirm_discard_tile(&mut self) {
+        self.discard.confirm_last_tile();
+    }
+
     pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
         let tiles_from_hand: Vec<GuiTile> = m_tiles
             .iter()

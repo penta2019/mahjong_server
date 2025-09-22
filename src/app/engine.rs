@@ -148,9 +148,9 @@ impl EngineApp {
         if self.view {
             #[cfg(feature = "gui")]
             {
-                let (tx, rx) = mpsc::channel();
-                let gui = crate::gui::Gui::new();
-                listeners.push(Box::new(EventChannel::new(tx)));
+                let (client_tx, _server_rx) = mpsc::channel(); // upstream
+                let (server_tx, client_rx) = mpsc::channel(); // downstream
+                listeners.push(Box::new(MessageChannel::new(server_tx)));
 
                 std::thread::spawn(move || {
                     let mut game = MahjongEngine::new(
@@ -162,7 +162,7 @@ impl EngineApp {
                     );
                     game.run();
                 });
-                gui.run(rx);
+                crate::gui::run(client_tx, client_rx);
                 return;
             }
             #[cfg(not(feature = "gui"))]

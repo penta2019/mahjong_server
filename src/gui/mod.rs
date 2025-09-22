@@ -5,25 +5,20 @@ mod menu;
 mod slider;
 mod util;
 
+use std::sync::mpsc::{Receiver, Sender};
+
 use bevy::prelude::*;
 
-pub struct Gui {}
+use crate::model::{ClientMessage, ServerMessage};
 
-impl Gui {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn run(&self, event_rx: crate::listener::EventRx) {
-        let mut app = App::new();
-        app.add_plugins(DefaultPlugins)
-            .add_plugins(slider::SliderPlugin)
-            .add_plugins(control::ControlPlugin)
-            .add_plugins(debug::DebugPlugin)
-            .add_plugins(menu::MenuPlugin)
-            .add_plugins(mahjong::StagePlugin::new(event_rx))
-            .add_plugins(mahjong::TilePlugin);
-
-        app.run();
-    }
+pub fn run(tx: Sender<ClientMessage>, rx: Receiver<ServerMessage>) {
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins)
+        .add_plugins(slider::SliderPlugin)
+        .add_plugins(control::ControlPlugin)
+        .add_plugins(debug::DebugPlugin)
+        .add_plugins(menu::MenuPlugin)
+        .add_plugins(mahjong::StagePlugin::new(tx, rx))
+        .add_plugins(mahjong::TilePlugin);
+    app.run();
 }

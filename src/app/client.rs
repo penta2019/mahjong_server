@@ -19,7 +19,8 @@ impl ClientApp {
         #[cfg(feature = "gui")]
         {
             let (_, rx) = std::sync::mpsc::channel(); // TODO
-            crate::gui::Gui::new().run(rx);
+            let (tx, _) = std::sync::mpsc::channel(); // TODO
+            crate::gui::run(tx, rx);
         }
     }
 }

@@ -1,5 +1,8 @@
 use std::{
-    sync::Mutex,
+    sync::{
+        Mutex,
+        mpsc::{Receiver, Sender},
+    },
     thread::{self, ThreadId},
 };
 
@@ -18,27 +21,30 @@ use super::{
 };
 use crate::{
     gui::mahjong::tile::TileMesh,
-    listener::EventRx,
     model::{Event as MjEvent, *},
 };
 
+type Tx = Sender<ClientMessage>;
+type Rx = Receiver<ServerMessage>;
+
 pub struct StagePlugin {
-    event_rx: Mutex<Option<EventRx>>,
+    event_rx: Mutex<Option<(Tx, Rx)>>,
 }
 
 impl StagePlugin {
-    pub fn new(event_rx: EventRx) -> Self {
+    pub fn new(tx: Tx, rx: Rx) -> Self {
         Self {
-            event_rx: Mutex::new(Some(event_rx)),
+            event_rx: Mutex::new(Some((tx, rx))),
         }
     }
 }
 
 impl Plugin for StagePlugin {
     fn build(&self, app: &mut App) {
-        let event_rx = self.event_rx.lock().unwrap().take().unwrap();
-        app.insert_resource(EventReceiver {
-            recv: Mutex::new(event_rx),
+        let (tx, rx) = self.event_rx.lock().unwrap().take().unwrap();
+        app.insert_resource(MessageChannel {
+            tx: Mutex::new(tx),
+            rx: Mutex::new(rx),
         })
         .insert_resource(GuiStage::empty())
         .add_event::<TileHoverEvent>()
@@ -48,8 +54,9 @@ impl Plugin for StagePlugin {
 }
 
 #[derive(Resource, Debug)]
-struct EventReceiver {
-    recv: Mutex<EventRx>,
+struct MessageChannel {
+    tx: Mutex<Tx>,
+    rx: Mutex<Rx>,
 }
 
 #[derive(Event, Debug)]
@@ -154,12 +161,12 @@ fn handle_mouse_event(
 fn process_event(
     mut param: StageParam,
     mut stage: ResMut<GuiStage>,
-    event_reader: ResMut<EventReceiver>,
+    msg_cli: ResMut<MessageChannel>,
     mut tile_hover: EventReader<TileHoverEvent>,
 ) {
     with_param(&mut param, || {
-        if let Ok(event) = event_reader.recv.lock().unwrap().try_recv() {
-            handle_event(&mut stage, &event);
+        if let Ok(msg) = msg_cli.rx.lock().unwrap().try_recv() {
+            handle_message(&mut stage, &msg);
         }
 
         for t in tile_hover.read() {
@@ -168,31 +175,42 @@ fn process_event(
     });
 }
 
-fn handle_event(stage: &mut GuiStage, event: &MjEvent) {
-    match &event {
-        MjEvent::Begin(_ev) => {}
-        MjEvent::New(ev) => {
-            // ステージ上のentityを再帰的にすべて削除
-            let e_stage = stage.entity();
-            if e_stage != Entity::PLACEHOLDER {
-                param().commands.entity(e_stage).despawn();
+fn handle_message(stage: &mut GuiStage, msg: &ServerMessage) {
+    match msg {
+        ServerMessage::Event(event) => {
+            match event.as_ref() {
+                MjEvent::Begin(_ev) => {}
+                MjEvent::New(ev) => {
+                    // ステージ上のentityを再帰的にすべて削除
+                    let e_stage = stage.entity();
+                    if e_stage != Entity::PLACEHOLDER {
+                        param().commands.entity(e_stage).despawn();
+                    }
+
+                    // 空のステージを作成
+                    *stage = GuiStage::new();
+                    stage.set_player(0);
+
+                    stage.event_new(ev);
+                }
+                MjEvent::Deal(ev) => stage.event_deal(ev),
+                MjEvent::Discard(ev) => stage.event_discard(ev),
+                MjEvent::Meld(ev) => stage.event_meld(ev),
+                MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
+                MjEvent::Dora(ev) => stage.event_dora(ev),
+                MjEvent::Win(ev) => stage.event_win(ev),
+                MjEvent::Draw(ev) => stage.event_draw(ev),
+                MjEvent::End(_ev) => {}
             }
-
-            // 空のステージを作成
-            *stage = GuiStage::new();
-            stage.set_player(0);
-
-            stage.event_new(ev);
         }
-        MjEvent::Deal(ev) => stage.event_deal(ev),
-        MjEvent::Discard(ev) => stage.event_discard(ev),
-        MjEvent::Meld(ev) => stage.event_meld(ev),
-        MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
-        MjEvent::Dora(ev) => stage.event_dora(ev),
-        MjEvent::Win(ev) => stage.event_win(ev),
-        MjEvent::Draw(ev) => stage.event_draw(ev),
-        MjEvent::End(_ev) => {}
+        ServerMessage::Action { actions, tenpais } => {
+            // TODO
+        }
+        ServerMessage::Info { seat } => {
+            // TODO
+        }
     }
+
     // param().print_hierarchy(stage.entity());
 }
 

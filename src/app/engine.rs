@@ -127,7 +127,7 @@ impl EngineApp {
         );
     }
 
-    fn run_single_game(self, actors: [Box<dyn Actor>; 4]) {
+    fn run_single_game(self, mut actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
 
         // Debug port
@@ -145,12 +145,30 @@ impl EngineApp {
             listeners.push(Box::new(Debug::new()));
         }
 
-        if self.view {
-            #[cfg(feature = "gui")]
-            {
-                let (client_tx, _server_rx) = mpsc::channel(); // upstream
-                let (server_tx, client_rx) = mpsc::channel(); // downstream
-                listeners.push(Box::new(MessageChannel::new(server_tx)));
+        #[cfg(feature = "gui")]
+        {
+            let mut gui_txrx = None;
+            for actor in &mut actors {
+                if let Some(any) = actor.try_as_any_mut()
+                    && let Some(actor_gui) = any.downcast_mut::<crate::actor::gui::Gui>()
+                {
+                    if gui_txrx.is_some() {
+                        error!("Multiple `Gui` cannot exist simultaneously.");
+                        std::process::exit(1);
+                    }
+                    gui_txrx = actor_gui.take_client_txrx();
+                }
+            }
+
+            if self.view || gui_txrx.is_some() {
+                let (tx, rx) = if let Some((tx, rx)) = gui_txrx {
+                    (tx, rx)
+                } else {
+                    let (tx, _server_rx) = mpsc::channel(); // upstream
+                    let (server_tx, rx) = mpsc::channel(); // downstream
+                    listeners.push(Box::new(MessageChannel::new(server_tx)));
+                    (tx, rx)
+                };
 
                 std::thread::spawn(move || {
                     let mut game = MahjongEngine::new(
@@ -162,11 +180,15 @@ impl EngineApp {
                     );
                     game.run();
                 });
-                crate::gui::run(client_tx, client_rx);
+                crate::gui::run(tx, rx);
                 return;
             }
-            #[cfg(not(feature = "gui"))]
-            panic!("view mode `-v` requires `gui` feature at compile time");
+        }
+
+        #[cfg(not(feature = "gui"))]
+        if self.view {
+            error!("view mode `-v` requires `gui` feature at compile time");
+            std::process::exit(1);
         }
 
         let mut game =
@@ -808,7 +830,7 @@ impl MahjongEngine {
 
                 // stage情報
                 riichi_sticks = 0;
-                // 和了が子の場合　積み棒をリセットして親交代
+                // 和了が子の場合 積み棒をリセットして親交代
                 if !is_dealer(&stg, turn) {
                     honba_sticks = 0;
                     need_dealer_change = true;

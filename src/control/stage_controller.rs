@@ -59,7 +59,7 @@ impl StageController {
         ];
         for s in 0..SEAT {
             for actor in &self.actors {
-                names[s] = actor.get_name();
+                names[s] = actor.get_name().to_owned();
             }
         }
         names

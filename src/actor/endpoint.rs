@@ -12,15 +12,6 @@ use crate::error;
 
 pub struct EndpointBuilder;
 
-#[derive(Debug, Default)]
-struct SharedData {
-    msgs: Vec<(Value, bool)>, // [(message, is_action)]
-    cursor: usize,
-    action: Option<Action>,
-    waker: Option<Waker>,
-    is_expired: bool,
-}
-
 impl ActorBuilder for EndpointBuilder {
     fn get_default_config(&self) -> Config {
         Config {
@@ -35,6 +26,15 @@ impl ActorBuilder for EndpointBuilder {
     fn create(&self, config: Config) -> Box<dyn Actor> {
         Box::new(Endpoint::from_config(config))
     }
+}
+
+#[derive(Debug, Default)]
+struct SharedData {
+    msgs: Vec<(Value, bool)>, // [(message, is_action)]
+    cursor: usize,
+    action: Option<Action>,
+    waker: Option<Waker>,
+    is_expired: bool,
 }
 
 pub struct Endpoint {
@@ -164,7 +164,7 @@ impl Listener for Endpoint {
     }
 }
 
-pub struct SelectFuture {
+struct SelectFuture {
     shared: Arc<Mutex<SharedData>>,
 }
 

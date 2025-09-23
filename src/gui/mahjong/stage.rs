@@ -161,13 +161,11 @@ fn handle_mouse_event(
 fn process_event(
     mut param: StageParam,
     mut stage: ResMut<GuiStage>,
-    msg_cli: ResMut<MessageChannel>,
+    mut msg_ch: ResMut<MessageChannel>,
     mut tile_hover: EventReader<TileHoverEvent>,
 ) {
     with_param(&mut param, || {
-        if let Ok(msg) = msg_cli.rx.lock().unwrap().try_recv() {
-            handle_message(&mut stage, &msg);
-        }
+        handle_message(&mut stage, &mut msg_ch);
 
         for t in tile_hover.read() {
             stage.set_hover_tile(t.tile_entity);
@@ -175,39 +173,54 @@ fn process_event(
     });
 }
 
-fn handle_message(stage: &mut GuiStage, msg: &ServerMessage) {
-    match msg {
-        ServerMessage::Event(event) => {
-            match event.as_ref() {
-                MjEvent::Begin(_ev) => {}
-                MjEvent::New(ev) => {
-                    // ステージ上のentityを再帰的にすべて削除
-                    let e_stage = stage.entity();
-                    if e_stage != Entity::PLACEHOLDER {
-                        param().commands.entity(e_stage).despawn();
+fn handle_message(stage: &mut GuiStage, msg_ch: &mut ResMut<MessageChannel>) {
+    while let Ok(msg) = msg_ch.rx.lock().unwrap().try_recv() {
+        match msg {
+            ServerMessage::Event(event) => {
+                match event.as_ref() {
+                    MjEvent::Begin(_ev) => {}
+                    MjEvent::New(ev) => {
+                        // ステージ上のentityを再帰的にすべて削除
+                        let e_stage = stage.entity();
+                        if e_stage != Entity::PLACEHOLDER {
+                            param().commands.entity(e_stage).despawn();
+                        }
+
+                        // 空のステージを作成
+                        *stage = GuiStage::new();
+                        stage.set_player(0);
+
+                        stage.event_new(ev);
                     }
-
-                    // 空のステージを作成
-                    *stage = GuiStage::new();
-                    stage.set_player(0);
-
-                    stage.event_new(ev);
+                    MjEvent::Deal(ev) => stage.event_deal(ev),
+                    MjEvent::Discard(ev) => stage.event_discard(ev),
+                    MjEvent::Meld(ev) => stage.event_meld(ev),
+                    MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
+                    MjEvent::Dora(ev) => stage.event_dora(ev),
+                    MjEvent::Win(ev) => stage.event_win(ev),
+                    MjEvent::Draw(ev) => stage.event_draw(ev),
+                    MjEvent::End(_ev) => {}
                 }
-                MjEvent::Deal(ev) => stage.event_deal(ev),
-                MjEvent::Discard(ev) => stage.event_discard(ev),
-                MjEvent::Meld(ev) => stage.event_meld(ev),
-                MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
-                MjEvent::Dora(ev) => stage.event_dora(ev),
-                MjEvent::Win(ev) => stage.event_win(ev),
-                MjEvent::Draw(ev) => stage.event_draw(ev),
-                MjEvent::End(_ev) => {}
+
+                // TODO
+                // 一度のUpdateで複数のEventの更新を行うとGlobalTransformに
+                // GuiTileのentityが追加される前にget()が呼び出され失敗する
+                break;
             }
-        }
-        ServerMessage::Action { actions, tenpais } => {
-            // TODO
-        }
-        ServerMessage::Info { seat } => {
-            // TODO
+            ServerMessage::Action {
+                id,
+                actions,
+                tenpais,
+            } => {
+                let action = ClientMessage::Action {
+                    id,
+                    action: Action::nop(),
+                };
+                msg_ch.tx.lock().unwrap().send(action).unwrap();
+            }
+            ServerMessage::Info { seat } => {
+                println!("ServerMessage::Info {{ {seat} }}");
+            }
         }
     }
 

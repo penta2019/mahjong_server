@@ -1,5 +1,3 @@
-use crate::error;
-
 #[derive(Debug)]
 pub struct ClientApp {
     args: Vec<String>,
@@ -7,8 +5,9 @@ pub struct ClientApp {
 
 impl ClientApp {
     pub fn new(args: Vec<String>) -> Self {
-        if !cfg!(feature = "gui") {
-            error!("`gui` feature is required at compile time");
+        #[cfg(not(feature = "gui"))]
+        {
+            crate::error!("`gui` feature is required at compile time");
             std::process::exit(1);
         }
         Self { args }

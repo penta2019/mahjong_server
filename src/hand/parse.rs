@@ -42,7 +42,7 @@ pub fn parse_melds(melds: &[Meld]) -> ParsedHand {
 }
 
 // 牌種を順子と刻子に分解
-// 三連刻の場合2通り(刻子3つ, 順子3つ)の分割が存在する　四連刻は役満(四暗刻)なので無視
+// 三連刻の場合2通り(刻子3つ, 順子3つ)の分割が存在する 四連刻は役満(四暗刻)なので無視
 // 予め分解可能であることを確認しておくこと(分解できない場合assertに失敗)
 // TileRowが空(すべて0)の場合は分解可能とみなし[[]]を返却
 fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {

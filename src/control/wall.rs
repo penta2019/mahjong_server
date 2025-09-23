@@ -26,7 +26,7 @@ pub fn create_wall(seed: u64, n_red5: usize) -> Vec<Tile> {
     wall
 }
 
-// デバッグ用に作為的な牌山を生成　指定がない場所はシード値に従ってランダムに生成
+// デバッグ用に作為的な牌山を生成 指定がない場所はシード値に従ってランダムに生成
 #[allow(dead_code)]
 pub fn create_wall_debug(seed: u64, n_red5: usize) -> Vec<Tile> {
     assert!(n_red5 <= 4);

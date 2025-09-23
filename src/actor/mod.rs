@@ -7,6 +7,10 @@ mod null;
 mod random;
 mod tiitoitsu;
 
+#[cfg(feature = "gui")]
+pub mod gui;
+
+use std::any::Any;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
@@ -19,7 +23,7 @@ use crate::util::variant::*;
 
 use crate::error;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub name: String,
     pub args: Vec<Arg>,
@@ -56,8 +60,14 @@ pub trait Actor: Listener + ActorClone + Send {
     // Actorの詳細表示用
     fn get_config(&self) -> &Config;
 
-    fn get_name(&self) -> String {
-        "NoName".to_string()
+    // プレイヤー名
+    fn get_name(&self) -> &str {
+        &self.get_config().name
+    }
+
+    // ダウンキャストが必要な場合に実装 (Gui用)
+    fn try_as_any_mut(&mut self) -> Option<&mut dyn Any> {
+        None
     }
 }
 
@@ -102,6 +112,8 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
         Box::new(manual::ManualBuilder),
         Box::new(mjai::MjaiEndpointBuilder),
         Box::new(tiitoitsu::TiitoitsuBotBuilder),
+        #[cfg(feature = "gui")]
+        Box::new(gui::GuiBuilder),
     ];
 
     let name: &str;

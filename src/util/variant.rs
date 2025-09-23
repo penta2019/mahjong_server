@@ -61,7 +61,7 @@ impl fmt::Display for Variant {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Arg {
     pub name: String,
     pub value: Variant,

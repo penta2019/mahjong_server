@@ -1,9 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::convert::tenhou::TenhouSerializer;
-use crate::listener::Listener;
-use crate::model::*;
-use crate::util::misc::*;
+use crate::{convert::tenhou::TenhouSerializer, listener::Listener, model::*, util::misc::*};
 
 // [EventWriter]
 #[derive(Debug)]

@@ -1,8 +1,12 @@
-use std::mem;
-use std::sync::Arc;
-use std::sync::mpsc::{Receiver, Sender, channel};
-use std::task::{RawWaker, RawWakerVTable, Waker};
-use std::time::Duration;
+use std::{
+    mem,
+    sync::{
+        Arc,
+        mpsc::{Receiver, Sender, channel},
+    },
+    task::{RawWaker, RawWakerVTable, Waker},
+    time::Duration,
+};
 
 use crate::util::misc::Res;
 

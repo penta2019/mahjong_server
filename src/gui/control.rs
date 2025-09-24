@@ -1,8 +1,10 @@
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
 
-use bevy::input::mouse::MouseMotion;
-use bevy::prelude::*;
-use bevy::window::{CursorGrabMode, WindowFocused};
+use bevy::{
+    input::mouse::MouseMotion,
+    prelude::*,
+    window::{CursorGrabMode, WindowFocused},
+};
 
 use super::{debug::DebugState, menu::MenuState};
 

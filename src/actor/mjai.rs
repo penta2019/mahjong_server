@@ -1,17 +1,14 @@
-use std::io;
-use std::io::prelude::*;
-use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{
+    io::{self, prelude::*},
+    net::{TcpListener, TcpStream},
+    sync::{Arc, Mutex},
+    thread,
+};
 
 use serde_json::{Value, json};
 
 use super::*;
-use crate::control::common::get_scores;
-use crate::convert::mjai::*;
-use crate::util::misc::*;
-
-use crate::{error, info};
+use crate::{control::common::get_scores, convert::mjai::*, error, info, util::misc::*};
 
 #[derive(Debug, Default)]
 struct SharedData {

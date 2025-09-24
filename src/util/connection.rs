@@ -1,8 +1,10 @@
-use std::fmt;
-use std::io::prelude::*;
-use std::net::{TcpListener, TcpStream};
-use std::sync::mpsc;
-use std::thread;
+use std::{
+    fmt,
+    io::prelude::*,
+    net::{TcpListener, TcpStream},
+    sync::mpsc,
+    thread,
+};
 
 use crate::{error, info, warn};
 

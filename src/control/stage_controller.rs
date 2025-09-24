@@ -1,11 +1,13 @@
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 
-use crate::actor::{Actor, SelectedAction};
-use crate::control::common::*;
-use crate::hand::*;
-use crate::listener::Listener;
-use crate::model::*;
-use crate::util::misc::{Res, rank_by_rank_vec};
+use crate::{
+    actor::{Actor, SelectedAction},
+    control::common::*,
+    hand::*,
+    listener::Listener,
+    model::*,
+    util::misc::{Res, rank_by_rank_vec},
+};
 
 use TileState::*;
 

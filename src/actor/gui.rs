@@ -1,7 +1,11 @@
-use std::sync::mpsc::{Receiver, Sender, channel};
-use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll, Waker};
-use std::thread;
+use std::{
+    sync::{
+        Arc, Mutex,
+        mpsc::{Receiver, Sender, channel},
+    },
+    task::{Context, Poll, Waker},
+    thread,
+};
 
 pub use super::*;
 pub use crate::model::MessageHolder;

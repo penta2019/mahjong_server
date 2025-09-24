@@ -10,18 +10,12 @@ mod tiitoitsu;
 #[cfg(feature = "gui")]
 pub mod gui;
 
-use std::any::Any;
-use std::fmt;
-use std::future::Future;
-use std::pin::Pin;
+use std::{any::Any, fmt, future::Future, pin::Pin};
 
-use crate::control::stage_controller::StageRef;
-use crate::listener::Listener;
-use crate::model::*;
-use crate::util::misc::Res;
-use crate::util::variant::*;
-
-use crate::error;
+use crate::{
+    control::stage_controller::StageRef, error, listener::Listener, model::*, util::misc::Res,
+    util::variant::*,
+};
 
 #[derive(Debug, Clone)]
 pub struct Config {

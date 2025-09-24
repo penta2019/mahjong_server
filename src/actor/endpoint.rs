@@ -1,14 +1,19 @@
-use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll, Waker};
-use std::thread;
+use std::{
+    sync::{Arc, Mutex},
+    task::{Context, Poll, Waker},
+    thread,
+};
 
 use serde_json::{Value, json};
 
 use super::*;
-use crate::util::connection::{Connection, Message, TcpConnection};
-use crate::util::misc::sleep;
-
-use crate::error;
+use crate::{
+    error,
+    util::{
+        connection::{Connection, Message, TcpConnection},
+        misc::sleep,
+    },
+};
 
 pub struct EndpointBuilder;
 

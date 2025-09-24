@@ -1,6 +1,5 @@
 use super::parse::parse_into_chiitoitsu_win;
-use crate::control::common::tiles_with_red5;
-use crate::model::*;
+use crate::{control::common::tiles_with_red5, model::*};
 
 // [完成形判定 (面子, 雀頭)]
 
@@ -217,11 +216,7 @@ pub fn calc_tiles_to_chiitoitsu_win(hand: &TileTable) -> Vec<Tile> {
         }
     }
 
-    if n_pair == 6 {
-        res
-    } else {
-        vec![]
-    }
+    if n_pair == 6 { res } else { vec![] }
 }
 
 // 国士無双

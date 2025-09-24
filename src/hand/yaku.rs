@@ -1,7 +1,9 @@
 use std::fmt;
 
-use super::parse::{ParsedHand, SetPair, SetPairType};
-use super::win::is_kokushimusou_win;
+use super::{
+    parse::{ParsedHand, SetPair, SetPairType},
+    win::is_kokushimusou_win,
+};
 use crate::model::*;
 
 use SetPairType::*;

@@ -1,8 +1,5 @@
 use super::*;
-use crate::control::common::*;
-use crate::util::misc::prompt;
-
-use crate::error;
+use crate::{control::common::*, error, util::misc::prompt};
 
 use ActionType::*;
 

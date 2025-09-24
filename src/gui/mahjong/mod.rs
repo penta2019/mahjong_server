@@ -9,6 +9,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 use bevy::prelude::*;
 
+use super::util::reparent_tranform;
 use crate::model::*;
 
 pub use stage::StagePlugin;

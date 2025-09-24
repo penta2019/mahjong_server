@@ -1,12 +1,18 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
-use crate::listener::Listener;
-use crate::model::*;
-use crate::util::connection::{Connection, Message};
-use crate::util::misc::sleep;
+use crate::{
+    listener::Listener,
+    model::*,
+    util::{
+        connection::{Connection, Message},
+        misc::sleep,
+    },
+};
 
 #[derive(Debug, Default)]
 struct SharedData {
@@ -26,25 +32,27 @@ impl EventSender {
         let arc0 = Arc::new(Mutex::new(SharedData::default()));
         let arc1 = arc0.clone();
 
-        thread::spawn(move || loop {
+        thread::spawn(move || {
             loop {
-                let mut d = arc1.lock().unwrap();
-                d.send_request = false;
-                match conn.recv() {
-                    Message::Open => d.cursor = 0,
-                    Message::Text(_) => {}
-                    Message::Nop => {
-                        while d.cursor < d.msgs.len() {
-                            conn.send(&d.msgs[d.cursor].to_string());
-                            d.cursor += 1;
+                loop {
+                    let mut d = arc1.lock().unwrap();
+                    d.send_request = false;
+                    match conn.recv() {
+                        Message::Open => d.cursor = 0,
+                        Message::Text(_) => {}
+                        Message::Nop => {
+                            while d.cursor < d.msgs.len() {
+                                conn.send(&d.msgs[d.cursor].to_string());
+                                d.cursor += 1;
+                            }
+                            break;
                         }
-                        break;
+                        Message::Close => {}
+                        Message::NoConnection => break,
                     }
-                    Message::Close => {}
-                    Message::NoConnection => break,
                 }
+                sleep(0.01);
             }
-            sleep(0.01);
         });
 
         Self { data: arc0 }

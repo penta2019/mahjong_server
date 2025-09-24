@@ -1,13 +1,16 @@
-use std::fmt::Write;
-use std::fs::File;
-use std::io::{self, BufRead};
+use std::{
+    fmt::Write,
+    fs::File,
+    io::{self, BufRead},
+};
 
-use crate::control::common::*;
-use crate::hand::{YakuFlags, evaluate_hand};
-use crate::model::*;
-use crate::util::misc::*;
-
-use crate::error;
+use crate::{
+    control::common::*,
+    error,
+    hand::{YakuFlags, evaluate_hand},
+    model::*,
+    util::misc::*,
+};
 
 #[derive(Debug)]
 pub struct CalculatorApp {

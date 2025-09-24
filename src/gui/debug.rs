@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{control::ControlContext, util::*};
+use super::{control::ControlContext, util::MsecTimer};
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DebugState {

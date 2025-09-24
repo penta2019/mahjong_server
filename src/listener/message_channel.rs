@@ -1,7 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use crate::listener::Listener;
-use crate::model::*;
+use crate::{listener::Listener, model::*};
 
 pub struct MessageChannel {
     event_tx: Sender<ServerMessage>,

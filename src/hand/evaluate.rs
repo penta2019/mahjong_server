@@ -1,8 +1,5 @@
-use super::parse::*;
-use super::point::*;
-use super::yaku::*;
-use crate::control::common::*;
-use crate::model::*;
+use super::{parse::*, point::*, yaku::*};
+use crate::{control::common::*, model::*};
 
 pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &[Tile]) -> Option<ScoreContext> {
     let pl = &stg.players[stg.turn];

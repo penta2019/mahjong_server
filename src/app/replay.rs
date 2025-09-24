@@ -1,21 +1,20 @@
-#![allow(dead_code)]
-
 use std::path::{Path, PathBuf};
 
-use crate::actor::{Actor, create_actor};
-use crate::control::stage_controller::StageController;
-use crate::listener::{Debug, EventPrinter, Listener};
-use crate::model::*;
-use crate::util::misc::*;
-
-use crate::error;
+use crate::{
+    actor::{Actor, create_actor},
+    control::stage_controller::StageController,
+    error,
+    listener::{Debug, EventPrinter, Listener},
+    model::*,
+    util::misc::*,
+};
 
 #[derive(Debug)]
 pub struct ReplayApp {
     file_path: String,
     skip: String,
     debug: bool,
-    names: [String; SEAT], // actor names
+    // names: [String; SEAT], // actor names
 }
 
 impl ReplayApp {
@@ -26,12 +25,12 @@ impl ReplayApp {
             file_path: String::new(),
             skip: String::new(),
             debug: false,
-            names: [
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-            ],
+            // names: [
+            //     "".to_string(),
+            //     "".to_string(),
+            //     "".to_string(),
+            //     "".to_string(),
+            // ],
         };
 
         let mut it = args.iter();

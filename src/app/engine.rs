@@ -1,21 +1,26 @@
-use std::sync::mpsc;
-use std::task::{Context, Poll, Waker};
+use std::{
+    sync::mpsc,
+    task::{Context, Poll, Waker},
+};
 
 use rand::prelude::*;
 
-use crate::actor::*;
-use crate::control::common::*;
-use crate::control::possible_actions::*;
-use crate::control::stage_controller::StageController;
-use crate::control::wall::create_wall;
-use crate::hand::{evaluate_hand_ron, evaluate_hand_tsumo};
-use crate::listener::*;
-use crate::model::*;
-use crate::util::connection::TcpConnection;
-use crate::util::misc::*;
-use crate::util::waiter::{Waiter, waiter_waker};
-
-use crate::{error, warn};
+use crate::{
+    actor::*,
+    control::{
+        common::*, possible_actions::*, stage_controller::StageController, wall::create_wall,
+    },
+    error,
+    hand::{evaluate_hand_ron, evaluate_hand_tsumo},
+    listener::*,
+    model::*,
+    util::{
+        connection::TcpConnection,
+        misc::*,
+        waiter::{Waiter, waiter_waker},
+    },
+    warn,
+};
 
 use ActionType::*;
 

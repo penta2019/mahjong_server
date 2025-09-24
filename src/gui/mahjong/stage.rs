@@ -9,7 +9,10 @@ use std::{
 use bevy::{
     color::palettes::basic::{BLACK, GREEN},
     ecs::system::SystemParam,
-    input::mouse::MouseMotion,
+    input::{
+        ButtonState,
+        mouse::{MouseButtonInput, MouseMotion},
+    },
 };
 
 use super::{
@@ -48,7 +51,7 @@ impl Plugin for StagePlugin {
         })
         .insert_resource(GuiStage::empty())
         .add_event::<TileHoverEvent>()
-        .add_systems(Update, handle_mouse_event)
+        .add_systems(Update, handle_mouse_motion)
         .add_systems(Update, process_event);
     }
 }
@@ -128,7 +131,7 @@ fn with_param<F: FnOnce()>(param: &mut StageParam, f: F) {
     };
 }
 
-fn handle_mouse_event(
+fn handle_mouse_motion(
     mut mouse_events: EventReader<MouseMotion>,
     window: Single<&mut Window>,
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
@@ -163,17 +166,29 @@ fn process_event(
     mut stage: ResMut<GuiStage>,
     mut msg_ch: ResMut<MessageChannel>,
     mut tile_hover: EventReader<TileHoverEvent>,
+    mut mouse_input: EventReader<MouseButtonInput>,
 ) {
     with_param(&mut param, || {
         handle_message(&mut stage, &mut msg_ch);
 
-        for t in tile_hover.read() {
-            stage.set_hover_tile(t.tile_entity);
+        for ev in tile_hover.read() {
+            stage.set_hover_tile(ev.tile_entity);
+        }
+
+        for ev in mouse_input.read() {
+            match ev.state {
+                ButtonState::Pressed => {
+                    println!("Mouse button press: {:?}", ev.button);
+                }
+                ButtonState::Released => {
+                    println!("Mouse button release: {:?}", ev.button);
+                }
+            }
         }
     });
 }
 
-fn handle_message(stage: &mut GuiStage, msg_ch: &mut ResMut<MessageChannel>) {
+fn handle_message(stage: &mut GuiStage, msg_ch: &mut MessageChannel) {
     while let Ok(msg) = msg_ch.rx.lock().unwrap().try_recv() {
         match msg {
             ServerMessage::Event(event) => {
@@ -186,10 +201,10 @@ fn handle_message(stage: &mut GuiStage, msg_ch: &mut ResMut<MessageChannel>) {
                             param().commands.entity(e_stage).despawn();
                         }
 
+                        let seat = stage.camera_seat;
                         // 空のステージを作成
                         *stage = GuiStage::new();
-                        stage.set_player(0);
-
+                        stage.set_player(seat);
                         stage.event_new(ev);
                     }
                     MjEvent::Deal(ev) => stage.event_deal(ev),
@@ -212,14 +227,14 @@ fn handle_message(stage: &mut GuiStage, msg_ch: &mut ResMut<MessageChannel>) {
                 actions,
                 tenpais,
             } => {
-                let action = ClientMessage::Action {
-                    id,
-                    action: Action::nop(),
-                };
-                msg_ch.tx.lock().unwrap().send(action).unwrap();
+                // let action = ClientMessage::Action {
+                //     id,
+                //     action: Action::nop(),
+                // };
+                // msg_ch.tx.lock().unwrap().send(action).unwrap();
             }
             ServerMessage::Info { seat } => {
-                println!("ServerMessage::Info {{ {seat} }}");
+                stage.set_player(seat);
             }
         }
     }

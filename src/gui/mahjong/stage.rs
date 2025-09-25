@@ -23,7 +23,7 @@ use super::{
     *,
 };
 use crate::{
-    gui::mahjong::tile::TileMesh,
+    gui::mahjong::tile::{TileMesh, TileMutateEvent},
     model::{Event as MjEvent, *},
 };
 
@@ -75,6 +75,7 @@ pub struct StageParam<'w, 's> {
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
     pub camera: EventWriter<'w, CameraEvent>,
+    pub tile_mutate: EventWriter<'w, TileMutateEvent>,
     pub tile_tags: Query<'w, 's, &'static TileTag>,
 
     // for debug

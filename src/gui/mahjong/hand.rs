@@ -41,10 +41,11 @@ impl GuiHand {
     }
 
     pub fn take_tile(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
-        let tile = if is_drawn {
+        let mut tile = if is_drawn {
             // 牌を明示的にツモ切り
             self.drawn_tile.take().unwrap()
         } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == m_tile) {
+            // 手牌が見える状態かつ牌が存在する場合
             self.tiles.remove(pos)
         } else if let Some(drawn_tile) = &self.drawn_tile
             && drawn_tile.tile() == m_tile
@@ -52,9 +53,21 @@ impl GuiHand {
             // ツモ牌を暗黙に手牌から取り除く場合 (加槓,暗槓など)
             self.drawn_tile.take().unwrap()
         } else {
-            panic!("{} not found in hand", m_tile);
+            // 対戦モードで他家の手牌がすべてZ8の場合
+            if let Some(pos) = self.tiles.iter().position(|t| t.tile() == Z8) {
+                self.tiles.remove(pos)
+            } else {
+                panic!("{} not found in hand", m_tile);
+            }
         };
-        assert!(tile.tile() == m_tile);
+
+        if tile.tile() == Z8 {
+            param()
+                .tile_mutate
+                .write(TileMutateEvent::mutate(&mut tile, m_tile));
+        } else {
+            assert!(tile.tile() == m_tile);
+        }
 
         if let Some(drawn_tile) = self.drawn_tile.take() {
             self.tiles.push(drawn_tile);

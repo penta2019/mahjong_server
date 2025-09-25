@@ -8,6 +8,8 @@ pub struct TilePlugin;
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(amend_tile_texture)
+            .add_event::<TileMutateEvent>()
+            .add_systems(Update, tile_mutate_event)
             // StageのUpdateと同時実行するとremoveとinsertが重なって
             // insertしたばかりのMoveToが削除されることがあるのでPostUpdateを使用
             .add_systems(PostUpdate, animate_move);
@@ -81,15 +83,30 @@ impl TileMesh {
     }
 }
 
+#[derive(Event, Debug)]
+pub struct TileMutateEvent {
+    entity: Entity,
+    tile: Tile,
+}
+
+impl TileMutateEvent {
+    pub fn mutate(tile: &mut GuiTile, m_tile: Tile) -> Self {
+        tile.tile = m_tile;
+        Self {
+            entity: tile.entity,
+            tile: m_tile,
+        }
+    }
+}
+
 fn amend_tile_texture(
     trigger: Trigger<SceneInstanceReady>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut asset_materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     childrens: Query<&Children>,
     mut tile_tags: Query<&mut TileTag>,
     gltf_materials: Query<&GltfMaterialName>,
-    // materials: Query<&MeshMaterial3d<StandardMaterial>>,
 ) {
     let e_tile = trigger.target();
     let Ok(mut tile_tag) = tile_tags.get_mut(e_tile) else {
@@ -102,7 +119,7 @@ fn amend_tile_texture(
     // ハイライト表示を行うために見た目が同じでも牌毎に異なるmaterialを作成
     for e_descendant in childrens.iter_descendants(e_tile) {
         if let Ok(name) = gltf_materials.get(e_descendant) {
-            let material = asset_materials.add(match name.0.as_str() {
+            let material = materials.add(match name.0.as_str() {
                 "face" => {
                     let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
                     StandardMaterial {
@@ -127,6 +144,29 @@ fn amend_tile_texture(
                 },
             ));
             tile_tag.mesh_materials.push(material)
+        }
+    }
+}
+
+fn tile_mutate_event(
+    mut reader: EventReader<TileMutateEvent>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut tile_tags: Query<&mut TileTag>,
+) {
+    for ev in reader.read() {
+        let e_tile = ev.entity;
+        let Ok(mut tile_tag) = tile_tags.get_mut(e_tile) else {
+            return;
+        };
+
+        tile_tag.tile = ev.tile;
+        for h in &tile_tag.mesh_materials {
+            let material = materials.get_mut(h).unwrap();
+            if material.base_color_texture.is_some() {
+                let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
+                material.base_color_texture = Some(texture);
+            }
         }
     }
 }

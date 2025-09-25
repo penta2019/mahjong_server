@@ -16,7 +16,7 @@ impl ActorBuilder for GuiBuilder {
     fn get_default_config(&self) -> Config {
         Config {
             name: "Gui".to_string(),
-            args: vec![Arg::bool("conceal", false)],
+            args: vec![Arg::bool("conceal", true)],
         }
     }
 

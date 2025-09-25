@@ -193,10 +193,12 @@ impl MoveTo {
 
 fn animate_move(mut commands: Commands, move_tos: Query<(Entity, &mut Transform, &mut MoveTo)>) {
     for (e, mut tf, mut move_to) in move_tos {
-        let diff_vec = move_to.target - tf.translation;
-        tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
-        move_to.frame_left -= 1;
-        if move_to.frame_left == 0 {
+        if move_to.frame_left > 1 {
+            let diff_vec = move_to.target - tf.translation;
+            tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
+            move_to.frame_left -= 1;
+        } else {
+            tf.translation = move_to.target;
             commands.entity(e).remove::<MoveTo>();
         }
     }

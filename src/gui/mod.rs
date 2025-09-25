@@ -5,13 +5,11 @@ mod menu;
 mod slider;
 mod util;
 
-use std::sync::mpsc::{Receiver, Sender};
-
 use bevy::prelude::*;
 
-use crate::model::{ClientMessage, ServerMessage};
+use mahjong::{Rx, Tx};
 
-pub fn run(tx: Sender<ClientMessage>, rx: Receiver<ServerMessage>) {
+pub fn run(tx: Tx, rx: Rx) {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins)
         .add_plugins(slider::SliderPlugin)

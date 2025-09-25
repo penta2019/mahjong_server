@@ -13,6 +13,7 @@ pub struct GuiPlayer {
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
+    target_tile: Option<Entity>,
 }
 
 impl GuiPlayer {
@@ -53,6 +54,7 @@ impl GuiPlayer {
             hand,
             discard,
             meld,
+            target_tile: None,
         }
     }
 
@@ -95,6 +97,30 @@ impl GuiPlayer {
         let tile = self.hand.take_tile(m_tile, is_drawn);
         self.discard.push_tile(tile);
         self.hand.align();
+    }
+
+    pub fn set_target_tile(&mut self, tile: Option<Entity>) {
+        if tile == self.target_tile {
+            return;
+        }
+
+        // 元々のtarget_tileを解除
+        let param = param();
+        if let Some(e_tile) = self.target_tile
+            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+        {
+            tile_tag.set_highlight(&mut param.materials, false);
+        }
+        self.target_tile = None;
+
+        // 新しいtarget_tileを指定
+        if let Some(e_tile) = tile
+            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+            && self.hand.find_tile_from_entity(e_tile).is_some()
+        {
+            tile_tag.set_highlight(&mut param.materials, true);
+            self.target_tile = tile;
+        }
     }
 
     pub fn confirm_discard_tile(&mut self) {

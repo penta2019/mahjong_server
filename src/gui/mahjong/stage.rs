@@ -11,11 +11,9 @@ pub struct GuiStage {
     entity: Entity,
     players: Vec<GuiPlayer>,
     last_tile: Option<(Seat, ActionType, Tile)>,
-    last_hover_tile: Option<Entity>,
     camera_seat: Seat,
     show_hand: bool,
     possible_actions: Vec<Action>,
-    target_tile: Option<Entity>,
 }
 
 impl GuiStage {
@@ -79,11 +77,9 @@ impl GuiStage {
             entity,
             players,
             last_tile: None,
-            last_hover_tile: None,
             camera_seat: 0,
             show_hand: true,
             possible_actions: vec![],
-            target_tile: None,
         }
     }
 
@@ -102,24 +98,8 @@ impl GuiStage {
         }
     }
 
-    pub fn set_hover_tile(&mut self, tile: Option<Entity>) {
-        if tile == self.last_hover_tile {
-            return;
-        }
-
-        let param = param();
-        if let Some(e_tile) = self.last_hover_tile
-            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
-        {
-            tile_tag.set_highlight(&mut param.materials, false);
-        }
-        if let Some(e_tile) = tile
-            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
-        {
-            tile_tag.set_highlight(&mut param.materials, true);
-        }
-
-        self.last_hover_tile = tile;
+    pub fn set_target_tile(&mut self, e_tile: Option<Entity>) {
+        self.players[self.camera_seat].set_target_tile(e_tile);
     }
 
     pub fn event_new(&mut self, event: &EventNew) {

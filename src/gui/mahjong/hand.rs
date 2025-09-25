@@ -76,6 +76,20 @@ impl GuiHand {
         tile
     }
 
+    pub fn find_tile_from_entity(&self, e_tile: Entity) -> Option<&GuiTile> {
+        for tile in &self.tiles {
+            if e_tile == tile.entity() {
+                return Some(tile);
+            }
+        }
+        if let Some(tile) = &self.drawn_tile
+            && tile.entity() == e_tile
+        {
+            return Some(tile);
+        }
+        None
+    }
+
     pub fn align(&mut self) {
         self.tiles.sort_by_key(|t| t.tile());
         for (i, tile) in self.tiles.iter().enumerate() {

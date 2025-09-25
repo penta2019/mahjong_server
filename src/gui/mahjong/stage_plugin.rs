@@ -111,7 +111,7 @@ impl StageResource {
 
     pub fn set_hover_tile(&mut self, entity: Option<Entity>) {
         if let Some(stage) = self.stage.as_mut() {
-            stage.set_hover_tile(entity);
+            stage.set_target_tile(entity);
         }
     }
 }

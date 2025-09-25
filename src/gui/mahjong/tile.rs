@@ -1,6 +1,8 @@
-use bevy::{gltf::GltfMaterialName, prelude::*, scene::SceneInstanceReady};
+use bevy::{
+    gltf::GltfMaterialName, input::mouse::MouseMotion, prelude::*, scene::SceneInstanceReady,
+};
 
-use super::HasEntity;
+use super::{super::control::MainCamera, HasEntity};
 use crate::model::Tile;
 
 pub struct TilePlugin;
@@ -8,11 +10,13 @@ pub struct TilePlugin;
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(amend_tile_texture)
+            .add_event::<TileHoverEvent>()
+            .add_systems(Update, tile_hover)
             .add_event::<TileMutateEvent>()
-            .add_systems(Update, tile_mutate_event)
+            .add_systems(Update, tile_mutate)
             // StageのUpdateと同時実行するとremoveとinsertが重なって
             // insertしたばかりのMoveToが削除されることがあるのでPostUpdateを使用
-            .add_systems(PostUpdate, animate_move);
+            .add_systems(PostUpdate, move_animation);
     }
 }
 
@@ -83,22 +87,6 @@ impl TileMesh {
     }
 }
 
-#[derive(Event, Debug)]
-pub struct TileMutateEvent {
-    entity: Entity,
-    tile: Tile,
-}
-
-impl TileMutateEvent {
-    pub fn mutate(tile: &mut GuiTile, m_tile: Tile) -> Self {
-        tile.tile = m_tile;
-        Self {
-            entity: tile.entity,
-            tile: m_tile,
-        }
-    }
-}
-
 fn amend_tile_texture(
     trigger: Trigger<SceneInstanceReady>,
     mut commands: Commands,
@@ -148,7 +136,58 @@ fn amend_tile_texture(
     }
 }
 
-fn tile_mutate_event(
+#[derive(Event, Debug)]
+pub struct TileHoverEvent {
+    pub tile_entity: Option<Entity>,
+}
+
+fn tile_hover(
+    mut mouse_events: EventReader<MouseMotion>,
+    window: Single<&mut Window>,
+    camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
+    mut ray_cast: MeshRayCast,
+    tile_meshes: Query<&TileMesh>,
+    mut tile_hover: EventWriter<TileHoverEvent>,
+) {
+    let Some(_) = mouse_events.read().next() else {
+        return;
+    };
+    let Some(p_cursor) = window.cursor_position() else {
+        return;
+    };
+    let (camera, tf_camera) = &*camera;
+    let Ok(ray) = camera.viewport_to_world(tf_camera, p_cursor) else {
+        return;
+    };
+
+    for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
+        if let Ok(m) = tile_meshes.get(*entity) {
+            tile_hover.write(TileHoverEvent {
+                tile_entity: Some(m.tile_entity()),
+            });
+            return;
+        }
+    }
+    tile_hover.write(TileHoverEvent { tile_entity: None });
+}
+
+#[derive(Event, Debug)]
+pub struct TileMutateEvent {
+    entity: Entity,
+    tile: Tile,
+}
+
+impl TileMutateEvent {
+    pub fn mutate(tile: &mut GuiTile, m_tile: Tile) -> Self {
+        tile.tile = m_tile;
+        Self {
+            entity: tile.entity,
+            tile: m_tile,
+        }
+    }
+}
+
+fn tile_mutate(
     mut reader: EventReader<TileMutateEvent>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -191,7 +230,7 @@ impl MoveTo {
     }
 }
 
-fn animate_move(mut commands: Commands, move_tos: Query<(Entity, &mut Transform, &mut MoveTo)>) {
+fn move_animation(mut commands: Commands, move_tos: Query<(Entity, &mut Transform, &mut MoveTo)>) {
     for (e, mut tf, mut move_to) in move_tos {
         if move_to.frame_left > 1 {
             let diff_vec = move_to.target - tf.translation;

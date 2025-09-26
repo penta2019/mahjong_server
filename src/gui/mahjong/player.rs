@@ -99,27 +99,38 @@ impl GuiPlayer {
         self.hand.align();
     }
 
-    pub fn set_target_tile(&mut self, tile: Option<Entity>) {
-        if tile == self.target_tile {
-            return;
-        }
+    // pub fn set_target_tile(&mut self, tile: Option<Entity>) {
+    //     if tile == self.target_tile {
+    //         return;
+    //     }
 
-        // 元々のtarget_tileを解除
-        let param = param();
+    //     let param = param();
+
+    //     // 元々のtarget_tileを解除
+    //     if let Some(e_tile) = self.target_tile
+    //         && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+    //     {
+    //         tile_tag.set_highlight(&mut param.materials, false);
+    //     }
+    //     self.target_tile = None;
+
+    //     // 新しいtarget_tileを指定
+    //     if let Some(e_tile) = tile
+    //         && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+    //         && self.hand.find_tile_from_entity(e_tile).is_some()
+    //     {
+    //         tile_tag.set_highlight(&mut param.materials, true);
+    //         self.target_tile = tile;
+    //     }
+    // }
+
+    pub fn get_target_tile(&self) -> Option<(Entity, Tile, IsDrawn)> {
         if let Some(e_tile) = self.target_tile
-            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+            && let Some((tile, is_drawn)) = self.hand.find_tile_from_entity(e_tile)
         {
-            tile_tag.set_highlight(&mut param.materials, false);
-        }
-        self.target_tile = None;
-
-        // 新しいtarget_tileを指定
-        if let Some(e_tile) = tile
-            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
-            && self.hand.find_tile_from_entity(e_tile).is_some()
-        {
-            tile_tag.set_highlight(&mut param.materials, true);
-            self.target_tile = tile;
+            Some((e_tile, tile, is_drawn))
+        } else {
+            None
         }
     }
 
@@ -138,6 +149,22 @@ impl GuiPlayer {
 
     pub fn take_last_discard_tile(&mut self) -> GuiTile {
         self.discard.take_last_tile()
+    }
+
+    pub fn handle_events(&mut self) {
+        let param = param();
+
+        for ev in param.tile_hover.read() {
+            println!("handle_tile_hover: {ev:?}");
+        }
+
+        for ev in param.mouse_motion.read() {
+            println!("handle_mouse_motion: {ev:?}");
+        }
+
+        for ev in param.mouse_input.read() {
+            println!("handle_mouse_motion: {ev:?}");
+        }
     }
 }
 

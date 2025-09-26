@@ -1,5 +1,7 @@
 use super::*;
 
+pub type IsDrawn = bool;
+
 #[derive(Debug)]
 pub struct GuiHand {
     entity: Entity,
@@ -64,7 +66,7 @@ impl GuiHand {
         if tile.tile() == Z8 {
             param()
                 .tile_mutate
-                .write(TileMutateEvent::mutate(&mut tile, m_tile));
+                .write(TileMutate::mutate(&mut tile, m_tile));
         } else {
             assert!(tile.tile() == m_tile);
         }
@@ -76,16 +78,16 @@ impl GuiHand {
         tile
     }
 
-    pub fn find_tile_from_entity(&self, e_tile: Entity) -> Option<&GuiTile> {
+    pub fn find_tile_from_entity(&self, e_tile: Entity) -> Option<(Tile, IsDrawn)> {
         for tile in &self.tiles {
             if e_tile == tile.entity() {
-                return Some(tile);
+                return Some((tile.tile(), false));
             }
         }
         if let Some(tile) = &self.drawn_tile
             && tile.entity() == e_tile
         {
-            return Some(tile);
+            return Some((tile.tile(), true));
         }
         None
     }

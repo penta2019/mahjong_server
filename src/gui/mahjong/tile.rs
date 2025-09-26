@@ -10,9 +10,9 @@ pub struct TilePlugin;
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(amend_tile_texture)
-            .add_event::<TileHoverEvent>()
+            .add_event::<TileHover>()
             .add_systems(Update, tile_hover)
-            .add_event::<TileMutateEvent>()
+            .add_event::<TileMutate>()
             .add_systems(Update, tile_mutate)
             // StageのUpdateと同時実行するとremoveとinsertが重なって
             // insertしたばかりのMoveToが削除されることがあるのでPostUpdateを使用
@@ -137,7 +137,7 @@ fn amend_tile_texture(
 }
 
 #[derive(Event, Debug)]
-pub struct TileHoverEvent {
+pub struct TileHover {
     pub tile_entity: Option<Entity>,
 }
 
@@ -147,7 +147,7 @@ fn tile_hover(
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,
     tile_meshes: Query<&TileMesh>,
-    mut tile_hover: EventWriter<TileHoverEvent>,
+    mut tile_hover: EventWriter<TileHover>,
 ) {
     let Some(_) = mouse_events.read().next() else {
         return;
@@ -162,22 +162,22 @@ fn tile_hover(
 
     for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
         if let Ok(m) = tile_meshes.get(*entity) {
-            tile_hover.write(TileHoverEvent {
+            tile_hover.write(TileHover {
                 tile_entity: Some(m.tile_entity()),
             });
             return;
         }
     }
-    tile_hover.write(TileHoverEvent { tile_entity: None });
+    tile_hover.write(TileHover { tile_entity: None });
 }
 
 #[derive(Event, Debug)]
-pub struct TileMutateEvent {
+pub struct TileMutate {
     entity: Entity,
     tile: Tile,
 }
 
-impl TileMutateEvent {
+impl TileMutate {
     pub fn mutate(tile: &mut GuiTile, m_tile: Tile) -> Self {
         tile.tile = m_tile;
         Self {
@@ -188,7 +188,7 @@ impl TileMutateEvent {
 }
 
 fn tile_mutate(
-    mut reader: EventReader<TileMutateEvent>,
+    mut reader: EventReader<TileMutate>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut tile_tags: Query<&mut TileTag>,

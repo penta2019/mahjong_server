@@ -1,22 +1,33 @@
 use std::thread::{self, ThreadId};
 
-use bevy::ecs::system::SystemParam;
+use bevy::{
+    ecs::system::SystemParam,
+    input::mouse::{MouseButtonInput, MouseMotion},
+};
 
 use super::{
-    super::{control::CameraEvent, util::print_hierarchy},
+    super::{control::CameraMove, util::print_hierarchy},
     *,
 };
 
 #[derive(SystemParam)]
 pub struct StageParam<'w, 's> {
     pub commands: Commands<'w, 's>,
+    pub window: Single<'w, &'static mut Window>,
     pub meshes: ResMut<'w, Assets<Mesh>>,
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
-    pub camera: EventWriter<'w, CameraEvent>,
-    pub tile_mutate: EventWriter<'w, TileMutateEvent>,
     pub tile_tags: Query<'w, 's, &'static TileTag>,
+
+    // EventWriter
+    pub camera: EventWriter<'w, CameraMove>,
+    pub tile_mutate: EventWriter<'w, TileMutate>,
+
+    // EventReader
+    pub tile_hover: EventReader<'w, 's, TileHover>,
+    pub mouse_input: EventReader<'w, 's, MouseButtonInput>,
+    pub mouse_motion: EventReader<'w, 's, MouseMotion>,
 
     // for debug
     pub names: Query<'w, 's, &'static Name>,

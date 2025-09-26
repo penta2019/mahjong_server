@@ -17,7 +17,7 @@ impl Plugin for ControlPlugin {
 
         app.insert_state(FlyState::Off)
             .insert_resource(ctx)
-            .add_event::<CameraEvent>()
+            .add_event::<CameraMove>()
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
@@ -102,13 +102,13 @@ impl Default for ControlContext {
 }
 
 #[derive(Event, Debug)]
-pub struct CameraEvent {
+pub struct CameraMove {
     translation: Vec3,
     yaw: f32,   // [-PI, PI)
     pitch: f32, // (-FRAC_PI_2, FRAC_PI_2)
 }
 
-impl CameraEvent {
+impl CameraMove {
     pub fn new(pos: Vec3, yaw: f32, pitch: f32) -> Self {
         Self {
             translation: pos,
@@ -204,7 +204,7 @@ fn keyboard_handler_global(
 }
 
 fn camera_event(
-    mut reader: EventReader<CameraEvent>,
+    mut reader: EventReader<CameraMove>,
     mut context: ResMut<ControlContext>,
     mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {

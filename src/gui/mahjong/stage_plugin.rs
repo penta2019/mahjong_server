@@ -3,8 +3,6 @@ use std::sync::{
     mpsc::{Receiver, Sender},
 };
 
-use bevy::input::{ButtonState, mouse::MouseButtonInput};
-
 use super::*;
 use crate::model::{Event as MjEvent, *};
 
@@ -40,7 +38,7 @@ pub struct StageResource {
 }
 
 impl StageResource {
-    pub fn new(tx: Tx, rx: Rx) -> Self {
+    fn new(tx: Tx, rx: Rx) -> Self {
         Self {
             stage: None,
             seat: 0,
@@ -49,7 +47,7 @@ impl StageResource {
         }
     }
 
-    pub fn update(&mut self) {
+    fn update(&mut self) {
         while let Ok(msg) = self.rx.lock().unwrap().try_recv() {
             if let ServerMessage::Event(ev) = &msg
                 && let MjEvent::New(_) = ev.as_ref()
@@ -67,21 +65,10 @@ impl StageResource {
 
             match msg {
                 ServerMessage::Event(event) => {
-                    let Some(stage) = self.stage.as_mut() else {
-                        continue;
-                    };
-
                     match event.as_ref() {
                         MjEvent::Begin(_ev) => {}
-                        MjEvent::New(ev) => stage.event_new(ev),
-                        MjEvent::Deal(ev) => stage.event_deal(ev),
-                        MjEvent::Discard(ev) => stage.event_discard(ev),
-                        MjEvent::Meld(ev) => stage.event_meld(ev),
-                        MjEvent::Nukidora(ev) => stage.event_nukidora(ev),
-                        MjEvent::Dora(ev) => stage.event_dora(ev),
-                        MjEvent::Win(ev) => stage.event_win(ev),
-                        MjEvent::Draw(ev) => stage.event_draw(ev),
                         MjEvent::End(_ev) => {}
+                        _ => self.stage.as_mut().unwrap().handle_event(&event),
                     }
 
                     // TODO
@@ -106,38 +93,20 @@ impl StageResource {
             }
         }
 
-        // param().print_hierarchy(stage.entity());
-    }
-
-    pub fn set_hover_tile(&mut self, entity: Option<Entity>) {
-        if let Some(stage) = self.stage.as_mut() {
-            stage.set_target_tile(entity);
+        if let Some(stage) = &mut self.stage {
+            stage.handle_events();
         }
+
+        // 使用されなかったEventを全て破棄
+        let param = param();
+        param.tile_hover.read();
+        param.mouse_motion.read();
+        param.mouse_input.read();
     }
 }
 
-fn process_event(
-    mut param: StageParam,
-    mut stage_res: ResMut<StageResource>,
-    mut tile_hover: EventReader<TileHoverEvent>,
-    mut mouse_input: EventReader<MouseButtonInput>,
-) {
+fn process_event(mut param: StageParam, mut stage_res: ResMut<StageResource>) {
     with_param(&mut param, || {
         stage_res.update();
-
-        for ev in tile_hover.read() {
-            stage_res.set_hover_tile(ev.tile_entity);
-        }
-
-        for ev in mouse_input.read() {
-            match ev.state {
-                ButtonState::Pressed => {
-                    println!("Mouse button press: {:?}", ev.button);
-                }
-                ButtonState::Released => {
-                    println!("Mouse button release: {:?}", ev.button);
-                }
-            }
-        }
     });
 }

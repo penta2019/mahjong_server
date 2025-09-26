@@ -1,7 +1,7 @@
 use bevy::color::palettes::basic::{BLACK, GREEN};
 
-use super::{super::control::CameraEvent, *};
-use crate::model::*;
+use super::{super::control::CameraMove, *};
+use crate::model::{Event as MjEvent, *}; // Eventはbevyと衝突
 
 pub const CAMERA_POS: Vec3 = Vec3::new(0., 0.8, 0.8);
 pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0., -0.02, 0.);
@@ -86,7 +86,7 @@ impl GuiStage {
     pub fn set_player(&mut self, seat: Seat) {
         self.camera_seat = seat;
         let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
-        param().camera.write(CameraEvent::look(pos, CAMERA_LOOK_AT));
+        param().camera.write(CameraMove::look(pos, CAMERA_LOOK_AT));
         for (s, player) in self.players.iter_mut().enumerate() {
             if s == seat {
                 player.set_hand_mode(HandMode::Camera);
@@ -98,17 +98,36 @@ impl GuiStage {
         }
     }
 
-    pub fn set_target_tile(&mut self, e_tile: Option<Entity>) {
-        self.players[self.camera_seat].set_target_tile(e_tile);
+    // pub fn get_target_tile(&self) -> Option<(Entity, Tile, IsDrawn)> {
+    //     self.players[self.camera_seat].get_target_tile()
+    // }
+
+    pub fn handle_events(&mut self) {
+        self.players[self.camera_seat].handle_events();
     }
 
-    pub fn event_new(&mut self, event: &EventNew) {
+    pub fn handle_event(&mut self, event: &MjEvent) {
+        match event {
+            MjEvent::Begin(_ev) => {}
+            MjEvent::New(ev) => self.event_new(ev),
+            MjEvent::Deal(ev) => self.event_deal(ev),
+            MjEvent::Discard(ev) => self.event_discard(ev),
+            MjEvent::Meld(ev) => self.event_meld(ev),
+            MjEvent::Nukidora(ev) => self.event_nukidora(ev),
+            MjEvent::Dora(ev) => self.event_dora(ev),
+            MjEvent::Win(ev) => self.event_win(ev),
+            MjEvent::Draw(ev) => self.event_draw(ev),
+            MjEvent::End(_ev) => {}
+        }
+    }
+
+    fn event_new(&mut self, event: &EventNew) {
         for seat in 0..SEAT {
             self.players[seat].init_hand(&event.hands[seat]);
         }
     }
 
-    pub fn event_deal(&mut self, event: &EventDeal) {
+    fn event_deal(&mut self, event: &EventDeal) {
         if let Some((seat, ActionType::Discard, _)) = self.last_tile {
             self.players[seat].confirm_discard_tile();
         }
@@ -116,12 +135,12 @@ impl GuiStage {
         self.players[event.seat].deal_tile(event.tile);
     }
 
-    pub fn event_discard(&mut self, event: &EventDiscard) {
+    fn event_discard(&mut self, event: &EventDiscard) {
         self.players[event.seat].discard_tile(event.tile, event.is_drawn, event.is_riichi);
         self.last_tile = Some((event.seat, ActionType::Discard, event.tile));
     }
 
-    pub fn event_meld(&mut self, event: &EventMeld) {
+    fn event_meld(&mut self, event: &EventMeld) {
         // 鳴いたプレイヤーから半時計回りに見た牌を捨てたプレイヤーの座席
         // 自身(0), 下家(1), 対面(2), 上家(3)
         let mut meld_offset = 0;
@@ -139,13 +158,13 @@ impl GuiStage {
         self.players[event.seat].meld(&event.consumed, meld_tile, meld_offset);
     }
 
-    pub fn event_nukidora(&mut self, _event: &EventNukidora) {}
+    fn event_nukidora(&mut self, _event: &EventNukidora) {}
 
-    pub fn event_dora(&mut self, _event: &EventDora) {}
+    fn event_dora(&mut self, _event: &EventDora) {}
 
-    pub fn event_win(&mut self, _event: &EventWin) {}
+    fn event_win(&mut self, _event: &EventWin) {}
 
-    pub fn event_draw(&mut self, _event: &EventDraw) {}
+    fn event_draw(&mut self, _event: &EventDraw) {}
 }
 
 impl HasEntity for GuiStage {

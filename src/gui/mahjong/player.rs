@@ -1,9 +1,43 @@
+use std::sync::{Arc, Mutex};
+
+use bevy::input::ButtonState;
+
 use super::*;
+
+const COLOR_ACTIVE: LinearRgba = LinearRgba::new(0., 0.1, 0., 0.); // ハイライト (打牌可)
+const COLOR_INACTIVE: LinearRgba = LinearRgba::new(0.1, 0., 0., 0.); // ハイライト (打牌不可)
+const COLOR_NORMAL: LinearRgba = LinearRgba::BLACK; // ハイライトなし
 
 pub enum HandMode {
     Camera,
     Close,
     Open,
+}
+
+#[derive(Debug)]
+pub struct PossibleActions {
+    id: u32,
+    actions: Vec<Action>,
+    tenpais: Vec<Tenpai>,
+    tx: Arc<Mutex<Tx>>,
+}
+
+impl PossibleActions {
+    pub fn new(id: u32, actions: Vec<Action>, tenpais: Vec<Tenpai>, tx: Arc<Mutex<Tx>>) -> Self {
+        Self {
+            id,
+            actions,
+            tenpais,
+            tx,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum TargetState {
+    Released,
+    Pressed,
+    Dragging,
 }
 
 #[derive(Debug)]
@@ -13,7 +47,11 @@ pub struct GuiPlayer {
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
+    // 操作用
     target_tile: Option<Entity>,
+    target_state: TargetState,
+    can_discard: bool,
+    possible_actions: Option<PossibleActions>,
 }
 
 impl GuiPlayer {
@@ -55,6 +93,9 @@ impl GuiPlayer {
             discard,
             meld,
             target_tile: None,
+            target_state: TargetState::Released,
+            can_discard: false,
+            possible_actions: None,
         }
     }
 
@@ -91,6 +132,8 @@ impl GuiPlayer {
     }
 
     pub fn discard_tile(&mut self, m_tile: Tile, is_drawn: bool, is_riichi: bool) {
+        self.set_target_tile(None);
+
         if is_riichi {
             self.discard.set_riichi();
         }
@@ -99,46 +142,13 @@ impl GuiPlayer {
         self.hand.align();
     }
 
-    // pub fn set_target_tile(&mut self, tile: Option<Entity>) {
-    //     if tile == self.target_tile {
-    //         return;
-    //     }
-
-    //     let param = param();
-
-    //     // 元々のtarget_tileを解除
-    //     if let Some(e_tile) = self.target_tile
-    //         && let Ok(tile_tag) = param.tile_tags.get(e_tile)
-    //     {
-    //         tile_tag.set_highlight(&mut param.materials, false);
-    //     }
-    //     self.target_tile = None;
-
-    //     // 新しいtarget_tileを指定
-    //     if let Some(e_tile) = tile
-    //         && let Ok(tile_tag) = param.tile_tags.get(e_tile)
-    //         && self.hand.find_tile_from_entity(e_tile).is_some()
-    //     {
-    //         tile_tag.set_highlight(&mut param.materials, true);
-    //         self.target_tile = tile;
-    //     }
-    // }
-
-    pub fn get_target_tile(&self) -> Option<(Entity, Tile, IsDrawn)> {
-        if let Some(e_tile) = self.target_tile
-            && let Some((tile, is_drawn)) = self.hand.find_tile_from_entity(e_tile)
-        {
-            Some((e_tile, tile, is_drawn))
-        } else {
-            None
-        }
-    }
-
     pub fn confirm_discard_tile(&mut self) {
         self.discard.confirm_last_tile();
     }
 
     pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
+        self.set_target_tile(None);
+
         let tiles_from_hand: Vec<GuiTile> = m_tiles
             .iter()
             .map(|t| self.hand.take_tile(*t, false))
@@ -151,19 +161,117 @@ impl GuiPlayer {
         self.discard.take_last_tile()
     }
 
-    pub fn handle_events(&mut self) {
+    pub fn handle_gui_events(&mut self) {
         let param = param();
 
-        for ev in param.tile_hover.read() {
-            println!("handle_tile_hover: {ev:?}");
-        }
-
-        for ev in param.mouse_motion.read() {
-            println!("handle_mouse_motion: {ev:?}");
+        for ev in param.hovered_tile.read() {
+            self.set_target_tile(ev.tile_entity);
         }
 
         for ev in param.mouse_input.read() {
-            println!("handle_mouse_motion: {ev:?}");
+            if ev.button == MouseButton::Left {
+                match ev.state {
+                    ButtonState::Pressed => {
+                        if self.target_tile.is_some() {
+                            self.target_state = TargetState::Pressed;
+                        }
+                    }
+                    ButtonState::Released => {
+                        if self.target_state == TargetState::Pressed {
+                            self.action_discard_tile();
+                        }
+                        self.target_state = TargetState::Released;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn handle_actions(&mut self, possible_actions: PossibleActions) {
+        // TODO: 打牌以外はとりあえずスキップ
+        if possible_actions
+            .actions
+            .iter()
+            .all(|a| a.action_type != ActionType::Discard)
+        {
+            let action = ClientMessage::Action {
+                id: possible_actions.id,
+                action: Action::nop(),
+            };
+            possible_actions.tx.lock().unwrap().send(action).unwrap();
+        }
+
+        self.set_can_discard(true);
+        self.possible_actions = Some(possible_actions);
+    }
+
+    pub fn on_event(&mut self) {
+        self.set_can_discard(false);
+        self.possible_actions = None;
+    }
+
+    fn set_can_discard(&mut self, flag: bool) {
+        self.can_discard = flag;
+        self.change_target_tile_color(if self.can_discard {
+            COLOR_ACTIVE
+        } else {
+            COLOR_INACTIVE
+        });
+    }
+
+    fn set_target_tile(&mut self, tile: Option<Entity>) {
+        // 牌が変化していない場合何もしない
+        if tile == self.target_tile {
+            return;
+        }
+
+        // 元々のtarget_tileを解除
+        self.change_target_tile_color(COLOR_NORMAL);
+        self.target_tile = None;
+        self.target_state = TargetState::Released;
+
+        // 新しいtarget_tileを指定
+        if let Some(e_tile) = tile
+            && self.hand.find_tile_from_entity(e_tile).is_some()
+        {
+            self.target_tile = tile;
+            self.change_target_tile_color(if self.can_discard {
+                COLOR_ACTIVE
+            } else {
+                COLOR_INACTIVE
+            });
+        }
+    }
+
+    fn change_target_tile_color(&self, color: LinearRgba) {
+        let param = param();
+        if let Some(e_tile) = self.target_tile
+            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+        {
+            tile_tag.set_emissive(&mut param.materials, color);
+        }
+    }
+
+    fn action_discard_tile(&self) {
+        if let Some(e_tile) = self.target_tile
+            && let Some(actions) = &self.possible_actions
+        {
+            for act in &actions.actions {
+                if act.action_type == ActionType::Discard
+                    && let Some((tile, is_drawn)) = self.hand.find_tile_from_entity(e_tile)
+                {
+                    let action = ClientMessage::Action {
+                        id: actions.id,
+                        action: if is_drawn {
+                            Action::nop()
+                        } else {
+                            Action::discard(tile)
+                        },
+                    };
+                    actions.tx.lock().unwrap().send(action).unwrap();
+                    break;
+                }
+            }
         }
     }
 }

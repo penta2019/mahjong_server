@@ -18,12 +18,12 @@ pub use stage_plugin::{Rx, StagePlugin, Tx};
 pub use tile::TilePlugin;
 
 use discard::GuiDiscard;
-use hand::{GuiHand, IsDrawn};
+use hand::GuiHand;
 use meld::GuiMeld;
-use player::{GuiPlayer, HandMode};
+use player::{GuiPlayer, HandMode, PossibleActions};
 use stage::GuiStage;
 use stage_param::{StageParam, create_tile, param, with_param};
-use tile::{GuiTile, MoveTo, TileHover, TileMutate, TileTag};
+use tile::{GuiTile, HoveredTile, MoveTo, TileMutate, TileTag};
 
 trait HasEntity {
     fn entity(&self) -> Entity;

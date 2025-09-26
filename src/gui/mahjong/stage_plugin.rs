@@ -1,10 +1,13 @@
 use std::sync::{
-    Mutex,
+    Arc, Mutex,
     mpsc::{Receiver, Sender},
 };
 
 use super::*;
-use crate::model::{Event as MjEvent, *};
+use crate::{
+    gui::mahjong::player::PossibleActions,
+    model::{Event as MjEvent, *},
+};
 
 pub type Tx = Sender<ClientMessage>;
 pub type Rx = Receiver<ServerMessage>;
@@ -33,7 +36,7 @@ impl Plugin for StagePlugin {
 pub struct StageResource {
     stage: Option<GuiStage>,
     seat: Seat,
-    tx: Mutex<Tx>,
+    tx: Arc<Mutex<Tx>>,
     rx: Mutex<Rx>,
 }
 
@@ -42,7 +45,7 @@ impl StageResource {
         Self {
             stage: None,
             seat: 0,
-            tx: Mutex::new(tx),
+            tx: Arc::new(Mutex::new(tx)),
             rx: Mutex::new(rx),
         }
     }
@@ -81,11 +84,15 @@ impl StageResource {
                     actions,
                     tenpais,
                 } => {
-                    let action = ClientMessage::Action {
-                        id,
-                        action: Action::nop(),
-                    };
-                    self.tx.lock().unwrap().send(action).unwrap();
+                    self.stage
+                        .as_mut()
+                        .unwrap()
+                        .handle_actions(PossibleActions::new(
+                            id,
+                            actions,
+                            tenpais,
+                            self.tx.clone(),
+                        ));
                 }
                 ServerMessage::Info { seat } => {
                     self.seat = seat; // このメッセージはEventNewより先に受信
@@ -94,14 +101,10 @@ impl StageResource {
         }
 
         if let Some(stage) = &mut self.stage {
-            stage.handle_events();
+            stage.handle_gui_events();
         }
-
         // 使用されなかったEventを全て破棄
-        let param = param();
-        param.tile_hover.read();
-        param.mouse_motion.read();
-        param.mouse_input.read();
+        param().drain_events();
     }
 }
 

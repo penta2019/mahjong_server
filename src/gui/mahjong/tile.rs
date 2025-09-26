@@ -10,7 +10,7 @@ pub struct TilePlugin;
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(amend_tile_texture)
-            .add_event::<TileHover>()
+            .add_event::<HoveredTile>()
             .add_systems(Update, tile_hover)
             .add_event::<TileMutate>()
             .add_systems(Update, tile_mutate)
@@ -64,14 +64,10 @@ pub struct TileTag {
 }
 
 impl TileTag {
-    pub fn set_highlight(&self, materials: &mut Assets<StandardMaterial>, flag: bool) {
+    pub fn set_emissive(&self, materials: &mut Assets<StandardMaterial>, color: LinearRgba) {
         for h in &self.mesh_materials {
             let material = materials.get_mut(h).unwrap();
-            material.emissive = if flag {
-                LinearRgba::new(0.1, 0.05, 0., 0.)
-            } else {
-                LinearRgba::BLACK
-            };
+            material.emissive = color;
         }
     }
 }
@@ -136,22 +132,37 @@ fn amend_tile_texture(
     }
 }
 
+// #[derive(Event, Debug)]
+// pub struct UpdateHoveredTile;
+
 #[derive(Event, Debug)]
-pub struct TileHover {
+pub struct HoveredTile {
     pub tile_entity: Option<Entity>,
 }
 
 fn tile_hover(
     mut mouse_events: EventReader<MouseMotion>,
+    tile_move: Query<&TileTag, Changed<Transform>>,
     window: Single<&mut Window>,
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,
     tile_meshes: Query<&TileMesh>,
-    mut tile_hover: EventWriter<TileHover>,
+    mut tile_hover: EventWriter<HoveredTile>,
 ) {
-    let Some(_) = mouse_events.read().next() else {
-        return;
-    };
+    // マウスか牌が移動した場合にのみ新しく判定を実行
+    {
+        let mut skip = true;
+        for _ in mouse_events.read() {
+            skip = false;
+        }
+        for _ in tile_move {
+            skip = false;
+        }
+        if skip {
+            return;
+        }
+    }
+
     let Some(p_cursor) = window.cursor_position() else {
         return;
     };
@@ -162,13 +173,13 @@ fn tile_hover(
 
     for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
         if let Ok(m) = tile_meshes.get(*entity) {
-            tile_hover.write(TileHover {
+            tile_hover.write(HoveredTile {
                 tile_entity: Some(m.tile_entity()),
             });
             return;
         }
     }
-    tile_hover.write(TileHover { tile_entity: None });
+    tile_hover.write(HoveredTile { tile_entity: None });
 }
 
 #[derive(Event, Debug)]

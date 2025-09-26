@@ -1,9 +1,6 @@
 use std::thread::{self, ThreadId};
 
-use bevy::{
-    ecs::system::SystemParam,
-    input::mouse::{MouseButtonInput, MouseMotion},
-};
+use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput};
 
 use super::{
     super::{control::CameraMove, util::print_hierarchy},
@@ -13,7 +10,7 @@ use super::{
 #[derive(SystemParam)]
 pub struct StageParam<'w, 's> {
     pub commands: Commands<'w, 's>,
-    pub window: Single<'w, &'static mut Window>,
+    // pub window: Single<'w, &'static mut Window>,
     pub meshes: ResMut<'w, Assets<Mesh>>,
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
@@ -23,11 +20,11 @@ pub struct StageParam<'w, 's> {
     // EventWriter
     pub camera: EventWriter<'w, CameraMove>,
     pub tile_mutate: EventWriter<'w, TileMutate>,
+    // pub update_hovered_tile: EventWriter<'w, UpdateHoveredTile>,
 
     // EventReader
-    pub tile_hover: EventReader<'w, 's, TileHover>,
+    pub hovered_tile: EventReader<'w, 's, HoveredTile>,
     pub mouse_input: EventReader<'w, 's, MouseButtonInput>,
-    pub mouse_motion: EventReader<'w, 's, MouseMotion>,
 
     // for debug
     pub names: Query<'w, 's, &'static Name>,
@@ -38,6 +35,11 @@ impl<'w, 's> StageParam<'w, 's> {
     #[allow(unused)]
     pub fn print_hierarchy(&self, entity: Entity) {
         print_hierarchy(entity, &self.names, &self.childrens);
+    }
+
+    pub fn drain_events(&mut self) {
+        self.hovered_tile.read();
+        self.mouse_input.read();
     }
 }
 

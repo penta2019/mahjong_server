@@ -13,7 +13,6 @@ pub struct GuiStage {
     last_tile: Option<(Seat, ActionType, Tile)>,
     camera_seat: Seat,
     show_hand: bool,
-    possible_actions: Vec<Action>,
 }
 
 impl GuiStage {
@@ -79,7 +78,6 @@ impl GuiStage {
             last_tile: None,
             camera_seat: 0,
             show_hand: true,
-            possible_actions: vec![],
         }
     }
 
@@ -102,11 +100,8 @@ impl GuiStage {
     //     self.players[self.camera_seat].get_target_tile()
     // }
 
-    pub fn handle_events(&mut self) {
-        self.players[self.camera_seat].handle_events();
-    }
-
     pub fn handle_event(&mut self, event: &MjEvent) {
+        self.players[self.camera_seat].on_event();
         match event {
             MjEvent::Begin(_ev) => {}
             MjEvent::New(ev) => self.event_new(ev),
@@ -119,6 +114,14 @@ impl GuiStage {
             MjEvent::Draw(ev) => self.event_draw(ev),
             MjEvent::End(_ev) => {}
         }
+    }
+
+    pub fn handle_actions(&mut self, possible_actions: PossibleActions) {
+        self.players[self.camera_seat].handle_actions(possible_actions);
+    }
+
+    pub fn handle_gui_events(&mut self) {
+        self.players[self.camera_seat].handle_gui_events();
     }
 
     fn event_new(&mut self, event: &EventNew) {

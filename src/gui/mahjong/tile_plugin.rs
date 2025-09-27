@@ -27,7 +27,7 @@ pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Ti
         .spawn((
             Name::new(format!("Tile({tile})")),
             SceneRoot(tile_model),
-            TileTag {
+            TileControl {
                 tile,
                 mesh_materials: vec![],
             },
@@ -36,12 +36,12 @@ pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Ti
 }
 
 #[derive(Component, Debug)]
-pub struct TileTag {
+pub struct TileControl {
     tile: Tile,
     mesh_materials: Vec<Handle<StandardMaterial>>,
 }
 
-impl TileTag {
+impl TileControl {
     pub fn mutate(&mut self, tile: Tile) {
         self.tile = tile;
     }
@@ -65,15 +65,15 @@ fn tile_texture(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     childrens: Query<&Children>,
-    mut tile_tags: Query<&mut TileTag>,
+    mut tile_controls: Query<&mut TileControl>,
     gltf_materials: Query<&GltfMaterialName>,
 ) {
     let e_tile = trigger.target();
-    let Ok(mut tile_tag) = tile_tags.get_mut(e_tile) else {
+    let Ok(mut tile_control) = tile_controls.get_mut(e_tile) else {
         return;
     };
     // テクスチャ張替え用のコンポーネントは以降不要なので削除
-    // commands.entity(e_tile).remove::<TileTag>();
+    // commands.entity(e_tile).remove::<TileControl>();
 
     // 牌のテクスチャを適切なものに張替え
     // ハイライト表示を行うために見た目が同じでも牌毎に異なるmaterialを作成
@@ -81,7 +81,7 @@ fn tile_texture(
         if let Ok(name) = gltf_materials.get(e_descendant) {
             let material = materials.add(match name.0.as_str() {
                 "face" => {
-                    let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
+                    let texture = asset_server.load(format!("texture/{}.png", tile_control.tile));
                     StandardMaterial {
                         base_color_texture: Some(texture),
                         ..Default::default()
@@ -103,22 +103,22 @@ fn tile_texture(
                     tile_entity: e_tile,
                 },
             ));
-            tile_tag.mesh_materials.push(material)
+            tile_control.mesh_materials.push(material)
         }
     }
 }
 
 fn tile_mutate(
-    tile_tags: Query<&mut TileTag, Changed<TileTag>>,
+    tile_controls: Query<&mut TileControl, Changed<TileControl>>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for tile_tag in tile_tags {
-        println!("changed: {}", tile_tag.tile);
-        for h in &tile_tag.mesh_materials {
+    for tile_control in tile_controls {
+        println!("changed: {}", tile_control.tile);
+        for h in &tile_control.mesh_materials {
             let material = materials.get_mut(h).unwrap();
             if material.base_color_texture.is_some() {
-                let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
+                let texture = asset_server.load(format!("texture/{}.png", tile_control.tile));
                 material.base_color_texture = Some(texture);
             }
         }
@@ -127,7 +127,7 @@ fn tile_mutate(
 
 fn tile_hover(
     mut mouse_events: EventReader<MouseMotion>,
-    tile_move: Query<&TileTag, Changed<Transform>>,
+    tile_move: Query<&TileControl, Changed<Transform>>,
     window: Single<&mut Window>,
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,

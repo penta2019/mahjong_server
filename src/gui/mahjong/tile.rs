@@ -23,15 +23,16 @@ impl GuiTile {
 
     pub fn mutate(&mut self, m_tile: Tile) {
         self.tile = m_tile;
-        self.tile_tag().mutate(m_tile);
+        self.tile_control().mutate(m_tile);
     }
 
     pub fn set_emissive(&self, color: LinearRgba) {
-        self.tile_tag().set_emissive(&mut param().materials, color);
+        self.tile_control()
+            .set_emissive(&mut param().materials, color);
     }
 
-    fn tile_tag(&self) -> Mut<'_, TileTag> {
-        param().tile_tags.get_mut(self.entity).unwrap()
+    fn tile_control(&self) -> Mut<'_, TileControl> {
+        param().tile_controls.get_mut(self.entity).unwrap()
     }
 }
 

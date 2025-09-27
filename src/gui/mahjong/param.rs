@@ -15,7 +15,7 @@ pub struct StageParam<'w, 's> {
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
-    pub tile_tags: Query<'w, 's, &'static mut TileTag>,
+    pub tile_controls: Query<'w, 's, &'static mut TileControl>,
 
     // EventWriter
     pub camera: EventWriter<'w, CameraMove>,

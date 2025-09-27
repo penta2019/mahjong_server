@@ -27,7 +27,7 @@ use param::{StageParam, param, with_param};
 use player::{GuiPlayer, HandMode, PossibleActions};
 use stage::GuiStage;
 use tile::GuiTile;
-use tile_plugin::{HoveredTile, TileTag, create_tile};
+use tile_plugin::{HoveredTile, TileControl, create_tile};
 
 trait HasEntity {
     fn entity(&self) -> Entity;

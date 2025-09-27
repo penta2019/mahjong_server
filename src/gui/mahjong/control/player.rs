@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use bevy::input::ButtonState;
 
-use super::*;
+use super::{super::Tx, *};
 
 const COLOR_ACTIVE: LinearRgba = LinearRgba::new(0., 0.1, 0., 0.); // ハイライト (打牌可)
 const COLOR_INACTIVE: LinearRgba = LinearRgba::new(0.1, 0., 0., 0.); // ハイライト (打牌不可)

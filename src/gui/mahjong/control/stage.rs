@@ -1,7 +1,10 @@
 use bevy::color::palettes::basic::{BLACK, GREEN};
 
-use super::{super::control::CameraMove, *};
-use crate::model::{Event as MjEvent, *}; // Eventはbevyと衝突
+use super::*;
+use crate::{
+    gui::control::CameraMove,
+    model::{Event as MjEvent, *}, // Eventはbevyと衝突
+};
 
 pub const CAMERA_POS: Vec3 = Vec3::new(0., 0.8, 0.8);
 pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0., -0.02, 0.);
@@ -79,6 +82,10 @@ impl GuiStage {
             camera_seat: 0,
             show_hand: true,
         }
+    }
+
+    pub fn destroy(self) {
+        param().commands.entity(self.entity).despawn();
     }
 
     pub fn set_player(&mut self, seat: Seat) {

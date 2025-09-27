@@ -1,4 +1,7 @@
-use super::*;
+use super::{
+    super::tile_plugin::{TileControl, create_tile},
+    *,
+};
 
 #[derive(Debug)]
 pub struct GuiTile {

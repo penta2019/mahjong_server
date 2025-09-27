@@ -1,37 +1,19 @@
-mod discard;
-mod hand;
-mod meld;
+mod control;
 mod param;
-mod player;
-mod stage;
 mod stage_plugin;
-mod tile;
 mod tile_plugin;
 
-use std::{
-    f32::consts::{FRAC_PI_2, PI},
-    sync::Mutex,
+use std::sync::{
+    Mutex,
+    mpsc::{Receiver, Sender},
 };
 
 use bevy::prelude::*;
 
-use super::{move_animation::MoveAnimation, util::reparent_tranform};
-use crate::model::*;
+use crate::model::{ClientMessage, ServerMessage};
 
-pub use stage_plugin::{Rx, Tx};
-
-use discard::GuiDiscard;
-use hand::GuiHand;
-use meld::GuiMeld;
-use param::{StageParam, param, with_param};
-use player::{GuiPlayer, HandMode, PossibleActions};
-use stage::GuiStage;
-use tile::GuiTile;
-use tile_plugin::{HoveredTile, TileControl, create_tile};
-
-trait HasEntity {
-    fn entity(&self) -> Entity;
-}
+pub type Tx = Sender<ClientMessage>;
+pub type Rx = Receiver<ServerMessage>;
 
 pub struct MahjongPlugin {
     txrx: Mutex<Option<(Tx, Rx)>>,

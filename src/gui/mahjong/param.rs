@@ -4,6 +4,7 @@ use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput};
 
 use super::{
     super::{control::CameraMove, util::print_hierarchy},
+    tile_plugin::{HoveredTile, TileControl},
     *,
 };
 

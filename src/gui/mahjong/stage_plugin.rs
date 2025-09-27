@@ -1,16 +1,11 @@
-use std::sync::{
-    Arc, Mutex,
-    mpsc::{Receiver, Sender},
-};
+use std::sync::{Arc, Mutex};
 
-use super::*;
-use crate::{
-    gui::mahjong::player::PossibleActions,
-    model::{Event as MjEvent, *},
+use super::{
+    control::{GuiStage, PossibleActions},
+    param::{StageParam, param, with_param},
+    *,
 };
-
-pub type Tx = Sender<ClientMessage>;
-pub type Rx = Receiver<ServerMessage>;
+use crate::model::{Event as MjEvent, *};
 
 pub struct StagePlugin {
     txrx: Mutex<Option<(Tx, Rx)>>,
@@ -30,6 +25,12 @@ impl Plugin for StagePlugin {
         app.insert_resource(StageResource::new(tx, rx))
             .add_systems(Update, process_event);
     }
+}
+
+fn process_event(mut param: StageParam, mut stage_res: ResMut<StageResource>) {
+    with_param(&mut param, || {
+        stage_res.update();
+    });
 }
 
 #[derive(Resource, Debug)]
@@ -57,7 +58,7 @@ impl StageResource {
             {
                 // ステージ上のentityを再帰的にすべて削除
                 if let Some(stage) = self.stage.take() {
-                    param().commands.entity(stage.entity()).despawn();
+                    stage.destroy();
                 }
 
                 // 空のステージを作成
@@ -106,10 +107,4 @@ impl StageResource {
         // 使用されなかったEventを全て破棄
         param().drain_events();
     }
-}
-
-fn process_event(mut param: StageParam, mut stage_res: ResMut<StageResource>) {
-    with_param(&mut param, || {
-        stage_res.update();
-    });
 }

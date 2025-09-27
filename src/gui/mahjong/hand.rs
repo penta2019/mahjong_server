@@ -24,7 +24,7 @@ impl GuiHand {
 
     pub fn init(&mut self, m_tiles: &[Tile]) {
         for t in m_tiles {
-            let tile = create_tile(*t);
+            let tile = GuiTile::new(*t);
             param()
                 .commands
                 .entity(tile.entity())
@@ -34,7 +34,7 @@ impl GuiHand {
     }
 
     pub fn deal_tile(&mut self, m_tile: Tile) {
-        let tile = create_tile(m_tile);
+        let tile = GuiTile::new(m_tile);
         param()
             .commands
             .entity(tile.entity())
@@ -64,10 +64,7 @@ impl GuiHand {
         };
 
         if tile.tile() == Z8 {
-            tile.mutate(
-                &mut param().tile_tags.get_mut(tile.entity()).unwrap(),
-                m_tile,
-            );
+            tile.mutate(m_tile);
         } else {
             assert!(tile.tile() == m_tile);
         }
@@ -79,16 +76,16 @@ impl GuiHand {
         tile
     }
 
-    pub fn find_tile_from_entity(&self, e_tile: Entity) -> Option<(Tile, IsDrawn)> {
+    pub fn find_tile_from_entity(&self, e_tile: Entity) -> Option<(&GuiTile, IsDrawn)> {
         for tile in &self.tiles {
             if e_tile == tile.entity() {
-                return Some((tile.tile(), false));
+                return Some((tile, false));
             }
         }
         if let Some(tile) = &self.drawn_tile
             && tile.entity() == e_tile
         {
-            return Some((tile.tile(), true));
+            return Some((tile, true));
         }
         None
     }

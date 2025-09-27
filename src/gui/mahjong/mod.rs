@@ -2,11 +2,12 @@ mod discard;
 mod hand;
 mod meld;
 mod move_to;
+mod param;
 mod player;
 mod stage;
-mod stage_param;
 mod stage_plugin;
 mod tile;
+mod tile_plugin;
 
 use std::{
     f32::consts::{FRAC_PI_2, PI},
@@ -24,10 +25,11 @@ use discard::GuiDiscard;
 use hand::GuiHand;
 use meld::GuiMeld;
 use move_to::MoveTo;
+use param::{MahjongParam, param, with_param};
 use player::{GuiPlayer, HandMode, PossibleActions};
 use stage::GuiStage;
-use stage_param::{StageParam, create_tile, param, with_param};
-use tile::{GuiTile, HoveredTile, TileTag};
+use tile::GuiTile;
+use tile_plugin::{HoveredTile, TileTag, create_tile};
 
 trait HasEntity {
     fn entity(&self) -> Entity;
@@ -50,7 +52,7 @@ impl Plugin for MahjongPlugin {
         let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
         app.add_plugins((
             move_to::MovePlugin,
-            tile::TilePlugin,
+            tile_plugin::TilePlugin,
             stage_plugin::StagePlugin::new(tx, rx),
         ));
     }

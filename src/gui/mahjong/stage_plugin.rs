@@ -108,7 +108,7 @@ impl StageResource {
     }
 }
 
-fn process_event(mut param: StageParam, mut stage_res: ResMut<StageResource>) {
+fn process_event(mut param: MahjongParam, mut stage_res: ResMut<StageResource>) {
     with_param(&mut param, || {
         stage_res.update();
     });

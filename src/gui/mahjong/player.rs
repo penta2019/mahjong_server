@@ -244,11 +244,10 @@ impl GuiPlayer {
     }
 
     fn change_target_tile_color(&self, color: LinearRgba) {
-        let param = param();
         if let Some(e_tile) = self.target_tile
-            && let Ok(tile_tag) = param.tile_tags.get(e_tile)
+            && let Some((tile, _)) = self.hand.find_tile_from_entity(e_tile)
         {
-            tile_tag.set_emissive(&mut param.materials, color);
+            tile.set_emissive(color);
         }
     }
 
@@ -265,7 +264,7 @@ impl GuiPlayer {
                         action: if is_drawn {
                             Action::nop()
                         } else {
-                            Action::discard(tile)
+                            Action::discard(tile.tile())
                         },
                     };
                     actions.tx.lock().unwrap().send(action).unwrap();

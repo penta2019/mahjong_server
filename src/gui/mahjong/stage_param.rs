@@ -15,11 +15,11 @@ pub struct StageParam<'w, 's> {
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
-    pub tile_tags: Query<'w, 's, &'static TileTag>,
+    pub tile_tags: Query<'w, 's, &'static mut TileTag>,
 
     // EventWriter
     pub camera: EventWriter<'w, CameraMove>,
-    pub tile_mutate: EventWriter<'w, TileMutate>,
+    // pub tile_mutate: EventWriter<'w, TileMutate>,
     // pub update_hovered_tile: EventWriter<'w, UpdateHoveredTile>,
 
     // EventReader

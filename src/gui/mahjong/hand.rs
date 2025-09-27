@@ -64,9 +64,10 @@ impl GuiHand {
         };
 
         if tile.tile() == Z8 {
-            param()
-                .tile_mutate
-                .write(TileMutate::mutate(&mut tile, m_tile));
+            tile.mutate(
+                &mut param().tile_tags.get_mut(tile.entity()).unwrap(),
+                m_tile,
+            );
         } else {
             assert!(tile.tile() == m_tile);
         }

@@ -11,12 +11,8 @@ impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(amend_tile_texture)
             .add_event::<HoveredTile>()
-            .add_systems(Update, tile_hover)
-            .add_event::<TileMutate>()
-            .add_systems(Update, tile_mutate)
-            // StageのUpdateと同時実行するとremoveとinsertが重なって
-            // insertしたばかりのMoveToが削除されることがあるのでPostUpdateを使用
-            .add_systems(PostUpdate, move_animation);
+            .add_systems(PreUpdate, tile_hover)
+            .add_systems(PostUpdate, tile_mutate);
     }
 }
 
@@ -49,6 +45,12 @@ impl GuiTile {
     pub fn tile(&self) -> Tile {
         self.tile
     }
+
+    pub fn mutate(&mut self, tag: &mut TileTag, m_tile: Tile) {
+        assert!(self.tile == tag.tile);
+        self.tile = m_tile;
+        tag.tile = m_tile;
+    }
 }
 
 impl HasEntity for GuiTile {
@@ -73,14 +75,13 @@ impl TileTag {
 }
 
 #[derive(Component, Debug)]
-pub struct TileMesh {
+struct TileMesh {
     tile_entity: Entity,
 }
 
-impl TileMesh {
-    pub fn tile_entity(&self) -> Entity {
-        self.tile_entity
-    }
+#[derive(Event, Debug)]
+pub struct HoveredTile {
+    pub tile_entity: Option<Entity>,
 }
 
 fn amend_tile_texture(
@@ -132,12 +133,21 @@ fn amend_tile_texture(
     }
 }
 
-// #[derive(Event, Debug)]
-// pub struct UpdateHoveredTile;
-
-#[derive(Event, Debug)]
-pub struct HoveredTile {
-    pub tile_entity: Option<Entity>,
+fn tile_mutate(
+    tile_tags: Query<&mut TileTag, Changed<TileTag>>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for tile_tag in tile_tags {
+        println!("changed: {}", tile_tag.tile);
+        for h in &tile_tag.mesh_materials {
+            let material = materials.get_mut(h).unwrap();
+            if material.base_color_texture.is_some() {
+                let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
+                material.base_color_texture = Some(texture);
+            }
+        }
+    }
 }
 
 fn tile_hover(
@@ -174,82 +184,10 @@ fn tile_hover(
     for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
         if let Ok(m) = tile_meshes.get(*entity) {
             tile_hover.write(HoveredTile {
-                tile_entity: Some(m.tile_entity()),
+                tile_entity: Some(m.tile_entity),
             });
             return;
         }
     }
     tile_hover.write(HoveredTile { tile_entity: None });
-}
-
-#[derive(Event, Debug)]
-pub struct TileMutate {
-    entity: Entity,
-    tile: Tile,
-}
-
-impl TileMutate {
-    pub fn mutate(tile: &mut GuiTile, m_tile: Tile) -> Self {
-        tile.tile = m_tile;
-        Self {
-            entity: tile.entity,
-            tile: m_tile,
-        }
-    }
-}
-
-fn tile_mutate(
-    mut reader: EventReader<TileMutate>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut tile_tags: Query<&mut TileTag>,
-) {
-    for ev in reader.read() {
-        let e_tile = ev.entity;
-        let Ok(mut tile_tag) = tile_tags.get_mut(e_tile) else {
-            return;
-        };
-
-        tile_tag.tile = ev.tile;
-        for h in &tile_tag.mesh_materials {
-            let material = materials.get_mut(h).unwrap();
-            if material.base_color_texture.is_some() {
-                let texture = asset_server.load(format!("texture/{}.png", tile_tag.tile));
-                material.base_color_texture = Some(texture);
-            }
-        }
-    }
-}
-
-// 等速移動アニメーション
-#[derive(Component, Debug)]
-pub struct MoveTo {
-    // 移動アニメーションの目標(終了)位置
-    target: Vec3,
-    // アニメーションの残りフレーム数
-    // フレームごとに値を1づつ下げていき, 1/frame_left * (target - 現在位置)つづ移動
-    // frame_left == 1のときはtargetをそのまま現在位置にセットしてanimationを終了 (= MoveToを削除)
-    frame_left: usize,
-}
-
-impl MoveTo {
-    pub fn new(target: Vec3) -> Self {
-        Self {
-            target,
-            frame_left: 12,
-        }
-    }
-}
-
-fn move_animation(mut commands: Commands, move_tos: Query<(Entity, &mut Transform, &mut MoveTo)>) {
-    for (e, mut tf, mut move_to) in move_tos {
-        if move_to.frame_left > 1 {
-            let diff_vec = move_to.target - tf.translation;
-            tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
-            move_to.frame_left -= 1;
-        } else {
-            tf.translation = move_to.target;
-            commands.entity(e).remove::<MoveTo>();
-        }
-    }
 }

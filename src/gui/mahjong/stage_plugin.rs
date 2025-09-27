@@ -13,20 +13,20 @@ pub type Tx = Sender<ClientMessage>;
 pub type Rx = Receiver<ServerMessage>;
 
 pub struct StagePlugin {
-    event_rx: Mutex<Option<(Tx, Rx)>>,
+    txrx: Mutex<Option<(Tx, Rx)>>,
 }
 
 impl StagePlugin {
     pub fn new(tx: Tx, rx: Rx) -> Self {
         Self {
-            event_rx: Mutex::new(Some((tx, rx))),
+            txrx: Mutex::new(Some((tx, rx))),
         }
     }
 }
 
 impl Plugin for StagePlugin {
     fn build(&self, app: &mut App) {
-        let (tx, rx) = self.event_rx.lock().unwrap().take().unwrap();
+        let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
         app.insert_resource(StageResource::new(tx, rx))
             .add_systems(Update, process_event);
     }

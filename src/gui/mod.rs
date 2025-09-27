@@ -24,9 +24,9 @@ pub fn run(tx: Tx, rx: Rx) {
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins,
-        slider::SliderPlugin,
         camera::ControlPlugin,
         debug::DebugPlugin,
+        slider::SliderPlugin,
         menu::MenuPlugin,
         move_animation::MoveAnimationPlugin,
         mahjong::MahjongPlugin::new(tx, rx),

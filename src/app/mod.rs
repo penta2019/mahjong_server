@@ -5,7 +5,6 @@ mod client;
 mod engine;
 mod replay;
 
-pub use calculator::CalculatorApp;
-pub use client::ClientApp;
-pub use engine::EngineApp;
-pub use replay::ReplayApp;
+pub use self::{
+    calculator::CalculatorApp, client::ClientApp, engine::EngineApp, replay::ReplayApp,
+};

@@ -9,11 +9,13 @@ use std::fmt;
 
 use crate::model::*;
 
-pub use debug::Debug;
-pub use event_printer::EventPrinter;
-pub use event_sender::{EventSender, StageSender};
-pub use event_writer::{EventWriter, TenhouEventWriter};
-pub use message_channel::MessageChannel;
+pub use self::{
+    debug::Debug,
+    event_printer::EventPrinter,
+    event_sender::{EventSender, StageSender},
+    event_writer::{EventWriter, TenhouEventWriter},
+    message_channel::MessageChannel,
+};
 
 pub trait Listener: Send {
     fn notify_event(&mut self, _stg: &Stage, _event: &Event) {}

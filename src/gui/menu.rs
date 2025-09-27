@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    control::ControlContext,
+    camera::CameraContext,
     slider::{Slider, SliderState, create_slider},
 };
 
@@ -9,22 +9,22 @@ pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_state(MenuState::Off)
+        app.insert_state(MenuState::Hidden)
             .insert_resource(MenuConfig::default())
             .add_systems(Startup, setup)
-            .add_systems(OnEnter(MenuState::On), state_on)
-            .add_systems(OnExit(MenuState::On), state_off)
+            .add_systems(OnEnter(MenuState::Visible), state_visible)
+            .add_systems(OnEnter(MenuState::Hidden), state_hidden)
             .add_systems(
                 Update,
-                handler_button_interaction.run_if(in_state(MenuState::On)),
+                handler_button_interaction.run_if(in_state(MenuState::Visible)),
             );
     }
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MenuState {
-    On,
-    Off,
+    Visible,
+    Hidden,
 }
 
 #[derive(Resource, Debug, Default)]
@@ -118,9 +118,9 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
     config.mouse_sensitivity_slider = Some(sensitivity_slider);
 }
 
-fn state_on(
+fn state_visible(
     config: Res<MenuConfig>,
-    control_context: Res<ControlContext>,
+    control_context: Res<CameraContext>,
     mut visibility: Single<&mut Visibility, With<MenuUI>>,
     mut slider_state: ResMut<NextState<SliderState>>,
     sliders: Query<(Entity, &mut Slider)>,
@@ -135,9 +135,9 @@ fn state_on(
     }
 }
 
-fn state_off(
+fn state_hidden(
     config: Res<MenuConfig>,
-    mut control_context: ResMut<ControlContext>,
+    mut control_context: ResMut<CameraContext>,
     mut visivility: Single<&mut Visibility, With<MenuUI>>,
     mut slider_state: ResMut<NextState<SliderState>>,
     sliders: Query<(Entity, &Slider)>,

@@ -2,7 +2,7 @@ use bevy::{
     gltf::GltfMaterialName, input::mouse::MouseMotion, prelude::*, scene::SceneInstanceReady,
 };
 
-use super::super::control::MainCamera;
+use super::super::camera::MainCamera;
 use crate::model::Tile;
 
 pub struct TilePlugin;

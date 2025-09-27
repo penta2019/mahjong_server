@@ -1,22 +1,22 @@
 use bevy::prelude::*;
 
-use super::{control::ControlContext, util::MsecTimer};
+use super::{camera::CameraContext, util::MsecTimer};
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DebugState {
-    On,
-    Off,
+    Hidden,
+    Visible,
 }
 
 pub struct DebugPlugin;
 
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_state(DebugState::Off)
+        app.insert_state(DebugState::Hidden)
             .add_systems(Startup, setup)
-            .add_systems(OnEnter(DebugState::On), state_on)
-            .add_systems(OnExit(DebugState::On), state_off)
-            .add_systems(Update, update.run_if(in_state(DebugState::On)));
+            .add_systems(OnEnter(DebugState::Hidden), state_hidden)
+            .add_systems(OnEnter(DebugState::Visible), state_visible)
+            .add_systems(Update, update.run_if(in_state(DebugState::Visible)));
     }
 }
 
@@ -74,19 +74,19 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-fn state_on(mut visibility: Single<&mut Visibility, With<Container>>) {
+fn state_visible(mut visibility: Single<&mut Visibility, With<Container>>) {
     **visibility = Visibility::Visible;
 }
 
-fn state_off(mut visibility: Single<&mut Visibility, With<Container>>) {
+fn state_hidden(mut visibility: Single<&mut Visibility, With<Container>>) {
     **visibility = Visibility::Hidden;
 }
 
 fn update(
     time: Res<Time>,
     mut timer: Local<MsecTimer<500>>,
-    camera: Single<&Transform, With<super::control::MainCamera>>,
-    control_context: Res<ControlContext>,
+    camera: Single<&Transform, With<super::camera::MainCamera>>,
+    control_context: Res<CameraContext>,
     mut texts: Query<(&mut Text, &Info)>,
 ) {
     let is_update_period = timer.tick(&time);

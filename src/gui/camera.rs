@@ -6,30 +6,29 @@ use bevy::{
     window::{CursorGrabMode, WindowFocused},
 };
 
-use super::{debug::DebugState, menu::MenuState};
-
 pub struct ControlPlugin;
 
 impl Plugin for ControlPlugin {
     fn build(&self, app: &mut App) {
-        let mut ctx = ControlContext::default();
+        let mut ctx = CameraContext::default();
         ctx.set_mouse_sensitivity(30.0);
 
-        app.insert_state(FlyState::Off)
+        app.insert_state(CameraState::Fix)
             .insert_resource(ctx)
             .add_event::<CameraMove>()
             .add_systems(Startup, setup)
+            .add_systems(OnEnter(CameraState::Fly), state_fly)
+            .add_systems(OnEnter(CameraState::Fix), state_fix)
             .add_systems(
                 Update,
                 (
-                    keyboard_handler_global,
                     camera_event,
                     (
                         camera_move_by_keyboard,
                         camera_look_by_mouse,
                         window_focus_handler,
                     )
-                        .run_if(in_state(FlyState::On)),
+                        .run_if(in_state(CameraState::Fly)),
                 ),
             );
     }
@@ -39,20 +38,19 @@ impl Plugin for ControlPlugin {
 pub struct MainCamera;
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum FlyState {
-    On,
-    Off,
+pub enum CameraState {
+    Fly,
+    Fix,
 }
 
 #[derive(Resource, Debug)]
-pub struct ControlContext {
-    can_fly: bool,
+pub struct CameraContext {
     sensitivity: (f32, f32), // (value, percent)
     yaw: f32,                // [-PI, PI)
     pitch: f32,              // (-FRAC_PI_2, FRAC_PI_2)
 }
 
-impl ControlContext {
+impl CameraContext {
     pub fn set_mouse_sensitivity(&mut self, percent: f32) {
         // 0% -> 10%(0.01), 100% -> 100%(0.1)
         self.sensitivity = (0.1 * (0.1 + 0.9 * percent / 100.0), percent);
@@ -90,10 +88,9 @@ impl ControlContext {
     }
 }
 
-impl Default for ControlContext {
+impl Default for CameraContext {
     fn default() -> Self {
         Self {
-            can_fly: false,
             sensitivity: (0.0, 0.0),
             yaw: 0.0,
             pitch: 0.0,
@@ -125,17 +122,7 @@ impl CameraMove {
     }
 }
 
-fn set_cursor_visibility(window: &mut Window, visible: bool) {
-    if visible {
-        window.cursor_options.visible = true;
-        window.cursor_options.grab_mode = CursorGrabMode::None;
-    } else {
-        window.cursor_options.visible = false;
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
-    }
-}
-
-fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
+fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
     context.set_pitch(-30.0_f32.to_radians());
     let tf_camera = Transform {
         translation: Vec3::new(0., 1., 1.),
@@ -154,58 +141,17 @@ fn setup(mut commands: Commands, mut context: ResMut<ControlContext>) {
     ));
 }
 
-fn keyboard_handler_global(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut context: ResMut<ControlContext>,
-    mut next_fly_state: ResMut<NextState<FlyState>>,
-    debug_state: Res<State<DebugState>>,
-    mut next_debug_state: ResMut<NextState<DebugState>>,
-    menu_state: Res<State<MenuState>>,
-    mut next_menu_state: ResMut<NextState<MenuState>>,
-    mut window: Single<&mut Window>,
-) {
-    let mut set_fly_state = |enable| {
-        if enable {
-            next_fly_state.set(FlyState::On);
-            set_cursor_visibility(&mut window, false);
-        } else {
-            next_fly_state.set(FlyState::Off);
-            set_cursor_visibility(&mut window, true);
-        }
-    };
+fn state_fly(mut window: Single<&mut Window>) {
+    set_cursor_visibility(&mut window, false);
+}
 
-    if keys.just_pressed(KeyCode::Tab) {
-        next_debug_state.set(if **debug_state == DebugState::On {
-            DebugState::Off
-        } else {
-            DebugState::On
-        });
-    }
-
-    if keys.just_pressed(KeyCode::Space) {
-        context.can_fly = !context.can_fly;
-        set_fly_state(context.can_fly);
-    }
-
-    if keys.just_pressed(KeyCode::Escape) {
-        match **menu_state {
-            MenuState::On => {
-                // メニューを閉じる State: Disabled -> On, Off -> Off
-                next_menu_state.set(MenuState::Off);
-                set_fly_state(context.can_fly);
-            }
-            MenuState::Off => {
-                // メニューを開く State: On -> Disabled, Off -> Off
-                next_menu_state.set(MenuState::On);
-                set_fly_state(false);
-            }
-        }
-    }
+fn state_fix(mut window: Single<&mut Window>) {
+    set_cursor_visibility(&mut window, true);
 }
 
 fn camera_event(
     mut reader: EventReader<CameraMove>,
-    mut context: ResMut<ControlContext>,
+    mut context: ResMut<CameraContext>,
     mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
     for ev in reader.read() {
@@ -261,7 +207,7 @@ fn camera_move_by_keyboard(
 
 fn camera_look_by_mouse(
     mut mouse_events: EventReader<MouseMotion>,
-    mut context: ResMut<ControlContext>,
+    mut context: ResMut<CameraContext>,
     mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
     if mouse_events.is_empty() {
@@ -297,5 +243,15 @@ fn window_focus_handler(
     for event in focus_events.read() {
         // flyモードのまま他のアプリケーションにフォーカスが移動した場合の処理
         set_cursor_visibility(&mut window, !event.focused);
+    }
+}
+
+fn set_cursor_visibility(window: &mut Window, visible: bool) {
+    if visible {
+        window.cursor_options.visible = true;
+        window.cursor_options.grab_mode = CursorGrabMode::None;
+    } else {
+        window.cursor_options.visible = false;
+        window.cursor_options.grab_mode = CursorGrabMode::Locked;
     }
 }

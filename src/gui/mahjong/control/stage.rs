@@ -2,7 +2,7 @@ use bevy::color::palettes::basic::{BLACK, GREEN};
 
 use super::*;
 use crate::{
-    gui::control::CameraMove,
+    gui::camera::CameraMove,
     model::{Event as MjEvent, *}, // Eventはbevyと衝突
 };
 

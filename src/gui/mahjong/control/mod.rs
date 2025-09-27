@@ -16,14 +16,15 @@ use crate::{
     model::*,
 };
 
-pub use player::PossibleActions;
-pub use stage::GuiStage;
+pub use self::{player::PossibleActions, stage::GuiStage};
 
-use discard::GuiDiscard;
-use hand::GuiHand;
-use meld::GuiMeld;
-use player::{GuiPlayer, HandMode};
-use tile::GuiTile;
+use self::{
+    discard::GuiDiscard,
+    hand::GuiHand,
+    meld::GuiMeld,
+    player::{GuiPlayer, HandMode},
+    tile::GuiTile,
+};
 
 trait HasEntity {
     fn entity(&self) -> Entity;

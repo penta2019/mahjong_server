@@ -2,6 +2,7 @@ mod control;
 mod debug;
 mod mahjong;
 mod menu;
+mod move_animation;
 mod slider;
 mod util;
 
@@ -17,6 +18,7 @@ pub fn run(tx: Tx, rx: Rx) {
         control::ControlPlugin,
         debug::DebugPlugin,
         menu::MenuPlugin,
+        move_animation::MoveAnimationPlugin,
         mahjong::MahjongPlugin::new(tx, rx),
     ));
     app.run();

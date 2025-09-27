@@ -95,7 +95,7 @@ impl GuiMeld {
             commands.entity(tile.entity()).insert((
                 ChildOf(meld_item.entity()),
                 tfs[i],
-                MoveTo::new(move_to),
+                MoveAnimation::new(move_to),
             ));
         }
 
@@ -133,10 +133,11 @@ impl GuiMeld {
             0.,
         );
 
-        param()
-            .commands
-            .entity(e_tile)
-            .insert((ChildOf(e_meld_item), tf, MoveTo::new(move_to)));
+        param().commands.entity(e_tile).insert((
+            ChildOf(e_meld_item),
+            tf,
+            MoveAnimation::new(move_to),
+        ));
 
         meld_item.tiles.push(tile);
     }

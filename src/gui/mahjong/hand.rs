@@ -96,7 +96,7 @@ impl GuiHand {
             param()
                 .commands
                 .entity(tile.entity())
-                .insert(MoveTo::new(Vec3::new(
+                .insert(MoveAnimation::new(Vec3::new(
                     GuiTile::WIDTH * i as f32,
                     GuiTile::HEIGHT / 2.,
                     GuiTile::DEPTH / 2.,

@@ -66,7 +66,7 @@ impl GuiDiscard {
         param().commands.entity(tile.entity()).insert((
             ChildOf(self.entity),
             tf,
-            MoveTo::new(move_to),
+            MoveAnimation::new(move_to),
         ));
         self.tiles.push((tile, pos));
     }
@@ -76,7 +76,7 @@ impl GuiDiscard {
             param()
                 .commands
                 .entity(tile.entity())
-                .insert(MoveTo::new(*pos));
+                .insert(MoveAnimation::new(*pos));
         }
     }
 

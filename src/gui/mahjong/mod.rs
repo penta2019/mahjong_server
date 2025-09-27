@@ -1,7 +1,6 @@
 mod discard;
 mod hand;
 mod meld;
-mod move_to;
 mod param;
 mod player;
 mod stage;
@@ -16,7 +15,7 @@ use std::{
 
 use bevy::prelude::*;
 
-use super::util::reparent_tranform;
+use super::{move_animation::MoveAnimation, util::reparent_tranform};
 use crate::model::*;
 
 pub use stage_plugin::{Rx, Tx};
@@ -24,8 +23,7 @@ pub use stage_plugin::{Rx, Tx};
 use discard::GuiDiscard;
 use hand::GuiHand;
 use meld::GuiMeld;
-use move_to::MoveTo;
-use param::{MahjongParam, param, with_param};
+use param::{StageParam, param, with_param};
 use player::{GuiPlayer, HandMode, PossibleActions};
 use stage::GuiStage;
 use tile::GuiTile;
@@ -51,7 +49,6 @@ impl Plugin for MahjongPlugin {
     fn build(&self, app: &mut App) {
         let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
         app.add_plugins((
-            move_to::MovePlugin,
             tile_plugin::TilePlugin,
             stage_plugin::StagePlugin::new(tx, rx),
         ));

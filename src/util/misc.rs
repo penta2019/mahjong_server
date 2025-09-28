@@ -1,7 +1,5 @@
 use std::fmt;
 
-use serde_json::Value;
-
 use crate::error;
 
 pub type Res<T = ()> = Result<T, Box<dyn std::error::Error>>;
@@ -131,32 +129,4 @@ pub fn rank_by_rank_vec<T: Ord + Clone>(v: &[T]) -> Vec<usize> {
         res[i] = r;
     }
     res
-}
-
-pub fn as_usize(v: &Value) -> usize {
-    v.as_i64().unwrap() as usize
-}
-
-pub fn as_i32(v: &Value) -> i32 {
-    v.as_i64().unwrap() as i32
-}
-
-pub fn as_str(v: &Value) -> &str {
-    v.as_str().unwrap()
-}
-
-pub fn as_bool(v: &Value) -> bool {
-    v.as_bool().unwrap()
-}
-
-pub fn as_array(v: &Value) -> &[Value] {
-    v.as_array().unwrap()
-}
-
-pub fn as_enumerate(v: &Value) -> impl Iterator<Item = (usize, &Value)> {
-    v.as_array().unwrap().iter().enumerate()
-}
-
-pub fn as_vec<T>(f: impl Fn(&Value) -> T, v: &Value) -> Vec<T> {
-    as_array(v).iter().map(f).collect()
 }

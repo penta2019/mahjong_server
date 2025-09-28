@@ -1,3 +1,5 @@
+use rand::{prelude::IndexedRandom, rng};
+
 use super::*;
 
 pub type IsDrawn = bool;
@@ -68,9 +70,17 @@ impl GuiHand {
             // ツモ牌を暗黙に手牌から取り除く場合 (加槓,暗槓など)
             self.drawn_tile.take().unwrap()
         } else {
-            // 対戦モードで他家の手牌がすべてZ8の場合
-            if let Some(pos) = self.tiles.iter().position(|t| t.tile() == Z8) {
-                self.tiles.remove(pos)
+            // 対戦モードで他家の手牌にZ8(基本的には全てZ8)が含まれる場合
+            // 手牌のZ8の中からランダムに選択
+            let pos_candidates = self
+                .tiles
+                .iter()
+                .enumerate()
+                .filter(|(_, t)| t.tile() == Z8)
+                .map(|(i, _)| i)
+                .collect::<Vec<usize>>();
+            if let Some(pos) = pos_candidates.choose(&mut rng()) {
+                self.tiles.remove(*pos)
             } else {
                 panic!("{} not found in hand", m_tile);
             }

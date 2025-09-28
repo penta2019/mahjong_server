@@ -32,6 +32,7 @@ pub struct GuiPlayer {
     target_state: TargetState,
     can_discard: bool,
     possible_actions: Option<PossibleActions>,
+    preferred_discard_tile: Option<Entity>,
 }
 
 impl GuiPlayer {
@@ -76,6 +77,7 @@ impl GuiPlayer {
             target_state: TargetState::Released,
             can_discard: false,
             possible_actions: None,
+            preferred_discard_tile: None,
         }
     }
 
@@ -117,7 +119,10 @@ impl GuiPlayer {
         if is_riichi {
             self.discard.set_riichi();
         }
-        let tile = self.hand.take_tile(m_tile, is_drawn);
+        let tile = self
+            .hand
+            .take_tile(m_tile, is_drawn, self.preferred_discard_tile);
+        self.preferred_discard_tile = None;
         self.discard.push_tile(tile);
         self.hand.align();
     }
@@ -131,7 +136,7 @@ impl GuiPlayer {
 
         let tiles_from_hand: Vec<GuiTile> = m_tiles
             .iter()
-            .map(|t| self.hand.take_tile(*t, false))
+            .map(|t| self.hand.take_tile(*t, false, None))
             .collect();
         self.meld.meld(tiles_from_hand, meld_tile, meld_offset);
         self.hand.align();
@@ -167,20 +172,7 @@ impl GuiPlayer {
             }
         }
 
-        // TODO: 打牌以外はとりあえずスキップ
-        // if self
-        //     .possible_actions
-        //     .actions
-        //     .iter()
-        //     .all(|a| a.action_type != ActionType::Discard)
-        // {
-        //     let action = ClientMessage::Action {
-        //         id: possible_actions.id,
-        //         action: Action::nop(),
-        //     };
-        //     possible_actions.tx.lock().unwrap().send(action).unwrap();
-        // }
-
+        // TODO: 打牌以外は一旦今はスキップ
         if let Some(actions) = &self.possible_actions
             && actions
                 .actions
@@ -251,7 +243,7 @@ impl GuiPlayer {
         }
     }
 
-    fn action_discard_tile(&self) -> Option<SelectedAction> {
+    fn action_discard_tile(&mut self) -> Option<SelectedAction> {
         if let Some(e_tile) = self.target_tile
             && let Some(actions) = &self.possible_actions
         {
@@ -259,6 +251,7 @@ impl GuiPlayer {
                 if act.action_type == ActionType::Discard
                     && let Some((tile, is_drawn)) = self.hand.find_tile_from_entity(e_tile)
                 {
+                    self.preferred_discard_tile = Some(tile.entity());
                     return Some(SelectedAction {
                         id: actions.id,
                         action: if is_drawn {

@@ -42,10 +42,23 @@ impl GuiHand {
         self.drawn_tile = Some(tile);
     }
 
-    pub fn take_tile(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
+    pub fn take_tile(
+        &mut self,
+        m_tile: Tile,
+        is_drawn: bool,
+        preferred_tile: Option<Entity>,
+    ) -> GuiTile {
         let mut tile = if is_drawn {
             // 牌を明示的にツモ切り
             self.drawn_tile.take().unwrap()
+        } else if let Some(e_tile) = preferred_tile
+            && let Some(pos) = self
+                .tiles
+                .iter()
+                .position(|t| t.tile() == m_tile && t.entity() == e_tile)
+        {
+            // 手牌が見える状態かつ牌が存在し,Discard Actionの打牌として選択している場合
+            self.tiles.remove(pos)
         } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == m_tile) {
             // 手牌が見える状態かつ牌が存在する場合
             self.tiles.remove(pos)

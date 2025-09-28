@@ -5,23 +5,27 @@ use super::*;
 pub enum ServerMessage {
     // clippyの警告が出るのでBox化 #large_enum_variant
     Event(Box<Event>),
-    Action {
-        id: u32,
-        actions: Vec<Action>,
-        tenpais: Vec<Tenpai>,
-    },
-    Info {
-        seat: Seat,
-    },
+    Action(PossibleActions),
+    Info { seat: Seat },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
-    Action {
-        id: u32, // ServerMessageの対応するActionのidをそのままコピー (誤動作防止用)
-        action: Action,
-    },
+    Action(SelectedAction),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PossibleActions {
+    pub id: u32, // 任意のid
+    pub actions: Vec<Action>,
+    pub tenpais: Vec<Tenpai>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SelectedAction {
+    pub id: u32, // ServerMessageの対応するActionのidをそのままコピー (誤動作防止用)
+    pub action: Action,
 }
 
 #[derive(Debug)]
@@ -68,16 +72,16 @@ impl MessageHolder {
 
     pub fn push_actions(&mut self, actions: Vec<Action>, tenpais: Vec<Tenpai>) {
         self.act_id += 1;
-        self.messages.push(ServerMessage::Action {
+        self.messages.push(ServerMessage::Action(PossibleActions {
             id: self.act_id,
             actions,
             tenpais,
-        });
+        }));
     }
 
-    pub fn reset(&mut self) {
-        self.cursor = 0;
-    }
+    // pub fn reset(&mut self) {
+    //     self.cursor = 0;
+    // }
 
     pub fn next(&mut self) -> Option<&ServerMessage> {
         'skip: while self.cursor < self.messages.len() {

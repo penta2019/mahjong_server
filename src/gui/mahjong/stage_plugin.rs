@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use super::{
-    control::{GuiStage, PossibleActions},
+    control::GuiStage,
     param::{StageParam, param, with_param},
     *,
 };
@@ -37,7 +37,7 @@ fn process_event(mut param: StageParam, mut stage_res: ResMut<StageResource>) {
 pub struct StageResource {
     stage: Option<GuiStage>,
     seat: Seat,
-    tx: Arc<Mutex<Tx>>,
+    tx: Mutex<Tx>,
     rx: Mutex<Rx>,
 }
 
@@ -46,7 +46,7 @@ impl StageResource {
         Self {
             stage: None,
             seat: 0,
-            tx: Arc::new(Mutex::new(tx)),
+            tx: Mutex::new(tx),
             rx: Mutex::new(rx),
         }
     }
@@ -80,20 +80,11 @@ impl StageResource {
                     // GuiTileのentityが追加される前にget()が呼び出され失敗する
                     break;
                 }
-                ServerMessage::Action {
-                    id,
-                    actions,
-                    tenpais,
-                } => {
+                ServerMessage::Action(possible_actions) => {
                     self.stage
                         .as_mut()
                         .unwrap()
-                        .handle_actions(PossibleActions::new(
-                            id,
-                            actions,
-                            tenpais,
-                            self.tx.clone(),
-                        ));
+                        .handle_actions(possible_actions);
                 }
                 ServerMessage::Info { seat } => {
                     self.seat = seat; // このメッセージはEventNewより先に受信
@@ -101,8 +92,14 @@ impl StageResource {
             }
         }
 
-        if let Some(stage) = &mut self.stage {
-            stage.handle_gui_events();
+        if let Some(stage) = &mut self.stage
+            && let Some(action) = stage.handle_gui_events()
+        {
+            self.tx
+                .lock()
+                .unwrap()
+                .send(ClientMessage::Action(action))
+                .unwrap();
         }
         // 使用されなかったEventを全て破棄
         param().drain_events();

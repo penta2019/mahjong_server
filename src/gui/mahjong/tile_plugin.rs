@@ -114,7 +114,6 @@ fn tile_mutate(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for tile_control in tile_controls {
-        println!("changed: {}", tile_control.tile);
         for h in &tile_control.mesh_materials {
             let material = materials.get_mut(h).unwrap();
             if material.base_color_texture.is_some() {

@@ -1,8 +1,6 @@
-use std::sync::{Arc, Mutex};
-
 use bevy::input::ButtonState;
 
-use super::{super::Tx, *};
+use super::*;
 
 const COLOR_ACTIVE: LinearRgba = LinearRgba::new(0., 0.1, 0., 0.); // ハイライト (打牌可)
 const COLOR_INACTIVE: LinearRgba = LinearRgba::new(0.1, 0., 0., 0.); // ハイライト (打牌不可)
@@ -14,40 +12,22 @@ pub enum HandMode {
     Open,
 }
 
-#[derive(Debug)]
-pub struct PossibleActions {
-    id: u32,
-    actions: Vec<Action>,
-    tenpais: Vec<Tenpai>,
-    tx: Arc<Mutex<Tx>>,
-}
-
-impl PossibleActions {
-    pub fn new(id: u32, actions: Vec<Action>, tenpais: Vec<Tenpai>, tx: Arc<Mutex<Tx>>) -> Self {
-        Self {
-            id,
-            actions,
-            tenpais,
-            tx,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Eq)]
 enum TargetState {
     Released,
     Pressed,
-    Dragging,
+    // Dragging,
 }
 
 #[derive(Debug)]
 pub struct GuiPlayer {
+    // Event用
     entity: Entity,
     tf_close_hand: Transform,
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
-    // 操作用
+    // Action用
     target_tile: Option<Entity>,
     target_state: TargetState,
     can_discard: bool,
@@ -161,8 +141,9 @@ impl GuiPlayer {
         self.discard.take_last_tile()
     }
 
-    pub fn handle_gui_events(&mut self) {
+    pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
         let param = param();
+        let mut action = None;
 
         for ev in param.hovered_tile.read() {
             self.set_target_tile(ev.tile_entity);
@@ -178,29 +159,48 @@ impl GuiPlayer {
                     }
                     ButtonState::Released => {
                         if self.target_state == TargetState::Pressed {
-                            self.action_discard_tile();
+                            action = self.action_discard_tile();
                         }
                         self.target_state = TargetState::Released;
                     }
                 }
             }
         }
+
+        // TODO: 打牌以外はとりあえずスキップ
+        // if self
+        //     .possible_actions
+        //     .actions
+        //     .iter()
+        //     .all(|a| a.action_type != ActionType::Discard)
+        // {
+        //     let action = ClientMessage::Action {
+        //         id: possible_actions.id,
+        //         action: Action::nop(),
+        //     };
+        //     possible_actions.tx.lock().unwrap().send(action).unwrap();
+        // }
+
+        if let Some(actions) = &self.possible_actions
+            && actions
+                .actions
+                .iter()
+                .all(|a| a.action_type != ActionType::Discard)
+        {
+            action = Some(SelectedAction {
+                id: actions.id,
+                action: Action::nop(),
+            });
+        }
+
+        if action.is_some() {
+            self.possible_actions = None;
+        }
+
+        action
     }
 
     pub fn handle_actions(&mut self, possible_actions: PossibleActions) {
-        // TODO: 打牌以外はとりあえずスキップ
-        if possible_actions
-            .actions
-            .iter()
-            .all(|a| a.action_type != ActionType::Discard)
-        {
-            let action = ClientMessage::Action {
-                id: possible_actions.id,
-                action: Action::nop(),
-            };
-            possible_actions.tx.lock().unwrap().send(action).unwrap();
-        }
-
         self.set_can_discard(true);
         self.possible_actions = Some(possible_actions);
     }
@@ -251,7 +251,7 @@ impl GuiPlayer {
         }
     }
 
-    fn action_discard_tile(&self) {
+    fn action_discard_tile(&self) -> Option<SelectedAction> {
         if let Some(e_tile) = self.target_tile
             && let Some(actions) = &self.possible_actions
         {
@@ -259,19 +259,18 @@ impl GuiPlayer {
                 if act.action_type == ActionType::Discard
                     && let Some((tile, is_drawn)) = self.hand.find_tile_from_entity(e_tile)
                 {
-                    let action = ClientMessage::Action {
+                    return Some(SelectedAction {
                         id: actions.id,
                         action: if is_drawn {
                             Action::nop()
                         } else {
                             Action::discard(tile.tile())
                         },
-                    };
-                    actions.tx.lock().unwrap().send(action).unwrap();
-                    break;
+                    });
                 }
             }
         }
+        None
     }
 }
 

@@ -16,7 +16,7 @@ use crate::{
     model::*,
 };
 
-pub use self::{player::PossibleActions, stage::GuiStage};
+pub use self::stage::GuiStage;
 
 use self::{
     discard::GuiDiscard,

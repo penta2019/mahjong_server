@@ -127,8 +127,8 @@ impl GuiStage {
         self.players[self.camera_seat].handle_actions(possible_actions);
     }
 
-    pub fn handle_gui_events(&mut self) {
-        self.players[self.camera_seat].handle_gui_events();
+    pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
+        self.players[self.camera_seat].handle_gui_events()
     }
 
     fn event_new(&mut self, event: &EventNew) {

@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 
 use crate::{
-    actor::{Actor, SelectedAction},
+    actor::{ActionFuture, Actor},
     control::common::*,
     hand::*,
     listener::Listener,
@@ -114,7 +114,7 @@ impl StageController {
         seat: Seat,
         acts: &[Action],
         tenpais: &[Tenpai],
-    ) -> SelectedAction {
+    ) -> ActionFuture {
         self.actors[seat].select(acts, tenpais)
     }
 

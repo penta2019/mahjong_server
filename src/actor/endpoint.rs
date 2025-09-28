@@ -109,7 +109,7 @@ impl Actor for Endpoint {
         self.seat = seat;
     }
 
-    fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> ActionFuture {
         let mut shared = self.shared.lock().unwrap();
         let act_msg = json!({"type": "Action", "actions": json!(acts), "tenpais": json!(tenpais)});
         shared.msgs.push((act_msg, true));

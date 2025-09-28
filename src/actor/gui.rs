@@ -8,7 +8,7 @@ use std::{
 };
 
 pub use super::*;
-pub use crate::model::MessageHolder;
+use crate::model::{MessageHolder, SelectedAction};
 
 pub struct GuiBuilder;
 
@@ -27,9 +27,8 @@ impl ActorBuilder for GuiBuilder {
 
 #[derive(Debug)]
 struct Shared {
-    action_id: u32,
-    possible_actions: Option<Vec<Action>>,
-    selected_action: Option<Action>,
+    possible_actions: Option<PossibleActions>,
+    selected_action: Option<SelectedAction>,
     waker: Option<Waker>,
 }
 
@@ -50,7 +49,6 @@ impl Gui {
         let conceal = config.args[0].value.as_bool();
 
         let shared = Arc::new(Mutex::new(Shared {
-            action_id: 0,
             possible_actions: None,
             selected_action: None,
             waker: None,
@@ -61,8 +59,10 @@ impl Gui {
             while let Ok(act) = rx.recv() {
                 let mut shared = shared2.lock().unwrap();
                 match act {
-                    ClientMessage::Action { id, action } => {
-                        if id == shared.action_id {
+                    ClientMessage::Action(action) => {
+                        if let Some(actions) = &shared.possible_actions
+                            && action.id == actions.id
+                        {
                             // TODO: actがactionsに含まれるかチェック
                             shared.selected_action = Some(action);
                             if let Some(waker) = shared.waker.take() {
@@ -93,9 +93,8 @@ impl Gui {
         while let Some(msg) = self.messages.next() {
             shared.possible_actions = None;
             shared.selected_action = None;
-            if let ServerMessage::Action { id, actions, .. } = msg {
-                shared.action_id = *id;
-                shared.possible_actions = Some(actions.clone());
+            if let ServerMessage::Action(possible_actions) = msg {
+                shared.possible_actions = Some(possible_actions.clone());
             }
             self.tx.send(msg.clone()).unwrap();
         }
@@ -113,7 +112,7 @@ impl Actor for Gui {
         self.messages = MessageHolder::new(seat, self.conceal);
     }
 
-    fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> ActionFuture {
         self.messages.push_actions(acts.to_vec(), tenpais.to_vec());
         self.flush();
         Box::pin(SelectFuture {
@@ -156,6 +155,6 @@ impl Future for SelectFuture {
             shared.waker = Some(cx.waker().clone());
             return Poll::Pending;
         }
-        Poll::Ready(shared.selected_action.take().unwrap())
+        Poll::Ready(shared.selected_action.take().unwrap().action)
     }
 }

@@ -23,9 +23,9 @@ pub struct Config {
     pub args: Vec<Arg>,
 }
 
-pub type SelectedAction = Pin<Box<dyn Future<Output = Action>>>;
+pub type ActionFuture = Pin<Box<dyn Future<Output = Action>>>;
 
-pub fn ready(act: Action) -> SelectedAction {
+pub fn ready(act: Action) -> ActionFuture {
     Box::pin(std::future::ready(act))
 }
 
@@ -42,7 +42,7 @@ pub trait Actor: Listener + ActorClone + Send {
     // actsの中から任意のアクションを選択して返すFutureを返す.
     // tenpaisは聴牌可能な時に捨て牌と和了牌の組み合わせを示す.
     // Rust1.75でasync traitが実装されたがtraitオブジェクトと一緒には使えない.
-    fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> SelectedAction;
+    fn select(&mut self, acts: &[Action], tenpais: &[Tenpai]) -> ActionFuture;
 
     // アクションの選択の失効通知
     // Actorがアクションの選択を行う前にアクションの選択自体が不可能になった場合に呼ばれる.

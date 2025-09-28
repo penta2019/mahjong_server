@@ -249,7 +249,7 @@ impl Actor for MjaiEndpoint {
         self.seat = seat;
     }
 
-    fn select(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> SelectedAction {
+    fn select(&mut self, acts: &[Action], _tenpais: &[Tenpai]) -> ActionFuture {
         let stg = self.stage.lock().unwrap();
 
         // possible_actionを追加

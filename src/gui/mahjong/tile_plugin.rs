@@ -29,6 +29,7 @@ pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Ti
             SceneRoot(tile_model),
             TileControl {
                 tile,
+                is_mutating: false,
                 mesh_materials: vec![],
             },
         ))
@@ -38,12 +39,14 @@ pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Ti
 #[derive(Component, Debug)]
 pub struct TileControl {
     tile: Tile,
+    is_mutating: bool, // tile_mutateの処理フラグ
     mesh_materials: Vec<Handle<StandardMaterial>>,
 }
 
 impl TileControl {
     pub fn mutate(&mut self, tile: Tile) {
         self.tile = tile;
+        self.is_mutating = true;
     }
 
     pub fn set_emissive(&self, materials: &mut Assets<StandardMaterial>, color: LinearRgba) {
@@ -72,8 +75,6 @@ fn tile_texture(
     let Ok(mut tile_control) = tile_controls.get_mut(e_tile) else {
         return;
     };
-    // テクスチャ張替え用のコンポーネントは以降不要なので削除
-    // commands.entity(e_tile).remove::<TileControl>();
 
     // 牌のテクスチャを適切なものに張替え
     // ハイライト表示を行うために見た目が同じでも牌毎に異なるmaterialを作成
@@ -113,7 +114,12 @@ fn tile_mutate(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for tile_control in tile_controls {
+    for mut tile_control in tile_controls {
+        if !tile_control.is_mutating {
+            continue;
+        }
+        tile_control.is_mutating = false;
+
         for h in &tile_control.mesh_materials {
             let material = materials.get_mut(h).unwrap();
             if material.base_color_texture.is_some() {

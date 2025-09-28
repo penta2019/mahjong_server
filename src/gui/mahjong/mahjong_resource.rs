@@ -1,48 +1,18 @@
 use std::sync::Mutex;
 
-use super::{
-    control::GuiStage,
-    param::{StageParam, param, with_param},
-    *,
-};
+use super::{control::GuiStage, control_param::param, *};
 use crate::model::{Event as MjEvent, *};
 
-pub struct StagePlugin {
-    txrx: Mutex<Option<(Tx, Rx)>>,
-}
-
-impl StagePlugin {
-    pub fn new(tx: Tx, rx: Rx) -> Self {
-        Self {
-            txrx: Mutex::new(Some((tx, rx))),
-        }
-    }
-}
-
-impl Plugin for StagePlugin {
-    fn build(&self, app: &mut App) {
-        let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
-        app.insert_resource(StageResource::new(tx, rx))
-            .add_systems(Update, process_event);
-    }
-}
-
-fn process_event(mut param: StageParam, mut stage_res: ResMut<StageResource>) {
-    with_param(&mut param, || {
-        stage_res.update();
-    });
-}
-
 #[derive(Resource, Debug)]
-pub struct StageResource {
+pub struct MajongResource {
     stage: Option<GuiStage>,
     seat: Seat,
     tx: Mutex<Tx>,
     rx: Mutex<Rx>,
 }
 
-impl StageResource {
-    fn new(tx: Tx, rx: Rx) -> Self {
+impl MajongResource {
+    pub fn new(tx: Tx, rx: Rx) -> Self {
         Self {
             stage: None,
             seat: 0,
@@ -51,7 +21,7 @@ impl StageResource {
         }
     }
 
-    fn update(&mut self) {
+    pub fn update(&mut self) {
         while let Ok(msg) = self.rx.lock().unwrap().try_recv() {
             if let ServerMessage::Event(ev) = &msg
                 && let MjEvent::New(_) = ev.as_ref()

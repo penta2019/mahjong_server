@@ -155,8 +155,8 @@ impl GuiPlayer {
         }
 
         for ev in param.mouse_input.read() {
-            if ev.button == MouseButton::Left {
-                match ev.state {
+            match ev.button {
+                MouseButton::Left => match ev.state {
                     ButtonState::Pressed => {
                         if self.target_tile.is_some() {
                             self.target_state = TargetState::Pressed;
@@ -168,7 +168,14 @@ impl GuiPlayer {
                         }
                         self.target_state = TargetState::Released;
                     }
-                }
+                },
+                MouseButton::Right => match ev.state {
+                    ButtonState::Pressed => {
+                        action = self.action_nop();
+                    }
+                    ButtonState::Released => {}
+                },
+                _ => {}
             }
         }
 
@@ -241,6 +248,16 @@ impl GuiPlayer {
         {
             tile.set_emissive(color);
         }
+    }
+
+    fn action_nop(&mut self) -> Option<SelectedAction> {
+        if let Some(actions) = &self.possible_actions {
+            return Some(SelectedAction {
+                id: actions.id,
+                action: Action::nop(),
+            });
+        }
+        None
     }
 
     fn action_discard_tile(&mut self) -> Option<SelectedAction> {

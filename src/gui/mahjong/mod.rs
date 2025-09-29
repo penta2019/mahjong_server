@@ -1,6 +1,6 @@
+mod button;
 mod control;
 mod control_param;
-mod mahjong_resource;
 mod tile_plugin;
 
 use std::sync::{
@@ -11,8 +11,8 @@ use std::sync::{
 use bevy::prelude::*;
 
 use self::{
+    control::MahjonGuiControl,
     control_param::{ControlParam, with_param},
-    mahjong_resource::MajongResource,
 };
 use crate::model::{ClientMessage, ServerMessage};
 
@@ -35,12 +35,12 @@ impl Plugin for MahjongPlugin {
     fn build(&self, app: &mut App) {
         let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
         app.add_plugins(tile_plugin::TilePlugin)
-            .insert_resource(MajongResource::new(tx, rx))
-            .add_systems(Update, mahjong_main_loop);
+            .insert_resource(MahjonGuiControl::new(tx, rx))
+            .add_systems(Update, control_loop);
     }
 }
 
-fn mahjong_main_loop(mut param: ControlParam, mut stage_res: ResMut<MajongResource>) {
+fn control_loop(mut param: ControlParam, mut stage_res: ResMut<MahjonGuiControl>) {
     with_param(&mut param, || {
         stage_res.update();
     });

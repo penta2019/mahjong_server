@@ -1,11 +1,10 @@
 use std::thread::{self, ThreadId};
 
-use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput};
+use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput, prelude::*};
 
 use super::{
     super::{camera::CameraMove, util::print_hierarchy},
     tile_plugin::{HoveredTile, TileControl},
-    *,
 };
 
 // stage_plugin::stage_main_loopから呼び出される関数(controlディレクトリのモジュール)から使用するパラメータ

@@ -103,10 +103,6 @@ impl GuiStage {
         }
     }
 
-    // pub fn get_target_tile(&self) -> Option<(Entity, Tile, IsDrawn)> {
-    //     self.players[self.camera_seat].get_target_tile()
-    // }
-
     pub fn handle_event(&mut self, event: &MjEvent) {
         self.players[self.camera_seat].on_event();
         match event {

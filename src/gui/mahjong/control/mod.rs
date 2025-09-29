@@ -23,7 +23,7 @@ use crate::{
 
 use self::{
     discard::GuiDiscard,
-    hand::GuiHand,
+    hand::{GuiHand, IsDrawn},
     meld::GuiMeld,
     player::{GuiPlayer, HandMode},
     stage::GuiStage,

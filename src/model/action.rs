@@ -132,11 +132,3 @@ pub struct Tenpai {
     pub winning_tiles: Vec<WinningTile>, // 聴牌になる和了牌のリスト
     pub is_furiten: bool,                // フリテンの有無
 }
-
-// 用途不明
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// #[serde(tag = "type")]
-// pub struct PossibleActions {
-//     pub actions: Vec<Action>,
-//     pub tenpais: Vec<Tenpai>,
-// }

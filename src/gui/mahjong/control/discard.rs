@@ -48,8 +48,10 @@ impl GuiDiscard {
 
         // event.is_riichi == trueの時以外に直前のリーチ宣言牌が鳴きで他家の副露に移動した場合なども含む
         if let Some(riichi_index) = self.riichi_index {
-            // リーチ宣言牌とその次の牌は位置が少しずれる
-            if i_tile == riichi_index || i_tile == riichi_index + 1 {
+            // リーチ宣言牌とその次の牌は位置が少しずれる (リーチ宣言牌の次の打牌で行が変わるタイミングは除く)
+            if i_tile == riichi_index
+                || (i_tile == riichi_index + 1 && i_tile % GuiDiscard::TILES_IN_ROW != 0)
+            {
                 pos += Vec3::new((GuiTile::HEIGHT - GuiTile::WIDTH) / 2., 0., 0.);
             }
             // リーチ宣言牌を横に倒す

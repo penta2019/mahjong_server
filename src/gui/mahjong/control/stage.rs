@@ -6,8 +6,8 @@ use crate::{
     model::{Event as MjEvent, *}, // Eventはbevyと衝突
 };
 
-pub const CAMERA_POS: Vec3 = Vec3::new(0., 0.8, 0.8);
-pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0., -0.02, 0.);
+pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.8, 0.8);
+pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.02, 0.0);
 
 #[derive(Resource, Debug)]
 pub struct GuiStage {
@@ -29,7 +29,7 @@ impl GuiStage {
         let entity = commands
             .spawn((
                 Name::new("Stage".to_string()),
-                Transform::from_xyz(0., 0., 0.),
+                Transform::from_xyz(0.0, 0.0, 0.0),
                 Mesh3d(meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
                 MeshMaterial3d(materials.add(Color::from(GREEN))),
             ))
@@ -40,7 +40,7 @@ impl GuiStage {
         commands.spawn((
             Name::new("Info".to_string()),
             ChildOf(entity),
-            Transform::from_xyz(0., 0.001, 0.),
+            Transform::from_xyz(0.0, 0.001, 0.0),
             Mesh3d(meshes.add(Plane3d::default().mesh().size(0.12, 0.12))),
             MeshMaterial3d(materials.add(Color::from(BLACK))),
         ));
@@ -58,7 +58,7 @@ impl GuiStage {
                 Transform::from_translation(
                     Quat::from_rotation_y(FRAC_PI_2 * i as f32) * Vec3::ONE,
                 )
-                .looking_at(Vec3::new(0., 0.1, 0.), Vec3::new(0., 1., 0.)),
+                .looking_at(Vec3::new(0.0, 0.1, 0.0), Vec3::new(0.0, 1.0, 0.0)),
             ));
         }
 

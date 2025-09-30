@@ -3,7 +3,7 @@ use super::*;
 #[derive(Debug)]
 pub struct GuiDiscard {
     entity: Entity,
-    // 捨て牌のVec3は(0., 0., 0.)から開始し横(x)にTILE_WIDTHずつスライドしていく
+    // 捨て牌のVec3は(0.0, 0.0, 0.0)から開始し横(x)にTILE_WIDTHずつスライドしていく
     // 各行の捨て牌は6個までなのでpos_tiles.len() % 6 == 0のときは
     // xを0.にリセットしてyをTILE_HEIGHTだけマイナス方向にスライド
     // 例外的にリーチ宣言牌とその次の牌(行の先頭は例外)の場合は
@@ -37,9 +37,9 @@ impl GuiDiscard {
         let mut pos = if let Some((_, last_pos)) = self.tiles.last() {
             if i_tile.is_multiple_of(GuiDiscard::TILES_IN_ROW) {
                 let y = -GuiTile::HEIGHT * (i_tile / GuiDiscard::TILES_IN_ROW) as f32;
-                Vec3::new(0., y, 0.)
+                Vec3::new(0.0, y, 0.0)
             } else {
-                last_pos + Vec3::new(GuiTile::WIDTH, 0., 0.)
+                last_pos + Vec3::new(GuiTile::WIDTH, 0.0, 0.0)
             }
         } else {
             Vec3::default()
@@ -50,9 +50,9 @@ impl GuiDiscard {
         if let Some(riichi_index) = self.riichi_index {
             // リーチ宣言牌とその次の牌は位置が少しずれる (リーチ宣言牌の次の打牌で行が変わるタイミングは除く)
             if i_tile == riichi_index
-                || (i_tile == riichi_index + 1 && i_tile % GuiDiscard::TILES_IN_ROW != 0)
+                || (i_tile == riichi_index + 1 && !i_tile.is_multiple_of(GuiDiscard::TILES_IN_ROW))
             {
-                pos += Vec3::new((GuiTile::HEIGHT - GuiTile::WIDTH) / 2., 0., 0.);
+                pos += Vec3::new((GuiTile::HEIGHT - GuiTile::WIDTH) / 2.0, 0.0, 0.0);
             }
             // リーチ宣言牌を横に倒す
             if i_tile == riichi_index {
@@ -64,7 +64,7 @@ impl GuiDiscard {
         tf.rotation = rot;
 
         // 捨て牌が通る(鳴きやロンが入らない)まで少しずらしておく
-        let move_to = pos + Vec3::new(GuiTile::WIDTH / 2., -GuiTile::WIDTH / 2., 0.);
+        let move_to = pos + Vec3::new(GuiTile::WIDTH / 2.0, -GuiTile::WIDTH / 4.0, 0.0);
         param().commands.entity(tile.entity()).insert((
             ChildOf(self.entity),
             tf,

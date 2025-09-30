@@ -121,8 +121,8 @@ impl GuiHand {
                 .entity(tile.entity())
                 .insert(MoveAnimation::new(Vec3::new(
                     GuiTile::WIDTH * i as f32,
-                    GuiTile::HEIGHT / 2.,
-                    GuiTile::DEPTH / 2.,
+                    GuiTile::HEIGHT / 2.0,
+                    GuiTile::DEPTH / 2.0,
                 )));
         }
     }
@@ -130,8 +130,8 @@ impl GuiHand {
     fn tf_tile(&self, is_drawn: bool) -> Transform {
         Transform::from_xyz(
             GuiTile::WIDTH * self.tiles.len() as f32 + if is_drawn { 0.005 } else { 0. },
-            GuiTile::HEIGHT / 2.,
-            GuiTile::DEPTH / 2.,
+            GuiTile::HEIGHT / 2.0,
+            GuiTile::DEPTH / 2.0,
         )
     }
 }

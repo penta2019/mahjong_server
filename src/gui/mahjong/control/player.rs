@@ -43,7 +43,7 @@ impl GuiPlayer {
 
         let entity = commands.spawn(Name::new("Player")).id();
 
-        let tf_close_hand = Transform::from_xyz(-0.12, 0., 0.21);
+        let tf_close_hand = Transform::from_xyz(-0.12, 0.0, 0.21);
         let hand = GuiHand::new();
         commands
             .entity(hand.entity())
@@ -53,7 +53,7 @@ impl GuiPlayer {
         commands.entity(discard.entity()).insert((
             ChildOf(entity),
             Transform {
-                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2., 0.074),
+                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074),
                 rotation: Quat::from_rotation_x(-FRAC_PI_2),
                 scale: Vec3::ONE,
             },
@@ -63,7 +63,7 @@ impl GuiPlayer {
         commands.entity(meld.entity()).insert((
             ChildOf(entity),
             Transform {
-                translation: Vec3::new(0.25, GuiTile::DEPTH / 2., 0.22),
+                translation: Vec3::new(0.25, GuiTile::DEPTH / 2.0, 0.22),
                 rotation: Quat::from_rotation_x(-FRAC_PI_2),
                 scale: Vec3::ONE,
             },

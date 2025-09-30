@@ -16,7 +16,7 @@ impl GuiMeld {
         Self {
             entity,
             items: vec![],
-            item_ofsset_x: 0.,
+            item_ofsset_x: 0.0,
         }
     }
 
@@ -61,10 +61,10 @@ impl GuiMeld {
         let commands = &mut param().commands;
 
         let mut meld_item = GuiMeldItem::new();
-        self.item_ofsset_x -= meld_item_width + GuiTile::WIDTH / 4.;
+        self.item_ofsset_x -= meld_item_width + GuiTile::WIDTH / 4.0;
         commands.entity(meld_item.entity()).insert((
             ChildOf(self.entity),
-            Transform::from_xyz(self.item_ofsset_x, 0., 0.),
+            Transform::from_xyz(self.item_ofsset_x, 0.0, 0.0),
         ));
 
         if let Some(i) = meld_index {
@@ -77,14 +77,14 @@ impl GuiMeld {
             });
         }
 
-        let mut offset_x = 0.; // 次の牌の基準位置
+        let mut offset_x = 0.0; // 次の牌の基準位置
         for (i, tile) in tiles.iter().enumerate() {
             tfs[i].translation =
                 reparent_tranform(tile.entity(), self.entity, &param().globals).translation;
 
-            let mut move_to = Vec3::new(offset_x, 0., 0.);
+            let mut move_to = Vec3::new(offset_x, 0.0, 0.0);
             if Some(i) == meld_index {
-                let frac_diff_2 = (GuiTile::HEIGHT - GuiTile::WIDTH) / 2.;
+                let frac_diff_2 = (GuiTile::HEIGHT - GuiTile::WIDTH) / 2.0;
                 move_to.x += frac_diff_2;
                 move_to.y -= frac_diff_2;
                 offset_x += GuiTile::HEIGHT;
@@ -126,11 +126,11 @@ impl GuiMeld {
             FRAC_PI_2
         });
 
-        let frac_diff_2 = (GuiTile::HEIGHT - GuiTile::WIDTH) / 2.;
+        let frac_diff_2 = (GuiTile::HEIGHT - GuiTile::WIDTH) / 2.0;
         let move_to = Vec3::new(
             GuiTile::WIDTH * meld_index as f32 + frac_diff_2,
             GuiTile::WIDTH - frac_diff_2,
-            0.,
+            0.0,
         );
 
         param().commands.entity(e_tile).insert((

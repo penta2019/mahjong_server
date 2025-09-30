@@ -82,6 +82,21 @@ impl MahjonGuiControl {
                     break;
                 }
                 ServerMessage::Action(possible_actions) => {
+                    // Nopのみしか選択肢がない場合は即時応答
+                    if possible_actions.actions.len() == 1
+                        && possible_actions.actions[0].action_type == ActionType::Nop
+                    {
+                        self.tx
+                            .lock()
+                            .unwrap()
+                            .send(ClientMessage::Action(SelectedAction {
+                                id: possible_actions.id,
+                                action: Action::nop(),
+                            }))
+                            .unwrap();
+                        break;
+                    }
+
                     self.stage
                         .as_mut()
                         .unwrap()

@@ -4,7 +4,7 @@ use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput, prelude::*}
 
 use super::{
     super::{camera::CameraMove, util::print_hierarchy},
-    button::ActionButton,
+    button::ActionTypeButton,
     tile_plugin::{HoveredTile, TileControl},
 };
 
@@ -23,7 +23,7 @@ pub struct ControlParam<'w, 's> {
         's,
         (
             &'static Interaction,
-            &'static mut ActionButton,
+            &'static mut ActionTypeButton,
             &'static mut BorderColor,
         ),
         Changed<Interaction>,

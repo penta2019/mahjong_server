@@ -1,6 +1,6 @@
 use bevy::input::ButtonState;
 
-use crate::gui::mahjong::button::create_action_button;
+use crate::gui::mahjong::button::crate_action_type_button;
 
 use super::*;
 
@@ -29,12 +29,21 @@ pub struct GuiPlayer {
     hand: GuiHand,
     discard: GuiDiscard,
     meld: GuiMeld,
+
     // Action用
     target_tile: Option<Entity>,
     preferred_discard_tile: Option<Entity>,
     target_state: TargetState,
     possible_actions: Option<PossibleActions>,
-    action_buttons_root: Option<Entity>,
+    // アクションのタイプのみを表示するメインメニュー
+    // 選択されたアクションタイプが
+    // * 一つしかない場合 -> すぐに実行
+    // * 複数存在する場合 -> サブメニューで候補一覧を表示
+    action_main_menu: Option<Entity>,
+    // 同じActionTypeが複数ある場合の候補一覧またはリーチ時のキャンセルボタンを表示するサブメニュー
+    action_sub_menu: Option<Entity>,
+    // リーチ宣言牌として可能な打牌一覧, リーチ時以外は空
+    riichi_discard_tiles: Vec<Tile>,
 }
 
 impl GuiPlayer {
@@ -79,7 +88,9 @@ impl GuiPlayer {
             preferred_discard_tile: None,
             target_state: TargetState::Released,
             possible_actions: None,
-            action_buttons_root: None,
+            action_main_menu: None,
+            action_sub_menu: None,
+            riichi_discard_tiles: vec![],
         }
     }
 
@@ -151,7 +162,7 @@ impl GuiPlayer {
     pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
         let action0 = self.handle_hovered_tile();
         let action1 = self.handle_mouse_input();
-        let action2 = self.handle_action_buttons();
+        let action2 = self.handle_action_type_buttons();
 
         if let Some(action) = action0.or(action1).or(action2)
             && let Some(actions) = self.possible_actions.take()
@@ -167,7 +178,10 @@ impl GuiPlayer {
     }
 
     pub fn handle_actions(&mut self, actions: PossibleActions) {
-        self.action_buttons_root = create_action_buttons(&actions.actions);
+        let types = ordered_action_types(&actions.actions);
+        if !types.is_empty() {
+            self.action_main_menu = Some(create_action_menu(&types));
+        }
         self.possible_actions = Some(actions);
         self.update_target_tile_color();
     }
@@ -202,7 +216,11 @@ impl GuiPlayer {
                 },
                 MouseButton::Right => match ev.state {
                     ButtonState::Pressed => {
-                        action = self.action_nop();
+                        if self.action_sub_menu.is_some() {
+                            self.cancel_sub_menu();
+                        } else {
+                            action = self.action_nop();
+                        }
                     }
                     ButtonState::Released => {}
                 },
@@ -212,26 +230,48 @@ impl GuiPlayer {
         action
     }
 
-    fn handle_action_buttons(&self) -> Option<Action> {
+    fn handle_action_type_buttons(&mut self) -> Option<Action> {
         let param = param();
         let mut action = None;
         for (interaction, action_button, mut border_color) in &mut param.action_buttons {
-            println!("{:?}", action_button);
             match *interaction {
                 Interaction::Pressed => {
+                    // サブメニューのキャンセルボタンの処理
+                    if self.action_sub_menu.is_some()
+                        && action_button.action_type == ActionType::Nop
+                    {
+                        self.cancel_sub_menu();
+                        continue;
+                    }
+
+                    // メインメニューのボタン処理
                     if let Some(actions) = &self.possible_actions {
-                        let candicate_actions: Vec<_> = actions
+                        let actions: Vec<_> = actions
                             .actions
                             .iter()
                             .filter(|a| action_button.action_type == a.action_type)
+                            .map(|a| a.clone())
                             .collect();
-                        match candicate_actions.len() {
+                        match actions.len() {
                             0 => {}
                             1 => {
-                                action = Some(candicate_actions[0].clone());
+                                let action0 = actions[0].clone();
+                                if action0.action_type == ActionType::Riichi {
+                                    self.riichi_discard_tiles = action0.tiles;
+                                    if let Some(root) = self.action_main_menu {
+                                        param.commands.entity(root).insert(Visibility::Hidden);
+                                    }
+                                    // リーチのキャンセルボタンを生成
+                                    self.action_sub_menu = Some(create_action_sub_menu(&[]));
+                                } else {
+                                    action = Some(action0);
+                                }
                             }
                             2.. => {
-                                todo!();
+                                if let Some(root) = self.action_main_menu {
+                                    param.commands.entity(root).insert(Visibility::Hidden);
+                                }
+                                self.action_sub_menu = Some(create_action_sub_menu(&actions));
                             }
                         }
                     }
@@ -250,7 +290,11 @@ impl GuiPlayer {
     fn clear_actions(&mut self) {
         self.possible_actions = None;
         self.update_target_tile_color();
-        if let Some(root) = self.action_buttons_root.take() {
+        self.riichi_discard_tiles = vec![];
+        if let Some(root) = self.action_main_menu.take() {
+            param().commands.entity(root).despawn();
+        }
+        if let Some(root) = self.action_sub_menu.take() {
             param().commands.entity(root).despawn();
         }
     }
@@ -278,11 +322,18 @@ impl GuiPlayer {
     fn get_target_tile_if_discardable(&self) -> Option<(&GuiTile, IsDrawn)> {
         let e_tile = self.target_tile?;
         let (tile, is_drawn) = self.hand.find_tile_from_entity(e_tile)?;
-        let actions = self.possible_actions.as_ref()?;
-        let discard = find_discard(&actions.actions)?;
-        if !discard.tiles.contains(&tile.tile()) {
+        if self.riichi_discard_tiles.is_empty() {
+            // 通常時
+            let actions = self.possible_actions.as_ref()?;
+            let discard = find_discard(&actions.actions)?;
+            if !discard.tiles.contains(&tile.tile()) {
+                return Some((tile, is_drawn));
+            }
+        } else if self.riichi_discard_tiles.contains(&tile.tile()) {
+            // リーチ時
             return Some((tile, is_drawn));
         }
+
         None
     }
 
@@ -302,6 +353,17 @@ impl GuiPlayer {
         }
     }
 
+    fn cancel_sub_menu(&mut self) {
+        if let Some(sub) = self.action_sub_menu {
+            let param = param();
+            self.riichi_discard_tiles = vec![];
+            param.commands.entity(sub).despawn();
+            if let Some(main) = self.action_main_menu {
+                param.commands.entity(main).insert(Visibility::Visible);
+            }
+        }
+    }
+
     fn action_nop(&mut self) -> Option<Action> {
         if self.possible_actions.is_some() {
             return Some(Action::nop());
@@ -311,11 +373,20 @@ impl GuiPlayer {
 
     fn action_discard_tile(&mut self) -> Option<Action> {
         let (tile, is_drawn) = self.get_target_tile_if_discardable()?;
-        let action = if is_drawn {
-            Action::nop()
+        let action = if self.riichi_discard_tiles.is_empty() {
+            if is_drawn {
+                Action::nop()
+            } else {
+                Action::discard(tile.tile())
+            }
         } else {
-            Action::discard(tile.tile())
+            if is_drawn {
+                Action::riichi_drawn()
+            } else {
+                Action::riichi(tile.tile())
+            }
         };
+
         self.preferred_discard_tile = Some(tile.entity());
         Some(action)
     }
@@ -327,14 +398,7 @@ impl HasEntity for GuiPlayer {
     }
 }
 
-fn create_action_buttons(actions: &[Action]) -> Option<Entity> {
-    //-> Vec<impl Bundle> {
-
-    let types = ordered_action_types(actions);
-    if types.is_empty() {
-        return None;
-    }
-
+fn create_action_menu(action_types: &[ActionType]) -> Entity {
     let param = param();
     let root = param
         .commands
@@ -349,22 +413,56 @@ fn create_action_buttons(actions: &[Action]) -> Option<Entity> {
         })
         .id();
 
-    for action_type in types {
+    for action_type in action_types {
         param
             .commands
-            .spawn(create_action_button(
-                action_type,
-                &format!("{:?}", action_type),
+            .spawn(crate_action_type_button(
+                *action_type,
+                &format!("{:?}", *action_type),
             ))
             .insert(ChildOf(root));
     }
 
-    Some(root)
+    root
+}
+
+fn create_action_sub_menu(actions: &[Action]) -> Entity {
+    let param = param();
+    let root = param
+        .commands
+        .spawn(Node {
+            position_type: PositionType::Absolute,
+            right: Val::Percent(20.0),
+            bottom: Val::Percent(18.0),
+            display: Display::Flex,
+            flex_direction: FlexDirection::RowReverse,
+            align_items: AlignItems::Center,
+            ..default()
+        })
+        .id();
+
+    param
+        .commands
+        .spawn(crate_action_type_button(ActionType::Nop, "Cancel"))
+        .insert(ChildOf(root));
+
+    // for action in actions {
+    //     param
+    //         .commands
+    //         .spawn(crate_action_button(
+    //             *action,
+    //             &format!("{:?}", *action),
+    //         ))
+    //         .insert(ChildOf(root));
+    // }
+
+    root
 }
 
 fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
     use ActionType::*;
     let mut types: Vec<_> = [
+        Nop,
         // turn action
         // Discard,
         Tsumo,
@@ -374,7 +472,6 @@ fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
         Kyushukyuhai,
         Nukidora,
         // call action
-        Nop,
         Ron,
         Chi,
         Pon,

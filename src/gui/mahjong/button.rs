@@ -1,19 +1,24 @@
 use bevy::prelude::*;
 
-use crate::model::ActionType;
+use crate::model::{Action, ActionType};
 
 // const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 // const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
 // const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 #[derive(Component, Debug)]
-pub struct ActionButton {
+pub struct ActionTypeButton {
     pub action_type: ActionType,
 }
 
-pub fn create_action_button(action_type: ActionType, text: &str) -> impl Bundle + use<> {
+#[derive(Component, Debug)]
+pub struct ActionButton {
+    pub action: Action,
+}
+
+pub fn crate_action_type_button(action_type: ActionType, text: &str) -> impl Bundle + use<> {
     (
-        ActionButton { action_type },
+        ActionTypeButton { action_type },
         Button,
         Node {
             width: Val::Px(100.0),
@@ -40,3 +45,5 @@ pub fn create_action_button(action_type: ActionType, text: &str) -> impl Bundle 
         )],
     )
 }
+
+pub fn create_action_button(action: &Action) -> impl Bundle + use<> {}

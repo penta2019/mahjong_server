@@ -34,14 +34,14 @@ fn move_animation(
     mut commands: Commands,
     move_tos: Query<(Entity, &mut Transform, &mut MoveAnimation)>,
 ) {
-    for (e, mut tf, mut move_to) in move_tos {
+    for (entity, mut tf, mut move_to) in move_tos {
         if move_to.frame_left > 1 {
             let diff_vec = move_to.target - tf.translation;
             tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
             move_to.frame_left -= 1;
         } else {
             tf.translation = move_to.target;
-            commands.entity(e).remove::<MoveAnimation>();
+            commands.entity(entity).remove::<MoveAnimation>();
         }
     }
 }

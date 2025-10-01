@@ -505,12 +505,12 @@ impl MahjongEngine {
         let wall_count = stg.wall_count;
         drop(stg);
 
-        if let Some(Action { action_type, .. }) = self.melding {
-            match action_type {
+        if let Some(Action { ty, .. }) = self.melding {
+            match ty {
                 Pon | Chi => {}
                 Ankan | Minkan | Kakan => {
                     let (r, kd) = self.draw_kan_tile();
-                    if action_type == Ankan {
+                    if ty == Ankan {
                         self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
                         self.handle_event(Event::deal(turn, r));
                     } else {
@@ -560,7 +560,7 @@ impl MahjongEngine {
             self.waiter.wait();
         };
 
-        let tp = act.action_type;
+        let tp = act.ty;
         let cs = act.tiles.clone();
         self.melding = None;
 
@@ -590,7 +590,7 @@ impl MahjongEngine {
                 assert!(
                     !acts
                         .iter()
-                        .find(|a| a.action_type == Discard)
+                        .find(|a| a.ty == Discard)
                         .unwrap()
                         .tiles
                         .contains(&t)
@@ -611,7 +611,7 @@ impl MahjongEngine {
                 };
                 assert!(
                     acts.iter()
-                        .find(|a| a.action_type == Riichi)
+                        .find(|a| a.ty == Riichi)
                         .unwrap()
                         .tiles
                         .contains(&t)
@@ -658,7 +658,7 @@ impl MahjongEngine {
         let mut n_chi = 0;
         for s in 0..SEAT {
             for act in &acts_list[s] {
-                match act.action_type {
+                match act.ty {
                     Nop => {}
                     Chi => n_chi += 1,
                     Pon => n_pon += 1,
@@ -691,23 +691,23 @@ impl MahjongEngine {
             for (s, f) in &mut selected_actions {
                 if !completed_actors.contains(s) {
                     match f.as_mut().poll(&mut cx) {
-                        Poll::Ready(a) => {
+                        Poll::Ready(act) => {
                             let s = *s;
-                            match a.action_type {
+                            match act.ty {
                                 Nop => {}
-                                Chi => chi = Some((s, a)),
-                                Pon => pon = Some((s, a)),
-                                Minkan => minkan = Some((s, a)),
+                                Chi => chi = Some((s, act)),
+                                Pon => pon = Some((s, act)),
+                                Minkan => minkan = Some((s, act)),
                                 Ron => rons.push(s),
                                 _ => panic!(
                                     "action {} not found in {}",
-                                    a,
+                                    act,
                                     vec_to_string(&acts_list[s])
                                 ),
                             }
 
-                            for a in &acts_list[s] {
-                                match a.action_type {
+                            for act in &acts_list[s] {
+                                match act.ty {
                                     Nop => {}
                                     Chi => n_chi -= 1,
                                     Pon => n_pon -= 1,

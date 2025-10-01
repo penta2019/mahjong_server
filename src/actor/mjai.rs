@@ -300,7 +300,7 @@ impl Actor for MjaiEndpoint {
 
         let act = mjai_act.to_action(self.seat == stg.turn);
         // actがacts内に存在する有効な操作であるかをチェック
-        match act.action_type {
+        match act.ty {
             ActionType::Discard => {
                 if self.seat != stg.turn {
                     error!("invalid discard action");
@@ -434,8 +434,8 @@ fn stream_handler(
             recv()?; // recv none
             {
                 let d = &mut data.lock().unwrap();
-                let a = serde_json::from_value(v2)?;
-                d.selected_action = Some(a);
+                let act = serde_json::from_value(v2)?;
+                d.selected_action = Some(act);
                 d.is_riichi = true;
             }
 

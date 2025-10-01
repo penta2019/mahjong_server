@@ -101,11 +101,11 @@ impl StageController {
         let stg = self.stage.try_read().unwrap();
         // Actorより先にListenrsにイベントを通知
         // Debug(Listener)などが一時停止する可能性があるため, またActorが特定のイベントでクラッシュする際にイベントを前もって補足するため
-        for a in &mut self.listeners {
-            a.notify_event(&stg, event);
+        for listener in &mut self.listeners {
+            listener.notify_event(&stg, event);
         }
-        for a in &mut self.actors {
-            a.notify_event(&stg, event);
+        for actor in &mut self.actors {
+            actor.notify_event(&stg, event);
         }
     }
 

@@ -71,7 +71,7 @@ impl fmt::Debug for dyn Actor {
         let arg_str = conf
             .args
             .iter()
-            .map(|a| format!("{}={}", a.name, a.value))
+            .map(|arg| format!("{}={}", arg.name, arg.value))
             .collect::<Vec<String>>()
             .join(",");
         write!(f, "{}({})", conf.name, arg_str)
@@ -140,12 +140,12 @@ pub fn create_actor(exp: &str) -> Box<dyn Actor> {
                 std::process::exit(0);
             }
 
-            for (i, &a) in args.iter().enumerate() {
-                if !a.is_empty() {
-                    conf.args[i].value = match parse_as(&conf.args[i].value, a) {
+            for (i, &arg) in args.iter().enumerate() {
+                if !arg.is_empty() {
+                    conf.args[i].value = match parse_as(&conf.args[i].value, arg) {
                         Ok(v) => v,
                         Err(err) => {
-                            error!("{}: {}", err, a);
+                            error!("{}: {}", err, arg);
                             std::process::exit(0);
                         }
                     };

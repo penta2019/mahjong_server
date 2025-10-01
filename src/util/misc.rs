@@ -66,12 +66,12 @@ pub fn write_to_file(file_path: &str, data: &str) -> Res {
     Ok(())
 }
 
-// pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, e: &T) {
-//     v.remove(v.iter().position(|x| x == e).unwrap());
+// pub fn vec_remove<T: PartialEq>(v: &mut Vec<T>, x: &T) {
+//     v.remove(v.iter().position(|x| x == x).unwrap());
 // }
 
-pub fn vec_count<T: PartialEq>(v: &[T], e: &T) -> usize {
-    v.iter().filter(|&n| n == e).count()
+pub fn vec_count<T: PartialEq>(v: &[T], x: &T) -> usize {
+    v.iter().filter(|&n| n == x).count()
 }
 
 pub fn vec_to_string<T: fmt::Display>(v: &[T]) -> String {
@@ -119,7 +119,7 @@ pub fn rank_by_index_vec<T: Ord + Clone>(v: &[T]) -> Vec<usize> {
             a.0.cmp(&b.0)
         }
     });
-    i_n.iter().map(|e| e.0).collect()
+    i_n.iter().map(|x| x.0).collect()
 }
 
 // 値が大きい順に並べた時に各要素が何番目であるかを示す配列を返却

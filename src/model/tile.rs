@@ -9,9 +9,9 @@ pub const Z8: Tile = Tile(TZ, UK); // unknown tile
 
 impl Tile {
     pub fn from_symbol(s: &str) -> Self {
-        let cs: Vec<char> = s.chars().collect();
-        let t = tile_type_from_char(cs[0]).unwrap();
-        let n = tile_number_from_char(cs[1]).unwrap();
+        let chars: Vec<char> = s.chars().collect();
+        let t = tile_type_from_char(chars[0]).unwrap();
+        let n = tile_number_from_char(chars[1]).unwrap();
         Self(t, n)
     }
 

@@ -244,18 +244,22 @@ pub enum Action {
 基本的に麻雀英語wikiの表記に従いますが,役の名称はすべて日本語で統一します.
 
 ### 変数名省略
+
 * general
+ty: type (予約語なのでrustプロジェクトで代わりに採用されている変数名を使用)
+ch: char
 n(_): number(_)
 i(_): index(_)
 d(_): delta(_)
 c(_): count(_)
+
 * mahjong
 stg: stage
 ti: Tile type index
 ni: Tile number index
-a: action
 s: seat
 t: tile
+
 * Bevy
 q(_): query(_)
 e(_): entity(_)

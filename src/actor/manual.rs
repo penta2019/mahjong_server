@@ -67,7 +67,7 @@ impl Actor for Manual {
         println!("{}", hand_str);
 
         for (i, act) in acts.iter().enumerate() {
-            let i = if act.action_type == Discard {
+            let i = if act.ty == Discard {
                 "_".to_string()
             } else {
                 i.to_string()
@@ -86,20 +86,20 @@ impl Actor for Manual {
             }
             let buf = prompt();
             let mut chars = buf.chars();
-            let c = if let Some(c) = chars.next() {
-                c
+            let ch = if let Some(ch) = chars.next() {
+                ch
             } else {
                 println!();
                 continue;
             };
-            match c {
+            match ch {
                 'm' | 'p' | 's' | 'z' => {
                     if stg.turn != self.seat {
                         error!("discard not allowed");
                         continue;
                     }
 
-                    let ti = tile_type_from_char(c).unwrap();
+                    let ti = tile_type_from_char(ch).unwrap();
                     let ni = match tile_number_from_char(chars.next().unwrap()) {
                         Ok(n) => n,
                         Err(_) => {
@@ -119,8 +119,8 @@ impl Actor for Manual {
                     }
 
                     if riichi {
-                        if let Some(a) = acts.iter().find(|a| a.action_type == Riichi) {
-                            if a.tiles.contains(&t) {
+                        if let Some(act) = acts.iter().find(|a| a.ty == Riichi) {
+                            if act.tiles.contains(&t) {
                                 println!();
                                 return ready(Action::riichi(t));
                             } else {
@@ -130,8 +130,8 @@ impl Actor for Manual {
                             panic!();
                         }
                     } else {
-                        if let Some(a) = acts.iter().find(|a| a.action_type == Discard) {
-                            if !a.tiles.contains(&t) {
+                        if let Some(act) = acts.iter().find(|a| a.ty == Discard) {
+                            if !act.tiles.contains(&t) {
                                 println!();
                                 return ready(Action::discard(t));
                             } else {
@@ -170,7 +170,7 @@ impl Actor for Manual {
                         continue;
                     }
 
-                    match acts[n].action_type {
+                    match acts[n].ty {
                         Discard => {
                             println!("please select tile");
                         }

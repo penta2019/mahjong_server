@@ -84,7 +84,7 @@ impl MahjonGuiControl {
                 ServerMessage::Action(possible_actions) => {
                     // Nopのみしか選択肢がない場合は即時応答
                     if possible_actions.actions.len() == 1
-                        && possible_actions.actions[0].action_type == ActionType::Nop
+                        && possible_actions.actions[0].ty == ActionType::Nop
                     {
                         self.tx
                             .lock()
@@ -109,12 +109,12 @@ impl MahjonGuiControl {
         }
 
         if let Some(stage) = &mut self.stage
-            && let Some(action) = stage.handle_gui_events()
+            && let Some(act) = stage.handle_gui_events()
         {
             self.tx
                 .lock()
                 .unwrap()
-                .send(ClientMessage::Action(action))
+                .send(ClientMessage::Action(act))
                 .unwrap();
         }
         // 使用されなかったEventを全て破棄

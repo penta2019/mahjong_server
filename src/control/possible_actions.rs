@@ -10,7 +10,7 @@ pub fn calc_possible_turn_actions(
     tenpais: &[Tenpai],
 ) -> Vec<Action> {
     if let Some(act) = melding {
-        match act.action_type {
+        match act.ty {
             ActionType::Chi | ActionType::Pon => {
                 // チー,ポンのあとは打牌のみ
                 return vec![Action::new(
@@ -322,7 +322,7 @@ fn check_ron(stg: &Stage) -> Vec<(Seat, Action)> {
 // 鳴き後の組み換え禁止の牌
 fn calc_restricted_discards(act: &Action) -> Vec<Tile> {
     let mut v = vec![];
-    let tp = act.action_type;
+    let tp = act.ty;
     let cs = &act.tiles;
     match tp {
         ActionType::Chi => {
@@ -467,7 +467,7 @@ pub fn check_pao_for_selected_action(stg: &Stage, seat: Seat, act: &Action) -> b
     }
 
     // 四槓子
-    if act.action_type == ActionType::Minkan {
+    if act.ty == ActionType::Minkan {
         let mut cnt = 0;
         for m in &pl.melds {
             match m.meld_type {

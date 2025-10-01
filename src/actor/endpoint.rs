@@ -65,8 +65,8 @@ impl Endpoint {
                 match conn.recv() {
                     Message::Open => d.cursor = 0,
                     Message::Text(act) => match serde_json::from_str::<Action>(&act) {
-                        Ok(a) => {
-                            d.action = Some(a);
+                        Ok(act) => {
+                            d.action = Some(act);
                             d.waker.take().unwrap().wake();
                         }
                         Err(err) => error!("{}: {}", err, act),

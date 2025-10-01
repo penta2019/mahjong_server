@@ -8,7 +8,7 @@ use crate::model::{Action, ActionType};
 
 #[derive(Component, Debug)]
 pub struct ActionTypeButton {
-    pub action_type: ActionType,
+    pub ty: ActionType,
 }
 
 #[derive(Component, Debug)]
@@ -16,9 +16,9 @@ pub struct ActionButton {
     pub action: Action,
 }
 
-pub fn crate_action_type_button(action_type: ActionType, text: &str) -> impl Bundle + use<> {
+pub fn crate_action_type_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
     (
-        ActionTypeButton { action_type },
+        ActionTypeButton { ty },
         Button,
         Node {
             width: Val::Px(100.0),

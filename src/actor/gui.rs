@@ -59,12 +59,12 @@ impl Gui {
             while let Ok(act) = rx.recv() {
                 let mut shared = shared2.lock().unwrap();
                 match act {
-                    ClientMessage::Action(action) => {
+                    ClientMessage::Action(act) => {
                         if let Some(actions) = &shared.possible_actions
-                            && action.id == actions.id
+                            && act.id == actions.id
                         {
                             // TODO: actがactionsに含まれるかチェック
-                            shared.selected_action = Some(action);
+                            shared.selected_action = Some(act);
                             if let Some(waker) = shared.waker.take() {
                                 waker.wake();
                             }

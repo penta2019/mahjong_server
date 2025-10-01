@@ -164,13 +164,13 @@ impl GuiPlayer {
         let action1 = self.handle_mouse_input();
         let action2 = self.handle_action_type_buttons();
 
-        if let Some(action) = action0.or(action1).or(action2)
-            && let Some(actions) = self.possible_actions.take()
+        if let Some(act) = action0.or(action1).or(action2)
+            && let Some(acts) = self.possible_actions.take()
         {
             self.clear_actions();
             Some(SelectedAction {
-                id: actions.id,
-                action,
+                id: acts.id,
+                action: act,
             })
         } else {
             None
@@ -198,7 +198,7 @@ impl GuiPlayer {
     }
 
     fn handle_mouse_input(&mut self) -> Option<Action> {
-        let mut action = None;
+        let mut act = None;
         for ev in param().mouse_input.read() {
             match ev.button {
                 MouseButton::Left => match ev.state {
@@ -209,7 +209,7 @@ impl GuiPlayer {
                     }
                     ButtonState::Released => {
                         if self.target_state == TargetState::Pressed {
-                            action = self.action_discard_tile();
+                            act = self.action_discard_tile();
                         }
                         self.target_state = TargetState::Released;
                     }
@@ -219,7 +219,7 @@ impl GuiPlayer {
                         if self.action_sub_menu.is_some() {
                             self.cancel_sub_menu();
                         } else {
-                            action = self.action_nop();
+                            act = self.action_nop();
                         }
                     }
                     ButtonState::Released => {}
@@ -227,51 +227,49 @@ impl GuiPlayer {
                 _ => {}
             }
         }
-        action
+        act
     }
 
     fn handle_action_type_buttons(&mut self) -> Option<Action> {
         let param = param();
-        let mut action = None;
+        let mut act = None;
         for (interaction, action_button, mut border_color) in &mut param.action_buttons {
             match *interaction {
                 Interaction::Pressed => {
                     // サブメニューのキャンセルボタンの処理
-                    if self.action_sub_menu.is_some()
-                        && action_button.action_type == ActionType::Nop
-                    {
+                    if self.action_sub_menu.is_some() && action_button.ty == ActionType::Nop {
                         self.cancel_sub_menu();
                         continue;
                     }
 
                     // メインメニューのボタン処理
-                    if let Some(actions) = &self.possible_actions {
-                        let mut actions: Vec<_> = actions
+                    if let Some(possible_acts) = &self.possible_actions {
+                        let mut acts: Vec<_> = possible_acts
                             .actions
                             .iter()
-                            .filter(|a| action_button.action_type == a.action_type)
+                            .filter(|a| action_button.ty == a.ty)
                             .cloned()
                             .collect();
-                        match actions.len() {
+                        match acts.len() {
                             0 => {}
                             1 => {
-                                let action0 = actions.remove(0);
-                                if action0.action_type == ActionType::Riichi {
-                                    self.riichi_discard_tiles = action0.tiles;
+                                let act0 = acts.remove(0);
+                                if act0.ty == ActionType::Riichi {
+                                    self.riichi_discard_tiles = act0.tiles;
                                     if let Some(root) = self.action_main_menu {
                                         param.commands.entity(root).insert(Visibility::Hidden);
                                     }
                                     // リーチのキャンセルボタンを生成
                                     self.action_sub_menu = Some(create_action_sub_menu(&[]));
                                 } else {
-                                    action = Some(action0);
+                                    act = Some(act0);
                                 }
                             }
                             2.. => {
                                 if let Some(root) = self.action_main_menu {
                                     param.commands.entity(root).insert(Visibility::Hidden);
                                 }
-                                self.action_sub_menu = Some(create_action_sub_menu(&actions));
+                                self.action_sub_menu = Some(create_action_sub_menu(&acts));
                             }
                         }
                     }
@@ -284,7 +282,7 @@ impl GuiPlayer {
                 }
             }
         }
-        action
+        act
     }
 
     fn clear_actions(&mut self) {
@@ -374,7 +372,7 @@ impl GuiPlayer {
 
     fn action_discard_tile(&mut self) -> Option<Action> {
         let (tile, is_drawn) = self.get_target_tile_if_discardable()?;
-        let action = if self.riichi_discard_tiles.is_empty() {
+        let act = if self.riichi_discard_tiles.is_empty() {
             if is_drawn {
                 Action::nop()
             } else {
@@ -389,7 +387,7 @@ impl GuiPlayer {
         };
 
         self.preferred_discard_tile = Some(tile.entity());
-        Some(action)
+        Some(act)
     }
 }
 
@@ -414,13 +412,10 @@ fn create_action_menu(action_types: &[ActionType]) -> Entity {
         })
         .id();
 
-    for action_type in action_types {
+    for ty in action_types {
         param
             .commands
-            .spawn(crate_action_type_button(
-                *action_type,
-                &format!("{:?}", *action_type),
-            ))
+            .spawn(crate_action_type_button(*ty, &format!("{:?}", *ty)))
             .insert(ChildOf(root));
     }
 
@@ -447,12 +442,12 @@ fn create_action_sub_menu(actions: &[Action]) -> Entity {
         .spawn(crate_action_type_button(ActionType::Nop, "Cancel"))
         .insert(ChildOf(root));
 
-    // for action in actions {
+    // for act in actions {
     //     param
     //         .commands
     //         .spawn(crate_action_button(
-    //             *action,
-    //             &format!("{:?}", *action),
+    //             *act,
+    //             &format!("{:?}", *act),
     //         ))
     //         .insert(ChildOf(root));
     // }
@@ -479,7 +474,7 @@ fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
         Minkan,
     ]
     .into_iter()
-    .filter(|t| actions.iter().any(|a| a.action_type == *t))
+    .filter(|t| actions.iter().any(|a| a.ty == *t))
     .collect();
 
     // 打牌可能な場合はNop(Skipボタン)は不要
@@ -491,9 +486,7 @@ fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
 }
 
 fn find_discard(actions: &[Action]) -> Option<&Action> {
-    actions
-        .iter()
-        .find(|a| a.action_type == ActionType::Discard)
+    actions.iter().find(|a| a.ty == ActionType::Discard)
 }
 
 fn find_tile(tiles: &[GuiTile], entity: Entity) -> Option<&GuiTile> {

@@ -29,14 +29,14 @@ pub enum ActionType {
 // Chi, Ponなどの標的の牌はstage.last_tileを参照する
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Action {
-    pub action_type: ActionType,
+    pub ty: ActionType,
     pub tiles: Vec<Tile>,
 }
 
 impl Action {
     #[inline]
-    pub fn new(action_type: ActionType, tiles: Vec<Tile>) -> Self {
-        Self { action_type, tiles }
+    pub fn new(ty: ActionType, tiles: Vec<Tile>) -> Self {
+        Self { ty, tiles }
     }
 
     #[inline]
@@ -114,7 +114,7 @@ impl Action {
 
 impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}{:?}", self.action_type, self.tiles)?;
+        write!(f, "{:?}{:?}", self.ty, self.tiles)?;
 
         Ok(())
     }

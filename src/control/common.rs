@@ -152,20 +152,20 @@ pub fn tiles_with_red5(tt: &TileTable, t: Tile) -> Vec<Tile> {
 
 pub fn tiles_from_string(exp: &str) -> Res<Vec<Tile>> {
     let mut tiles = vec![];
-    let undef: usize = 255;
+    let undef: usize = 255; // TODO: Opitonに置き換え
     let mut ti = undef;
-    for c in exp.chars() {
-        match c {
-            'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(c).unwrap(),
+    for ch in exp.chars() {
+        match ch {
+            'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(ch).unwrap(),
             '0'..='9' => {
                 if ti == undef {
                     Err("tile number befor tile type")?;
                 }
-                let ni = c.to_digit(10).unwrap() as usize;
+                let ni = ch.to_digit(10).unwrap() as usize;
                 tiles.push(Tile(ti, ni));
             }
             _ => {
-                Err(format!("invalid char: '{}'", c))?;
+                Err(format!("invalid char: '{}'", ch))?;
             }
         }
     }
@@ -194,9 +194,9 @@ pub fn meld_from_string(exp: &str) -> Res<Meld> {
     let mut from = 0;
     let mut tiles = vec![];
     let mut froms = vec![];
-    for c in exp.chars() {
-        match c {
-            'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(c).unwrap(),
+    for ch in exp.chars() {
+        match ch {
+            'm' | 'p' | 's' | 'z' => ti = tile_type_from_char(ch).unwrap(),
             '+' => {
                 if froms.is_empty() {
                     Err("invalid '+' suffix")?;
@@ -210,13 +210,13 @@ pub fn meld_from_string(exp: &str) -> Res<Meld> {
                 }
 
                 from += 1;
-                let ni = c.to_digit(10).unwrap() as usize;
+                let ni = ch.to_digit(10).unwrap() as usize;
                 nis.push(if ni == 0 { 5 } else { ni });
                 tiles.push(Tile(ti, ni));
                 froms.push(seat);
             }
             _ => {
-                Err(format!("invalid char: '{}'", c))?;
+                Err(format!("invalid char: '{}'", ch))?;
             }
         }
     }
@@ -280,8 +280,8 @@ pub fn meld_to_string(m: &Meld, s: Seat) -> String {
 }
 
 #[inline]
-pub fn tile_type_from_char(c: char) -> Res<Type> {
-    match c {
+pub fn tile_type_from_char(ch: char) -> Res<Type> {
+    match ch {
         'm' => Ok(TM),
         'p' => Ok(TP),
         's' => Ok(TS),
@@ -302,8 +302,8 @@ pub fn tile_type_to_char(ti: Type) -> char {
 }
 
 #[inline]
-pub fn tile_number_from_char(c: char) -> Res<Tnum> {
-    if let Some(i) = c.to_digit(10) {
+pub fn tile_number_from_char(ch: char) -> Res<Tnum> {
+    if let Some(i) = ch.to_digit(10) {
         Ok(i as Tnum)
     } else {
         Err("invalid tile number".to_string())?
@@ -315,13 +315,13 @@ pub fn tile_number_to_char(ni: Tnum) -> char {
     std::char::from_digit(ni as u32, 10).unwrap()
 }
 
-pub fn wind_from_char(c: char) -> Res<Index> {
-    Ok(match c {
+pub fn wind_from_char(ch: char) -> Res<Index> {
+    Ok(match ch {
         'E' => 1,
         'S' => 2,
         'W' => 3,
         'N' => 4,
-        _ => Err(format!("invalid wind symbol: {}", c))?,
+        _ => Err(format!("invalid wind symbol: {}", ch))?,
     })
 }
 

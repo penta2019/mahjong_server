@@ -349,7 +349,7 @@ pub enum MjaiAction {
 
 impl MjaiAction {
     pub fn from_action(stg: &Stage, seat: Seat, act: &Action) -> Option<Self> {
-        let tp = act.action_type;
+        let tp = act.ty;
         let cs = &act.tiles;
         Some(match tp {
             ActionType::Nop => return None,
@@ -541,7 +541,7 @@ fn test_mjai_message() {
     let msgs = [dahai, chi, pon, kakan, daiminkan, ankan, reach, hora, none];
 
     for &msg in &msgs {
-        let a: MjaiAction = serde_json::from_str(msg).unwrap();
-        println!("{:?}", a);
+        let act: MjaiAction = serde_json::from_str(msg).unwrap();
+        println!("{:?}", act);
     }
 }

@@ -1,5 +1,5 @@
 use super::{
-    super::tile_plugin::{TileControl, create_tile},
+    tile_plugin::{TileControl, create_tile},
     *,
 };
 

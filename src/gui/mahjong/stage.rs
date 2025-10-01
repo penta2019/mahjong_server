@@ -1,10 +1,7 @@
 use bevy::color::palettes::basic::{BLACK, GREEN};
 
 use super::*;
-use crate::{
-    gui::camera::CameraMove,
-    model::{Event as MjEvent, *}, // Eventはbevyと衝突
-};
+use crate::gui::camera::CameraMove;
 
 pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.8, 0.8);
 pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.02, 0.0);

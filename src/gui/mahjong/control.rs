@@ -1,38 +1,6 @@
-// ControlParam(= param())に依存するStage UI関連のモジュールはここに配置
-mod discard;
-mod hand;
-mod meld;
-mod player;
-mod stage;
-mod tile;
+use std::sync::Mutex;
 
-use std::{
-    f32::consts::{FRAC_PI_2, PI},
-    sync::Mutex,
-};
-
-use bevy::prelude::*;
-
-use super::control_param::param;
-
-use super::{Rx, Tx};
-use crate::{
-    gui::{move_animation::MoveAnimation, util::reparent_tranform},
-    model::{Event as MjEvent, *},
-};
-
-use self::{
-    discard::GuiDiscard,
-    hand::{GuiHand, IsDrawn},
-    meld::GuiMeld,
-    player::{GuiPlayer, HandMode},
-    stage::GuiStage,
-    tile::GuiTile,
-};
-
-trait HasEntity {
-    fn entity(&self) -> Entity;
-}
+use super::*;
 
 #[derive(Resource, Debug)]
 pub struct MahjonGuiControl {

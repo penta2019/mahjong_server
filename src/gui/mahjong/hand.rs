@@ -1,6 +1,7 @@
 use rand::{prelude::IndexedRandom, rng};
 
 use super::*;
+use crate::gui::move_animation::MoveAnimation;
 
 pub type IsDrawn = bool;
 

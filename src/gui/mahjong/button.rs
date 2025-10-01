@@ -2,23 +2,25 @@ use bevy::prelude::*;
 
 use crate::model::{Action, ActionType};
 
+use super::tile::GuiTile;
+
 // const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 // const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
 // const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 #[derive(Component, Debug)]
-pub struct ActionTypeButton {
+pub struct ActionMenuButton {
     pub ty: ActionType,
 }
 
 #[derive(Component, Debug)]
-pub struct ActionButton {
+pub struct ActionSubMenuButton {
     pub action: Action,
 }
 
-pub fn crate_action_type_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
+pub fn create_action_menu_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
     (
-        ActionTypeButton { ty },
+        ActionMenuButton { ty },
         Button,
         Node {
             width: Val::Px(100.0),
@@ -46,4 +48,23 @@ pub fn crate_action_type_button(ty: ActionType, text: &str) -> impl Bundle + use
     )
 }
 
-pub fn create_action_button(action: &Action) -> impl Bundle + use<> {}
+pub fn create_action_sub_menu_button(action: Action) -> impl Bundle + use<> {
+    let tiles: Vec<_> = action.tiles.iter().map(|t| GuiTile::new(*t)).collect();
+    (
+        ActionSubMenuButton { action },
+        Button,
+        Node {
+            width: Val::Px(100.0),
+            height: Val::Px(60.0),
+            border: UiRect::all(Val::Px(2.0)),
+            margin: UiRect::all(Val::Px(5.0)),
+            // 内部のテキストを中央に表示(横方向)
+            justify_content: JustifyContent::Center,
+            // 内部のテキストを中央に表示(縦方向)
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        BorderColor(Color::BLACK),
+        BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 0.8)),
+    )
+}

@@ -1,8 +1,11 @@
 use bevy::input::ButtonState;
 
-use crate::gui::mahjong::button::crate_action_type_button;
+use crate::model::ActionType;
 
-use super::*;
+use super::{
+    button::{create_action_menu_button, create_action_sub_menu_button},
+    *,
+};
 
 const COLOR_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
 const COLOR_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
@@ -447,7 +450,7 @@ fn create_action_menu(action_types: &[ActionType]) -> Entity {
     for ty in action_types {
         param
             .commands
-            .spawn(crate_action_type_button(*ty, &format!("{:?}", *ty)))
+            .spawn(create_action_menu_button(*ty, &format!("{:?}", *ty)))
             .insert(ChildOf(root));
     }
 
@@ -471,7 +474,7 @@ fn create_action_sub_menu(actions: &[Action]) -> Entity {
 
     param
         .commands
-        .spawn(crate_action_type_button(ActionType::Nop, "Cancel"))
+        .spawn(create_action_menu_button(ActionType::Nop, "Cancel"))
         .insert(ChildOf(root));
 
     // for act in actions {

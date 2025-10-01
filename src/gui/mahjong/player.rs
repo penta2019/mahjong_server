@@ -3,7 +3,7 @@ use bevy::input::ButtonState;
 use crate::model::ActionType;
 
 use super::{
-    button::{create_action_menu_button, create_action_sub_menu_button},
+    button::{ActionButton, create_action_main_button, create_action_sub_button},
     *,
 };
 
@@ -163,11 +163,15 @@ impl GuiPlayer {
     }
 
     pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
-        let action0 = self.handle_hovered_tile();
-        let action1 = self.handle_mouse_input();
-        let action2 = self.handle_action_type_buttons();
+        let selected_act = [
+            self.handle_hovered_tile(),
+            self.handle_mouse_input(),
+            self.handle_action_buttons(),
+        ]
+        .into_iter()
+        .fold(None, |a, b| a.or(b));
 
-        if let Some(act) = action0.or(action1).or(action2)
+        if let Some(act) = selected_act
             && let Some(acts) = self.possible_actions.take()
         {
             self.clear_actions();
@@ -183,7 +187,7 @@ impl GuiPlayer {
     pub fn handle_actions(&mut self, actions: PossibleActions) {
         let types = ordered_action_types(&actions.actions);
         if !types.is_empty() {
-            self.action_main_menu = Some(create_action_menu(&types));
+            self.action_main_menu = Some(create_action_main_menu(&types));
         }
         self.possible_actions = Some(actions);
         self.update_target_tile_color();
@@ -233,50 +237,14 @@ impl GuiPlayer {
         act
     }
 
-    fn handle_action_type_buttons(&mut self) -> Option<Action> {
-        let param = param();
+    fn handle_action_buttons(&mut self) -> Option<Action> {
         let mut act = None;
-        for (interaction, action_button, mut border_color) in &mut param.action_buttons {
+        for (interaction, button, mut border_color) in &mut param().action_menu_buttons {
             match *interaction {
-                Interaction::Pressed => {
-                    // サブメニューのキャンセルボタンの処理
-                    if self.action_sub_menu.is_some() && action_button.ty == ActionType::Nop {
-                        self.cancel_sub_menu();
-                        continue;
-                    }
-
-                    // メインメニューのボタン処理
-                    if let Some(possible_acts) = &self.possible_actions {
-                        let mut acts: Vec<_> = possible_acts
-                            .actions
-                            .iter()
-                            .filter(|a| action_button.ty == a.ty)
-                            .cloned()
-                            .collect();
-                        match acts.len() {
-                            0 => {}
-                            1 => {
-                                let act0 = acts.remove(0);
-                                if act0.ty == ActionType::Riichi {
-                                    self.set_riichi(act0.tiles);
-                                    if let Some(root) = self.action_main_menu {
-                                        param.commands.entity(root).insert(Visibility::Hidden);
-                                    }
-                                    // リーチのキャンセルボタンを生成
-                                    self.action_sub_menu = Some(create_action_sub_menu(&[]));
-                                } else {
-                                    act = Some(act0);
-                                }
-                            }
-                            2.. => {
-                                if let Some(root) = self.action_main_menu {
-                                    param.commands.entity(root).insert(Visibility::Hidden);
-                                }
-                                self.action_sub_menu = Some(create_action_sub_menu(&acts));
-                            }
-                        }
-                    }
-                }
+                Interaction::Pressed => match &*button {
+                    ActionButton::Main(ty) => act = self.on_main_pressed(*ty),
+                    ActionButton::Sub(act0) => act = Some(act0.clone()),
+                },
                 Interaction::Hovered => {
                     border_color.0 = Color::WHITE;
                 }
@@ -288,15 +256,58 @@ impl GuiPlayer {
         act
     }
 
+    fn on_main_pressed(&mut self, ty: ActionType) -> Option<Action> {
+        // サブメニューのキャンセルボタンの処理
+        if self.action_sub_menu.is_some() && ty == ActionType::Nop {
+            self.cancel_sub_menu();
+            return None;
+        }
+
+        let param = param();
+        let mut act = None;
+        // メインメニューのボタン処理
+        if let Some(possible_acts) = &self.possible_actions {
+            let mut acts: Vec<_> = possible_acts
+                .actions
+                .iter()
+                .filter(|a| ty == a.ty)
+                .cloned()
+                .collect();
+            match acts.len() {
+                0 => {}
+                1 => {
+                    let act0 = acts.remove(0);
+                    if act0.ty == ActionType::Riichi {
+                        self.set_riichi(act0.tiles);
+                        if let Some(menu) = self.action_main_menu {
+                            param.commands.entity(menu).insert(Visibility::Hidden);
+                        }
+                        // リーチのキャンセルボタンを生成
+                        self.action_sub_menu = Some(create_action_sub_menu(&[]));
+                    } else {
+                        act = Some(act0);
+                    }
+                }
+                2.. => {
+                    if let Some(menu) = self.action_main_menu {
+                        param.commands.entity(menu).insert(Visibility::Hidden);
+                    }
+                    self.action_sub_menu = Some(create_action_sub_menu(&acts));
+                }
+            }
+        }
+        act
+    }
+
     fn clear_actions(&mut self) {
         self.possible_actions = None;
         self.update_target_tile_color();
         self.set_riichi(vec![]);
-        if let Some(root) = self.action_main_menu.take() {
-            param().commands.entity(root).despawn();
+        if let Some(menu) = self.action_main_menu.take() {
+            param().commands.entity(menu).despawn();
         }
-        if let Some(root) = self.action_sub_menu.take() {
-            param().commands.entity(root).despawn();
+        if let Some(menu) = self.action_sub_menu.take() {
+            param().commands.entity(menu).despawn();
         }
     }
 
@@ -432,9 +443,9 @@ impl HasEntity for GuiPlayer {
     }
 }
 
-fn create_action_menu(action_types: &[ActionType]) -> Entity {
+fn create_action_main_menu(action_types: &[ActionType]) -> Entity {
     let param = param();
-    let root = param
+    let menu = param
         .commands
         .spawn(Node {
             position_type: PositionType::Absolute,
@@ -450,16 +461,16 @@ fn create_action_menu(action_types: &[ActionType]) -> Entity {
     for ty in action_types {
         param
             .commands
-            .spawn(create_action_menu_button(*ty, &format!("{:?}", *ty)))
-            .insert(ChildOf(root));
+            .spawn(create_action_main_button(*ty, &format!("{:?}", *ty)))
+            .insert(ChildOf(menu));
     }
 
-    root
+    menu
 }
 
 fn create_action_sub_menu(actions: &[Action]) -> Entity {
     let param = param();
-    let root = param
+    let menu = param
         .commands
         .spawn(Node {
             position_type: PositionType::Absolute,
@@ -474,20 +485,17 @@ fn create_action_sub_menu(actions: &[Action]) -> Entity {
 
     param
         .commands
-        .spawn(create_action_menu_button(ActionType::Nop, "Cancel"))
-        .insert(ChildOf(root));
+        .spawn(create_action_main_button(ActionType::Nop, "Cancel"))
+        .insert(ChildOf(menu));
 
-    // for act in actions {
-    //     param
-    //         .commands
-    //         .spawn(crate_action_button(
-    //             *act,
-    //             &format!("{:?}", *act),
-    //         ))
-    //         .insert(ChildOf(root));
-    // }
+    for act in actions {
+        param
+            .commands
+            .spawn(create_action_sub_button(act.clone()))
+            .insert(ChildOf(menu));
+    }
 
-    root
+    menu
 }
 
 fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {

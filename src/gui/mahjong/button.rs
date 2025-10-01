@@ -2,25 +2,19 @@ use bevy::prelude::*;
 
 use crate::model::{Action, ActionType};
 
-use super::tile::GuiTile;
+// use super::tile::GuiTile;
 
-// const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
-// const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
-// const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
+const MENU_BACKGROUND: Color = Color::srgba(0.15, 0.15, 0.15, 0.8);
 
-#[derive(Component, Debug)]
-pub struct ActionMenuButton {
-    pub ty: ActionType,
+#[derive(Component, Debug, PartialEq, Eq)]
+pub enum ActionButton {
+    Main(ActionType),
+    Sub(Action),
 }
 
-#[derive(Component, Debug)]
-pub struct ActionSubMenuButton {
-    pub action: Action,
-}
-
-pub fn create_action_menu_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
+pub fn create_action_main_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
     (
-        ActionMenuButton { ty },
+        ActionButton::Main(ty),
         Button,
         Node {
             width: Val::Px(100.0),
@@ -34,7 +28,7 @@ pub fn create_action_menu_button(ty: ActionType, text: &str) -> impl Bundle + us
             ..default()
         },
         BorderColor(Color::BLACK),
-        BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 0.8)),
+        BackgroundColor(MENU_BACKGROUND),
         children![(
             Text::new(text),
             TextFont {
@@ -48,10 +42,11 @@ pub fn create_action_menu_button(ty: ActionType, text: &str) -> impl Bundle + us
     )
 }
 
-pub fn create_action_sub_menu_button(action: Action) -> impl Bundle + use<> {
-    let tiles: Vec<_> = action.tiles.iter().map(|t| GuiTile::new(*t)).collect();
+pub fn create_action_sub_button(action: Action) -> impl Bundle + use<> {
+    // let tiles: Vec<_> = action.tiles.iter().map(|t| GuiTile::new(*t)).collect();
+    let text: String = action.tiles.iter().map(|t| t.to_string()).collect();
     (
-        ActionSubMenuButton { action },
+        ActionButton::Sub(action),
         Button,
         Node {
             width: Val::Px(100.0),
@@ -65,6 +60,16 @@ pub fn create_action_sub_menu_button(action: Action) -> impl Bundle + use<> {
             ..default()
         },
         BorderColor(Color::BLACK),
-        BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 0.8)),
+        BackgroundColor(MENU_BACKGROUND),
+        children![(
+            Text::new(text),
+            TextFont {
+                // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 16.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.9, 0.9, 0.9)),
+            TextShadow::default(),
+        )],
     )
 }

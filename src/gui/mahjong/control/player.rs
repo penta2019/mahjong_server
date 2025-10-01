@@ -246,16 +246,16 @@ impl GuiPlayer {
 
                     // メインメニューのボタン処理
                     if let Some(actions) = &self.possible_actions {
-                        let actions: Vec<_> = actions
+                        let mut actions: Vec<_> = actions
                             .actions
                             .iter()
                             .filter(|a| action_button.action_type == a.action_type)
-                            .map(|a| a.clone())
+                            .cloned()
                             .collect();
                         match actions.len() {
                             0 => {}
                             1 => {
-                                let action0 = actions[0].clone();
+                                let action0 = actions.remove(0);
                                 if action0.action_type == ActionType::Riichi {
                                     self.riichi_discard_tiles = action0.tiles;
                                     if let Some(root) = self.action_main_menu {
@@ -312,7 +312,7 @@ impl GuiPlayer {
 
         // 手牌に存在する牌なら新しいtarget_tileに指定
         if let Some(e_tile) = tile
-            && self.hand.find_tile_from_entity(e_tile).is_some()
+            && find_tile(self.hand.tiles(), e_tile).is_some()
         {
             self.target_tile = tile;
             self.update_target_tile_color();
@@ -321,7 +321,8 @@ impl GuiPlayer {
 
     fn get_target_tile_if_discardable(&self) -> Option<(&GuiTile, IsDrawn)> {
         let e_tile = self.target_tile?;
-        let (tile, is_drawn) = self.hand.find_tile_from_entity(e_tile)?;
+        let tile = find_tile(self.hand.tiles(), e_tile)?;
+        let is_drawn = self.hand.is_drawn_tile(tile);
         if self.riichi_discard_tiles.is_empty() {
             // 通常時
             let actions = self.possible_actions.as_ref()?;
@@ -347,14 +348,14 @@ impl GuiPlayer {
 
     fn change_target_tile_color(&self, color: LinearRgba) {
         if let Some(e_tile) = self.target_tile
-            && let Some((tile, _)) = self.hand.find_tile_from_entity(e_tile)
+            && let Some(tile) = find_tile(self.hand.tiles(), e_tile)
         {
             tile.set_emissive(color);
         }
     }
 
     fn cancel_sub_menu(&mut self) {
-        if let Some(sub) = self.action_sub_menu {
+        if let Some(sub) = self.action_sub_menu.take() {
             let param = param();
             self.riichi_discard_tiles = vec![];
             param.commands.entity(sub).despawn();
@@ -493,4 +494,8 @@ fn find_discard(actions: &[Action]) -> Option<&Action> {
     actions
         .iter()
         .find(|a| a.action_type == ActionType::Discard)
+}
+
+fn find_tile(tiles: &[GuiTile], entity: Entity) -> Option<&GuiTile> {
+    tiles.iter().find(|t| t.entity() == entity)
 }

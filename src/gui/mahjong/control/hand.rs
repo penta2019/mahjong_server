@@ -8,7 +8,7 @@ pub type IsDrawn = bool;
 pub struct GuiHand {
     entity: Entity,
     tiles: Vec<GuiTile>,
-    drawn_tile: Option<GuiTile>,
+    drawn_tile: Option<Entity>,
 }
 
 impl GuiHand {
@@ -37,11 +37,13 @@ impl GuiHand {
 
     pub fn deal_tile(&mut self, m_tile: Tile) {
         let tile = GuiTile::new(m_tile);
+        self.drawn_tile = Some(tile.entity());
+
         param()
             .commands
             .entity(tile.entity())
             .insert((ChildOf(self.entity), self.tf_tile(true)));
-        self.drawn_tile = Some(tile);
+        self.tiles.push(tile);
     }
 
     pub fn take_tile(
@@ -50,9 +52,12 @@ impl GuiHand {
         is_drawn: bool,
         preferred_tile: Option<Entity>,
     ) -> GuiTile {
-        let mut tile = if is_drawn {
+        let pos = if is_drawn {
             // 牌を明示的にツモ切り
-            self.drawn_tile.take().unwrap()
+            self.tiles
+                .iter()
+                .position(|t| self.is_drawn_tile(t))
+                .unwrap()
         } else if let Some(e_tile) = preferred_tile
             && let Some(pos) = self
                 .tiles
@@ -60,15 +65,21 @@ impl GuiHand {
                 .position(|t| t.tile() == m_tile && t.entity() == e_tile)
         {
             // 手牌が見える状態かつ牌が存在し,Discard Actionの打牌として選択している場合
-            self.tiles.remove(pos)
-        } else if let Some(pos) = self.tiles.iter().position(|t| t.tile() == m_tile) {
-            // 手牌が見える状態かつ牌が存在する場合
-            self.tiles.remove(pos)
-        } else if let Some(drawn_tile) = &self.drawn_tile
-            && drawn_tile.tile() == m_tile
+            pos
+        } else if let Some(pos) = self
+            .tiles
+            .iter()
+            .position(|t| t.tile() == m_tile && !self.is_drawn_tile(t))
         {
-            // ツモ牌を暗黙に手牌から取り除く場合 (加槓,暗槓など)
-            self.drawn_tile.take().unwrap()
+            // 手牌が見える状態かつ牌が存在する場合 (ツモ牌以外)
+            pos
+        } else if let Some(pos) = self
+            .tiles
+            .iter()
+            .position(|t| t.tile() == m_tile && self.is_drawn_tile(t))
+        {
+            // 手牌が見える状態かつ牌が存在する場合 (ツモ牌)
+            pos
         } else {
             // 対戦モードで他家の手牌にZ8(基本的には全てZ8)が含まれる場合
             // 手牌のZ8の中からランダムに選択
@@ -80,11 +91,13 @@ impl GuiHand {
                 .map(|(i, _)| i)
                 .collect::<Vec<usize>>();
             if let Some(pos) = pos_candidates.choose(&mut rng()) {
-                self.tiles.remove(*pos)
+                *pos
             } else {
                 panic!("{} not found in hand", m_tile);
             }
         };
+
+        let mut tile = self.tiles.remove(pos);
 
         if tile.tile() == Z8 {
             tile.mutate(m_tile);
@@ -92,25 +105,17 @@ impl GuiHand {
             assert!(tile.tile() == m_tile);
         }
 
-        if let Some(drawn_tile) = self.drawn_tile.take() {
-            self.tiles.push(drawn_tile);
-        }
+        self.drawn_tile = None;
 
         tile
     }
 
-    pub fn find_tile_from_entity(&self, e_tile: Entity) -> Option<(&GuiTile, IsDrawn)> {
-        for tile in &self.tiles {
-            if e_tile == tile.entity() {
-                return Some((tile, false));
-            }
-        }
-        if let Some(tile) = &self.drawn_tile
-            && tile.entity() == e_tile
-        {
-            return Some((tile, true));
-        }
-        None
+    pub fn tiles(&self) -> &[GuiTile] {
+        &self.tiles
+    }
+
+    pub fn is_drawn_tile(&self, tile: &GuiTile) -> bool {
+        Some(tile.entity()) == self.drawn_tile
     }
 
     pub fn align(&mut self) {

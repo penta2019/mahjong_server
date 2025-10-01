@@ -255,7 +255,7 @@ impl GuiPlayer {
                             1 => {
                                 let act0 = acts.remove(0);
                                 if act0.ty == ActionType::Riichi {
-                                    self.riichi_discard_tiles = act0.tiles;
+                                    self.set_riichi(act0.tiles);
                                     if let Some(root) = self.action_main_menu {
                                         param.commands.entity(root).insert(Visibility::Hidden);
                                     }
@@ -288,7 +288,7 @@ impl GuiPlayer {
     fn clear_actions(&mut self) {
         self.possible_actions = None;
         self.update_target_tile_color();
-        self.riichi_discard_tiles = vec![];
+        self.set_riichi(vec![]);
         if let Some(root) = self.action_main_menu.take() {
             param().commands.entity(root).despawn();
         }
@@ -304,7 +304,15 @@ impl GuiPlayer {
         }
 
         // 元々のtarget_tileを解除
-        self.change_target_tile_color(COLOR_NORMAL);
+        if !self.is_riichi() {
+            self.change_target_tile_color(COLOR_NORMAL);
+        } else if let Some(e_tile) = self.target_tile
+            && let Some(tile) = find_tile(self.hand.tiles(), e_tile)
+            && self.riichi_discard_tiles.contains(&tile.tile())
+        {
+            self.change_target_tile_color(COLOR_NORMAL);
+        }
+
         self.target_tile = None;
         self.target_state = TargetState::Released;
 
@@ -321,7 +329,7 @@ impl GuiPlayer {
         let e_tile = self.target_tile?;
         let tile = find_tile(self.hand.tiles(), e_tile)?;
         let is_drawn = self.hand.is_drawn_tile(tile);
-        if self.riichi_discard_tiles.is_empty() {
+        if !self.is_riichi() {
             // 通常時
             let actions = self.possible_actions.as_ref()?;
             let discard = find_discard(&actions.actions)?;
@@ -355,12 +363,36 @@ impl GuiPlayer {
     fn cancel_sub_menu(&mut self) {
         if let Some(sub) = self.action_sub_menu.take() {
             let param = param();
-            self.riichi_discard_tiles = vec![];
+            self.set_riichi(vec![]);
             param.commands.entity(sub).despawn();
             if let Some(main) = self.action_main_menu {
                 param.commands.entity(main).insert(Visibility::Visible);
             }
         }
+    }
+
+    fn set_riichi(&mut self, m_tiles: Vec<Tile>) {
+        // リーチをキャンセルした場合に色を戻す
+        if self.is_riichi() {
+            for tile in self.hand.tiles() {
+                tile.set_emissive(COLOR_NORMAL);
+            }
+        }
+
+        self.riichi_discard_tiles = m_tiles;
+
+        // リーチで宣言牌になれない牌をハイライトする
+        if self.is_riichi() {
+            for tile in self.hand.tiles() {
+                if !self.riichi_discard_tiles.contains(&tile.tile()) {
+                    tile.set_emissive(COLOR_INACTIVE);
+                }
+            }
+        }
+    }
+
+    fn is_riichi(&self) -> bool {
+        !self.riichi_discard_tiles.is_empty()
     }
 
     fn action_nop(&mut self) -> Option<Action> {
@@ -372,7 +404,7 @@ impl GuiPlayer {
 
     fn action_discard_tile(&mut self) -> Option<Action> {
         let (tile, is_drawn) = self.get_target_tile_if_discardable()?;
-        let act = if self.riichi_discard_tiles.is_empty() {
+        let act = if !self.is_riichi() {
             if is_drawn {
                 Action::nop()
             } else {

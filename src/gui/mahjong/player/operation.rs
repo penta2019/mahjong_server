@@ -84,15 +84,10 @@ impl GuiPlayer {
     }
 
     pub fn discard_tile(&mut self, m_tile: Tile, is_drawn: bool, is_riichi: bool) {
-        self.set_target_tile(None); // 手牌から外れる前にハイライトを削除
-
         if is_riichi {
             self.discard.set_riichi();
         }
-        let tile = self
-            .hand
-            .take_tile(m_tile, is_drawn, self.preferred_discard_tile);
-        self.preferred_discard_tile = None;
+        let tile = self.take_tile_from_hand(m_tile, is_drawn);
         self.discard.push_tile(tile);
         self.hand.align();
     }
@@ -102,11 +97,9 @@ impl GuiPlayer {
     }
 
     pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
-        self.set_target_tile(None); // 手牌から外れる前にハイライトを削除
-
         let tiles_from_hand: Vec<GuiTile> = m_tiles
             .iter()
-            .map(|t| self.hand.take_tile(*t, false, None))
+            .map(|t| self.take_tile_from_hand(*t, false))
             .collect();
         self.meld.meld(tiles_from_hand, meld_tile, meld_offset);
         self.hand.align();
@@ -114,6 +107,16 @@ impl GuiPlayer {
 
     pub fn take_last_discard_tile(&mut self) -> GuiTile {
         self.discard.take_last_tile()
+    }
+
+    fn take_tile_from_hand(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
+        let preferred = self.preferred_discard_tile.take();
+        let tile = self.hand.take_tile(m_tile, is_drawn, preferred);
+        if Some(tile.entity()) == self.target_tile {
+            self.target_tile = None;
+            tile.set_emissive(LinearRgba::BLACK);
+        }
+        tile
     }
 }
 

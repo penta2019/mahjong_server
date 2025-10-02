@@ -77,7 +77,7 @@ impl GuiStage {
             players,
             last_tile: None,
             camera_seat: 0,
-            show_hand: true,
+            show_hand: false,
         }
     }
 

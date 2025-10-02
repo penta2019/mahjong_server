@@ -6,7 +6,6 @@ use crate::model::ActionType;
 
 const COLOR_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
 const COLOR_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
-const COLOR_NORMAL: LinearRgba = LinearRgba::BLACK; // ハイライトなし
 
 impl GuiPlayer {
     pub fn on_event(&mut self) {
@@ -46,7 +45,22 @@ impl GuiPlayer {
 
     fn handle_hovered_tile(&mut self) -> Option<Action> {
         for ev in param().hovered_tile.read() {
-            self.set_target_tile(ev.tile_entity);
+            if self.target_state == TargetState::Released {
+                self.set_target_tile(ev.tile_entity);
+            } else {
+                if self.target_tile == ev.tile_entity {
+                    continue;
+                } else {
+                    // 牌を選択して左クリックを押し込んだ状態の場合並び替えを実行
+                    self.target_state = TargetState::Dragging;
+                    if let Some(target_tile) = self.target_tile
+                        && let Some(new_target_tile) = ev.tile_entity
+                        && find_tile(self.hand.tiles(), new_target_tile).is_some()
+                    {
+                        self.hand.move_tile(target_tile, new_target_tile);
+                    }
+                }
+            }
         }
         None
     }
@@ -158,7 +172,7 @@ impl GuiPlayer {
         }
     }
 
-    pub(super) fn set_target_tile(&mut self, tile: Option<Entity>) {
+    fn set_target_tile(&mut self, tile: Option<Entity>) {
         // 牌が変化していない場合何もしない
         if tile == self.target_tile {
             return;
@@ -166,12 +180,12 @@ impl GuiPlayer {
 
         // 元々のtarget_tileを解除
         if !self.is_riichi() {
-            self.change_target_tile_color(COLOR_NORMAL);
+            self.change_target_tile_color(LinearRgba::BLACK);
         } else if let Some(e_tile) = self.target_tile
             && let Some(tile) = find_tile(self.hand.tiles(), e_tile)
             && self.riichi_discard_tiles.contains(&tile.tile())
         {
-            self.change_target_tile_color(COLOR_NORMAL);
+            self.change_target_tile_color(LinearRgba::BLACK);
         }
 
         self.target_tile = None;
@@ -236,7 +250,7 @@ impl GuiPlayer {
         // リーチをキャンセルした場合に色を戻す
         if self.is_riichi() {
             for tile in self.hand.tiles() {
-                tile.set_emissive(COLOR_NORMAL);
+                tile.set_emissive(LinearRgba::BLACK);
             }
         }
 

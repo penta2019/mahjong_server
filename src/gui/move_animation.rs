@@ -18,7 +18,7 @@ pub struct MoveAnimation {
     // アニメーションの残りフレーム数
     // フレームごとに値を1づつ下げていき, 1/frame_left * (target - 現在位置)つづ移動
     // frame_left == 1のときはtargetをそのまま現在位置にセットしてanimationを終了 (= MoveAnimationを削除)
-    frame_left: usize,
+    frame_left: u32,
 }
 
 impl MoveAnimation {
@@ -28,13 +28,20 @@ impl MoveAnimation {
             frame_left: 12,
         }
     }
+
+    pub fn with_frame(target: Vec3, frame: u32) -> Self {
+        Self {
+            target,
+            frame_left: frame,
+        }
+    }
 }
 
 fn move_animation(
     mut commands: Commands,
-    move_tos: Query<(Entity, &mut Transform, &mut MoveAnimation)>,
+    move_animations: Query<(Entity, &mut Transform, &mut MoveAnimation)>,
 ) {
-    for (entity, mut tf, mut move_to) in move_tos {
+    for (entity, mut tf, mut move_to) in move_animations {
         if move_to.frame_left > 1 {
             let diff_vec = move_to.target - tf.translation;
             tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;

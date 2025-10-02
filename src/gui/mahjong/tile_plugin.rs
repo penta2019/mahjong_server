@@ -2,7 +2,7 @@ use bevy::{
     gltf::GltfMaterialName, input::mouse::MouseMotion, prelude::*, scene::SceneInstanceReady,
 };
 
-use super::super::camera::MainCamera;
+use super::super::{camera::MainCamera, move_animation::MoveAnimation};
 use crate::model::Tile;
 
 pub struct TilePlugin;
@@ -137,6 +137,7 @@ fn tile_hover(
     camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
     mut ray_cast: MeshRayCast,
     tile_meshes: Query<&TileMeshParent>,
+    move_animations: Query<(Entity, &mut MoveAnimation)>,
     mut tile_hover: EventWriter<HoveredTile>,
 ) {
     // マウスか牌が移動した場合にのみ新しく判定を実行
@@ -162,7 +163,10 @@ fn tile_hover(
     };
 
     for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
-        if let Ok(m) = tile_meshes.get(*entity) {
+        // アニメーション中のものは除外
+        if let Ok(m) = tile_meshes.get(*entity)
+            && move_animations.get(m.tile_entity).is_err()
+        {
             tile_hover.write(HoveredTile {
                 tile_entity: Some(m.tile_entity),
             });

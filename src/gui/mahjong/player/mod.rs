@@ -18,7 +18,7 @@ pub enum HandMode {
 enum TargetState {
     Released,
     Pressed,
-    // Dragging,
+    Dragging,
 }
 
 #[derive(Debug)]

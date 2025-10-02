@@ -10,6 +10,7 @@ pub struct GuiHand {
     entity: Entity,
     tiles: Vec<GuiTile>,
     drawn_tile: Option<Entity>,
+    do_sort: bool,
 }
 
 impl GuiHand {
@@ -22,6 +23,7 @@ impl GuiHand {
             entity,
             tiles: vec![],
             drawn_tile: None,
+            do_sort: true,
         }
     }
 
@@ -119,17 +121,43 @@ impl GuiHand {
         Some(tile.entity()) == self.drawn_tile
     }
 
+    pub fn set_sort(&mut self, flag: bool) {
+        self.do_sort = flag;
+        if self.do_sort {
+            self.align();
+        }
+    }
+
+    pub fn move_tile(&mut self, e_from: Entity, e_to: Entity) {
+        if let Some(from) = self.tiles.iter().position(|t| t.entity() == e_from)
+            && let Some(to) = self.tiles.iter().position(|t| t.entity() == e_to)
+        {
+            let tile = self.tiles.remove(from);
+            // from < to の場合,先のremoveで位置が一つ左にずれる
+            // let to = if from < to { to - 1 } else { to };
+            self.tiles.insert(to, tile);
+        }
+        self.set_sort(false);
+        self.align();
+    }
+
     pub fn align(&mut self) {
-        self.tiles.sort_by_key(|t| t.tile());
+        if self.do_sort {
+            self.tiles.sort_by_key(|t| t.tile());
+        }
+
         for (i, tile) in self.tiles.iter().enumerate() {
             param()
                 .commands
                 .entity(tile.entity())
-                .insert(MoveAnimation::new(Vec3::new(
-                    GuiTile::WIDTH * i as f32,
-                    GuiTile::HEIGHT / 2.0,
-                    GuiTile::DEPTH / 2.0,
-                )));
+                .insert(MoveAnimation::with_frame(
+                    Vec3::new(
+                        GuiTile::WIDTH * i as f32,
+                        GuiTile::HEIGHT / 2.0,
+                        GuiTile::DEPTH / 2.0,
+                    ),
+                    4,
+                ));
         }
     }
 

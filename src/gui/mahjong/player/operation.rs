@@ -1,0 +1,124 @@
+use super::{
+    super::stage::{CAMERA_LOOK_AT, CAMERA_POS},
+    *,
+};
+
+const TF_CLOSE_HAND: Transform = Transform::from_xyz(-0.12, 0.0, 0.21);
+
+impl GuiPlayer {
+    pub fn new() -> Self {
+        let commands = &mut param().commands;
+
+        let entity = commands.spawn(Name::new("Player")).id();
+
+        let hand = GuiHand::new();
+        commands
+            .entity(hand.entity())
+            .insert((ChildOf(entity), TF_CLOSE_HAND));
+
+        let discard = GuiDiscard::new();
+        commands.entity(discard.entity()).insert((
+            ChildOf(entity),
+            Transform {
+                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074),
+                rotation: Quat::from_rotation_x(-FRAC_PI_2),
+                scale: Vec3::ONE,
+            },
+        ));
+
+        let meld = GuiMeld::new();
+        commands.entity(meld.entity()).insert((
+            ChildOf(entity),
+            Transform {
+                translation: Vec3::new(0.25, GuiTile::DEPTH / 2.0, 0.22),
+                rotation: Quat::from_rotation_x(-FRAC_PI_2),
+                scale: Vec3::ONE,
+            },
+        ));
+
+        Self {
+            entity,
+            // tf_close_hand,
+            hand,
+            discard,
+            meld,
+            target_tile: None,
+            preferred_discard_tile: None,
+            target_state: TargetState::Released,
+            possible_actions: None,
+            action_main_menu: None,
+            action_sub_menu: None,
+            riichi_discard_tiles: vec![],
+        }
+    }
+
+    pub fn set_hand_mode(&mut self, mode: HandMode) {
+        let tf = match mode {
+            HandMode::Camera => {
+                let tf_camera =
+                    Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
+                let tf_camera_hand = Transform {
+                    translation: Vec3::new(-0.13, -0.13, -0.9),
+                    rotation: Quat::from_rotation_x(10.0_f32.to_radians()),
+                    scale: Vec3::ONE,
+                };
+                tf_camera * tf_camera_hand
+            }
+            HandMode::Close => TF_CLOSE_HAND,
+            HandMode::Open => {
+                let mut tf = TF_CLOSE_HAND;
+                tf.rotation = Quat::from_rotation_x(-FRAC_PI_2);
+                tf
+            }
+        };
+        param().commands.entity(self.hand.entity()).insert(tf);
+    }
+
+    pub fn init_hand(&mut self, m_tiles: &[Tile]) {
+        self.hand.init(m_tiles);
+        self.hand.align();
+    }
+
+    pub fn deal_tile(&mut self, m_tile: Tile) {
+        self.hand.deal_tile(m_tile);
+    }
+
+    pub fn discard_tile(&mut self, m_tile: Tile, is_drawn: bool, is_riichi: bool) {
+        self.set_target_tile(None); // 手牌から外れる前にハイライトを削除
+
+        if is_riichi {
+            self.discard.set_riichi();
+        }
+        let tile = self
+            .hand
+            .take_tile(m_tile, is_drawn, self.preferred_discard_tile);
+        self.preferred_discard_tile = None;
+        self.discard.push_tile(tile);
+        self.hand.align();
+    }
+
+    pub fn confirm_discard_tile(&mut self) {
+        self.discard.confirm_last_tile();
+    }
+
+    pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
+        self.set_target_tile(None); // 手牌から外れる前にハイライトを削除
+
+        let tiles_from_hand: Vec<GuiTile> = m_tiles
+            .iter()
+            .map(|t| self.hand.take_tile(*t, false, None))
+            .collect();
+        self.meld.meld(tiles_from_hand, meld_tile, meld_offset);
+        self.hand.align();
+    }
+
+    pub fn take_last_discard_tile(&mut self) -> GuiTile {
+        self.discard.take_last_tile()
+    }
+}
+
+impl HasEntity for GuiPlayer {
+    fn entity(&self) -> Entity {
+        self.entity
+    }
+}

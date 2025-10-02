@@ -1,165 +1,25 @@
-use bevy::input::ButtonState;
-
-use crate::model::ActionType;
-
 use super::{
-    button::{ActionButton, create_action_main_button, create_action_sub_button},
+    action_menu::{create_main_action_menu, create_sub_action_menu},
     *,
 };
+use crate::model::ActionType;
 
 const COLOR_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
 const COLOR_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
 const COLOR_NORMAL: LinearRgba = LinearRgba::BLACK; // ハイライトなし
 
-pub enum HandMode {
-    Camera,
-    Close,
-    Open,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-enum TargetState {
-    Released,
-    Pressed,
-    // Dragging,
-}
-
-#[derive(Debug)]
-pub struct GuiPlayer {
-    // Event用
-    entity: Entity,
-    tf_close_hand: Transform,
-    hand: GuiHand,
-    discard: GuiDiscard,
-    meld: GuiMeld,
-
-    // Action用
-    target_tile: Option<Entity>,
-    preferred_discard_tile: Option<Entity>,
-    target_state: TargetState,
-    possible_actions: Option<PossibleActions>,
-    // アクションのタイプのみを表示するメインメニュー
-    // 選択されたアクションタイプが
-    // * 一つしかない場合 -> すぐに実行
-    // * 複数存在する場合 -> サブメニューで候補一覧を表示
-    action_main_menu: Option<Entity>,
-    // 同じActionTypeが複数ある場合の候補一覧またはリーチ時のキャンセルボタンを表示するサブメニュー
-    action_sub_menu: Option<Entity>,
-    // リーチ宣言牌として可能な打牌一覧, リーチ時以外は空
-    riichi_discard_tiles: Vec<Tile>,
-}
-
 impl GuiPlayer {
-    pub fn new() -> Self {
-        let commands = &mut param().commands;
+    pub fn on_event(&mut self) {
+        self.clear_actions();
+    }
 
-        let entity = commands.spawn(Name::new("Player")).id();
-
-        let tf_close_hand = Transform::from_xyz(-0.12, 0.0, 0.21);
-        let hand = GuiHand::new();
-        commands
-            .entity(hand.entity())
-            .insert((ChildOf(entity), tf_close_hand));
-
-        let discard = GuiDiscard::new();
-        commands.entity(discard.entity()).insert((
-            ChildOf(entity),
-            Transform {
-                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074),
-                rotation: Quat::from_rotation_x(-FRAC_PI_2),
-                scale: Vec3::ONE,
-            },
-        ));
-
-        let meld = GuiMeld::new();
-        commands.entity(meld.entity()).insert((
-            ChildOf(entity),
-            Transform {
-                translation: Vec3::new(0.25, GuiTile::DEPTH / 2.0, 0.22),
-                rotation: Quat::from_rotation_x(-FRAC_PI_2),
-                scale: Vec3::ONE,
-            },
-        ));
-
-        Self {
-            entity,
-            tf_close_hand,
-            hand,
-            discard,
-            meld,
-            target_tile: None,
-            preferred_discard_tile: None,
-            target_state: TargetState::Released,
-            possible_actions: None,
-            action_main_menu: None,
-            action_sub_menu: None,
-            riichi_discard_tiles: vec![],
+    pub fn handle_actions(&mut self, actions: PossibleActions) {
+        let types = ordered_action_types(&actions.actions);
+        if !types.is_empty() {
+            self.action_main_menu = Some(create_main_action_menu(&types));
         }
-    }
-
-    pub fn set_hand_mode(&mut self, mode: HandMode) {
-        use super::stage::{CAMERA_LOOK_AT, CAMERA_POS};
-        let tf = match mode {
-            HandMode::Camera => {
-                let tf_camera =
-                    Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
-                let tf_close_hand = Transform {
-                    translation: Vec3::new(-0.13, -0.13, -0.9),
-                    rotation: Quat::from_rotation_x(10.0_f32.to_radians()),
-                    scale: Vec3::ONE,
-                };
-                tf_camera * tf_close_hand
-            }
-            HandMode::Close => self.tf_close_hand,
-            HandMode::Open => {
-                let mut tf = self.tf_close_hand;
-                tf.rotation = Quat::from_rotation_x(-FRAC_PI_2);
-                tf
-            }
-        };
-        param().commands.entity(self.hand.entity()).insert(tf);
-    }
-
-    pub fn init_hand(&mut self, m_tiles: &[Tile]) {
-        self.hand.init(m_tiles);
-        self.hand.align();
-    }
-
-    pub fn deal_tile(&mut self, m_tile: Tile) {
-        self.hand.deal_tile(m_tile);
-    }
-
-    pub fn discard_tile(&mut self, m_tile: Tile, is_drawn: bool, is_riichi: bool) {
-        self.set_target_tile(None); // 手牌から外れる前にハイライトを削除
-
-        if is_riichi {
-            self.discard.set_riichi();
-        }
-        let tile = self
-            .hand
-            .take_tile(m_tile, is_drawn, self.preferred_discard_tile);
-        self.preferred_discard_tile = None;
-        self.discard.push_tile(tile);
-        self.hand.align();
-    }
-
-    pub fn confirm_discard_tile(&mut self) {
-        self.discard.confirm_last_tile();
-    }
-
-    pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
-        self.set_target_tile(None); // 手牌から外れる前にハイライトを削除
-
-        let tiles_from_hand: Vec<GuiTile> = m_tiles
-            .iter()
-            .map(|t| self.hand.take_tile(*t, false, None))
-            .collect();
-        self.meld.meld(tiles_from_hand, meld_tile, meld_offset);
-        self.hand.align();
-    }
-
-    pub fn take_last_discard_tile(&mut self) -> GuiTile {
-        self.discard.take_last_tile()
+        self.possible_actions = Some(actions);
+        self.update_target_tile_color();
     }
 
     pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
@@ -182,19 +42,6 @@ impl GuiPlayer {
         } else {
             None
         }
-    }
-
-    pub fn handle_actions(&mut self, actions: PossibleActions) {
-        let types = ordered_action_types(&actions.actions);
-        if !types.is_empty() {
-            self.action_main_menu = Some(create_action_main_menu(&types));
-        }
-        self.possible_actions = Some(actions);
-        self.update_target_tile_color();
-    }
-
-    pub fn on_event(&mut self) {
-        self.clear_actions();
     }
 
     fn handle_hovered_tile(&mut self) -> Option<Action> {
@@ -283,7 +130,7 @@ impl GuiPlayer {
                             param.commands.entity(menu).insert(Visibility::Hidden);
                         }
                         // リーチのキャンセルボタンを生成
-                        self.action_sub_menu = Some(create_action_sub_menu(&[]));
+                        self.action_sub_menu = Some(create_sub_action_menu(&[]));
                     } else {
                         act = Some(act0);
                     }
@@ -292,7 +139,7 @@ impl GuiPlayer {
                     if let Some(menu) = self.action_main_menu {
                         param.commands.entity(menu).insert(Visibility::Hidden);
                     }
-                    self.action_sub_menu = Some(create_action_sub_menu(&acts));
+                    self.action_sub_menu = Some(create_sub_action_menu(&acts));
                 }
             }
         }
@@ -311,7 +158,7 @@ impl GuiPlayer {
         }
     }
 
-    fn set_target_tile(&mut self, tile: Option<Entity>) {
+    pub(super) fn set_target_tile(&mut self, tile: Option<Entity>) {
         // 牌が変化していない場合何もしない
         if tile == self.target_tile {
             return;
@@ -435,67 +282,6 @@ impl GuiPlayer {
         self.preferred_discard_tile = Some(tile.entity());
         Some(act)
     }
-}
-
-impl HasEntity for GuiPlayer {
-    fn entity(&self) -> Entity {
-        self.entity
-    }
-}
-
-fn create_action_main_menu(action_types: &[ActionType]) -> Entity {
-    let param = param();
-    let menu = param
-        .commands
-        .spawn(Node {
-            position_type: PositionType::Absolute,
-            right: Val::Percent(20.0),
-            bottom: Val::Percent(18.0),
-            display: Display::Flex,
-            flex_direction: FlexDirection::RowReverse,
-            align_items: AlignItems::Center,
-            ..default()
-        })
-        .id();
-
-    for ty in action_types {
-        param
-            .commands
-            .spawn(create_action_main_button(*ty, &format!("{:?}", *ty)))
-            .insert(ChildOf(menu));
-    }
-
-    menu
-}
-
-fn create_action_sub_menu(actions: &[Action]) -> Entity {
-    let param = param();
-    let menu = param
-        .commands
-        .spawn(Node {
-            position_type: PositionType::Absolute,
-            right: Val::Percent(20.0),
-            bottom: Val::Percent(18.0),
-            display: Display::Flex,
-            flex_direction: FlexDirection::RowReverse,
-            align_items: AlignItems::Center,
-            ..default()
-        })
-        .id();
-
-    param
-        .commands
-        .spawn(create_action_main_button(ActionType::Nop, "Cancel"))
-        .insert(ChildOf(menu));
-
-    for act in actions {
-        param
-            .commands
-            .spawn(create_action_sub_button(act.clone()))
-            .insert(ChildOf(menu));
-    }
-
-    menu
 }
 
 fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {

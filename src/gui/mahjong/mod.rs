@@ -1,4 +1,3 @@
-mod button;
 mod control;
 mod control_param;
 mod discard;

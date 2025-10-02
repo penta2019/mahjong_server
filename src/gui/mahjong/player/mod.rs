@@ -1,5 +1,6 @@
 mod action;
 mod action_menu;
+mod action_setting_menu;
 mod operation;
 
 use bevy::input::ButtonState;

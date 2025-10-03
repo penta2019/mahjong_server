@@ -139,6 +139,16 @@ fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
         }),
         tf_camera,
     ));
+
+    // Camera2dを追加している場合はUIはこちらに描画される
+    // 追加していない場合はCamera3dに投影される
+    // commands.spawn((
+    //     Camera {
+    //         order: 1,
+    //         ..default()
+    //     },
+    //     Camera2d,
+    // ));
 }
 
 fn state_fly(mut window: Single<&mut Window>) {

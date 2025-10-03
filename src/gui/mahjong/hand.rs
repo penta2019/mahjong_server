@@ -156,7 +156,7 @@ impl GuiHand {
                         GuiTile::HEIGHT / 2.0,
                         GuiTile::DEPTH / 2.0,
                     ),
-                    4,
+                    6,
                 ));
         }
     }

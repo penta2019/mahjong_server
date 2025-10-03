@@ -24,6 +24,7 @@ pub fn run(tx: Tx, rx: Rx) {
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins,
+        MeshPickingPlugin,
         camera::ControlPlugin,
         debug::DebugPlugin,
         slider::SliderPlugin,

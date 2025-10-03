@@ -42,12 +42,13 @@ fn move_animation(
     move_animations: Query<(Entity, &mut Transform, &mut MoveAnimation)>,
 ) {
     for (entity, mut tf, mut move_to) in move_animations {
-        if move_to.frame_left > 1 {
+        if move_to.frame_left > 0 && move_to.target != tf.translation {
             let diff_vec = move_to.target - tf.translation;
             tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
             move_to.frame_left -= 1;
         } else {
-            tf.translation = move_to.target;
+            // 残りフレームが0または現在位置が移動先の場合はMoveAnimationを削除
+            tf.translation = move_to.target; // 小数点誤差削除用
             commands.entity(entity).remove::<MoveAnimation>();
         }
     }

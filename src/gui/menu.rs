@@ -46,7 +46,7 @@ enum MenuButton {
 }
 
 fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
-    let root = commands
+    let container = commands
         .spawn((
             MenuUI,
             Node {
@@ -82,7 +82,7 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
             children![(Text::new("Quit"), TextColor(TEXT))],
         ))
         .id();
-    commands.entity(root).add_child(text_entity);
+    commands.entity(container).add_child(text_entity);
 
     let e_sensitivity_container = commands
         .spawn((
@@ -96,7 +96,9 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
             // BackgroundColor::from(bevy::color::palettes::basic::AQUA),
         ))
         .id();
-    commands.entity(root).add_child(e_sensitivity_container);
+    commands
+        .entity(container)
+        .add_child(e_sensitivity_container);
 
     let sensitivity_text = commands
         .spawn((

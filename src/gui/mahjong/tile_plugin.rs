@@ -1,8 +1,9 @@
 use bevy::{
-    gltf::GltfMaterialName, input::mouse::MouseMotion, prelude::*, scene::SceneInstanceReady,
+    gltf::GltfMaterialName, input::mouse::MouseMotion, picking::pointer::PointerInteraction,
+    prelude::*, scene::SceneInstanceReady,
 };
 
-use super::super::{camera::MainCamera, move_animation::MoveAnimation};
+use super::super::move_animation::MoveAnimation;
 use crate::model::Tile;
 
 pub struct TilePlugin;
@@ -133,9 +134,7 @@ fn tile_mutate(
 fn tile_hover(
     mut mouse_events: EventReader<MouseMotion>,
     tile_move: Query<&TileControl, Changed<Transform>>,
-    window: Single<&mut Window>,
-    camera: Single<(&mut Camera, &GlobalTransform), With<MainCamera>>,
-    mut ray_cast: MeshRayCast,
+    pointers: Query<&PointerInteraction>,
     tile_meshes: Query<&TileMeshParent>,
     move_animations: Query<(Entity, &mut MoveAnimation)>,
     mut tile_hover: EventWriter<HoveredTile>,
@@ -154,24 +153,21 @@ fn tile_hover(
         }
     }
 
-    let Some(p_cursor) = window.cursor_position() else {
-        return;
-    };
-    let (camera, tf_camera) = &*camera;
-    let Ok(ray) = camera.viewport_to_world(tf_camera, p_cursor) else {
-        return;
-    };
-
-    for (entity, _hit) in ray_cast.cast_ray(ray, &MeshRayCastSettings::default()) {
+    for (entity, _hit) in pointers
+        .iter()
+        .filter_map(|interaction| interaction.get_nearest_hit())
+    {
         // アニメーション中のものは除外
         if let Ok(m) = tile_meshes.get(*entity)
             && move_animations.get(m.tile_entity).is_err()
         {
+            // println!("{entity} {_hit:?}");
             tile_hover.write(HoveredTile {
                 tile_entity: Some(m.tile_entity),
             });
             return;
         }
     }
+
     tile_hover.write(HoveredTile { tile_entity: None });
 }

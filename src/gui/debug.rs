@@ -32,7 +32,7 @@ enum Info {
 }
 
 fn setup(mut commands: Commands) {
-    let root = commands
+    let container = commands
         .spawn((
             Container,
             Node {
@@ -46,31 +46,36 @@ fn setup(mut commands: Commands) {
             },
             ZIndex(0),
             Visibility::Hidden,
+            Pickable::IGNORE,
         ))
         .id();
     commands.spawn((
-        ChildOf(root),
+        ChildOf(container),
         Info::Fps,
         Text::new("fps: 0"),
         Node { ..default() },
+        Pickable::IGNORE,
     ));
     commands.spawn((
-        ChildOf(root),
+        ChildOf(container),
         Info::Pos,
         Text::new("pos:"),
         Node { ..default() },
+        Pickable::IGNORE,
     ));
     commands.spawn((
-        ChildOf(root),
+        ChildOf(container),
         Info::Yaw,
         Text::new("yaw:"),
         Node { ..default() },
+        Pickable::IGNORE,
     ));
     commands.spawn((
-        ChildOf(root),
+        ChildOf(container),
         Info::Pitch,
         Text::new("pitch:"),
         Node { ..default() },
+        Pickable::IGNORE,
     ));
 }
 

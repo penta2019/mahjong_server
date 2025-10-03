@@ -36,7 +36,7 @@ fn create_action_setting_button(text: &str) -> impl Bundle + use<> {
             align_items: AlignItems::Center,
             ..default()
         },
-        BorderColor(Color::BLACK),
+        BorderColor::all(Color::BLACK),
         BackgroundColor(MENU_BACKGROUND),
         children![(
             Text::new(text),

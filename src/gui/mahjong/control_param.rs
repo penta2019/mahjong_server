@@ -29,12 +29,12 @@ pub struct ControlParam<'w, 's> {
         Changed<Interaction>,
     >,
 
-    // EventWriter
-    pub camera: EventWriter<'w, CameraMove>,
+    // MessageWriter
+    pub camera: MessageWriter<'w, CameraMove>,
 
-    // EventReader
-    pub hovered_tile: EventReader<'w, 's, HoveredTile>,
-    pub mouse_input: EventReader<'w, 's, MouseButtonInput>,
+    // MessageReader
+    pub hovered_tile: MessageReader<'w, 's, HoveredTile>,
+    pub mouse_input: MessageReader<'w, 's, MouseButtonInput>,
 
     // for debug
     pub names: Query<'w, 's, &'static Name>,

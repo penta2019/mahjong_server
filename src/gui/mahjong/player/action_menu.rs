@@ -85,7 +85,7 @@ fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> 
             align_items: AlignItems::Center,
             ..default()
         },
-        BorderColor(Color::BLACK),
+        BorderColor::all(Color::BLACK),
         BackgroundColor(MENU_BACKGROUND),
         children![(
             Text::new(text),
@@ -117,7 +117,7 @@ fn create_sub_action_button(action: Action) -> impl Bundle + use<> {
             align_items: AlignItems::Center,
             ..default()
         },
-        BorderColor(Color::BLACK),
+        BorderColor::all(Color::BLACK),
         BackgroundColor(MENU_BACKGROUND),
         children![(
             Text::new(text),

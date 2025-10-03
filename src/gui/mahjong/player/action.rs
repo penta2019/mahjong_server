@@ -107,10 +107,10 @@ impl GuiPlayer {
                     ActionButton::Sub(act0) => act = Some(act0.clone()),
                 },
                 Interaction::Hovered => {
-                    border_color.0 = Color::WHITE;
+                    border_color.set_all(Color::WHITE);
                 }
                 Interaction::None => {
-                    border_color.0 = Color::BLACK;
+                    border_color.set_all(Color::BLACK);
                 }
             }
         }

@@ -3,7 +3,7 @@ use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use bevy::{
     input::mouse::MouseMotion,
     prelude::*,
-    window::{CursorGrabMode, WindowFocused},
+    window::{CursorGrabMode, CursorOptions, PrimaryWindow, WindowFocused},
 };
 
 pub struct ControlPlugin;
@@ -15,7 +15,7 @@ impl Plugin for ControlPlugin {
 
         app.insert_state(CameraState::Fix)
             .insert_resource(ctx)
-            .add_event::<CameraMove>()
+            .add_message::<CameraMove>()
             .add_systems(Startup, setup)
             .add_systems(OnEnter(CameraState::Fly), state_fly)
             .add_systems(OnEnter(CameraState::Fix), state_fix)
@@ -98,7 +98,7 @@ impl Default for CameraContext {
     }
 }
 
-#[derive(Event, Debug)]
+#[derive(Message, Debug)]
 pub struct CameraMove {
     translation: Vec3,
     yaw: f32,   // [-PI, PI)
@@ -151,16 +151,16 @@ fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
     // ));
 }
 
-fn state_fly(mut window: Single<&mut Window>) {
-    set_cursor_visibility(&mut window, false);
+fn state_fly(mut options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
+    set_cursor_visibility(&mut options, false);
 }
 
-fn state_fix(mut window: Single<&mut Window>) {
-    set_cursor_visibility(&mut window, true);
+fn state_fix(mut options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
+    set_cursor_visibility(&mut options, true);
 }
 
 fn camera_event(
-    mut reader: EventReader<CameraMove>,
+    mut reader: MessageReader<CameraMove>,
     mut context: ResMut<CameraContext>,
     mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
@@ -216,17 +216,17 @@ fn camera_move_by_keyboard(
 }
 
 fn camera_look_by_mouse(
-    mut mouse_events: EventReader<MouseMotion>,
+    mut mouse_motion: MessageReader<MouseMotion>,
     mut context: ResMut<CameraContext>,
     mut camera: Single<&mut Transform, With<MainCamera>>,
 ) {
-    if mouse_events.is_empty() {
+    if mouse_motion.is_empty() {
         return;
     }
 
     // マウス移動量を集計
     let mut delta = Vec2::ZERO;
-    for ev in mouse_events.read() {
+    for ev in mouse_motion.read() {
         delta += ev.delta;
     }
     if delta == Vec2::ZERO {
@@ -243,25 +243,25 @@ fn camera_look_by_mouse(
 }
 
 fn window_focus_handler(
-    mut focus_events: EventReader<WindowFocused>,
-    mut window: Single<&mut Window>,
+    mut window_focused: MessageReader<WindowFocused>,
+    mut options: Single<&mut CursorOptions, With<PrimaryWindow>>,
 ) {
-    if focus_events.is_empty() {
+    if window_focused.is_empty() {
         return;
     }
 
-    for event in focus_events.read() {
+    for event in window_focused.read() {
         // flyモードのまま他のアプリケーションにフォーカスが移動した場合の処理
-        set_cursor_visibility(&mut window, !event.focused);
+        set_cursor_visibility(&mut options, !event.focused);
     }
 }
 
-fn set_cursor_visibility(window: &mut Window, visible: bool) {
+fn set_cursor_visibility(options: &mut CursorOptions, visible: bool) {
     if visible {
-        window.cursor_options.visible = true;
-        window.cursor_options.grab_mode = CursorGrabMode::None;
+        options.visible = true;
+        options.grab_mode = CursorGrabMode::None;
     } else {
-        window.cursor_options.visible = false;
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
+        options.visible = false;
+        options.grab_mode = CursorGrabMode::Locked;
     }
 }

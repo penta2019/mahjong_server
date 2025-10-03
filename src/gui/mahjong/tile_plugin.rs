@@ -11,13 +11,13 @@ pub struct TilePlugin;
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(tile_texture)
-            .add_event::<HoveredTile>()
+            .add_message::<HoveredTile>()
             .add_systems(PreUpdate, tile_hover)
             .add_systems(PostUpdate, tile_mutate);
     }
 }
 
-#[derive(Event, Debug)]
+#[derive(Message, Debug)]
 pub struct HoveredTile {
     pub tile_entity: Option<Entity>,
 }
@@ -64,7 +64,7 @@ struct TileMeshParent {
 }
 
 fn tile_texture(
-    trigger: Trigger<SceneInstanceReady>,
+    ready: On<SceneInstanceReady>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -72,7 +72,7 @@ fn tile_texture(
     mut tile_controls: Query<&mut TileControl>,
     gltf_materials: Query<&GltfMaterialName>,
 ) {
-    let e_tile = trigger.target();
+    let e_tile = ready.event_target();
     let Ok(mut tile_control) = tile_controls.get_mut(e_tile) else {
         return;
     };
@@ -132,12 +132,12 @@ fn tile_mutate(
 }
 
 fn tile_hover(
-    mut mouse_events: EventReader<MouseMotion>,
+    mut mouse_events: MessageReader<MouseMotion>,
     tile_move: Query<&TileControl, Changed<Transform>>,
     pointers: Query<&PointerInteraction>,
     tile_meshes: Query<&TileMeshParent>,
     move_animations: Query<(Entity, &mut MoveAnimation)>,
-    mut tile_hover: EventWriter<HoveredTile>,
+    mut tile_hover: MessageWriter<HoveredTile>,
 ) {
     // マウスか牌が移動した場合にのみ新しく判定を実行
     {

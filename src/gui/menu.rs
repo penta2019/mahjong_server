@@ -159,7 +159,7 @@ fn handler_button_interaction(
         (&Interaction, &mut BackgroundColor, &MenuButton),
         (Changed<Interaction>, With<Button>),
     >,
-    mut app_exit_events: EventWriter<AppExit>,
+    mut app_exit_events: MessageWriter<AppExit>,
 ) {
     for (interaction, mut color, button) in buttons {
         match *interaction {

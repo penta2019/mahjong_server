@@ -1,27 +1,102 @@
+use bevy::input::ButtonState;
+
 use super::{
-    action_menu::{create_main_action_menu, create_sub_action_menu},
-    *,
+    super::*,
+    action_menu::{ActionButton, create_main_action_menu, create_sub_action_menu},
+    auto_menu::create_auto_menu,
 };
 use crate::model::ActionType;
 
 const COLOR_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
 const COLOR_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
 
-impl GuiPlayer {
-    pub fn on_event(&mut self) {
-        self.clear_actions();
+#[derive(Debug, PartialEq, Eq)]
+enum TargetState {
+    Released,
+    Pressed,
+    Dragging,
+}
+
+macro_rules! hand {
+    ($s:expr) => {
+        unsafe { (**$s.player.as_ref().unwrap()).hand() }
+    };
+}
+
+#[derive(Debug)]
+pub struct ActionControl {
+    // イベント処理のpub関数が呼ばれた際にSomeをセットして抜ける際にNoneに戻す
+    player: Option<*mut GuiPlayer>,
+
+    auto_menu: Entity,
+    target_tile: Option<Entity>,
+    target_state: TargetState,
+    possible_actions: Option<PossibleActions>,
+    // アクションのタイプのみを表示するメインメニュー
+    // 選択されたアクションタイプが
+    // * 一つしかない場合 -> すぐに実行
+    // * 複数存在する場合 -> サブメニューで候補一覧を表示
+    action_main_menu: Option<Entity>,
+    // 同じActionTypeが複数ある場合の候補一覧またはリーチ時のキャンセルボタンを表示するサブメニュー
+    action_sub_menu: Option<Entity>,
+    // リーチ宣言牌として可能な打牌一覧, リーチ時以外は空
+    riichi_discard_tiles: Vec<Tile>,
+}
+
+unsafe impl Send for ActionControl {} // *mut GuiPlayer用
+unsafe impl Sync for ActionControl {} // *mut GuiPlayer用
+
+impl ActionControl {
+    pub fn new() -> Self {
+        Self {
+            player: None,
+            auto_menu: create_auto_menu(),
+            target_tile: None,
+            target_state: TargetState::Released,
+            possible_actions: None,
+            action_main_menu: None,
+            action_sub_menu: None,
+            riichi_discard_tiles: vec![],
+        }
     }
 
-    pub fn handle_actions(&mut self, actions: PossibleActions) {
+    pub fn destroy(self) {
+        for e in [
+            Some(self.auto_menu),
+            self.action_main_menu,
+            self.action_sub_menu,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            param().commands.entity(e).despawn();
+        }
+    }
+
+    pub fn on_event(&mut self, player: &mut GuiPlayer) {
+        self.player = Some(player as *mut GuiPlayer);
+
+        self.clear_actions();
+
+        self.player = None;
+    }
+
+    pub fn handle_actions(&mut self, player: &mut GuiPlayer, actions: PossibleActions) {
+        self.player = Some(player as *mut GuiPlayer);
+
         let types = ordered_action_types(&actions.actions);
         if !types.is_empty() {
             self.action_main_menu = Some(create_main_action_menu(&types));
         }
         self.possible_actions = Some(actions);
         self.update_target_tile_color();
+
+        self.player = None;
     }
 
-    pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
+    pub fn handle_gui_events(&mut self, player: &mut GuiPlayer) -> Option<SelectedAction> {
+        self.player = Some(player as *mut GuiPlayer);
+
         let selected_act = [
             self.handle_hovered_tile(),
             self.handle_mouse_input(),
@@ -30,7 +105,7 @@ impl GuiPlayer {
         .into_iter()
         .fold(None, |a, b| a.or(b));
 
-        if let Some(act) = selected_act
+        let selected_act = if let Some(act) = selected_act
             && let Some(acts) = self.possible_actions.take()
         {
             self.clear_actions();
@@ -40,7 +115,11 @@ impl GuiPlayer {
             })
         } else {
             None
-        }
+        };
+
+        self.player = None;
+
+        selected_act
     }
 
     fn handle_hovered_tile(&mut self) -> Option<Action> {
@@ -55,9 +134,9 @@ impl GuiPlayer {
                     self.target_state = TargetState::Dragging;
                     if let Some(target_tile) = self.target_tile
                         && let Some(new_target_tile) = ev.tile_entity
-                        && find_tile(self.hand.tiles(), new_target_tile).is_some()
+                        && find_tile(hand!(self).tiles(), new_target_tile).is_some()
                     {
-                        self.hand.move_tile(target_tile, new_target_tile);
+                        hand!(self).move_tile(target_tile, new_target_tile);
                     }
                 }
             }
@@ -182,7 +261,7 @@ impl GuiPlayer {
         if !self.is_riichi() {
             self.change_target_tile_color(LinearRgba::BLACK);
         } else if let Some(e_tile) = self.target_tile
-            && let Some(tile) = find_tile(self.hand.tiles(), e_tile)
+            && let Some(tile) = find_tile(hand!(self).tiles(), e_tile)
             && self.riichi_discard_tiles.contains(&tile.tile())
         {
             self.change_target_tile_color(LinearRgba::BLACK);
@@ -193,7 +272,7 @@ impl GuiPlayer {
 
         // 手牌に存在する牌なら新しいtarget_tileに指定
         if let Some(e_tile) = tile
-            && find_tile(self.hand.tiles(), e_tile).is_some()
+            && find_tile(hand!(self).tiles(), e_tile).is_some()
         {
             self.target_tile = tile;
             self.update_target_tile_color();
@@ -202,8 +281,8 @@ impl GuiPlayer {
 
     fn get_target_tile_if_discardable(&self) -> Option<(&GuiTile, IsDrawn)> {
         let e_tile = self.target_tile?;
-        let tile = find_tile(self.hand.tiles(), e_tile)?;
-        let is_drawn = self.hand.is_drawn_tile(tile);
+        let tile = find_tile(hand!(self).tiles(), e_tile)?;
+        let is_drawn = hand!(self).is_drawn_tile(tile);
         if !self.is_riichi() {
             // 通常時
             let actions = self.possible_actions.as_ref()?;
@@ -229,7 +308,7 @@ impl GuiPlayer {
 
     fn change_target_tile_color(&self, color: LinearRgba) {
         if let Some(e_tile) = self.target_tile
-            && let Some(tile) = find_tile(self.hand.tiles(), e_tile)
+            && let Some(tile) = find_tile(hand!(self).tiles(), e_tile)
         {
             tile.set_emissive(color);
         }
@@ -249,7 +328,7 @@ impl GuiPlayer {
     fn set_riichi(&mut self, m_tiles: Vec<Tile>) {
         // リーチをキャンセルした場合に色を戻す
         if self.is_riichi() {
-            for tile in self.hand.tiles() {
+            for tile in hand!(self).tiles() {
                 tile.set_emissive(LinearRgba::BLACK);
             }
         }
@@ -258,7 +337,7 @@ impl GuiPlayer {
 
         // リーチで宣言牌になれない牌をハイライトする
         if self.is_riichi() {
-            for tile in self.hand.tiles() {
+            for tile in hand!(self).tiles() {
                 if !self.riichi_discard_tiles.contains(&tile.tile()) {
                     tile.set_emissive(COLOR_INACTIVE);
                 }
@@ -293,7 +372,7 @@ impl GuiPlayer {
             }
         };
 
-        self.preferred_discard_tile = Some(tile.entity());
+        hand!(self).set_preferred_tile(tile.entity());
         Some(act)
     }
 }

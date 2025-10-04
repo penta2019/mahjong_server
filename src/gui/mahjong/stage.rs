@@ -12,6 +12,7 @@ pub struct GuiStage {
     players: Vec<GuiPlayer>,
     last_tile: Option<(Seat, ActionType, Tile)>,
     camera_seat: Seat,
+    action_control: ActionControl,
     show_hand: bool,
 }
 
@@ -72,16 +73,20 @@ impl GuiStage {
             players.push(player);
         }
 
+        let action_control = ActionControl::new();
+
         Self {
             entity,
             players,
             last_tile: None,
             camera_seat: 0,
+            action_control,
             show_hand: false,
         }
     }
 
     pub fn destroy(self) {
+        self.action_control.destroy();
         param().commands.entity(self.entity).despawn();
     }
 
@@ -101,7 +106,8 @@ impl GuiStage {
     }
 
     pub fn handle_event(&mut self, event: &MjEvent) {
-        self.players[self.camera_seat].on_event();
+        self.action_control
+            .on_event(&mut self.players[self.camera_seat]);
         match event {
             MjEvent::Begin(_ev) => {}
             MjEvent::New(ev) => self.event_new(ev),
@@ -116,12 +122,14 @@ impl GuiStage {
         }
     }
 
-    pub fn handle_actions(&mut self, possible_actions: PossibleActions) {
-        self.players[self.camera_seat].handle_actions(possible_actions);
+    pub fn handle_actions(&mut self, actions: PossibleActions) {
+        self.action_control
+            .handle_actions(&mut self.players[self.camera_seat], actions);
     }
 
     pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
-        self.players[self.camera_seat].handle_gui_events()
+        self.action_control
+            .handle_gui_events(&mut self.players[self.camera_seat])
     }
 
     fn event_new(&mut self, event: &EventNew) {

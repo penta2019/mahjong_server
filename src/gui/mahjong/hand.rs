@@ -10,6 +10,7 @@ pub struct GuiHand {
     entity: Entity,
     tiles: Vec<GuiTile>,
     drawn_tile: Option<Entity>,
+    preferred_tile: Option<Entity>,
     do_sort: bool,
 }
 
@@ -23,6 +24,7 @@ impl GuiHand {
             entity,
             tiles: vec![],
             drawn_tile: None,
+            preferred_tile: None,
             do_sort: true,
         }
     }
@@ -49,12 +51,8 @@ impl GuiHand {
         self.tiles.push(tile);
     }
 
-    pub fn take_tile(
-        &mut self,
-        m_tile: Tile,
-        is_drawn: bool,
-        preferred_tile: Option<Entity>,
-    ) -> GuiTile {
+    pub fn take_tile(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
+        let preferred_tile = self.preferred_tile.take();
         let pos = if is_drawn {
             // 牌を明示的にツモ切り
             self.tiles
@@ -139,6 +137,10 @@ impl GuiHand {
         }
         self.set_sort(false);
         self.align();
+    }
+
+    pub fn set_preferred_tile(&mut self, e_tile: Entity) {
+        self.preferred_tile = Some(e_tile);
     }
 
     pub fn align(&mut self) {

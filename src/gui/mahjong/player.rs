@@ -1,9 +1,23 @@
 use super::{
-    super::stage::{CAMERA_LOOK_AT, CAMERA_POS},
+    stage::{CAMERA_LOOK_AT, CAMERA_POS},
     *,
 };
 
 const TF_CLOSE_HAND: Transform = Transform::from_xyz(-0.12, 0.0, 0.21);
+
+pub enum HandMode {
+    Camera,
+    Close,
+    Open,
+}
+
+#[derive(Debug)]
+pub struct GuiPlayer {
+    entity: Entity,
+    hand: GuiHand,
+    discard: GuiDiscard,
+    meld: GuiMeld,
+}
 
 impl GuiPlayer {
     pub fn new() -> Self {
@@ -38,17 +52,9 @@ impl GuiPlayer {
 
         Self {
             entity,
-            // tf_close_hand,
             hand,
             discard,
             meld,
-            target_tile: None,
-            preferred_discard_tile: None,
-            target_state: TargetState::Released,
-            possible_actions: None,
-            action_main_menu: None,
-            action_sub_menu: None,
-            riichi_discard_tiles: vec![],
         }
     }
 
@@ -109,13 +115,13 @@ impl GuiPlayer {
         self.discard.take_last_tile()
     }
 
+    pub fn hand(&mut self) -> &mut GuiHand {
+        &mut self.hand
+    }
+
     fn take_tile_from_hand(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
-        let preferred = self.preferred_discard_tile.take();
-        let tile = self.hand.take_tile(m_tile, is_drawn, preferred);
-        if Some(tile.entity()) == self.target_tile {
-            self.target_tile = None;
-            tile.set_emissive(LinearRgba::BLACK);
-        }
+        let tile = self.hand.take_tile(m_tile, is_drawn);
+        tile.set_emissive(LinearRgba::BLACK);
         tile
     }
 }

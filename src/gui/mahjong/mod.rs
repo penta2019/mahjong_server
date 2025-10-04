@@ -1,3 +1,4 @@
+mod action;
 mod control;
 mod control_param;
 mod discard;
@@ -13,6 +14,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 use bevy::prelude::*;
 
 use self::{
+    action::ActionControl,
     control::MahjonGuiControl,
     control_param::{ControlParam, param, with_param},
     discard::GuiDiscard,

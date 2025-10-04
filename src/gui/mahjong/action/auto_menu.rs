@@ -1,8 +1,15 @@
 use bevy::prelude::*;
 
+use super::{BUTTON_BACKGROUND, GameButton};
 use crate::gui::mahjong::param;
 
-const MENU_BACKGROUND: Color = Color::srgba(0.15, 0.15, 0.15, 0.8);
+#[derive(Debug, PartialEq, Eq)]
+pub enum AutoButton {
+    Discard,
+    Sort,
+    Win,
+    Skip,
+}
 
 pub fn create_auto_menu() -> Entity {
     let bundle = (
@@ -16,23 +23,24 @@ pub fn create_auto_menu() -> Entity {
             ..default()
         },
         children![
-            create_auto_button("Discard"),
-            create_auto_button("Sort"),
-            create_auto_button("Win"),
-            create_auto_button("Skip"),
+            create_auto_button(AutoButton::Discard, "Discard"),
+            create_auto_button(AutoButton::Sort, "Sort"),
+            create_auto_button(AutoButton::Win, "Win"),
+            create_auto_button(AutoButton::Skip, "Skip"),
         ],
     );
 
     param().commands.spawn(bundle).id()
 }
 
-fn create_auto_button(text: &str) -> impl Bundle + use<> {
+fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {
     (
+        GameButton::Auto(button),
         Button,
         Node {
             width: Val::Px(100.0),
             height: Val::Px(40.0),
-            // border: UiRect::all(Val::Px(2.0)),
+            border: UiRect::all(Val::Px(1.0)),
             margin: UiRect::horizontal(Val::Px(5.0)),
             // 内部のテキストを中央に表示(横方向)
             justify_content: JustifyContent::Center,
@@ -40,9 +48,9 @@ fn create_auto_button(text: &str) -> impl Bundle + use<> {
             align_items: AlignItems::Center,
             ..default()
         },
-        BorderRadius::all(Val::Px(2.0)),
+        BorderRadius::all(Val::Px(4.0)),
         BorderColor::all(Color::BLACK),
-        BackgroundColor(MENU_BACKGROUND),
+        BackgroundColor(BUTTON_BACKGROUND),
         children![(
             Text::new(text),
             TextFont {

@@ -2,7 +2,8 @@ use bevy::input::ButtonState;
 
 use super::{
     super::*,
-    action_menu::{ActionButton, create_main_action_menu, create_sub_action_menu},
+    GameButton,
+    action_menu::{create_main_action_menu, create_sub_action_menu},
     auto_menu::create_auto_menu,
 };
 use crate::model::ActionType;
@@ -101,6 +102,7 @@ impl ActionControl {
             self.handle_hovered_tile(),
             self.handle_mouse_input(),
             self.handle_action_buttons(),
+            self.handle_auto_menu(),
         ]
         .into_iter()
         .fold(None, |a, b| a.or(b));
@@ -179,11 +181,12 @@ impl ActionControl {
 
     fn handle_action_buttons(&mut self) -> Option<Action> {
         let mut act = None;
-        for (interaction, button, mut border_color) in &mut param().action_menu_buttons {
+        for (interaction, button, mut border_color) in &mut param().game_buttons {
             match *interaction {
                 Interaction::Pressed => match &*button {
-                    ActionButton::Main(ty) => act = self.on_main_pressed(*ty),
-                    ActionButton::Sub(act0) => act = Some(act0.clone()),
+                    GameButton::Main(ty) => act = self.on_main_pressed(*ty),
+                    GameButton::Sub(act0) => act = Some(act0.clone()),
+                    GameButton::Auto(_auto) => (),
                 },
                 Interaction::Hovered => {
                     border_color.set_all(Color::WHITE);
@@ -194,6 +197,10 @@ impl ActionControl {
             }
         }
         act
+    }
+
+    fn handle_auto_menu(&mut self) -> Option<Action> {
+        None
     }
 
     fn on_main_pressed(&mut self, ty: ActionType) -> Option<Action> {

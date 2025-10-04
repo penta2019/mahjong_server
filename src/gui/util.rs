@@ -15,7 +15,6 @@ impl<const MSEC: usize> Default for MsecTimer<MSEC> {
     }
 }
 
-#[allow(unused)]
 pub fn print_hierarchy(entity: Entity, names: &Query<&Name>, childrens: &Query<&Children>) {
     fn print_entity_tree(
         entity: Entity,
@@ -44,7 +43,6 @@ pub fn print_hierarchy(entity: Entity, names: &Query<&Name>, childrens: &Query<&
     print_entity_tree(entity, 0, names, childrens);
 }
 
-#[allow(unused)]
 pub fn reparent_tranform(
     child: Entity,
     new_parent: Entity,

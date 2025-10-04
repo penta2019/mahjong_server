@@ -1,19 +1,12 @@
 use bevy::prelude::*;
 
+use super::{BUTTON_BACKGROUND, GameButton};
 use crate::{
     gui::mahjong::param,
     model::{Action, ActionType},
 };
 
 // use super::tile::GuiTile;
-
-const MENU_BACKGROUND: Color = Color::srgba(0.15, 0.15, 0.15, 0.8);
-
-#[derive(Component, Debug, PartialEq, Eq)]
-pub enum ActionButton {
-    Main(ActionType),
-    Sub(Action),
-}
 
 pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
     let param = param();
@@ -72,7 +65,7 @@ pub fn create_sub_action_menu(actions: &[Action]) -> Entity {
 
 fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
     (
-        ActionButton::Main(ty),
+        GameButton::Main(ty),
         Button,
         Node {
             width: Val::Px(100.0),
@@ -86,7 +79,7 @@ fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> 
             ..default()
         },
         BorderColor::all(Color::BLACK),
-        BackgroundColor(MENU_BACKGROUND),
+        BackgroundColor(BUTTON_BACKGROUND),
         children![(
             Text::new(text),
             TextFont {
@@ -104,7 +97,7 @@ fn create_sub_action_button(action: Action) -> impl Bundle + use<> {
     // let tiles: Vec<_> = action.tiles.iter().map(|t| GuiTile::new(*t)).collect();
     let text: String = action.tiles.iter().map(|t| t.to_string()).collect();
     (
-        ActionButton::Sub(action),
+        GameButton::Sub(action),
         Button,
         Node {
             width: Val::Px(100.0),
@@ -118,7 +111,7 @@ fn create_sub_action_button(action: Action) -> impl Bundle + use<> {
             ..default()
         },
         BorderColor::all(Color::BLACK),
-        BackgroundColor(MENU_BACKGROUND),
+        BackgroundColor(BUTTON_BACKGROUND),
         children![(
             Text::new(text),
             TextFont {

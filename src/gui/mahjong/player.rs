@@ -1,7 +1,4 @@
-use super::{
-    stage::{CAMERA_LOOK_AT, CAMERA_POS},
-    *,
-};
+use super::*;
 
 const TF_CLOSE_HAND: Transform = Transform::from_xyz(-0.12, 0.0, 0.21);
 
@@ -61,6 +58,7 @@ impl GuiPlayer {
     pub fn set_hand_mode(&mut self, mode: HandMode) {
         let tf = match mode {
             HandMode::Camera => {
+                use super::stage::{CAMERA_LOOK_AT, CAMERA_POS};
                 let tf_camera =
                     Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
                 let tf_camera_hand = Transform {
@@ -71,11 +69,7 @@ impl GuiPlayer {
                 tf_camera * tf_camera_hand
             }
             HandMode::Close => TF_CLOSE_HAND,
-            HandMode::Open => {
-                let mut tf = TF_CLOSE_HAND;
-                tf.rotation = Quat::from_rotation_x(-FRAC_PI_2);
-                tf
-            }
+            HandMode::Open => TF_CLOSE_HAND.with_rotation(Quat::from_rotation_x(-FRAC_PI_2)),
         };
         param().commands.entity(self.hand.entity()).insert(tf);
     }

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{BUTTON_BACKGROUND, GameButton};
+use super::{BUTTON_INACTIVE, GameButton};
 use crate::{
     gui::mahjong::param,
     model::{Action, ActionType},
@@ -79,7 +79,7 @@ fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> 
             ..default()
         },
         BorderColor::all(Color::BLACK),
-        BackgroundColor(BUTTON_BACKGROUND),
+        BackgroundColor(BUTTON_INACTIVE),
         children![(
             Text::new(text),
             TextFont {
@@ -111,7 +111,7 @@ fn create_sub_action_button(action: Action) -> impl Bundle + use<> {
             ..default()
         },
         BorderColor::all(Color::BLACK),
-        BackgroundColor(BUTTON_BACKGROUND),
+        BackgroundColor(BUTTON_INACTIVE),
         children![(
             Text::new(text),
             TextFont {

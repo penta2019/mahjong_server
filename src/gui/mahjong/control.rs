@@ -46,7 +46,8 @@ impl MahjonGuiControl {
 
                     // TODO
                     // 一度のUpdateで複数のEventの更新を行うとGlobalTransformに
-                    // GuiTileのentityが追加される前にget()が呼び出され失敗する
+                    // GuiTileのentityが追加される前にreparent_transformから
+                    // Query::get()が呼び出され失敗する
                     break;
                 }
                 ServerMessage::Action(possible_actions) => {

@@ -1,15 +1,17 @@
+use std::collections::HashMap;
+
 use bevy::input::ButtonState;
 
 use super::{
     super::*,
-    GameButton,
+    BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,
     action_menu::{create_main_action_menu, create_sub_action_menu},
     auto_menu::create_auto_menu,
 };
-use crate::model::ActionType;
+use crate::{gui::mahjong::action::AutoButton, model::ActionType};
 
-const COLOR_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
-const COLOR_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
+const TILE_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
+const TILE_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
 
 #[derive(Debug, PartialEq, Eq)]
 enum TargetState {
@@ -29,7 +31,12 @@ pub struct ActionControl {
     // イベント処理のpub関数が呼ばれた際にSomeをセットして抜ける際にNoneに戻す
     player: Option<*mut GuiPlayer>,
 
+    // auto
+    auto_reset_request: bool,
     auto_menu: Entity,
+    auto_flags: HashMap<AutoButton, bool>,
+
+    // action
     target_tile: Option<Entity>,
     target_state: TargetState,
     possible_actions: Option<PossibleActions>,
@@ -51,7 +58,9 @@ impl ActionControl {
     pub fn new() -> Self {
         Self {
             player: None,
+            auto_reset_request: false,
             auto_menu: create_auto_menu(),
+            auto_flags: HashMap::new(),
             target_tile: None,
             target_state: TargetState::Released,
             possible_actions: None,
@@ -74,10 +83,26 @@ impl ActionControl {
         }
     }
 
-    pub fn on_event(&mut self, player: &mut GuiPlayer) {
+    pub fn handle_event(&mut self, player: &mut GuiPlayer, event: &MjEvent) {
         self.player = Some(player as *mut GuiPlayer);
 
         self.clear_actions();
+
+        // Newが届いた時点ではstageの生成がQueryに反映されていないため
+        // 次のイベントでフラグのリセット処理を実行
+        // TODO: この方法は同じUpdate内でeventを行う場合正しく動作しない
+        if self.auto_reset_request {
+            self.auto_reset_request = false;
+            self.set_auto_flag(AutoButton::Discard, false);
+            self.set_auto_flag(AutoButton::Sort, true);
+            self.set_auto_flag(AutoButton::Win, false);
+            self.set_auto_flag(AutoButton::Skip, false);
+        }
+
+        match event {
+            MjEvent::New(_) => self.auto_reset_request = true,
+            _ => {}
+        }
 
         self.player = None;
     }
@@ -102,7 +127,6 @@ impl ActionControl {
             self.handle_hovered_tile(),
             self.handle_mouse_input(),
             self.handle_action_buttons(),
-            self.handle_auto_menu(),
         ]
         .into_iter()
         .fold(None, |a, b| a.or(b));
@@ -138,6 +162,9 @@ impl ActionControl {
                         && let Some(new_target_tile) = ev.tile_entity
                         && find_tile(hand!(self).tiles(), new_target_tile).is_some()
                     {
+                        if self.auto_flags.get(&AutoButton::Sort) == Some(&true) {
+                            self.set_auto_flag(AutoButton::Sort, false);
+                        }
                         hand!(self).move_tile(target_tile, new_target_tile);
                     }
                 }
@@ -180,27 +207,60 @@ impl ActionControl {
     }
 
     fn handle_action_buttons(&mut self) -> Option<Action> {
+        let param = param();
         let mut act = None;
-        for (interaction, button, mut border_color) in &mut param().game_buttons {
+        for (entity, interaction) in &mut param.button_interaction {
+            let Ok((button, mut border, mut background)) = param.game_buttons.get_mut(entity)
+            else {
+                continue;
+            };
+
             match *interaction {
                 Interaction::Pressed => match &*button {
                     GameButton::Main(ty) => act = self.on_main_pressed(*ty),
                     GameButton::Sub(act0) => act = Some(act0.clone()),
-                    GameButton::Auto(_auto) => (),
+                    GameButton::Auto(auto) => {
+                        let flag = self.auto_flags.entry(*auto).or_insert(false);
+                        *flag ^= true;
+                        *background = if *flag {
+                            BUTTON_ACTIVE.into()
+                        } else {
+                            BUTTON_INACTIVE.into()
+                        };
+
+                        match auto {
+                            AutoButton::Sort => hand!(self).set_sort(*flag),
+                            _ => {}
+                        }
+                    }
                 },
                 Interaction::Hovered => {
-                    border_color.set_all(Color::WHITE);
+                    border.set_all(Color::WHITE);
                 }
                 Interaction::None => {
-                    border_color.set_all(Color::BLACK);
+                    border.set_all(Color::BLACK);
                 }
             }
         }
         act
     }
 
-    fn handle_auto_menu(&mut self) -> Option<Action> {
-        None
+    fn set_auto_flag(&mut self, target: AutoButton, flag: bool) {
+        // println!("    set_auto_flag: {target:?}, {flag}");
+        for (button, _, mut background) in &mut param().game_buttons {
+            let GameButton::Auto(auto_button) = *button else {
+                continue;
+            };
+
+            if target == auto_button {
+                self.auto_flags.insert(auto_button, flag);
+                *background = if flag {
+                    BUTTON_ACTIVE.into()
+                } else {
+                    BUTTON_INACTIVE.into()
+                };
+            }
+        }
     }
 
     fn on_main_pressed(&mut self, ty: ActionType) -> Option<Action> {
@@ -307,9 +367,9 @@ impl ActionControl {
 
     fn update_target_tile_color(&mut self) {
         self.change_target_tile_color(if self.get_target_tile_if_discardable().is_some() {
-            COLOR_ACTIVE
+            TILE_ACTIVE
         } else {
-            COLOR_INACTIVE
+            TILE_INACTIVE
         });
     }
 
@@ -346,7 +406,7 @@ impl ActionControl {
         if self.is_riichi() {
             for tile in hand!(self).tiles() {
                 if !self.riichi_discard_tiles.contains(&tile.tile()) {
-                    tile.set_emissive(COLOR_INACTIVE);
+                    tile.set_emissive(TILE_INACTIVE);
                 }
             }
         }

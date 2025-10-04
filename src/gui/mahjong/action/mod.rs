@@ -8,9 +8,10 @@ use crate::model::{Action, ActionType};
 
 pub use self::{action_control::ActionControl, auto_menu::AutoButton};
 
-const BUTTON_BACKGROUND: Color = Color::srgba(0.15, 0.15, 0.15, 0.8);
+pub const BUTTON_ACTIVE: Color = Color::srgba(0.15, 0.40, 0.15, 0.8);
+pub const BUTTON_INACTIVE: Color = Color::srgba(0.15, 0.15, 0.15, 0.8);
 
-#[derive(Component, Debug, PartialEq, Eq)]
+#[derive(Component, Debug)]
 pub enum GameButton {
     Main(ActionType),
     Sub(Action),

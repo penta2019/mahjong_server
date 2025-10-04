@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
-use super::{BUTTON_BACKGROUND, GameButton};
+use super::{BUTTON_INACTIVE, GameButton};
 use crate::gui::mahjong::param;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AutoButton {
     Discard,
     Sort,
@@ -50,7 +50,7 @@ fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {
         },
         BorderRadius::all(Val::Px(4.0)),
         BorderColor::all(Color::BLACK),
-        BackgroundColor(BUTTON_BACKGROUND),
+        BackgroundColor(BUTTON_INACTIVE),
         children![(
             Text::new(text),
             TextFont {

@@ -107,7 +107,7 @@ impl GuiStage {
 
     pub fn handle_event(&mut self, event: &MjEvent) {
         self.action_control
-            .on_event(&mut self.players[self.camera_seat]);
+            .handle_event(&mut self.players[self.camera_seat], event);
         match event {
             MjEvent::Begin(_ev) => {}
             MjEvent::New(ev) => self.event_new(ev),

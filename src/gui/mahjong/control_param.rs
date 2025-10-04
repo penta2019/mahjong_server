@@ -18,16 +18,19 @@ pub struct ControlParam<'w, 's> {
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
     pub tile_controls: Query<'w, 's, &'static mut TileControl>,
+
+    // Game Button
     pub game_buttons: Query<
         'w,
         's,
         (
-            &'static Interaction,
             &'static mut GameButton,
             &'static mut BorderColor,
+            &'static mut BackgroundColor,
         ),
-        Changed<Interaction>,
     >,
+    pub button_interaction:
+        Query<'w, 's, (Entity, &'static Interaction), (Changed<Interaction>, With<GameButton>)>,
 
     // MessageWriter
     pub camera: MessageWriter<'w, CameraMove>,

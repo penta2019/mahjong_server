@@ -83,7 +83,8 @@ fn tile_texture(
         if let Ok(name) = gltf_materials.get(e_descendant) {
             let material = materials.add(match name.0.as_str() {
                 "face" => {
-                    let texture = asset_server.load(format!("texture/{}.png", tile_control.tile));
+                    let texture =
+                        asset_server.load(format!("texture_small/{}.png", tile_control.tile));
                     StandardMaterial {
                         base_color_texture: Some(texture),
                         ..Default::default()

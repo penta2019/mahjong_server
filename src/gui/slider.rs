@@ -6,6 +6,7 @@ pub enum SliderState {
     Off,
 }
 
+// TODO: bevy 0.17へのアップデートにより故障中
 pub struct SliderPlugin;
 
 impl Plugin for SliderPlugin {

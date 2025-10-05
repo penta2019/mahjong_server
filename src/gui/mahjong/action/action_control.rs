@@ -134,11 +134,16 @@ impl ActionControl {
         let selected_act = if let Some(act) = selected_act
             && let Some(acts) = self.possible_actions.take()
         {
-            self.clear_actions();
-            Some(SelectedAction {
-                id: acts.id,
-                action: act,
-            })
+            if is_valid_action(&acts.actions, &act, hand!(self)) {
+                self.clear_actions();
+                Some(SelectedAction {
+                    id: acts.id,
+                    action: act,
+                })
+            } else {
+                error!("`{act:?}` is not valid action");
+                None
+            }
         } else {
             None
         };
@@ -246,7 +251,6 @@ impl ActionControl {
     }
 
     fn set_auto_flag(&mut self, target: AutoButton, flag: bool) {
-        // println!("    set_auto_flag: {target:?}, {flag}");
         for (button, _, mut background) in &mut param().game_buttons {
             let GameButton::Auto(auto_button) = *button else {
                 continue;
@@ -417,10 +421,14 @@ impl ActionControl {
     }
 
     fn action_nop(&mut self) -> Option<Action> {
-        if self.possible_actions.is_some() {
-            return Some(Action::nop());
+        let nop = Action::nop();
+        if let Some(acts) = &self.possible_actions
+            && acts.actions.contains(&nop)
+        {
+            Some(nop)
+        } else {
+            None
         }
-        None
     }
 
     fn action_discard_tile(&mut self) -> Option<Action> {
@@ -480,4 +488,31 @@ fn find_discard(actions: &[Action]) -> Option<&Action> {
 
 fn find_tile(tiles: &[GuiTile], entity: Entity) -> Option<&GuiTile> {
     tiles.iter().find(|t| t.entity() == entity)
+}
+
+fn is_valid_action(actions: &[Action], action: &Action, hand: &GuiHand) -> bool {
+    match action.ty {
+        ActionType::Discard => {
+            if let Some(discard) = actions.iter().find(|a| a.ty == ActionType::Discard)
+                && let Some(tile) = action.tiles.first()
+                && !discard.tiles.contains(tile)
+                && hand.tiles().iter().find(|t| t.tile() == *tile).is_some()
+            {
+                true
+            } else {
+                false
+            }
+        }
+        ActionType::Riichi => {
+            if let Some(riichi) = actions.iter().find(|a| a.ty == ActionType::Riichi)
+                && let Some(riichi_tile) = action.tiles.first()
+                && riichi.tiles.contains(riichi_tile)
+            {
+                true
+            } else {
+                false
+            }
+        }
+        _ => actions.contains(action),
+    }
 }

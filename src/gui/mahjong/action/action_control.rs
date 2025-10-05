@@ -10,6 +10,8 @@ use super::{
 };
 use crate::{gui::mahjong::action::AutoButton, model::ActionType};
 
+use ActionType::*;
+
 const TILE_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
 const TILE_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
 
@@ -99,9 +101,8 @@ impl ActionControl {
             self.set_auto_flag(AutoButton::Skip, false);
         }
 
-        match event {
-            MjEvent::New(_) => self.auto_reset_request = true,
-            _ => {}
+        if let MjEvent::New(_) = event {
+            self.auto_reset_request = true
         }
 
         self.player = None;
@@ -127,6 +128,7 @@ impl ActionControl {
             self.handle_hovered_tile(),
             self.handle_mouse_input(),
             self.handle_action_buttons(),
+            self.handle_auto_action(),
         ]
         .into_iter()
         .fold(None, |a, b| a.or(b));
@@ -233,9 +235,8 @@ impl ActionControl {
                             BUTTON_INACTIVE.into()
                         };
 
-                        match auto {
-                            AutoButton::Sort => hand!(self).set_sort(*flag),
-                            _ => {}
+                        if auto == &AutoButton::Sort {
+                            hand!(self).set_sort(*flag)
                         }
                     }
                 },
@@ -248,6 +249,38 @@ impl ActionControl {
             }
         }
         act
+    }
+
+    fn handle_auto_action(&mut self) -> Option<Action> {
+        if let Some(acts) = &self.possible_actions {
+            let acts = &acts.actions;
+
+            if self.auto_flags.get(&AutoButton::Discard) == Some(&true)
+                && has_action(acts, Discard)
+                && has_action(acts, Nop)
+                && !has_action(acts, Tsumo)
+            {
+                return Some(Action::nop());
+            }
+
+            if self.auto_flags.get(&AutoButton::Win) == Some(&true) {
+                if has_action(acts, Tsumo) {
+                    return Some(Action::tsumo());
+                }
+                if has_action(acts, Ron) {
+                    return Some(Action::ron());
+                }
+            }
+
+            if self.auto_flags.get(&AutoButton::Skip) == Some(&true)
+                && !has_action(acts, Discard)
+                && has_action(acts, Nop)
+                && !has_action(acts, Ron)
+            {
+                return Some(Action::nop());
+            }
+        }
+        None
     }
 
     fn set_auto_flag(&mut self, target: AutoButton, flag: bool) {
@@ -269,7 +302,7 @@ impl ActionControl {
 
     fn on_main_pressed(&mut self, ty: ActionType) -> Option<Action> {
         // サブメニューのキャンセルボタンの処理
-        if self.action_sub_menu.is_some() && ty == ActionType::Nop {
+        if self.action_sub_menu.is_some() && ty == Nop {
             self.cancel_sub_menu();
             return None;
         }
@@ -288,7 +321,7 @@ impl ActionControl {
                 0 => {}
                 1 => {
                     let act0 = acts.remove(0);
-                    if act0.ty == ActionType::Riichi {
+                    if act0.ty == Riichi {
                         self.set_riichi(act0.tiles);
                         if let Some(menu) = self.action_main_menu {
                             param.commands.entity(menu).insert(Visibility::Hidden);
@@ -357,7 +390,7 @@ impl ActionControl {
         if !self.is_riichi() {
             // 通常時
             let actions = self.possible_actions.as_ref()?;
-            let discard = find_discard(&actions.actions)?;
+            let discard = &actions.actions.iter().find(|a| a.ty == Discard)?;
             if !discard.tiles.contains(&tile.tile()) {
                 return Some((tile, is_drawn));
             }
@@ -421,11 +454,10 @@ impl ActionControl {
     }
 
     fn action_nop(&mut self) -> Option<Action> {
-        let nop = Action::nop();
         if let Some(acts) = &self.possible_actions
-            && acts.actions.contains(&nop)
+            && has_action(&acts.actions, Nop)
         {
-            Some(nop)
+            Some(Action::nop())
         } else {
             None
         }
@@ -453,7 +485,6 @@ impl ActionControl {
 }
 
 fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
-    use ActionType::*;
     let mut types: Vec<_> = [
         Nop,
         // turn action
@@ -475,15 +506,15 @@ fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
     .collect();
 
     // 打牌可能な場合はNop(Skipボタン)は不要
-    if find_discard(actions).is_some() {
-        types.retain(|t| *t != ActionType::Nop);
+    if has_action(actions, Discard) {
+        types.retain(|t| *t != Nop);
     }
 
     types
 }
 
-fn find_discard(actions: &[Action]) -> Option<&Action> {
-    actions.iter().find(|a| a.ty == ActionType::Discard)
+fn has_action(actions: &[Action], ty: ActionType) -> bool {
+    actions.iter().any(|a| a.ty == ty)
 }
 
 fn find_tile(tiles: &[GuiTile], entity: Entity) -> Option<&GuiTile> {
@@ -492,19 +523,19 @@ fn find_tile(tiles: &[GuiTile], entity: Entity) -> Option<&GuiTile> {
 
 fn is_valid_action(actions: &[Action], action: &Action, hand: &GuiHand) -> bool {
     match action.ty {
-        ActionType::Discard => {
-            if let Some(discard) = actions.iter().find(|a| a.ty == ActionType::Discard)
+        Discard => {
+            if let Some(discard) = actions.iter().find(|a| a.ty == Discard)
                 && let Some(tile) = action.tiles.first()
                 && !discard.tiles.contains(tile)
-                && hand.tiles().iter().find(|t| t.tile() == *tile).is_some()
+                && hand.tiles().iter().any(|t| t.tile() == *tile)
             {
                 true
             } else {
                 false
             }
         }
-        ActionType::Riichi => {
-            if let Some(riichi) = actions.iter().find(|a| a.ty == ActionType::Riichi)
+        Riichi => {
+            if let Some(riichi) = actions.iter().find(|a| a.ty == Riichi)
                 && let Some(riichi_tile) = action.tiles.first()
                 && riichi.tiles.contains(riichi_tile)
             {

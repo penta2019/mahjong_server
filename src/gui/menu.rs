@@ -159,14 +159,14 @@ fn handler_button_interaction(
         (&Interaction, &mut BackgroundColor, &MenuButton),
         (Changed<Interaction>, With<Button>),
     >,
-    mut app_exit_events: MessageWriter<AppExit>,
+    mut app_exit: MessageWriter<AppExit>,
 ) {
     for (interaction, mut color, button) in buttons {
         match *interaction {
             Interaction::Pressed => {
                 *color = BackgroundColor(PRESSED_BUTTON);
                 match button {
-                    MenuButton::Quit => app_exit_events.write(AppExit::Success),
+                    MenuButton::Quit => app_exit.write(AppExit::Success),
                 };
             }
             Interaction::Hovered => {

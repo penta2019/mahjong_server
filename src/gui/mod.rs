@@ -25,7 +25,7 @@ pub fn run(tx: Tx, rx: Rx) {
     app.add_plugins((
         DefaultPlugins,
         MeshPickingPlugin,
-        camera::ControlPlugin,
+        camera::CameraPlugin,
         debug::DebugPlugin,
         slider::SliderPlugin,
         menu::MenuPlugin,
@@ -40,7 +40,7 @@ pub fn run(tx: Tx, rx: Rx) {
 fn keyboard_handler(
     keys: Res<ButtonInput<KeyCode>>,
     mut context: ResMut<Context>,
-    mut next_fly_state: ResMut<NextState<CameraState>>,
+    mut next_camera_state: ResMut<NextState<CameraState>>,
     debug_state: Res<State<DebugState>>,
     mut next_debug_state: ResMut<NextState<DebugState>>,
     menu_state: Res<State<MenuState>>,
@@ -57,9 +57,9 @@ fn keyboard_handler(
     if keys.just_pressed(KeyCode::Space) {
         context.can_fly = !context.can_fly;
         if context.can_fly && **menu_state == MenuState::Hidden {
-            next_fly_state.set(CameraState::Fly);
+            next_camera_state.set(CameraState::Fly);
         } else {
-            next_fly_state.set(CameraState::Fix);
+            next_camera_state.set(CameraState::Fix);
         }
     }
 
@@ -69,13 +69,13 @@ fn keyboard_handler(
                 // メニューを閉じる State: Disabled -> On, Off -> Off
                 next_menu_state.set(MenuState::Hidden);
                 if context.can_fly {
-                    next_fly_state.set(CameraState::Fly);
+                    next_camera_state.set(CameraState::Fly);
                 }
             }
             MenuState::Hidden => {
                 // メニューを開く State: On -> Disabled, Off -> Off
                 next_menu_state.set(MenuState::Visible);
-                next_fly_state.set(CameraState::Fix);
+                next_camera_state.set(CameraState::Fix);
             }
         }
     }

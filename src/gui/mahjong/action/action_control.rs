@@ -12,9 +12,6 @@ use crate::{gui::mahjong::action::AutoButton, model::ActionType};
 
 use ActionType::*;
 
-const TILE_ACTIVE: LinearRgba = LinearRgba::rgb(0.0, 0.1, 0.0); // ハイライト (打牌可)
-const TILE_INACTIVE: LinearRgba = LinearRgba::rgb(0.1, 0.0, 0.0); // ハイライト (打牌不可)
-
 #[derive(Debug, PartialEq, Eq)]
 enum TargetState {
     Released,
@@ -22,6 +19,7 @@ enum TargetState {
     Dragging,
 }
 
+// このマクロで&mutを複数作成する場合には借用チェッカー正しく機能しないので注意して使用すること
 macro_rules! hand {
     ($s:expr) => {
         unsafe { (**$s.player.as_ref().unwrap()).hand() }
@@ -363,12 +361,12 @@ impl ActionControl {
 
         // 元々のtarget_tileを解除
         if !self.is_riichi() {
-            self.change_target_tile_color(LinearRgba::BLACK);
+            self.change_target_tile_color(TILE_NORMAL);
         } else if let Some(e_tile) = self.target_tile
             && let Some(tile) = find_tile(hand!(self).tiles(), e_tile)
             && self.riichi_discard_tiles.contains(&tile.tile())
         {
-            self.change_target_tile_color(LinearRgba::BLACK);
+            self.change_target_tile_color(TILE_NORMAL);
         }
 
         self.target_tile = None;
@@ -414,7 +412,7 @@ impl ActionControl {
         if let Some(e_tile) = self.target_tile
             && let Some(tile) = find_tile(hand!(self).tiles(), e_tile)
         {
-            tile.set_emissive(color);
+            tile.blend(color);
         }
     }
 
@@ -433,7 +431,7 @@ impl ActionControl {
         // リーチをキャンセルした場合に色を戻す
         if self.is_riichi() {
             for tile in hand!(self).tiles() {
-                tile.set_emissive(LinearRgba::BLACK);
+                tile.blend(TILE_NORMAL);
             }
         }
 
@@ -443,7 +441,7 @@ impl ActionControl {
         if self.is_riichi() {
             for tile in hand!(self).tiles() {
                 if !self.riichi_discard_tiles.contains(&tile.tile()) {
-                    tile.set_emissive(TILE_INACTIVE);
+                    tile.blend(TILE_INACTIVE);
                 }
             }
         }
@@ -517,11 +515,11 @@ fn has_action(actions: &[Action], ty: ActionType) -> bool {
     actions.iter().any(|a| a.ty == ty)
 }
 
-fn find_tile(tiles: &[GuiTile], entity: Entity) -> Option<&GuiTile> {
-    tiles.iter().find(|t| t.entity() == entity)
+fn find_tile(tiles: &mut [GuiTile], entity: Entity) -> Option<&mut GuiTile> {
+    tiles.iter_mut().find(|t| t.entity() == entity)
 }
 
-fn is_valid_action(actions: &[Action], action: &Action, hand: &GuiHand) -> bool {
+fn is_valid_action(actions: &[Action], action: &Action, hand: &mut GuiHand) -> bool {
     match action.ty {
         Discard => {
             if let Some(discard) = actions.iter().find(|a| a.ty == Discard)
@@ -535,11 +533,21 @@ fn is_valid_action(actions: &[Action], action: &Action, hand: &GuiHand) -> bool 
             }
         }
         Riichi => {
-            if let Some(riichi) = actions.iter().find(|a| a.ty == Riichi)
-                && let Some(riichi_tile) = action.tiles.first()
-                && riichi.tiles.contains(riichi_tile)
-            {
-                true
+            if let Some(riichi) = actions.iter().find(|a| a.ty == Riichi) {
+                if let Some(riichi_tile) = action.tiles.first()
+                    && riichi.tiles.contains(riichi_tile)
+                {
+                    // ツモ切り以外のリーチ
+                    true
+                } else if action.tiles.is_empty()
+                    && let Some(tile) = hand.drawn_tile()
+                    && riichi.tiles.contains(&tile.tile())
+                {
+                    // ツモ切りリーチ
+                    true
+                } else {
+                    false
+                }
             } else {
                 false
             }

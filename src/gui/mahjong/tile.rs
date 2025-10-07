@@ -3,6 +3,10 @@ use super::{
     *,
 };
 
+pub const TILE_NORMAL: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.0); // ハイライトなし
+pub const TILE_ACTIVE: LinearRgba = LinearRgba::new(0.0, 1.0, 0.0, 0.15); // ハイライト (打牌可)
+pub const TILE_INACTIVE: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.4); // ハイライト (打牌不可)
+
 #[derive(Debug)]
 pub struct GuiTile {
     entity: Entity,
@@ -29,9 +33,8 @@ impl GuiTile {
         self.tile_control().mutate(m_tile);
     }
 
-    pub fn set_emissive(&self, color: LinearRgba) {
-        self.tile_control()
-            .set_emissive(&mut param().materials, color);
+    pub fn blend(&mut self, color: LinearRgba) {
+        self.tile_control().blend(color);
     }
 
     fn tile_control(&self) -> Mut<'_, TileControl> {

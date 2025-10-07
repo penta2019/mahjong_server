@@ -4,7 +4,7 @@ use super::*;
 use crate::gui::camera::CameraMove;
 
 pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.8, 0.8);
-pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.02, 0.0);
+pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.05, 0.0);
 
 #[derive(Resource, Debug)]
 pub struct GuiStage {

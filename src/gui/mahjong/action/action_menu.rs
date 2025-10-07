@@ -70,7 +70,7 @@ fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> 
         Node {
             width: Val::Px(100.0),
             height: Val::Px(40.0),
-            border: UiRect::all(Val::Px(2.0)),
+            border: UiRect::all(Val::Px(1.0)),
             margin: UiRect::all(Val::Px(5.0)),
             // 内部のテキストを中央に表示(横方向)
             justify_content: JustifyContent::Center,
@@ -102,7 +102,7 @@ fn create_sub_action_button(action: Action) -> impl Bundle + use<> {
         Node {
             width: Val::Px(100.0),
             height: Val::Px(60.0),
-            border: UiRect::all(Val::Px(2.0)),
+            border: UiRect::all(Val::Px(1.0)),
             margin: UiRect::all(Val::Px(5.0)),
             // 内部のテキストを中央に表示(横方向)
             justify_content: JustifyContent::Center,

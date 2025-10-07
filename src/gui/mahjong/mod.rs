@@ -22,7 +22,7 @@ use self::{
     meld::GuiMeld,
     player::{GuiPlayer, HandMode},
     stage::GuiStage,
-    tile::GuiTile,
+    tile::{GuiTile, TILE_ACTIVE, TILE_INACTIVE, TILE_NORMAL},
 };
 use crate::model::{Event as MjEvent, *};
 

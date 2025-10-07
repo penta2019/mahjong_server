@@ -138,6 +138,7 @@ fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
             ..default()
         }),
         tf_camera,
+        Msaa::Sample8,
     ));
 
     // Camera2dを追加している場合はUIはこちらに描画される

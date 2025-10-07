@@ -111,12 +111,17 @@ impl GuiHand {
         tile
     }
 
-    pub fn tiles(&self) -> &[GuiTile] {
-        &self.tiles
+    pub fn tiles(&mut self) -> &mut [GuiTile] {
+        &mut self.tiles
     }
 
     pub fn is_drawn_tile(&self, tile: &GuiTile) -> bool {
         Some(tile.entity()) == self.drawn_tile
+    }
+
+    pub fn drawn_tile(&self) -> Option<&GuiTile> {
+        let e_tile = self.drawn_tile?;
+        self.tiles.iter().find(|t| t.entity() == e_tile)
     }
 
     pub fn set_sort(&mut self, flag: bool) {

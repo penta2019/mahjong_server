@@ -114,8 +114,8 @@ impl GuiPlayer {
     }
 
     fn take_tile_from_hand(&mut self, m_tile: Tile, is_drawn: bool) -> GuiTile {
-        let tile = self.hand.take_tile(m_tile, is_drawn);
-        tile.set_emissive(LinearRgba::BLACK);
+        let mut tile = self.hand.take_tile(m_tile, is_drawn);
+        tile.blend(TILE_NORMAL);
         tile
     }
 }

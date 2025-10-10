@@ -1,4 +1,4 @@
-use bevy::color::palettes::basic::{BLACK, GREEN};
+use bevy::color::palettes::basic::GREEN;
 
 use super::*;
 use crate::gui::camera::CameraMove;
@@ -9,6 +9,7 @@ pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.05, 0.0);
 #[derive(Resource, Debug)]
 pub struct GuiStage {
     entity: Entity,
+    info: StageInfo,
     players: Vec<GuiPlayer>,
     last_tile: Option<(Seat, ActionType, Tile)>,
     camera_seat: Seat,
@@ -33,26 +34,19 @@ impl GuiStage {
             ))
             .id();
 
-        // info
-        // 局全体の情報 (得点, リー棒などのプレイヤーごとの情報はGuiPlayerに置く)
-        commands.spawn((
-            Name::new("Info".to_string()),
-            ChildOf(entity),
-            Transform::from_xyz(0.0, 0.001, 0.0),
-            Mesh3d(meshes.add(Plane3d::default().mesh().size(0.12, 0.12))),
-            MeshMaterial3d(materials.add(Color::from(BLACK))),
-        ));
+        // StageInfo (局, 本場, リー棒, 得点, 自風 等の中央情報表示パネル)
+        let info = StageInfo::new();
 
         // Light
-        // 斜め4方向から照射
+        // 斜め4方向から照射 (牌はこれらのライトを無視してシェーダで独自に行う)
         for i in 0..4 {
             commands.spawn((
-                ChildOf(entity),
                 DirectionalLight {
                     illuminance: 1_000.0,
                     shadows_enabled: false,
                     ..default()
                 },
+                ChildOf(entity),
                 Transform::from_translation(
                     Quat::from_rotation_y(FRAC_PI_2 * i as f32) * Vec3::ONE,
                 )
@@ -77,6 +71,7 @@ impl GuiStage {
 
         Self {
             entity,
+            info,
             players,
             last_tile: None,
             camera_seat: 0,
@@ -86,12 +81,14 @@ impl GuiStage {
     }
 
     pub fn destroy(self) {
-        self.action_control.destroy();
         param().commands.entity(self.entity).despawn();
+        self.info.destroy();
+        self.action_control.destroy();
     }
 
     pub fn set_player(&mut self, seat: Seat) {
         self.camera_seat = seat;
+        self.info.set_camera_seat(seat);
         let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
         param().camera.write(CameraMove::look(pos, CAMERA_LOOK_AT));
         for (s, player) in self.players.iter_mut().enumerate() {
@@ -133,6 +130,8 @@ impl GuiStage {
     }
 
     fn event_new(&mut self, event: &EventNew) {
+        self.info.init(event);
+        self.info.set_camera_seat(self.camera_seat);
         for seat in 0..SEAT {
             self.players[seat].init_hand(&event.hands[seat]);
         }

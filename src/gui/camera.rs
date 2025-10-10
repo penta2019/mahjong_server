@@ -131,7 +131,6 @@ fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
     };
     commands.spawn((
         MainCamera,
-        Camera::default(),
         Camera3d::default(),
         Projection::from(PerspectiveProjection {
             fov: 20.0_f32.to_radians(),
@@ -140,16 +139,6 @@ fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
         tf_camera,
         Msaa::Sample8,
     ));
-
-    // Camera2dを追加している場合はUIはこちらに描画される
-    // 追加していない場合はCamera3dに投影される
-    // commands.spawn((
-    //     Camera {
-    //         order: 1,
-    //         ..default()
-    //     },
-    //     Camera2d,
-    // ));
 }
 
 fn state_fly(mut options: Single<&mut CursorOptions, With<PrimaryWindow>>) {

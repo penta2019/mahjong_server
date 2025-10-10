@@ -4,6 +4,7 @@ use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput, prelude::*}
 
 use super::{
     super::{camera::CameraMove, util::print_hierarchy},
+    InfoTexture,
     action::GameButton,
     tile_plugin::{HoveredTile, TileControl},
 };
@@ -12,12 +13,13 @@ use super::{
 #[derive(SystemParam)]
 pub struct ControlParam<'w, 's> {
     pub commands: Commands<'w, 's>,
-    // pub window: Single<'w, &'static mut Window>,
     pub meshes: ResMut<'w, Assets<Mesh>>,
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
+
     pub tile_controls: Query<'w, 's, &'static mut TileControl>,
+    pub info_texture: Res<'w, InfoTexture>,
 
     // Game Button
     pub game_buttons: Query<

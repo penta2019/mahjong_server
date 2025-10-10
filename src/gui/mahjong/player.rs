@@ -31,7 +31,7 @@ impl GuiPlayer {
         commands.entity(discard.entity()).insert((
             ChildOf(entity),
             Transform {
-                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074),
+                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074 + 0.010),
                 rotation: Quat::from_rotation_x(-FRAC_PI_2),
                 scale: Vec3::ONE,
             },

@@ -69,13 +69,17 @@ impl StageInfo {
         let param = param();
         let commands = &mut param.commands;
 
-        let wind = ["E", "S", "W", "N"];
+        let wind = ["東", "南", "西", "北"];
+        // let wind = ["E", "S", "W", "N"];
 
-        let round_text = format!("{} {}", wind[event.round], (event.dealer + 1));
+        let font = param.asset_server.load("font/NotoSerifCJKjp-Regular.otf");
+
+        let round_text = format!("{}{}局", wind[event.round], (event.dealer + 1));
         let round = commands
             .spawn((
                 Text2d(round_text.into()),
                 TextFont {
+                    font: font.clone(),
                     font_size: 80.0,
                     ..default()
                 },
@@ -98,6 +102,7 @@ impl StageInfo {
                     (
                         Text2d(wind[i_wind].into()),
                         TextFont {
+                            font: font.clone(),
                             font_size: 60.0,
                             ..default()
                         },
@@ -108,6 +113,7 @@ impl StageInfo {
                     (
                         Text2d(event.scores[s].to_string().into()),
                         TextFont {
+                            font: font.clone(),
                             font_size: 60.0,
                             ..default()
                         },

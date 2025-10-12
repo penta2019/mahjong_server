@@ -1,17 +1,69 @@
 use std::sync::Mutex;
 
-use super::*;
+use super::{
+    param::{MahjongParam, with_param},
+    prelude::*,
+    stage::GuiStage,
+    tile_plugin::TilePlugin,
+};
+
+pub type Tx = std::sync::mpsc::Sender<ClientMessage>;
+pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
+
+pub trait HasEntity {
+    fn entity(&self) -> Entity;
+}
+
+#[derive(Resource)]
+pub struct InfoTexture(pub Handle<Image>);
+
+pub struct MahjongPlugin {
+    txrx: std::sync::Mutex<Option<(Tx, Rx)>>,
+}
+
+impl MahjongPlugin {
+    pub fn new(tx: Tx, rx: Rx) -> Self {
+        Self {
+            txrx: std::sync::Mutex::new(Some((tx, rx))),
+        }
+    }
+}
+
+impl Plugin for MahjongPlugin {
+    fn build(&self, app: &mut App) {
+        let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
+        app.add_plugins(TilePlugin)
+            .insert_resource(GuiMahjong::new(tx, rx))
+            .add_systems(Startup, setup)
+            .add_systems(Update, mahjong_control);
+    }
+}
+
+fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+    // 中央パネルのテクスチャを初期化
+    // レンダリング用のカメラより先に初期化される必要があるためここで実行
+    // 公式のExamplesでは同時に初期化しているが多くの初期化処理を一度に行う場合に正しく動作しない
+    use bevy::render::render_resource::TextureFormat;
+    let image = Image::new_target_texture(512, 512, TextureFormat::bevy_default());
+    commands.insert_resource(InfoTexture(images.add(image)));
+}
+
+fn mahjong_control(mut param: MahjongParam, mut stage_control: ResMut<GuiMahjong>) {
+    with_param(&mut param, || {
+        stage_control.update();
+    });
+}
 
 #[derive(Resource, Debug)]
-pub struct MahjonGuiControl {
+struct GuiMahjong {
     stage: Option<GuiStage>,
     seat: Seat,
     tx: Mutex<Tx>,
     rx: Mutex<Rx>,
 }
 
-impl MahjonGuiControl {
-    pub fn new(tx: Tx, rx: Rx) -> Self {
+impl GuiMahjong {
+    fn new(tx: Tx, rx: Rx) -> Self {
         Self {
             stage: None,
             seat: 0,
@@ -20,7 +72,7 @@ impl MahjonGuiControl {
         }
     }
 
-    pub fn update(&mut self) {
+    fn update(&mut self) {
         while let Ok(msg) = self.rx.lock().unwrap().try_recv() {
             if let ServerMessage::Event(ev) = &msg
                 && let MjEvent::New(_) = ev.as_ref()

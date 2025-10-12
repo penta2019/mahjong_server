@@ -1,6 +1,6 @@
 use super::{
+    prelude::*,
     tile_plugin::{TileControl, create_tile},
-    *,
 };
 
 pub const TILE_NORMAL: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.0); // ハイライトなし

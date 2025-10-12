@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{BUTTON_INACTIVE, GameButton};
-use crate::gui::mahjong::param;
+use crate::gui::mahjong::param::param;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AutoButton {

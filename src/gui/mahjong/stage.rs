@@ -1,6 +1,12 @@
 use bevy::color::palettes::basic::GREEN;
 
-use super::*;
+use super::{
+    action::ActionControl,
+    dora_indicator::DoraIndicator,
+    player::{GuiPlayer, HandMode},
+    prelude::*,
+    stage_info::StageInfo,
+};
 use crate::gui::camera::CameraMove;
 
 pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.8, 0.8);
@@ -8,12 +14,20 @@ pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.05, 0.0);
 
 #[derive(Resource, Debug)]
 pub struct GuiStage {
+    // stage Entity
+    // 殆どのEntityはこのEntityの子孫なので,これをdespawn()すればほぼ消える
     entity: Entity,
+    // 中央情報パネル
     info: StageInfo,
+    // 各プレイヤー (手牌, 河, 副露)
     players: Vec<GuiPlayer>,
+    // 副露に使用する最後に河に切られた牌
     last_tile: Option<(Seat, ActionType, Tile)>,
+    // カメラを配置するプレイヤーの座席
     camera_seat: Seat,
+    // カメラ座席の操作
     action_control: ActionControl,
+    // カメラ座席以外のプレイヤーの手牌の表示フラグ
     show_hand: bool,
 }
 
@@ -24,7 +38,6 @@ impl GuiStage {
         let meshes = &mut param.meshes;
         let materials = &mut param.materials;
 
-        // stage
         let entity = commands
             .spawn((
                 Name::new("Stage".to_string()),
@@ -33,9 +46,6 @@ impl GuiStage {
                 MeshMaterial3d(materials.add(Color::from(GREEN))),
             ))
             .id();
-
-        // StageInfo (局, 本場, リー棒, 得点, 自風 等の中央情報表示パネル)
-        let info = StageInfo::new();
 
         // Light
         // 斜め4方向から照射 (牌はこれらのライトを無視してシェーダで独自に行う)
@@ -53,6 +63,13 @@ impl GuiStage {
                 .looking_at(Vec3::new(0.0, 0.1, 0.0), Vec3::new(0.0, 1.0, 0.0)),
             ));
         }
+
+        let info = StageInfo::new();
+        commands
+            .entity(info.entity())
+            .insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
+
+        let _dora_indicator = DoraIndicator::new();
 
         let mut players = vec![];
         for seat in 0..SEAT {

@@ -2,7 +2,7 @@ mod action_control;
 mod action_menu;
 mod auto_menu;
 
-use bevy::prelude::*;
+use bevy::prelude::{Color, Component};
 
 use crate::model::{Action, ActionType};
 

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::{BUTTON_INACTIVE, GameButton};
 use crate::{
-    gui::mahjong::param,
+    gui::mahjong::param::param,
     model::{Action, ActionType},
 };
 

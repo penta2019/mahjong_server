@@ -290,7 +290,7 @@ enum RoundResult {
 #[derive(Debug)]
 struct NextRoundInfo {
     round: usize,
-    dealer: usize,
+    dealer: Seat,
     honba_sticks: usize,
     riichi_sticks: usize,
     scores: [Score; SEAT],
@@ -479,6 +479,9 @@ impl MahjongEngine {
         // ドラ表示牌
         let doras = vec![self.dora_wall[0]];
 
+        // サイコロの目の和
+        let dice = self.rng.random_range(1..=6) + self.rng.random_range(1..=6);
+
         let rn = &self.next_round_info;
         let event = Event::new(
             self.rule.clone(),
@@ -491,6 +494,7 @@ impl MahjongEngine {
             rn.scores,
             ph,
             self.wall.len() - self.n_deal,
+            dice,
         );
         self.handle_event(event);
     }
@@ -512,16 +516,16 @@ impl MahjongEngine {
                     let (r, kd) = self.draw_kan_tile();
                     if ty == Ankan {
                         self.handle_event(Event::dora(kd)); // 暗槓の槓ドラは打牌前
-                        self.handle_event(Event::deal(turn, r));
+                        self.handle_event(Event::deal(turn, r, true));
                     } else {
-                        self.handle_event(Event::deal(turn, r));
+                        self.handle_event(Event::deal(turn, r, true));
                         self.kan_dora = Some(kd); // 明槓,加槓の槓ドラは打牌後
                     }
                     self.check_suukansanra_needed();
                 }
                 Nukidora => {
                     let k = self.draw_nukidora_tile();
-                    self.handle_event(Event::deal(turn, k));
+                    self.handle_event(Event::deal(turn, k, false));
                 }
                 _ => panic!(),
             }
@@ -529,7 +533,7 @@ impl MahjongEngine {
             if wall_count > 0 {
                 let s = (turn + 1) % SEAT;
                 let t = self.draw_tile();
-                self.handle_event(Event::deal(s, t));
+                self.handle_event(Event::deal(s, t, false));
             } else {
                 self.round_result = Some(RoundResult::Draw(DrawType::Kouhaiheikyoku));
             }

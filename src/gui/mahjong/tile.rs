@@ -1,11 +1,7 @@
 use super::{
     prelude::*,
-    tile_plugin::{TileControl, create_tile},
+    tile_plugin::{TileBlend, TileMutate, create_tile},
 };
-
-pub const TILE_NORMAL: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.0); // ハイライトなし
-pub const TILE_ACTIVE: LinearRgba = LinearRgba::new(0.0, 1.0, 0.0, 0.15); // ハイライト (打牌可)
-pub const TILE_INACTIVE: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.4); // ハイライト (打牌不可)
 
 #[derive(Debug)]
 pub struct GuiTile {
@@ -15,8 +11,12 @@ pub struct GuiTile {
 
 impl GuiTile {
     pub const WIDTH: f32 = 0.020;
-    pub const HEIGHT: f32 = 0.028;
+    pub const HEIGHT: f32 = 0.0256;
     pub const DEPTH: f32 = 0.016;
+
+    pub const NORMAL: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.0); // ハイライトなし
+    pub const ACTIVE: LinearRgba = LinearRgba::new(0.0, 1.0, 0.0, 0.15); // ハイライト (打牌可)
+    pub const INACTIVE: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.4); // ハイライト (打牌不可)
 
     pub fn new(tile: Tile) -> Self {
         let param = param();
@@ -30,15 +30,17 @@ impl GuiTile {
 
     pub fn mutate(&mut self, m_tile: Tile) {
         self.tile = m_tile;
-        self.tile_control().mutate(m_tile);
+        param()
+            .commands
+            .entity(self.entity)
+            .insert(TileMutate(m_tile));
     }
 
     pub fn blend(&mut self, color: LinearRgba) {
-        self.tile_control().blend(color);
-    }
-
-    fn tile_control(&self) -> Mut<'_, TileControl> {
-        param().tile_controls.get_mut(self.entity).unwrap()
+        param()
+            .commands
+            .entity(self.entity)
+            .insert(TileBlend(color));
     }
 }
 

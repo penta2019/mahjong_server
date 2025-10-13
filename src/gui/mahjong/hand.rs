@@ -1,7 +1,7 @@
 use rand::{prelude::IndexedRandom, rng};
 
 use super::prelude::*;
-use crate::gui::move_animation::MoveAnimation;
+use crate::gui::{move_animation::MoveAnimation, util::reparent_tranform};
 
 pub type IsDrawn = bool;
 
@@ -40,14 +40,19 @@ impl GuiHand {
         }
     }
 
-    pub fn deal_tile(&mut self, m_tile: Tile) {
-        let tile = GuiTile::new(m_tile);
+    pub fn deal_tile(&mut self, tile: GuiTile) {
+        let param = param();
+
         self.drawn_tile = Some(tile.entity());
 
-        param()
-            .commands
-            .entity(tile.entity())
-            .insert((ChildOf(self.entity), self.tf_tile(true)));
+        let tf_from = reparent_tranform(tile.entity(), self.entity, &param.globals);
+        let tf_to = self.tf_tile(true);
+        param.commands.entity(tile.entity()).insert((
+            ChildOf(self.entity),
+            tf_from,
+            MoveAnimation::new(tf_to.translation).with_rotation(tf_to.rotation),
+        ));
+
         self.tiles.push(tile);
     }
 
@@ -154,17 +159,15 @@ impl GuiHand {
         }
 
         for (i, tile) in self.tiles.iter().enumerate() {
-            param()
-                .commands
-                .entity(tile.entity())
-                .insert(MoveAnimation::with_frame(
-                    Vec3::new(
-                        GuiTile::WIDTH * i as f32,
-                        GuiTile::HEIGHT / 2.0,
-                        GuiTile::DEPTH / 2.0,
-                    ),
-                    6,
-                ));
+            param().commands.entity(tile.entity()).insert(
+                MoveAnimation::new(Vec3::new(
+                    GuiTile::WIDTH * i as f32,
+                    GuiTile::HEIGHT / 2.0,
+                    GuiTile::DEPTH / 2.0,
+                ))
+                .with_frame(6)
+                .with_rotation(Quat::IDENTITY),
+            );
         }
     }
 

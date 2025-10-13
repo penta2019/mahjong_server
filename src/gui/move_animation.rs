@@ -19,6 +19,7 @@ pub struct MoveAnimation {
     // フレームごとに値を1づつ下げていき, 1/frame_left * (target - 現在位置)つづ移動
     // frame_left == 1のときはtargetをそのまま現在位置にセットしてanimationを終了 (= MoveAnimationを削除)
     frame_left: u32,
+    rotation: Option<Quat>,
 }
 
 impl MoveAnimation {
@@ -26,14 +27,18 @@ impl MoveAnimation {
         Self {
             target,
             frame_left: 12,
+            rotation: None,
         }
     }
 
-    pub fn with_frame(target: Vec3, frame: u32) -> Self {
-        Self {
-            target,
-            frame_left: frame,
-        }
+    pub fn with_frame(mut self, frame: u32) -> Self {
+        self.frame_left = frame;
+        self
+    }
+
+    pub fn with_rotation(mut self, rotation: Quat) -> Self {
+        self.rotation = Some(rotation);
+        self
     }
 }
 
@@ -49,6 +54,9 @@ fn move_animation(
         } else {
             // 残りフレームが0または現在位置が移動先の場合はMoveAnimationを削除
             tf.translation = move_to.target; // 小数点誤差削除用
+            if let Some(rotation) = move_to.rotation {
+                tf.rotation = rotation;
+            }
             commands.entity(entity).remove::<MoveAnimation>();
         }
     }

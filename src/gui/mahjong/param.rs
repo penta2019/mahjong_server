@@ -6,7 +6,7 @@ use super::{
     super::{camera::CameraMove, util::print_hierarchy},
     action::GameButton,
     plugin::InfoTexture,
-    tile_plugin::{HoveredTile, TileControl},
+    tile_plugin::HoveredTile,
 };
 
 // stage_plugin::stage_main_loopから呼び出される関数(controlディレクトリのモジュール)から使用するパラメータ
@@ -18,7 +18,7 @@ pub struct MahjongParam<'w, 's> {
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
 
-    pub tile_controls: Query<'w, 's, &'static mut TileControl>,
+    // 中央情報パネルのテクスチャ
     pub info_texture: Res<'w, InfoTexture>,
 
     // Game Button

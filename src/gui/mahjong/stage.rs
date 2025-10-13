@@ -2,15 +2,15 @@ use bevy::color::palettes::basic::GREEN;
 
 use super::{
     action::ActionControl,
-    dora_indicator::DoraIndicator,
     player::{GuiPlayer, HandMode},
     prelude::*,
     stage_info::StageInfo,
+    wall::Wall,
 };
 use crate::gui::camera::CameraMove;
 
-pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.8, 0.8);
-pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.05, 0.0);
+pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.9, 0.8);
+pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.04, 0.0);
 
 #[derive(Resource, Debug)]
 pub struct GuiStage {
@@ -19,8 +19,8 @@ pub struct GuiStage {
     entity: Entity,
     // 中央情報パネル
     info: StageInfo,
-    // ドラ表示牌
-    dora_indicator: DoraIndicator,
+    // 牌山
+    wall: Wall,
     // 各プレイヤー (手牌, 河, 副露)
     players: Vec<GuiPlayer>,
     // 副露に使用する最後に河に切られた牌
@@ -71,10 +71,10 @@ impl GuiStage {
             .entity(info.entity())
             .insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
 
-        let dora_indicator = DoraIndicator::new();
+        let wall = Wall::new();
         commands
-            .entity(dora_indicator.entity())
-            .insert(ChildOf(entity));
+            .entity(wall.entity())
+            .insert((ChildOf(entity), Transform::IDENTITY));
 
         let mut players = vec![];
         for seat in 0..SEAT {
@@ -94,7 +94,7 @@ impl GuiStage {
         Self {
             entity,
             info,
-            dora_indicator,
+            wall,
             players,
             last_tile: None,
             camera_seat: 0,
@@ -126,11 +126,6 @@ impl GuiStage {
                 player.set_hand_mode(HandMode::Close);
             }
         }
-
-        param()
-            .commands
-            .entity(self.dora_indicator.entity())
-            .insert(ChildOf(self.players[seat].entity()));
     }
 
     pub fn handle_event(&mut self, event: &MjEvent) {
@@ -163,17 +158,28 @@ impl GuiStage {
     fn event_new(&mut self, event: &EventNew) {
         self.info.init(event);
         self.info.set_camera_seat(self.camera_seat);
+
+        self.wall.init(event.dealer, event.dice);
+        for dora in &event.doras {
+            self.wall.add_dora(*dora);
+        }
+
         for seat in 0..SEAT {
             self.players[seat].init_hand(&event.hands[seat]);
         }
     }
 
     fn event_deal(&mut self, event: &EventDeal) {
-        if let Some((seat, ActionType::Discard, _)) = self.last_tile {
+        if let Some((seat, ActionType::Discard, _)) = self.last_tile.take() {
             self.players[seat].confirm_discard_tile();
         }
-        self.last_tile = None;
-        self.players[event.seat].deal_tile(event.tile);
+
+        let mut tile = self.wall.take_tile(event.is_replacement);
+        if tile.tile() == Z8 && event.tile != Z8 {
+            tile.mutate(event.tile);
+        }
+
+        self.players[event.seat].deal_tile(tile);
     }
 
     fn event_discard(&mut self, event: &EventDiscard) {
@@ -201,7 +207,9 @@ impl GuiStage {
 
     fn event_nukidora(&mut self, _event: &EventNukidora) {}
 
-    fn event_dora(&mut self, _event: &EventDora) {}
+    fn event_dora(&mut self, event: &EventDora) {
+        self.wall.add_dora(event.tile);
+    }
 
     fn event_win(&mut self, _event: &EventWin) {}
 

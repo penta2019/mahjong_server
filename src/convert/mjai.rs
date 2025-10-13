@@ -135,7 +135,7 @@ impl MjaiEvent {
     pub fn start_kyoku(
         id: Seat,
         round: usize,
-        dealer: usize,
+        dealer: Seat,
         honba_sticks: usize,
         riichi_sticks: usize,
         doras: &[Tile],

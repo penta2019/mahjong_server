@@ -25,8 +25,10 @@ impl CameraPlugin {
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        let mut ctx = CameraContext::default();
-        ctx.mode = self.mode;
+        let mut ctx = CameraContext {
+            mode: self.mode,
+            ..default()
+        };
         ctx.set_mouse_sensitivity(30.0);
 
         app.insert_state(CameraState::Fix)

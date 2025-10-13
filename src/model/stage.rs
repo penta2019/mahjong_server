@@ -15,7 +15,7 @@ pub struct Rule {
 pub struct Stage {
     pub rule: Rule,                                  // ゲーム設定
     pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
-    pub dealer: usize,                               // 局 (0~3 = 親のseat)
+    pub dealer: Seat,                                // 局 (0~3 = 親のseat)
     pub honba_sticks: usize,                         // 本場
     pub riichi_sticks: usize,                        // リーチ棒の供託
     pub turn: Seat,                                  // ツモ番のプレイヤーの座席

@@ -48,7 +48,7 @@ struct TenhouPlayer {
 
 #[derive(Debug, Default)]
 struct TenhouRound {
-    dealer: usize,
+    dealer: Seat,
     honba_sticks: usize,
     riichi_sticks: usize,
     scores: [Score; SEAT],

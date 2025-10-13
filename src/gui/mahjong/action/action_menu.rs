@@ -6,8 +6,6 @@ use crate::{
     model::{Action, ActionType},
 };
 
-// use super::tile::GuiTile;
-
 pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
     let param = param();
     let menu = param

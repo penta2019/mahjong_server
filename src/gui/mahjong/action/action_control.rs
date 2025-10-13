@@ -7,7 +7,6 @@ use super::{
         hand::{GuiHand, IsDrawn},
         player::GuiPlayer,
         prelude::*,
-        tile::{TILE_ACTIVE, TILE_INACTIVE, TILE_NORMAL},
     },
     BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,
     action_menu::{create_main_action_menu, create_sub_action_menu},
@@ -161,15 +160,15 @@ impl ActionControl {
     fn handle_hovered_tile(&mut self) -> Option<Action> {
         for ev in param().hovered_tile.read() {
             if self.target_state == TargetState::Released {
-                self.set_target_tile(ev.tile_entity);
+                self.set_target_tile(ev.entity);
             } else {
-                if self.target_tile == ev.tile_entity {
+                if self.target_tile == ev.entity {
                     continue;
                 } else {
                     // 牌を選択して左クリックを押し込んだ状態の場合並び替えを実行
                     self.target_state = TargetState::Dragging;
                     if let Some(target_tile) = self.target_tile
-                        && let Some(new_target_tile) = ev.tile_entity
+                        && let Some(new_target_tile) = ev.entity
                         && find_tile(hand!(self).tiles(), new_target_tile).is_some()
                     {
                         if self.auto_flags.get(&AutoButton::Sort) == Some(&true) {
@@ -366,12 +365,12 @@ impl ActionControl {
 
         // 元々のtarget_tileを解除
         if !self.is_riichi() {
-            self.change_target_tile_color(TILE_NORMAL);
+            self.change_target_tile_color(GuiTile::NORMAL);
         } else if let Some(e_tile) = self.target_tile
             && let Some(tile) = find_tile(hand!(self).tiles(), e_tile)
             && self.riichi_discard_tiles.contains(&tile.tile())
         {
-            self.change_target_tile_color(TILE_NORMAL);
+            self.change_target_tile_color(GuiTile::NORMAL);
         }
 
         self.target_tile = None;
@@ -407,9 +406,9 @@ impl ActionControl {
 
     fn update_target_tile_color(&mut self) {
         self.change_target_tile_color(if self.get_target_tile_if_discardable().is_some() {
-            TILE_ACTIVE
+            GuiTile::ACTIVE
         } else {
-            TILE_INACTIVE
+            GuiTile::INACTIVE
         });
     }
 
@@ -436,7 +435,7 @@ impl ActionControl {
         // リーチをキャンセルした場合に色を戻す
         if self.is_riichi() {
             for tile in hand!(self).tiles() {
-                tile.blend(TILE_NORMAL);
+                tile.blend(GuiTile::NORMAL);
             }
         }
 
@@ -446,7 +445,7 @@ impl ActionControl {
         if self.is_riichi() {
             for tile in hand!(self).tiles() {
                 if !self.riichi_discard_tiles.contains(&tile.tile()) {
-                    tile.blend(TILE_INACTIVE);
+                    tile.blend(GuiTile::INACTIVE);
                 }
             }
         }

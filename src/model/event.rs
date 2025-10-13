@@ -25,7 +25,7 @@ impl Event {
     pub fn new(
         rule: Rule,
         round: usize,
-        dealer: usize,
+        dealer: Seat,
         honba_sticks: usize,
         riichi_sticks: usize,
         doras: Vec<Tile>,
@@ -33,6 +33,7 @@ impl Event {
         scores: [Score; SEAT],
         hands: [Vec<Tile>; SEAT],
         wall_count: usize,
+        dice: usize,
     ) -> Self {
         Self::New(EventNew {
             rule,
@@ -45,12 +46,17 @@ impl Event {
             scores,
             hands,
             wall_count,
+            dice,
         })
     }
 
     #[inline]
-    pub fn deal(seat: Seat, tile: Tile) -> Self {
-        Self::Deal(EventDeal { seat, tile })
+    pub fn deal(seat: Seat, tile: Tile, is_replacement: bool) -> Self {
+        Self::Deal(EventDeal {
+            seat,
+            tile,
+            is_replacement,
+        })
     }
 
     #[inline]
@@ -86,7 +92,7 @@ impl Event {
     #[inline]
     pub fn win(
         round: usize,
-        dealer: usize,
+        dealer: Seat,
         honba_sticks: usize,
         riichi_sticks: usize,
         doras: Vec<Tile>,
@@ -114,7 +120,7 @@ impl Event {
     pub fn draw(
         draw_type: DrawType,
         round: usize,
-        dealer: usize,
+        dealer: Seat,
         names: [String; SEAT],
         scores: [Point; SEAT],
         delta_scores: [Point; SEAT],
@@ -146,7 +152,7 @@ pub struct EventBegin {}
 pub struct EventNew {
     pub rule: Rule,               // ゲーム設定
     pub round: usize,             // 場風
-    pub dealer: usize,            // 局
+    pub dealer: Seat,             // 局
     pub honba_sticks: usize,      // 本場
     pub riichi_sticks: usize,     // 供託(リーチ棒)
     pub doras: Vec<Tile>,         // ドラ表示牌
@@ -154,12 +160,14 @@ pub struct EventNew {
     pub scores: [Score; SEAT],    // 各プレイヤーの所持点
     pub hands: [Vec<Tile>; SEAT], // 各プレイヤーの手牌(親:14枚, 子:13枚)
     pub wall_count: usize,        // 牌山残り枚数
+    pub dice: usize,              // サイコロの目の和
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventDeal {
     pub seat: Seat,
-    pub tile: Tile, // ツモ牌
+    pub tile: Tile,           // ツモ牌
+    pub is_replacement: bool, // 嶺上牌の場合true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -194,7 +202,7 @@ pub struct EventWin {
     // Stageを見れば明らかにわかることであっても和了結果表示に必要な情報はすべてここに含める
     // StageControllerにとって必要なデータはdelta_scoresのみ
     pub round: usize,
-    pub dealer: usize,
+    pub dealer: Seat,
     pub honba_sticks: usize,
     pub riichi_sticks: usize,
     pub doras: Vec<Tile>,            // ドラ表示牌
@@ -210,7 +218,7 @@ pub struct EventDraw {
     // EventWin同様に流局表示に必要な情報をすべて含める
     pub draw_type: DrawType,
     pub round: usize,
-    pub dealer: usize,
+    pub dealer: Seat,
     pub names: [String; SEAT],               // プレイヤー名
     pub scores: [Point; SEAT],               // 変化前のスコア
     pub delta_scores: [Point; SEAT],         // 聴牌,流し満貫による点数変動

@@ -19,6 +19,8 @@ pub struct GuiStage {
     entity: Entity,
     // 中央情報パネル
     info: StageInfo,
+    // ドラ表示牌
+    dora_indicator: DoraIndicator,
     // 各プレイヤー (手牌, 河, 副露)
     players: Vec<GuiPlayer>,
     // 副露に使用する最後に河に切られた牌
@@ -41,9 +43,9 @@ impl GuiStage {
         let entity = commands
             .spawn((
                 Name::new("Stage".to_string()),
-                Transform::from_xyz(0.0, 0.0, 0.0),
                 Mesh3d(meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
                 MeshMaterial3d(materials.add(Color::from(GREEN))),
+                Transform::from_xyz(0.0, 0.0, 0.0),
             ))
             .id();
 
@@ -69,7 +71,10 @@ impl GuiStage {
             .entity(info.entity())
             .insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
 
-        let _dora_indicator = DoraIndicator::new();
+        let dora_indicator = DoraIndicator::new();
+        commands
+            .entity(dora_indicator.entity())
+            .insert(ChildOf(entity));
 
         let mut players = vec![];
         for seat in 0..SEAT {
@@ -89,6 +94,7 @@ impl GuiStage {
         Self {
             entity,
             info,
+            dora_indicator,
             players,
             last_tile: None,
             camera_seat: 0,
@@ -105,9 +111,12 @@ impl GuiStage {
 
     pub fn set_player(&mut self, seat: Seat) {
         self.camera_seat = seat;
+
         self.info.set_camera_seat(seat);
+
         let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
         param().camera.write(CameraMove::look(pos, CAMERA_LOOK_AT));
+
         for (s, player) in self.players.iter_mut().enumerate() {
             if s == seat {
                 player.set_hand_mode(HandMode::Camera);
@@ -117,6 +126,11 @@ impl GuiStage {
                 player.set_hand_mode(HandMode::Close);
             }
         }
+
+        param()
+            .commands
+            .entity(self.dora_indicator.entity())
+            .insert(ChildOf(self.players[seat].entity()));
     }
 
     pub fn handle_event(&mut self, event: &MjEvent) {

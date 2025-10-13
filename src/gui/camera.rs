@@ -1,16 +1,32 @@
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
 
 use bevy::{
+    camera::Viewport,
     input::mouse::MouseMotion,
     prelude::*,
-    window::{CursorGrabMode, CursorOptions, PrimaryWindow, WindowFocused},
+    window::{CursorGrabMode, CursorOptions, PrimaryWindow, WindowFocused, WindowResized},
 };
 
-pub struct CameraPlugin;
+#[derive(Debug, Clone, Copy)]
+pub enum ViewportMode {
+    FullSize,
+    AspectRatio(f32),
+}
+
+pub struct CameraPlugin {
+    mode: ViewportMode,
+}
+
+impl CameraPlugin {
+    pub fn new(mode: ViewportMode) -> Self {
+        Self { mode }
+    }
+}
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         let mut ctx = CameraContext::default();
+        ctx.mode = self.mode;
         ctx.set_mouse_sensitivity(30.0);
 
         app.insert_state(CameraState::Fix)
@@ -22,6 +38,7 @@ impl Plugin for CameraPlugin {
             .add_systems(
                 Update,
                 (
+                    update_viewport,
                     camera_event,
                     (
                         camera_move_by_keyboard,
@@ -45,6 +62,7 @@ pub enum CameraState {
 
 #[derive(Resource, Debug)]
 pub struct CameraContext {
+    mode: ViewportMode,
     sensitivity: (f32, f32), // (value, percent)
     yaw: f32,                // [-PI, PI)
     pitch: f32,              // (-FRAC_PI_2, FRAC_PI_2)
@@ -91,6 +109,7 @@ impl CameraContext {
 impl Default for CameraContext {
     fn default() -> Self {
         Self {
+            mode: ViewportMode::FullSize,
             sensitivity: (0.0, 0.0),
             yaw: 0.0,
             pitch: 0.0,
@@ -147,6 +166,47 @@ fn state_fly(mut options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
 
 fn state_fix(mut options: Single<&mut CursorOptions, With<PrimaryWindow>>) {
     set_cursor_visibility(&mut options, true);
+}
+
+fn update_viewport(
+    resize_reader: MessageReader<WindowResized>,
+    context: ResMut<CameraContext>,
+    mut camera: Single<&mut Camera, With<MainCamera>>,
+    window: Single<&Window, With<PrimaryWindow>>,
+) {
+    if resize_reader.is_empty() {
+        return;
+    }
+
+    let ViewportMode::AspectRatio(target_aspect) = context.mode else {
+        return;
+    };
+    let window_aspect = window.width() / window.height();
+
+    if (window_aspect - target_aspect).abs() < f32::EPSILON {
+        // 比率が同じ → フルスクリーン使用
+        camera.viewport = None;
+    } else if window_aspect > target_aspect {
+        // 横長 → 左右に黒帯
+        let height = window.height() as u32;
+        let width = (window.height() * target_aspect) as u32;
+        let x_offset = (window.width() as u32 - width) / 2;
+        camera.viewport = Some(Viewport {
+            physical_position: UVec2::new(x_offset, 0),
+            physical_size: UVec2::new(width, height),
+            ..default()
+        });
+    } else {
+        // 縦長 → 上下に黒帯
+        let width = window.width() as u32;
+        let height = (window.width() / target_aspect) as u32;
+        let y_offset = ((window.height() as u32) - height) / 2;
+        camera.viewport = Some(Viewport {
+            physical_position: UVec2::new(0, y_offset),
+            physical_size: UVec2::new(width, height),
+            ..default()
+        });
+    }
 }
 
 fn camera_event(

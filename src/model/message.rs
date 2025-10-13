@@ -7,6 +7,7 @@ pub enum ServerMessage {
     Event(Box<Event>),
     Action(PossibleActions),
     Info { seat: Seat },
+    Log, // TODO
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

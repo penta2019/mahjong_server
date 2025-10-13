@@ -126,6 +126,7 @@ impl GuiMahjong {
                 ServerMessage::Info { seat } => {
                     self.seat = seat; // このメッセージはEventNewより先に受信
                 }
+                ServerMessage::Log => todo!(),
             }
         }
 

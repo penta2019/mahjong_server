@@ -47,6 +47,7 @@ impl StageInfo {
         // UIのルートEntity
         let ui = commands
             .spawn((
+                Name::new("StageInfo".to_string()),
                 Transform::IDENTITY,
                 Visibility::Visible,
                 RenderLayers::layer(1),

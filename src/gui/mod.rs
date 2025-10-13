@@ -9,7 +9,7 @@ mod util;
 use bevy::prelude::*;
 
 use self::{
-    camera::CameraState,
+    camera::{CameraState, ViewportMode},
     debug::DebugState,
     mahjong::{Rx, Tx},
     menu::MenuState,
@@ -25,7 +25,7 @@ pub fn run(tx: Tx, rx: Rx) {
     app.add_plugins((
         DefaultPlugins,
         MeshPickingPlugin,
-        camera::CameraPlugin,
+        camera::CameraPlugin::new(ViewportMode::AspectRatio(4.0 / 3.0)),
         debug::DebugPlugin,
         slider::SliderPlugin,
         menu::MenuPlugin,

@@ -137,19 +137,18 @@ impl Listener for Endpoint {
         let mut d = self.shared.lock().unwrap();
         let val = match event {
             Event::New(ev) => {
-                let mut hands = ev.hands.clone();
+                // プレイヤーから見えるべきではない情報を削除 (他家の手牌, 牌山)
+                let mut ev2 = ev.clone();
                 for s in 0..SEAT {
                     if !self.debug && s != self.seat {
-                        hands[s].fill(Z8);
+                        ev2.hands[s].fill(Z8);
                     }
                 }
-                let ev2 = Event::New(EventNew {
-                    rule: ev.rule.clone(),
-                    hands,
-                    doras: ev.doras.clone(),
-                    names: ev.names.clone(),
-                    ..*ev
-                });
+                ev2.wall = vec![];
+                ev2.dora_wall = vec![];
+                ev2.ura_dora_wall = vec![];
+                ev2.replacement_wall = vec![];
+
                 let mut val = json!(ev2);
                 val["seat"] = json!(self.seat);
                 val

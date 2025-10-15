@@ -59,6 +59,10 @@ impl MessageHolder {
                             ev.hands[s].fill(Z8);
                         }
                     }
+                    ev.wall = vec![];
+                    ev.dora_wall = vec![];
+                    ev.ura_dora_wall = vec![];
+                    ev.replacement_wall = vec![];
                 }
             }
             Event::Deal(ev) => {

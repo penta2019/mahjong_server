@@ -34,6 +34,10 @@ impl Event {
         hands: [Vec<Tile>; SEAT],
         wall_count: usize,
         dice: usize,
+        wall: Vec<Tile>,
+        dora_wall: Vec<Tile>,
+        ura_dora_wall: Vec<Tile>,
+        replacement_wall: Vec<Tile>,
     ) -> Self {
         Self::New(EventNew {
             rule,
@@ -47,6 +51,10 @@ impl Event {
             hands,
             wall_count,
             dice,
+            wall,
+            dora_wall,
+            ura_dora_wall,
+            replacement_wall,
         })
     }
 
@@ -150,17 +158,21 @@ pub struct EventBegin {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventNew {
-    pub rule: Rule,               // ゲーム設定
-    pub round: usize,             // 場風
-    pub dealer: Seat,             // 局
-    pub honba_sticks: usize,      // 本場
-    pub riichi_sticks: usize,     // 供託(リーチ棒)
-    pub doras: Vec<Tile>,         // ドラ表示牌
-    pub names: [String; SEAT],    // プレイヤー名
-    pub scores: [Score; SEAT],    // 各プレイヤーの所持点
-    pub hands: [Vec<Tile>; SEAT], // 各プレイヤーの手牌(親:14枚, 子:13枚)
-    pub wall_count: usize,        // 牌山残り枚数
-    pub dice: usize,              // サイコロの目の和
+    pub rule: Rule,                  // ゲーム設定
+    pub round: usize,                // 場風
+    pub dealer: Seat,                // 局
+    pub honba_sticks: usize,         // 本場
+    pub riichi_sticks: usize,        // 供託(リーチ棒)
+    pub doras: Vec<Tile>,            // ドラ表示牌
+    pub names: [String; SEAT],       // プレイヤー名
+    pub scores: [Score; SEAT],       // 各プレイヤーの所持点
+    pub hands: [Vec<Tile>; SEAT],    // 各プレイヤーの手牌(13枚 親の14枚目も通常のツモとして扱う)
+    pub wall_count: usize,           // 牌山残り枚数
+    pub dice: usize,                 // サイコロの目の和
+    pub wall: Vec<Tile>,             // 牌譜用 牌山
+    pub dora_wall: Vec<Tile>,        // 牌譜用 ドラ表示牌 (5枚)
+    pub ura_dora_wall: Vec<Tile>,    // 牌譜用 裏ドラ (5枚)
+    pub replacement_wall: Vec<Tile>, // 牌譜用 嶺上牌 (4枚)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

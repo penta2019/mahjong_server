@@ -377,7 +377,7 @@ fn event_nukidora(stg: &mut Stage, event: &EventNukidora) {
 }
 
 fn event_dora(stg: &mut Stage, event: &EventDora) {
-    table_edit(stg, event.tile, TileState::U, TileState::R);
+    table_edit(stg, event.tile, U, R);
     stg.doras.push(event.tile);
 }
 

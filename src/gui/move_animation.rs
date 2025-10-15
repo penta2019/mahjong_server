@@ -19,7 +19,6 @@ pub struct MoveAnimation {
     // フレームごとに値を1づつ下げていき, 1/frame_left * (target - 現在位置)つづ移動
     // frame_left == 1のときはtargetをそのまま現在位置にセットしてanimationを終了 (= MoveAnimationを削除)
     frame_left: u32,
-    rotation: Option<Quat>,
 }
 
 impl MoveAnimation {
@@ -27,17 +26,11 @@ impl MoveAnimation {
         Self {
             target,
             frame_left: 12,
-            rotation: None,
         }
     }
 
     pub fn with_frame(mut self, frame: u32) -> Self {
         self.frame_left = frame;
-        self
-    }
-
-    pub fn with_rotation(mut self, rotation: Quat) -> Self {
-        self.rotation = Some(rotation);
         self
     }
 }
@@ -46,17 +39,14 @@ fn move_animation(
     mut commands: Commands,
     move_animations: Query<(Entity, &mut Transform, &mut MoveAnimation)>,
 ) {
-    for (entity, mut tf, mut move_to) in move_animations {
-        if move_to.frame_left > 0 && move_to.target != tf.translation {
-            let diff_vec = move_to.target - tf.translation;
-            tf.translation += 1.0 / move_to.frame_left as f32 * diff_vec;
-            move_to.frame_left -= 1;
+    for (entity, mut tf, mut anim) in move_animations {
+        if anim.frame_left > 0 && anim.target != tf.translation {
+            let d = 1.0 / anim.frame_left as f32;
+            tf.translation = tf.translation.lerp(anim.target, d);
+            anim.frame_left -= 1;
         } else {
             // 残りフレームが0または現在位置が移動先の場合はMoveAnimationを削除
-            tf.translation = move_to.target; // 小数点誤差削除用
-            if let Some(rotation) = move_to.rotation {
-                tf.rotation = rotation;
-            }
+            tf.translation = anim.target; // 小数点誤差削除用
             commands.entity(entity).remove::<MoveAnimation>();
         }
     }

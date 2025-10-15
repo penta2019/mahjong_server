@@ -7,22 +7,22 @@ const TF_WALL: Transform = Transform::from_xyz(0.177, GuiTile::DEPTH * 1.5, 0.17
 const WIDTH: usize = 17; // 牌山の横幅(枚)
 const HEIGHT: usize = 2; // 牌山の高さ(枚)
 
+// 牌山のそれぞれの牌とその管理情報
 #[derive(Debug)]
-struct TileEntry {
+struct Entry {
     tile: GuiTile,      // Tileの実態
     tf: Transform,      // 牌山非表示(通常状態)の配置
     tf_show: Transform, // 牌山表示時の配置
-    wall_seat: Seat,    // 牌が属している牌山の座席
 }
 
 #[derive(Debug)]
 pub struct Wall {
     entity: Entity,
-    tiles: VecDeque<TileEntry>,        // ツモ山
-    replacements: VecDeque<TileEntry>, // 嶺上牌
-    doras: Vec<TileEntry>,             // ドラ表示牌
-    ura_doras: Vec<TileEntry>,         // 裏ドラ
-    dora_count: usize,                 // ドラ表示牌の枚数
+    tiles: VecDeque<Entry>,        // ツモ山
+    replacements: VecDeque<Entry>, // 嶺上牌
+    doras: Vec<Entry>,             // ドラ表示牌
+    ura_doras: Vec<Entry>,         // 裏ドラ
+    dora_count: usize,             // ドラ表示牌の枚数
 }
 
 impl Wall {
@@ -42,7 +42,7 @@ impl Wall {
         }
     }
 
-    pub fn init(&mut self, dealer: Seat, dice: usize) {
+    pub fn init(&mut self, event: &EventNew) {
         let param = param();
 
         // 起家の一番左上の牌を先頭に時計回りに牌を積む
@@ -68,25 +68,34 @@ impl Wall {
                         rotation: Quat::from_rotation_x(FRAC_PI_2),
                         scale: Vec3::ONE,
                     };
+                    let tf_show = Transform {
+                        translation: Vec3::new(
+                            -GuiTile::WIDTH * w as f32 + GuiTile::HEIGHT * 0.5,
+                            -GuiTile::DEPTH,
+                            GuiTile::HEIGHT * (h as f32 - 0.5),
+                        ),
+                        rotation: Quat::from_rotation_x(-FRAC_PI_2),
+                        scale: Vec3::ONE,
+                    };
                     param
                         .commands
                         .entity(tile.entity())
-                        .insert((ChildOf(wall), tf));
-                    self.tiles.push_back(TileEntry {
+                        .insert((ChildOf(wall), tf_show));
+                    self.tiles.push_back(Entry {
                         tile,
                         tf,
-                        tf_show: Transform::IDENTITY,
-                        wall_seat: s,
+                        tf_show,
+                        // wall_seat: s,
                     });
                 }
             }
         }
 
         // 基準位置を親の牌山の右上の牌に移動
-        let wall_seat = (dealer + dice - 1) % SEAT;
+        let wall_seat = (event.dealer + event.dice - 1) % SEAT;
         self.tiles.rotate_right(WIDTH * HEIGHT * wall_seat);
         // サイコロの目の分基準位置を移動
-        self.tiles.rotate_left(dice * HEIGHT);
+        self.tiles.rotate_left(event.dice * HEIGHT);
 
         // 嶺上牌
         let tile_1 = self.tiles.pop_back().unwrap();
@@ -112,6 +121,12 @@ impl Wall {
                 // tileはここでDropされる
             }
         }
+
+        // 牌山の中身がわかる場合(牌譜,観戦,デバッグ等)はテクスチャを張り替える
+        mutate_tiles(self.tiles.iter_mut(), &event.wall);
+        mutate_tiles(self.doras.iter_mut(), &event.dora_wall);
+        mutate_tiles(self.ura_doras.iter_mut(), &event.ura_dora_wall);
+        mutate_tiles(self.replacements.iter_mut(), &event.replacement_wall);
     }
 
     pub fn take_tile(&mut self, is_replacement: bool) -> GuiTile {
@@ -130,7 +145,7 @@ impl Wall {
         param()
             .commands
             .entity(entry.tile.entity())
-            .insert(entry.tf);
+            .insert(entry.tf_show);
         self.dora_count += 1;
     }
 }
@@ -138,5 +153,11 @@ impl Wall {
 impl HasEntity for Wall {
     fn entity(&self) -> Entity {
         self.entity
+    }
+}
+
+fn mutate_tiles<'a, T: Iterator<Item = &'a mut Entry>>(target: T, source: &[Tile]) {
+    for (entry, tile) in target.zip(source.iter()) {
+        entry.tile.mutate(*tile);
     }
 }

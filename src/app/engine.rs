@@ -12,6 +12,7 @@ use crate::{
     },
     error,
     hand::{evaluate_hand_ron, evaluate_hand_tsumo},
+    info,
     listener::*,
     model::*,
     util::{
@@ -19,7 +20,6 @@ use crate::{
         misc::*,
         waiter::{Waiter, waiter_waker},
     },
-    warn,
 };
 
 use ActionType::*;
@@ -95,7 +95,7 @@ impl EngineApp {
 
         if app.seed == 0 {
             app.seed = unixtime_now() as u64;
-            warn!(
+            info!(
                 "Random seed is not specified. Unix timestamp '{}' is used as seed.",
                 app.seed
             );
@@ -466,7 +466,7 @@ impl MahjongEngine {
         self.wall = create_wall(self.rng.next_u64(), self.rule.red5);
 
         // 王牌
-        self.dora_wall = self.draw_tiles(5); // 槓ドラ
+        self.dora_wall = self.draw_tiles(5); // ドラ表示牌
         self.ura_dora_wall = self.draw_tiles(5); // 裏ドラ
         self.replacement_wall = self.draw_tiles(4); // 嶺上牌
 
@@ -495,6 +495,10 @@ impl MahjongEngine {
             ph,
             self.wall.len() - self.n_deal,
             dice,
+            self.wall[self.n_deal..].to_vec(),
+            self.dora_wall.clone(),
+            self.ura_dora_wall.clone(),
+            self.replacement_wall.clone(),
         );
         self.handle_event(event);
     }

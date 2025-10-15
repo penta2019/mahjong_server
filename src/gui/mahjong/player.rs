@@ -1,6 +1,6 @@
 use super::{discard::GuiDiscard, hand::GuiHand, meld::GuiMeld, prelude::*};
 
-const TF_CLOSE_HAND: Transform = Transform::from_xyz(-0.12, 0.0, 0.23);
+const TF_CLOSE_HAND: Transform = Transform::from_xyz(-0.12, 0.0, 0.235);
 
 pub enum HandMode {
     Camera,
@@ -41,7 +41,7 @@ impl GuiPlayer {
         commands.entity(meld.entity()).insert((
             ChildOf(entity),
             Transform {
-                translation: Vec3::new(0.25, GuiTile::DEPTH / 2.0, 0.22),
+                translation: Vec3::new(0.25, GuiTile::DEPTH / 2.0, 0.23),
                 rotation: Quat::from_rotation_x(-FRAC_PI_2),
                 scale: Vec3::ONE,
             },
@@ -62,7 +62,7 @@ impl GuiPlayer {
                 let tf_camera =
                     Transform::from_translation(CAMERA_POS).looking_at(CAMERA_LOOK_AT, Vec3::Y);
                 let tf_camera_hand = Transform {
-                    translation: Vec3::new(-0.13, -0.13, -0.9),
+                    translation: Vec3::new(-0.13, -0.132, -0.9),
                     rotation: Quat::from_rotation_x(10.0_f32.to_radians()),
                     scale: Vec3::ONE,
                 };

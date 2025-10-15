@@ -81,10 +81,9 @@ impl GuiStage {
             let player = GuiPlayer::new();
             commands.entity(player.entity()).insert((
                 ChildOf(entity),
-                Transform {
-                    rotation: Quat::from_rotation_y(std::f32::consts::FRAC_PI_2 * seat as f32),
-                    ..Default::default()
-                },
+                Transform::from_rotation(Quat::from_rotation_y(
+                    std::f32::consts::FRAC_PI_2 * seat as f32,
+                )),
             ));
             players.push(player);
         }
@@ -99,7 +98,7 @@ impl GuiStage {
             last_tile: None,
             camera_seat: 0,
             action_control,
-            show_hand: false,
+            show_hand: true,
         }
     }
 
@@ -159,7 +158,7 @@ impl GuiStage {
         self.info.init(event);
         self.info.set_camera_seat(self.camera_seat);
 
-        self.wall.init(event.dealer, event.dice);
+        self.wall.init(event);
         for dora in &event.doras {
             self.wall.add_dora(*dora);
         }
@@ -175,6 +174,9 @@ impl GuiStage {
         }
 
         let mut tile = self.wall.take_tile(event.is_replacement);
+        if tile.tile() != Z8 && event.tile != Z8 {
+            assert!(tile.tile() == event.tile);
+        }
         if tile.tile() == Z8 && event.tile != Z8 {
             tile.mutate(event.tile);
         }

@@ -45,12 +45,13 @@ impl GuiHand {
 
         self.drawn_tile = Some(tile.entity());
 
-        let tf_from = reparent_tranform(tile.entity(), self.entity, &param.globals);
+        let mut tf_from = reparent_tranform(tile.entity(), self.entity, &param.globals);
         let tf_to = self.tf_tile(true);
+        tf_from.rotation = tf_to.rotation;
         param.commands.entity(tile.entity()).insert((
             ChildOf(self.entity),
             tf_from,
-            MoveAnimation::new(tf_to.translation).with_rotation(tf_to.rotation),
+            MoveAnimation::new(tf_to.translation),
         ));
 
         self.tiles.push(tile);
@@ -165,8 +166,8 @@ impl GuiHand {
                     GuiTile::HEIGHT / 2.0,
                     GuiTile::DEPTH / 2.0,
                 ))
-                .with_frame(6)
-                .with_rotation(Quat::IDENTITY),
+                .with_frame(6),
+                // .with_rotation(Quat::IDENTITY),
             );
         }
     }

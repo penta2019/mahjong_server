@@ -30,11 +30,11 @@ impl GuiTile {
 
     pub fn mutate(&mut self, m_tile: Tile) {
         self.tile = m_tile;
-        param().cmd.entity(self.entity).insert(TileMutate(m_tile));
+        cmd().entity(self.entity).insert(TileMutate(m_tile));
     }
 
     pub fn blend(&mut self, color: LinearRgba) {
-        param().cmd.entity(self.entity).insert(TileBlend(color));
+        cmd().entity(self.entity).insert(TileBlend(color));
     }
 }
 

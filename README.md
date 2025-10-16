@@ -261,11 +261,12 @@ s: seat
 t: tile
 
 * Bevy
+cmd: commands
 q(_): query(_)
 e(_): entity(_)
 ev(_): event(_)
 tf(_): transform(_)
-p(_): posiiton(_)
+p: &mut MahjongParam (= param())
 
 ## Module構成
 ![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg)

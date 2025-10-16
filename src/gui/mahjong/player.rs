@@ -18,7 +18,7 @@ pub struct GuiPlayer {
 
 impl GuiPlayer {
     pub fn new() -> Self {
-        let cmd = &mut param().cmd;
+        let cmd = cmd();
 
         let entity = cmd.spawn(Name::new("Player")).id();
 
@@ -70,7 +70,7 @@ impl GuiPlayer {
             HandMode::Close => TF_CLOSE_HAND,
             HandMode::Open => TF_CLOSE_HAND.with_rotation(Quat::from_rotation_x(-FRAC_PI_2)),
         };
-        param().cmd.entity(self.hand.entity()).insert(tf);
+        cmd().entity(self.hand.entity()).insert(tf);
     }
 
     pub fn init_hand(&mut self, m_tiles: &[Tile]) {

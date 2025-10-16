@@ -2,14 +2,13 @@ use bevy::prelude::*;
 
 use super::{BUTTON_INACTIVE, GameButton};
 use crate::{
-    gui::mahjong::param::param,
+    gui::mahjong::param::cmd,
     model::{Action, ActionType},
 };
 
 pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
-    let param = param();
-    let menu = param
-        .cmd
+    let cmd = cmd();
+    let menu = cmd
         .spawn(Node {
             position_type: PositionType::Absolute,
             right: Val::Percent(20.0),
@@ -22,9 +21,7 @@ pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
         .id();
 
     for ty in action_types {
-        param
-            .cmd
-            .spawn(create_main_action_button(*ty, &format!("{:?}", *ty)))
+        cmd.spawn(create_main_action_button(*ty, &format!("{:?}", *ty)))
             .insert(ChildOf(menu));
     }
 
@@ -32,9 +29,8 @@ pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
 }
 
 pub fn create_sub_action_menu(actions: &[Action]) -> Entity {
-    let param = param();
-    let menu = param
-        .cmd
+    let cmd = cmd();
+    let menu = cmd
         .spawn(Node {
             position_type: PositionType::Absolute,
             right: Val::Percent(20.0),
@@ -46,15 +42,11 @@ pub fn create_sub_action_menu(actions: &[Action]) -> Entity {
         })
         .id();
 
-    param
-        .cmd
-        .spawn(create_main_action_button(ActionType::Nop, "Cancel"))
+    cmd.spawn(create_main_action_button(ActionType::Nop, "Cancel"))
         .insert(ChildOf(menu));
 
     for act in actions {
-        param
-            .cmd
-            .spawn(create_sub_action_button(act.clone()))
+        cmd.spawn(create_sub_action_button(act.clone()))
             .insert(ChildOf(menu));
     }
 

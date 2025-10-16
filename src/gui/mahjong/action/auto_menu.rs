@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{BUTTON_INACTIVE, GameButton};
-use crate::gui::mahjong::param::param;
+use crate::gui::mahjong::param::cmd;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AutoButton {
@@ -30,7 +30,7 @@ pub fn create_auto_menu() -> Entity {
         ],
     );
 
-    param().cmd.spawn(bundle).id()
+    cmd().spawn(bundle).id()
 }
 
 fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {

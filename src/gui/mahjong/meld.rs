@@ -10,10 +10,7 @@ pub struct GuiMeld {
 
 impl GuiMeld {
     pub fn new() -> Self {
-        let entity = param()
-            .cmd
-            .spawn((Name::new("Meld"), Transform::default()))
-            .id();
+        let entity = cmd().spawn((Name::new("Meld"), Transform::default())).id();
         Self {
             entity,
             items: vec![],
@@ -27,6 +24,8 @@ impl GuiMeld {
         meld_tile: Option<GuiTile>,
         meld_offset: usize,
     ) {
+        let p = param();
+
         let mut meld_item_width = GuiTile::WIDTH * tiles.len() as f32;
         if meld_tile.is_some() {
             meld_item_width += GuiTile::HEIGHT;
@@ -59,11 +58,9 @@ impl GuiMeld {
             }
         }
 
-        let cmd = &mut param().cmd;
-
         let mut meld_item = GuiMeldItem::new();
         self.item_ofsset_x -= meld_item_width + GuiTile::WIDTH / 4.0;
-        cmd.entity(meld_item.entity()).insert((
+        p.cmd.entity(meld_item.entity()).insert((
             ChildOf(self.entity),
             Transform::from_xyz(self.item_ofsset_x, 0.0, 0.0),
         ));
@@ -81,7 +78,7 @@ impl GuiMeld {
         let mut offset_x = 0.0; // 次の牌の基準位置
         for (i, tile) in tiles.iter().enumerate() {
             tfs[i].translation =
-                reparent_tranform(tile.entity(), self.entity, &param().globals).translation;
+                reparent_tranform(tile.entity(), self.entity, &p.globals).translation;
 
             let mut move_to = Vec3::new(offset_x, 0.0, 0.0);
             if Some(i) == meld_index {
@@ -93,7 +90,7 @@ impl GuiMeld {
                 offset_x += GuiTile::WIDTH;
             }
 
-            cmd.entity(tile.entity()).insert((
+            p.cmd.entity(tile.entity()).insert((
                 ChildOf(meld_item.entity()),
                 tfs[i],
                 MoveAnimation::new(move_to),
@@ -106,6 +103,8 @@ impl GuiMeld {
     }
 
     fn meld_kakan(&mut self, tile: GuiTile) {
+        let p = param();
+
         let normal = tile.tile().to_normal();
         let meld_item = self
             .items
@@ -118,7 +117,7 @@ impl GuiMeld {
         let e_tile = tile.entity();
         let e_meld_item = meld_item.entity();
         let mut tf = Transform::IDENTITY;
-        tf.translation = reparent_tranform(e_tile, e_meld_item, &param().globals).translation;
+        tf.translation = reparent_tranform(e_tile, e_meld_item, &p.globals).translation;
         tf.rotation = Quat::from_rotation_z(if meld_index == 2 {
             // 下家からなら右向き
             -FRAC_PI_2
@@ -134,8 +133,7 @@ impl GuiMeld {
             0.0,
         );
 
-        param()
-            .cmd
+        p.cmd
             .entity(e_tile)
             .insert((ChildOf(e_meld_item), tf, MoveAnimation::new(move_to)));
 
@@ -158,7 +156,7 @@ pub struct GuiMeldItem {
 
 impl GuiMeldItem {
     pub fn new() -> Self {
-        let entity = param().cmd.spawn(Name::new("MeldItem")).id();
+        let entity = cmd().spawn(Name::new("MeldItem")).id();
         Self {
             entity,
             tiles: vec![],

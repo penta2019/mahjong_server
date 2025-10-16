@@ -27,8 +27,7 @@ pub struct Wall {
 
 impl Wall {
     pub fn new() -> Self {
-        let entity = param()
-            .cmd
+        let entity = cmd()
             .spawn((Name::new("Wall".to_string()), Transform::IDENTITY))
             .id();
 
@@ -139,10 +138,7 @@ impl Wall {
         let entry = &mut self.doras[self.dora_count];
         entry.tile.mutate(m_tile);
         entry.tf = entry.tf * Transform::from_rotation(Quat::from_rotation_x(PI));
-        param()
-            .cmd
-            .entity(entry.tile.entity())
-            .insert(entry.tf_show);
+        cmd().entity(entry.tile.entity()).insert(entry.tf_show);
         self.dora_count += 1;
     }
 }

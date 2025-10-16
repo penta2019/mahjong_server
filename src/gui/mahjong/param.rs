@@ -75,6 +75,11 @@ pub fn param<'w, 's>() -> &'static mut MahjongParam<'w, 's> {
     }
 }
 
+#[inline]
+pub fn cmd<'w, 's>() -> &'static mut Commands<'w, 's> {
+    &mut param().cmd
+}
+
 // 関数fの実行中にparam()から&mut GuiStageを取得できるよう設定
 pub fn with_param<F: FnOnce()>(param: &mut MahjongParam, f: F) {
     let ptr_param = param as *mut MahjongParam as *mut ();

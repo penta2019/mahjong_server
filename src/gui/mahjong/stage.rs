@@ -35,16 +35,14 @@ pub struct GuiStage {
 
 impl GuiStage {
     pub fn new() -> Self {
-        let param = param();
-        let cmd = &mut param.cmd;
-        let meshes = &mut param.meshes;
-        let materials = &mut param.materials;
+        let p = param();
+        let cmd = cmd();
 
         let entity = cmd
             .spawn((
                 Name::new("Stage".to_string()),
-                Mesh3d(meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
-                MeshMaterial3d(materials.add(Color::from(GREEN))),
+                Mesh3d(p.meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
+                MeshMaterial3d(p.materials.add(Color::from(GREEN))),
                 Transform::from_xyz(0.0, 0.0, 0.0),
             ))
             .id();
@@ -101,7 +99,7 @@ impl GuiStage {
     }
 
     pub fn destroy(self) {
-        param().cmd.entity(self.entity).despawn();
+        cmd().entity(self.entity).despawn();
         self.info.destroy();
         self.action_control.destroy();
     }

@@ -17,8 +17,7 @@ impl GuiDiscard {
     const TILES_IN_ROW: usize = 6;
 
     pub fn new() -> Self {
-        let entity = param()
-            .cmd
+        let entity = cmd()
             .spawn((Name::new("Discard"), Transform::default()))
             .id();
         Self {
@@ -66,20 +65,15 @@ impl GuiDiscard {
 
         // 捨て牌が通る(鳴きやロンが入らない)まで少しずらしておく
         let move_to = pos + Vec3::new(GuiTile::WIDTH / 2.0, -GuiTile::WIDTH / 4.0, 0.0);
-        param().cmd.entity(tile.entity()).insert((
-            ChildOf(self.entity),
-            tf,
-            MoveAnimation::new(move_to),
-        ));
+        cmd()
+            .entity(tile.entity())
+            .insert((ChildOf(self.entity), tf, MoveAnimation::new(move_to)));
         self.tiles.push((tile, pos));
     }
 
     pub fn confirm_last_tile(&mut self) {
         if let Some((tile, pos)) = self.tiles.last().as_ref() {
-            param()
-                .cmd
-                .entity(tile.entity())
-                .insert(MoveAnimation::new(*pos));
+            cmd().entity(tile.entity()).insert(MoveAnimation::new(*pos));
         }
     }
 

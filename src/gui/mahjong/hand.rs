@@ -13,6 +13,7 @@ pub struct GuiHand {
     preferred_tile: Option<Entity>,
     do_sort: bool,
 }
+crate::impl_has_entity!(GuiHand);
 
 impl GuiHand {
     pub fn new() -> Self {
@@ -169,11 +170,5 @@ impl GuiHand {
             GuiTile::HEIGHT / 2.0,
             GuiTile::DEPTH / 2.0,
         )
-    }
-}
-
-impl HasEntity for GuiHand {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }

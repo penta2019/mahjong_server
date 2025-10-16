@@ -15,6 +15,7 @@ pub struct GuiPlayer {
     discard: GuiDiscard,
     meld: GuiMeld,
 }
+crate::impl_has_entity!(GuiPlayer);
 
 impl GuiPlayer {
     pub fn new() -> Self {
@@ -115,11 +116,5 @@ impl GuiPlayer {
         let mut tile = self.hand.take_tile(m_tile, is_drawn);
         tile.blend(GuiTile::NORMAL);
         tile
-    }
-}
-
-impl HasEntity for GuiPlayer {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }

@@ -1,6 +1,7 @@
 mod action;
 mod discard;
 mod hand;
+mod has_entity;
 mod meld;
 mod param;
 mod player;

@@ -12,6 +12,7 @@ pub struct StageInfo {
     ui: Entity,
     round: Option<Entity>,
 }
+crate::impl_has_entity!(StageInfo);
 
 impl StageInfo {
     pub fn new() -> Self {
@@ -137,11 +138,5 @@ impl StageInfo {
                     FRAC_PI_2 * seat as f32,
                 )));
         }
-    }
-}
-
-impl HasEntity for StageInfo {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }

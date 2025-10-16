@@ -8,6 +8,7 @@ pub struct GuiTile {
     entity: Entity,
     tile: Tile,
 }
+crate::impl_has_entity!(GuiTile);
 
 impl GuiTile {
     pub const WIDTH: f32 = 0.020;
@@ -35,11 +36,5 @@ impl GuiTile {
 
     pub fn blend(&mut self, color: LinearRgba) {
         self.insert(TileBlend(color));
-    }
-}
-
-impl HasEntity for GuiTile {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }

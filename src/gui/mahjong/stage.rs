@@ -32,6 +32,7 @@ pub struct GuiStage {
     // カメラ座席以外のプレイヤーの手牌の表示フラグ
     show_hand: bool,
 }
+crate::impl_has_entity!(GuiStage);
 
 impl GuiStage {
     pub fn new() -> Self {
@@ -210,10 +211,4 @@ impl GuiStage {
     fn event_win(&mut self, _event: &EventWin) {}
 
     fn event_draw(&mut self, _event: &EventDraw) {}
-}
-
-impl HasEntity for GuiStage {
-    fn entity(&self) -> Entity {
-        self.entity
-    }
 }

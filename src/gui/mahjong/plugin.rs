@@ -1,7 +1,6 @@
 use std::sync::Mutex;
 
 use super::{
-    super::util::reparent_transform,
     param::{MahjongParam, with_param},
     prelude::*,
     stage::GuiStage,
@@ -10,30 +9,6 @@ use super::{
 
 pub type Tx = std::sync::mpsc::Sender<ClientMessage>;
 pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
-
-pub trait HasEntity {
-    fn entity(&self) -> Entity;
-
-    #[inline]
-    fn cmd(&self) -> EntityCommands<'_> {
-        cmd().entity(self.entity())
-    }
-
-    #[inline]
-    fn insert(&self, bundle: impl Bundle) {
-        self.cmd().insert(bundle);
-    }
-
-    #[inline]
-    fn despawn(&self) {
-        self.cmd().despawn();
-    }
-
-    #[inline]
-    fn transform_from(&self, target: Entity) -> Transform {
-        reparent_transform(self.entity(), target, &param().globals)
-    }
-}
 
 #[derive(Resource)]
 pub struct InfoTexture(pub Handle<Image>);

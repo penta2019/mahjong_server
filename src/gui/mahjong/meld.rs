@@ -7,6 +7,7 @@ pub struct GuiMeld {
     items: Vec<GuiMeldItem>,
     item_ofsset_x: f32,
 }
+crate::impl_has_entity!(GuiMeld);
 
 impl GuiMeld {
     pub fn new() -> Self {
@@ -133,18 +134,13 @@ impl GuiMeld {
     }
 }
 
-impl HasEntity for GuiMeld {
-    fn entity(&self) -> Entity {
-        self.entity
-    }
-}
-
 #[derive(Debug)]
 pub struct GuiMeldItem {
     entity: Entity,
     tiles: Vec<GuiTile>,
     meld_index: Option<usize>,
 }
+crate::impl_has_entity!(GuiMeldItem);
 
 impl GuiMeldItem {
     pub fn new() -> Self {
@@ -154,11 +150,5 @@ impl GuiMeldItem {
             tiles: vec![],
             meld_index: None,
         }
-    }
-}
-
-impl HasEntity for GuiMeldItem {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }

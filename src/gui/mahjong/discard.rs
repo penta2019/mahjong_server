@@ -12,6 +12,7 @@ pub struct GuiDiscard {
     tiles: Vec<(GuiTile, Vec3)>,
     riichi_index: Option<usize>,
 }
+crate::impl_has_entity!(GuiDiscard);
 
 impl GuiDiscard {
     const TILES_IN_ROW: usize = 6;
@@ -77,11 +78,5 @@ impl GuiDiscard {
 
     pub fn take_last_tile(&mut self) -> GuiTile {
         self.tiles.pop().unwrap().0
-    }
-}
-
-impl HasEntity for GuiDiscard {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }

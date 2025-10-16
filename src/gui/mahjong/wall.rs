@@ -24,6 +24,7 @@ pub struct Wall {
     ura_doras: Vec<Entry>,         // 裏ドラ
     dora_count: usize,             // ドラ表示牌の枚数
 }
+crate::impl_has_entity!(Wall);
 
 impl Wall {
     pub fn new() -> Self {
@@ -140,12 +141,6 @@ impl Wall {
         entry.tf = entry.tf * Transform::from_rotation(Quat::from_rotation_x(PI));
         entry.tile.insert(entry.tf_show);
         self.dora_count += 1;
-    }
-}
-
-impl HasEntity for Wall {
-    fn entity(&self) -> Entity {
-        self.entity
     }
 }
 

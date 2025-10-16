@@ -31,8 +31,8 @@ enum Info {
     Pitch,
 }
 
-fn setup(mut commands: Commands) {
-    let container = commands
+fn setup(mut cmd: Commands) {
+    let container = cmd
         .spawn((
             Container,
             Node {
@@ -49,28 +49,28 @@ fn setup(mut commands: Commands) {
             Pickable::IGNORE,
         ))
         .id();
-    commands.spawn((
+    cmd.spawn((
         ChildOf(container),
         Info::Fps,
         Text::new("fps: 0"),
         Node { ..default() },
         Pickable::IGNORE,
     ));
-    commands.spawn((
+    cmd.spawn((
         ChildOf(container),
         Info::Pos,
         Text::new("pos:"),
         Node { ..default() },
         Pickable::IGNORE,
     ));
-    commands.spawn((
+    cmd.spawn((
         ChildOf(container),
         Info::Yaw,
         Text::new("yaw:"),
         Node { ..default() },
         Pickable::IGNORE,
     ));
-    commands.spawn((
+    cmd.spawn((
         ChildOf(container),
         Info::Pitch,
         Text::new("pitch:"),

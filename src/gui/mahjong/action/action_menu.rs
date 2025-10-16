@@ -9,7 +9,7 @@ use crate::{
 pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
     let param = param();
     let menu = param
-        .commands
+        .cmd
         .spawn(Node {
             position_type: PositionType::Absolute,
             right: Val::Percent(20.0),
@@ -23,7 +23,7 @@ pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
 
     for ty in action_types {
         param
-            .commands
+            .cmd
             .spawn(create_main_action_button(*ty, &format!("{:?}", *ty)))
             .insert(ChildOf(menu));
     }
@@ -34,7 +34,7 @@ pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
 pub fn create_sub_action_menu(actions: &[Action]) -> Entity {
     let param = param();
     let menu = param
-        .commands
+        .cmd
         .spawn(Node {
             position_type: PositionType::Absolute,
             right: Val::Percent(20.0),
@@ -47,13 +47,13 @@ pub fn create_sub_action_menu(actions: &[Action]) -> Entity {
         .id();
 
     param
-        .commands
+        .cmd
         .spawn(create_main_action_button(ActionType::Nop, "Cancel"))
         .insert(ChildOf(menu));
 
     for act in actions {
         param
-            .commands
+            .cmd
             .spawn(create_sub_action_button(act.clone()))
             .insert(ChildOf(menu));
     }

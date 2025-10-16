@@ -72,20 +72,19 @@ impl Material for TileMaterial {
     }
 }
 
-pub fn create_tile(commands: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Entity {
+pub fn create_tile(cmd: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Entity {
     let tile_model = asset_server.load(GltfAssetLabel::Scene(0).from_asset("tile/tile.glb"));
-    commands
-        .spawn((
-            Name::new(format!("Tile({tile})")),
-            SceneRoot(tile_model),
-            TileInit(tile),
-        ))
-        .id()
+    cmd.spawn((
+        Name::new(format!("Tile({tile})")),
+        SceneRoot(tile_model),
+        TileInit(tile),
+    ))
+    .id()
 }
 
 fn tile_texture(
     ready: On<SceneInstanceReady>,
-    mut commands: Commands,
+    mut cmd: Commands,
     asset_server: Res<AssetServer>,
     mut tile_materials: ResMut<Assets<TileMaterial>>,
     tile_inits: Query<&TileInit>,
@@ -108,15 +107,13 @@ fn tile_texture(
                 texture,
                 blend: Vec4::new(0.0, 0.0, 0.0, 0.0),
             });
-            commands
-                .entity(e_descendant)
+            cmd.entity(e_descendant)
                 .remove::<MeshMaterial3d<StandardMaterial>>()
                 .insert((
                     MeshMaterial3d(material.clone()),
                     TileMesh { entity: e_tile },
                 ));
-            commands
-                .entity(e_tile)
+            cmd.entity(e_tile)
                 .remove::<TileInit>()
                 .insert(TileComponent { material });
         }
@@ -186,7 +183,7 @@ fn tile_hover(
 }
 
 fn tile_mutate(
-    mut commands: Commands,
+    mut cmd: Commands,
     tiles: Query<(Entity, &TileComponent, &TileMutate)>,
     asset_server: Res<AssetServer>,
     mut tile_materials: ResMut<Assets<TileMaterial>>,
@@ -194,19 +191,19 @@ fn tile_mutate(
     for (e_tile, component, TileMutate(tile)) in tiles {
         let material = tile_materials.get_mut(&component.material).unwrap();
         material.texture = asset_server.load(tile_path(*tile));
-        commands.entity(e_tile).remove::<TileMutate>();
+        cmd.entity(e_tile).remove::<TileMutate>();
     }
 }
 
 fn tile_blend(
-    mut commands: Commands,
+    mut cmd: Commands,
     tiles: Query<(Entity, &TileComponent, &TileBlend)>,
     mut tile_materials: ResMut<Assets<TileMaterial>>,
 ) {
     for (e_tile, component, TileBlend(color)) in tiles {
         let material = tile_materials.get_mut(&component.material).unwrap();
         material.blend = Vec4::new(color.red, color.green, color.blue, color.alpha);
-        commands.entity(e_tile).remove::<TileBlend>();
+        cmd.entity(e_tile).remove::<TileBlend>();
     }
 }
 

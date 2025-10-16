@@ -39,13 +39,13 @@ impl Plugin for MahjongPlugin {
     }
 }
 
-fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
     // 中央パネルのテクスチャを初期化
     // レンダリング用のカメラより先に初期化される必要があるためここで実行
     // 公式のExamplesでは同時に初期化しているが多くの初期化処理を一度に行う場合に正しく動作しない
     use bevy::render::render_resource::TextureFormat;
     let image = Image::new_target_texture(512, 512, TextureFormat::bevy_default());
-    commands.insert_resource(InfoTexture(images.add(image)));
+    cmd.insert_resource(InfoTexture(images.add(image)));
 }
 
 fn mahjong_control(mut param: MahjongParam, mut stage_control: ResMut<GuiMahjong>) {

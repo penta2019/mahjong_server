@@ -28,7 +28,7 @@ pub struct Wall {
 impl Wall {
     pub fn new() -> Self {
         let entity = param()
-            .commands
+            .cmd
             .spawn((Name::new("Wall".to_string()), Transform::IDENTITY))
             .id();
 
@@ -43,12 +43,12 @@ impl Wall {
     }
 
     pub fn init(&mut self, event: &EventNew) {
-        let param = param();
+        let p = param();
+        let cmd = &mut p.cmd;
 
         // 起家の一番左上の牌を先頭に時計回りに牌を積む
         for s in 0..SEAT {
-            let wall = param
-                .commands
+            let wall = cmd
                 .spawn((
                     ChildOf(self.entity),
                     Transform::from_rotation(Quat::from_rotation_y(-FRAC_PI_2 * s as f32))
@@ -77,10 +77,7 @@ impl Wall {
                         rotation: Quat::from_rotation_x(-FRAC_PI_2),
                         scale: Vec3::ONE,
                     };
-                    param
-                        .commands
-                        .entity(tile.entity())
-                        .insert((ChildOf(wall), tf_show));
+                    cmd.entity(tile.entity()).insert((ChildOf(wall), tf_show));
                     self.tiles.push_back(Entry {
                         tile,
                         tf,
@@ -117,7 +114,7 @@ impl Wall {
         // TODO
         for _ in 0..13 * 4 {
             if let Some(tile) = self.tiles.pop_front() {
-                param.commands.entity(tile.tile.entity()).despawn();
+                cmd.entity(tile.tile.entity()).despawn();
                 // tileはここでDropされる
             }
         }
@@ -143,7 +140,7 @@ impl Wall {
         entry.tile.mutate(m_tile);
         entry.tf = entry.tf * Transform::from_rotation(Quat::from_rotation_x(PI));
         param()
-            .commands
+            .cmd
             .entity(entry.tile.entity())
             .insert(entry.tf_show);
         self.dora_count += 1;

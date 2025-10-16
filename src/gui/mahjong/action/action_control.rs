@@ -83,7 +83,7 @@ impl ActionControl {
         .into_iter()
         .flatten()
         {
-            param().commands.entity(e).despawn();
+            param().cmd.entity(e).despawn();
         }
     }
 
@@ -216,11 +216,10 @@ impl ActionControl {
     }
 
     fn handle_action_buttons(&mut self) -> Option<Action> {
-        let param = param();
+        let p = param();
         let mut act = None;
-        for (entity, interaction) in &mut param.button_interaction {
-            let Ok((button, mut border, mut background)) = param.game_buttons.get_mut(entity)
-            else {
+        for (entity, interaction) in &mut p.button_interaction {
+            let Ok((button, mut border, mut background)) = p.game_buttons.get_mut(entity) else {
                 continue;
             };
 
@@ -309,7 +308,7 @@ impl ActionControl {
             return None;
         }
 
-        let param = param();
+        let p = param();
         let mut act = None;
         // メインメニューのボタン処理
         if let Some(possible_acts) = &self.possible_actions {
@@ -326,7 +325,7 @@ impl ActionControl {
                     if act0.ty == Riichi {
                         self.set_riichi(act0.tiles);
                         if let Some(menu) = self.action_main_menu {
-                            param.commands.entity(menu).insert(Visibility::Hidden);
+                            p.cmd.entity(menu).insert(Visibility::Hidden);
                         }
                         // リーチのキャンセルボタンを生成
                         self.action_sub_menu = Some(create_sub_action_menu(&[]));
@@ -336,7 +335,7 @@ impl ActionControl {
                 }
                 2.. => {
                     if let Some(menu) = self.action_main_menu {
-                        param.commands.entity(menu).insert(Visibility::Hidden);
+                        p.cmd.entity(menu).insert(Visibility::Hidden);
                     }
                     self.action_sub_menu = Some(create_sub_action_menu(&acts));
                 }
@@ -350,10 +349,10 @@ impl ActionControl {
         self.update_target_tile_color();
         self.set_riichi(vec![]);
         if let Some(menu) = self.action_main_menu.take() {
-            param().commands.entity(menu).despawn();
+            param().cmd.entity(menu).despawn();
         }
         if let Some(menu) = self.action_sub_menu.take() {
-            param().commands.entity(menu).despawn();
+            param().cmd.entity(menu).despawn();
         }
     }
 
@@ -422,11 +421,11 @@ impl ActionControl {
 
     fn cancel_sub_menu(&mut self) {
         if let Some(sub) = self.action_sub_menu.take() {
-            let param = param();
+            let p = param();
             self.set_riichi(vec![]);
-            param.commands.entity(sub).despawn();
+            p.cmd.entity(sub).despawn();
             if let Some(main) = self.action_main_menu {
-                param.commands.entity(main).insert(Visibility::Visible);
+                p.cmd.entity(main).insert(Visibility::Visible);
             }
         }
     }

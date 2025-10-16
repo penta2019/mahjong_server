@@ -12,7 +12,7 @@ use super::{
 // stage_plugin::stage_main_loopから呼び出される関数(controlディレクトリのモジュール)から使用するパラメータ
 #[derive(SystemParam)]
 pub struct MahjongParam<'w, 's> {
-    pub commands: Commands<'w, 's>,
+    pub cmd: Commands<'w, 's>,
     pub meshes: ResMut<'w, Assets<Mesh>>,
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,

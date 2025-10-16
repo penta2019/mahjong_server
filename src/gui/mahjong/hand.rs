@@ -17,7 +17,7 @@ pub struct GuiHand {
 impl GuiHand {
     pub fn new() -> Self {
         let entity = param()
-            .commands
+            .cmd
             .spawn((Name::new("Hand"), Transform::default()))
             .id();
         Self {
@@ -33,7 +33,7 @@ impl GuiHand {
         for t in m_tiles {
             let tile = GuiTile::new(*t);
             param()
-                .commands
+                .cmd
                 .entity(tile.entity())
                 .insert((ChildOf(self.entity), self.tf_tile(false)));
             self.tiles.push(tile);
@@ -48,7 +48,7 @@ impl GuiHand {
         let mut tf_from = reparent_tranform(tile.entity(), self.entity, &param.globals);
         let tf_to = self.tf_tile(true);
         tf_from.rotation = tf_to.rotation;
-        param.commands.entity(tile.entity()).insert((
+        param.cmd.entity(tile.entity()).insert((
             ChildOf(self.entity),
             tf_from,
             MoveAnimation::new(tf_to.translation),
@@ -160,7 +160,7 @@ impl GuiHand {
         }
 
         for (i, tile) in self.tiles.iter().enumerate() {
-            param().commands.entity(tile.entity()).insert(
+            param().cmd.entity(tile.entity()).insert(
                 MoveAnimation::new(Vec3::new(
                     GuiTile::WIDTH * i as f32,
                     GuiTile::HEIGHT / 2.0,

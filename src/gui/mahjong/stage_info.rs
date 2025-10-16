@@ -16,7 +16,7 @@ pub struct StageInfo {
 impl StageInfo {
     pub fn new() -> Self {
         let param = param();
-        let commands = &mut param.commands;
+        let cmd = &mut param.cmd;
 
         // テクスチャを中央パネルに貼る
         let mesh_handle = param.meshes.add(Plane3d::default().mesh().size(0.12, 0.12));
@@ -26,12 +26,12 @@ impl StageInfo {
             unlit: false,
             ..default()
         });
-        let entity = commands
+        let entity = cmd
             .spawn((Mesh3d(mesh_handle), MeshMaterial3d(material_handle)))
             .id();
 
         // UIをテクスチャにレンダリングするためのCamera2Dの初期化
-        let camera = commands
+        let camera = cmd
             .spawn((
                 Camera2d,
                 Camera {
@@ -45,7 +45,7 @@ impl StageInfo {
             .id();
 
         // UIのルートEntity
-        let ui = commands
+        let ui = cmd
             .spawn((
                 Name::new("StageInfo".to_string()),
                 Transform::IDENTITY,
@@ -64,7 +64,7 @@ impl StageInfo {
 
     pub fn init(&mut self, event: &EventNew) {
         let param = param();
-        let commands = &mut param.commands;
+        let cmd = &mut param.cmd;
 
         let wind = ["東", "南", "西", "北"];
         // let wind = ["E", "S", "W", "N"];
@@ -72,7 +72,7 @@ impl StageInfo {
         let font = param.asset_server.load("font/NotoSerifCJKjp-Regular.otf");
 
         let round_text = format!("{}{}局", wind[event.round], (event.dealer + 1));
-        let round = commands
+        let round = cmd
             .spawn((
                 Text2d(round_text),
                 TextFont {
@@ -90,7 +90,7 @@ impl StageInfo {
 
         for s in 0..SEAT {
             let i_wind = (s + SEAT - event.dealer) % SEAT;
-            commands.spawn((
+            cmd.spawn((
                 ChildOf(self.ui),
                 Transform::from_rotation(Quat::from_rotation_z(s as f32 * FRAC_PI_2)),
                 Visibility::Visible,
@@ -125,14 +125,14 @@ impl StageInfo {
 
     pub fn destroy(self) {
         let param = param();
-        param.commands.entity(self.camera).despawn();
-        param.commands.entity(self.ui).despawn();
+        param.cmd.entity(self.camera).despawn();
+        param.cmd.entity(self.ui).despawn();
     }
 
     pub fn set_camera_seat(&self, seat: Seat) {
         if let Some(e_round) = self.round {
             param()
-                .commands
+                .cmd
                 .entity(e_round)
                 .insert(Transform::from_rotation(Quat::from_rotation_z(
                     FRAC_PI_2 * seat as f32,

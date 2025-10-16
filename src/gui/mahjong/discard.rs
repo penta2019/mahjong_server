@@ -18,7 +18,7 @@ impl GuiDiscard {
 
     pub fn new() -> Self {
         let entity = param()
-            .commands
+            .cmd
             .spawn((Name::new("Discard"), Transform::default()))
             .id();
         Self {
@@ -66,7 +66,7 @@ impl GuiDiscard {
 
         // 捨て牌が通る(鳴きやロンが入らない)まで少しずらしておく
         let move_to = pos + Vec3::new(GuiTile::WIDTH / 2.0, -GuiTile::WIDTH / 4.0, 0.0);
-        param().commands.entity(tile.entity()).insert((
+        param().cmd.entity(tile.entity()).insert((
             ChildOf(self.entity),
             tf,
             MoveAnimation::new(move_to),
@@ -77,7 +77,7 @@ impl GuiDiscard {
     pub fn confirm_last_tile(&mut self) {
         if let Some((tile, pos)) = self.tiles.last().as_ref() {
             param()
-                .commands
+                .cmd
                 .entity(tile.entity())
                 .insert(MoveAnimation::new(*pos));
         }

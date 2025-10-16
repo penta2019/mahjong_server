@@ -36,11 +36,11 @@ pub struct GuiStage {
 impl GuiStage {
     pub fn new() -> Self {
         let param = param();
-        let commands = &mut param.commands;
+        let cmd = &mut param.cmd;
         let meshes = &mut param.meshes;
         let materials = &mut param.materials;
 
-        let entity = commands
+        let entity = cmd
             .spawn((
                 Name::new("Stage".to_string()),
                 Mesh3d(meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
@@ -52,7 +52,7 @@ impl GuiStage {
         // Light
         // 斜め4方向から照射 (牌はこれらのライトを無視してシェーダで独自に行う)
         for i in 0..4 {
-            commands.spawn((
+            cmd.spawn((
                 DirectionalLight {
                     illuminance: 1_000.0,
                     shadows_enabled: false,
@@ -67,19 +67,17 @@ impl GuiStage {
         }
 
         let info = StageInfo::new();
-        commands
-            .entity(info.entity())
+        cmd.entity(info.entity())
             .insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
 
         let wall = Wall::new();
-        commands
-            .entity(wall.entity())
+        cmd.entity(wall.entity())
             .insert((ChildOf(entity), Transform::IDENTITY));
 
         let mut players = vec![];
         for seat in 0..SEAT {
             let player = GuiPlayer::new();
-            commands.entity(player.entity()).insert((
+            cmd.entity(player.entity()).insert((
                 ChildOf(entity),
                 Transform::from_rotation(Quat::from_rotation_y(
                     std::f32::consts::FRAC_PI_2 * seat as f32,
@@ -103,7 +101,7 @@ impl GuiStage {
     }
 
     pub fn destroy(self) {
-        param().commands.entity(self.entity).despawn();
+        param().cmd.entity(self.entity).despawn();
         self.info.destroy();
         self.action_control.destroy();
     }

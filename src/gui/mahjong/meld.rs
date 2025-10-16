@@ -11,7 +11,7 @@ pub struct GuiMeld {
 impl GuiMeld {
     pub fn new() -> Self {
         let entity = param()
-            .commands
+            .cmd
             .spawn((Name::new("Meld"), Transform::default()))
             .id();
         Self {
@@ -59,11 +59,11 @@ impl GuiMeld {
             }
         }
 
-        let commands = &mut param().commands;
+        let cmd = &mut param().cmd;
 
         let mut meld_item = GuiMeldItem::new();
         self.item_ofsset_x -= meld_item_width + GuiTile::WIDTH / 4.0;
-        commands.entity(meld_item.entity()).insert((
+        cmd.entity(meld_item.entity()).insert((
             ChildOf(self.entity),
             Transform::from_xyz(self.item_ofsset_x, 0.0, 0.0),
         ));
@@ -93,7 +93,7 @@ impl GuiMeld {
                 offset_x += GuiTile::WIDTH;
             }
 
-            commands.entity(tile.entity()).insert((
+            cmd.entity(tile.entity()).insert((
                 ChildOf(meld_item.entity()),
                 tfs[i],
                 MoveAnimation::new(move_to),
@@ -134,11 +134,10 @@ impl GuiMeld {
             0.0,
         );
 
-        param().commands.entity(e_tile).insert((
-            ChildOf(e_meld_item),
-            tf,
-            MoveAnimation::new(move_to),
-        ));
+        param()
+            .cmd
+            .entity(e_tile)
+            .insert((ChildOf(e_meld_item), tf, MoveAnimation::new(move_to)));
 
         meld_item.tiles.push(tile);
     }
@@ -159,7 +158,7 @@ pub struct GuiMeldItem {
 
 impl GuiMeldItem {
     pub fn new() -> Self {
-        let entity = param().commands.spawn(Name::new("MeldItem")).id();
+        let entity = param().cmd.spawn(Name::new("MeldItem")).id();
         Self {
             entity,
             tiles: vec![],

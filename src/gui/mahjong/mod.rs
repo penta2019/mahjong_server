@@ -6,6 +6,7 @@ mod param;
 mod player;
 mod plugin;
 mod prelude;
+mod setting;
 mod stage;
 mod stage_info;
 mod tile;

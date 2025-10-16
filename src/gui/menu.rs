@@ -45,8 +45,8 @@ enum MenuButton {
     Quit,
 }
 
-fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
-    let container = commands
+fn setup(mut cmd: Commands, mut config: ResMut<MenuConfig>) {
+    let container = cmd
         .spawn((
             MenuUI,
             Node {
@@ -67,7 +67,7 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
         ))
         .id();
 
-    let text_entity = commands
+    let text_entity = cmd
         .spawn((
             MenuButton::Quit,
             Button,
@@ -82,9 +82,9 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
             children![(Text::new("Quit"), TextColor(TEXT))],
         ))
         .id();
-    commands.entity(container).add_child(text_entity);
+    cmd.entity(container).add_child(text_entity);
 
-    let e_sensitivity_container = commands
+    let e_sensitivity_container = cmd
         .spawn((
             Node {
                 justify_self: JustifySelf::Stretch,
@@ -96,11 +96,9 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
             // BackgroundColor::from(bevy::color::palettes::basic::AQUA),
         ))
         .id();
-    commands
-        .entity(container)
-        .add_child(e_sensitivity_container);
+    cmd.entity(container).add_child(e_sensitivity_container);
 
-    let sensitivity_text = commands
+    let sensitivity_text = cmd
         .spawn((
             Node {
                 margin: UiRect::right(Val::Px(50.0)),
@@ -109,13 +107,11 @@ fn setup(mut commands: Commands, mut config: ResMut<MenuConfig>) {
             Text::new("mouse sensitivity"),
         ))
         .id();
-    commands
-        .entity(e_sensitivity_container)
+    cmd.entity(e_sensitivity_container)
         .add_child(sensitivity_text);
 
-    let sensitivity_slider = create_slider(&mut commands, 300.0);
-    commands
-        .entity(e_sensitivity_container)
+    let sensitivity_slider = create_slider(&mut cmd, 300.0);
+    cmd.entity(e_sensitivity_container)
         .add_child(sensitivity_slider);
     config.mouse_sensitivity_slider = Some(sensitivity_slider);
 }

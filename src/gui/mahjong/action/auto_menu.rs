@@ -30,7 +30,7 @@ pub fn create_auto_menu() -> Entity {
         ],
     );
 
-    param().commands.spawn(bundle).id()
+    param().cmd.spawn(bundle).id()
 }
 
 fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {

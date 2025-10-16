@@ -27,8 +27,8 @@ impl Plugin for SliderPlugin {
     }
 }
 
-pub fn create_slider(commands: &mut Commands, width: f32) -> Entity {
-    let e_slider = commands
+pub fn create_slider(cmd: &mut Commands, width: f32) -> Entity {
+    let e_slider = cmd
         .spawn((
             Slider {
                 dragging: false,
@@ -46,7 +46,7 @@ pub fn create_slider(commands: &mut Commands, width: f32) -> Entity {
         ))
         .id();
 
-    let e_slider_inner = commands
+    let e_slider_inner = cmd
         .spawn((
             SliderInnder,
             Node {
@@ -59,7 +59,7 @@ pub fn create_slider(commands: &mut Commands, width: f32) -> Entity {
             BackgroundColor::from(Color::WHITE),
         ))
         .id();
-    commands.entity(e_slider).add_child(e_slider_inner);
+    cmd.entity(e_slider).add_child(e_slider_inner);
 
     e_slider
 }

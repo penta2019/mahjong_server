@@ -143,14 +143,14 @@ impl CameraMove {
     }
 }
 
-fn setup(mut commands: Commands, mut context: ResMut<CameraContext>) {
+fn setup(mut cmd: Commands, mut context: ResMut<CameraContext>) {
     context.set_pitch(-45.0_f32.to_radians());
     let tf_camera = Transform {
         translation: Vec3::new(0.0, 1.0, 1.0),
         rotation: context.camera_rotation(),
         scale: Vec3::ONE,
     };
-    commands.spawn((
+    cmd.spawn((
         MainCamera,
         Camera3d::default(),
         Projection::from(PerspectiveProjection {

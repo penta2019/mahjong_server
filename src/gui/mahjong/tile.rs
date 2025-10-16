@@ -19,8 +19,8 @@ impl GuiTile {
     pub const INACTIVE: LinearRgba = LinearRgba::new(0.0, 0.0, 0.0, 0.4); // ハイライト (打牌不可)
 
     pub fn new(tile: Tile) -> Self {
-        let param = param();
-        let entity = create_tile(&mut param.commands, &param.asset_server, tile);
+        let p = param();
+        let entity = create_tile(&mut p.cmd, &p.asset_server, tile);
         Self { entity, tile }
     }
 
@@ -30,17 +30,11 @@ impl GuiTile {
 
     pub fn mutate(&mut self, m_tile: Tile) {
         self.tile = m_tile;
-        param()
-            .commands
-            .entity(self.entity)
-            .insert(TileMutate(m_tile));
+        param().cmd.entity(self.entity).insert(TileMutate(m_tile));
     }
 
     pub fn blend(&mut self, color: LinearRgba) {
-        param()
-            .commands
-            .entity(self.entity)
-            .insert(TileBlend(color));
+        param().cmd.entity(self.entity).insert(TileBlend(color));
     }
 }
 

@@ -36,7 +36,7 @@ impl MoveAnimation {
 }
 
 fn move_animation(
-    mut commands: Commands,
+    mut cmd: Commands,
     move_animations: Query<(Entity, &mut Transform, &mut MoveAnimation)>,
 ) {
     for (entity, mut tf, mut anim) in move_animations {
@@ -47,7 +47,7 @@ fn move_animation(
         } else {
             // 残りフレームが0または現在位置が移動先の場合はMoveAnimationを削除
             tf.translation = anim.target; // 小数点誤差削除用
-            commands.entity(entity).remove::<MoveAnimation>();
+            cmd.entity(entity).remove::<MoveAnimation>();
         }
     }
 }

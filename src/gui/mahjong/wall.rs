@@ -76,7 +76,7 @@ impl Wall {
                         rotation: Quat::from_rotation_x(-FRAC_PI_2),
                         scale: Vec3::ONE,
                     };
-                    cmd.entity(tile.entity()).insert((ChildOf(wall), tf_show));
+                    tile.insert((ChildOf(wall), tf_show));
                     self.tiles.push_back(Entry {
                         tile,
                         tf,
@@ -112,8 +112,8 @@ impl Wall {
 
         // TODO
         for _ in 0..13 * 4 {
-            if let Some(tile) = self.tiles.pop_front() {
-                cmd.entity(tile.tile.entity()).despawn();
+            if let Some(entry) = self.tiles.pop_front() {
+                entry.tile.despawn();
                 // tileはここでDropされる
             }
         }
@@ -138,7 +138,7 @@ impl Wall {
         let entry = &mut self.doras[self.dora_count];
         entry.tile.mutate(m_tile);
         entry.tf = entry.tf * Transform::from_rotation(Quat::from_rotation_x(PI));
-        cmd().entity(entry.tile.entity()).insert(entry.tf_show);
+        entry.tile.insert(entry.tf_show);
         self.dora_count += 1;
     }
 }

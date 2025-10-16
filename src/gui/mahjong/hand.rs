@@ -1,7 +1,7 @@
 use rand::{prelude::IndexedRandom, rng};
 
 use super::prelude::*;
-use crate::gui::{move_animation::MoveAnimation, util::reparent_tranform};
+use crate::gui::move_animation::MoveAnimation;
 
 pub type IsDrawn = bool;
 
@@ -29,22 +29,18 @@ impl GuiHand {
     pub fn init(&mut self, m_tiles: &[Tile]) {
         for t in m_tiles {
             let tile = GuiTile::new(*t);
-            cmd()
-                .entity(tile.entity())
-                .insert((ChildOf(self.entity), self.tf_tile(false)));
+            tile.insert((ChildOf(self.entity), self.tf_new_tile(false)));
             self.tiles.push(tile);
         }
     }
 
     pub fn deal_tile(&mut self, tile: GuiTile) {
-        let p = param();
-
         self.drawn_tile = Some(tile.entity());
 
-        let mut tf_from = reparent_tranform(tile.entity(), self.entity, &p.globals);
-        let tf_to = self.tf_tile(true);
+        let mut tf_from = tile.transform_from(self.entity);
+        let tf_to = self.tf_new_tile(true);
         tf_from.rotation = tf_to.rotation;
-        p.cmd.entity(tile.entity()).insert((
+        tile.insert((
             ChildOf(self.entity),
             tf_from,
             MoveAnimation::new(tf_to.translation),
@@ -155,21 +151,19 @@ impl GuiHand {
             self.tiles.sort_by_key(|t| t.tile());
         }
 
-        let p = param();
         for (i, tile) in self.tiles.iter().enumerate() {
-            p.cmd.entity(tile.entity()).insert(
+            tile.insert(
                 MoveAnimation::new(Vec3::new(
                     GuiTile::WIDTH * i as f32,
                     GuiTile::HEIGHT / 2.0,
                     GuiTile::DEPTH / 2.0,
                 ))
                 .with_frame(6),
-                // .with_rotation(Quat::IDENTITY),
             );
         }
     }
 
-    fn tf_tile(&self, is_drawn: bool) -> Transform {
+    fn tf_new_tile(&self, is_drawn: bool) -> Transform {
         Transform::from_xyz(
             GuiTile::WIDTH * self.tiles.len() as f32 + if is_drawn { 0.005 } else { 0. },
             GuiTile::HEIGHT / 2.0,

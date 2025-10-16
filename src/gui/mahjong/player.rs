@@ -23,11 +23,10 @@ impl GuiPlayer {
         let entity = cmd.spawn(Name::new("Player")).id();
 
         let hand = GuiHand::new();
-        cmd.entity(hand.entity())
-            .insert((ChildOf(entity), TF_CLOSE_HAND));
+        hand.insert((ChildOf(entity), TF_CLOSE_HAND));
 
         let discard = GuiDiscard::new();
-        cmd.entity(discard.entity()).insert((
+        discard.insert((
             ChildOf(entity),
             Transform {
                 translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074),
@@ -37,7 +36,7 @@ impl GuiPlayer {
         ));
 
         let meld = GuiMeld::new();
-        cmd.entity(meld.entity()).insert((
+        meld.insert((
             ChildOf(entity),
             Transform {
                 translation: Vec3::new(0.25, GuiTile::DEPTH / 2.0, 0.23),
@@ -70,7 +69,7 @@ impl GuiPlayer {
             HandMode::Close => TF_CLOSE_HAND,
             HandMode::Open => TF_CLOSE_HAND.with_rotation(Quat::from_rotation_x(-FRAC_PI_2)),
         };
-        cmd().entity(self.hand.entity()).insert(tf);
+        self.hand.insert(tf);
     }
 
     pub fn init_hand(&mut self, m_tiles: &[Tile]) {

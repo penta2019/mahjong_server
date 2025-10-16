@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use super::{
+    super::util::reparent_transform,
     param::{MahjongParam, with_param},
     prelude::*,
     stage::GuiStage,
@@ -12,6 +13,26 @@ pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
 
 pub trait HasEntity {
     fn entity(&self) -> Entity;
+
+    #[inline]
+    fn cmd(&self) -> EntityCommands<'_> {
+        cmd().entity(self.entity())
+    }
+
+    #[inline]
+    fn insert(&self, bundle: impl Bundle) {
+        self.cmd().insert(bundle);
+    }
+
+    #[inline]
+    fn despawn(&self) {
+        self.cmd().despawn();
+    }
+
+    #[inline]
+    fn transform_from(&self, target: Entity) -> Transform {
+        reparent_transform(self.entity(), target, &param().globals)
+    }
 }
 
 #[derive(Resource)]
@@ -98,7 +119,7 @@ impl GuiMahjong {
 
                     // TODO
                     // 一度のUpdateで複数のEventの更新を行うとGlobalTransformに
-                    // GuiTileのentityが追加される前にreparent_transformから
+                    // GuiTileのentityが追加される前にreparent_transformsformから
                     // Query::get()が呼び出され失敗する
                     break;
                 }
@@ -139,7 +160,7 @@ impl GuiMahjong {
                 .send(ClientMessage::Action(act))
                 .unwrap();
         }
-        // 使用されなかったEventを全て破棄
-        param().drain_events();
+
+        // 使用されなかったbevyのMessageは次のフレームには持ち越されない
     }
 }

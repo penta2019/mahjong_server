@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::gui::{move_animation::MoveAnimation, util::reparent_tranform};
+use crate::gui::move_animation::MoveAnimation;
 
 #[derive(Debug)]
 pub struct GuiDiscard {
@@ -60,20 +60,18 @@ impl GuiDiscard {
             }
         }
 
-        let mut tf = reparent_tranform(tile.entity(), self.entity, &param().globals);
+        let mut tf = tile.transform_from(self.entity);
         tf.rotation = rot;
 
         // 捨て牌が通る(鳴きやロンが入らない)まで少しずらしておく
         let move_to = pos + Vec3::new(GuiTile::WIDTH / 2.0, -GuiTile::WIDTH / 4.0, 0.0);
-        cmd()
-            .entity(tile.entity())
-            .insert((ChildOf(self.entity), tf, MoveAnimation::new(move_to)));
+        tile.insert((ChildOf(self.entity), tf, MoveAnimation::new(move_to)));
         self.tiles.push((tile, pos));
     }
 
     pub fn confirm_last_tile(&mut self) {
         if let Some((tile, pos)) = self.tiles.last().as_ref() {
-            cmd().entity(tile.entity()).insert(MoveAnimation::new(*pos));
+            tile.insert(MoveAnimation::new(*pos));
         }
     }
 

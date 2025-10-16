@@ -65,17 +65,15 @@ impl GuiStage {
         }
 
         let info = StageInfo::new();
-        cmd.entity(info.entity())
-            .insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
+        info.insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
 
         let wall = Wall::new();
-        cmd.entity(wall.entity())
-            .insert((ChildOf(entity), Transform::IDENTITY));
+        wall.insert((ChildOf(entity), Transform::IDENTITY));
 
         let mut players = vec![];
         for seat in 0..SEAT {
             let player = GuiPlayer::new();
-            cmd.entity(player.entity()).insert((
+            player.insert((
                 ChildOf(entity),
                 Transform::from_rotation(Quat::from_rotation_y(
                     std::f32::consts::FRAC_PI_2 * seat as f32,
@@ -99,7 +97,7 @@ impl GuiStage {
     }
 
     pub fn destroy(self) {
-        cmd().entity(self.entity).despawn();
+        self.despawn();
         self.info.destroy();
         self.action_control.destroy();
     }

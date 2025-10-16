@@ -420,11 +420,11 @@ impl ActionControl {
 
     fn cancel_sub_menu(&mut self) {
         if let Some(sub) = self.action_sub_menu.take() {
-            let p = param();
+            let cmd = cmd();
             self.set_riichi(vec![]);
-            p.cmd.entity(sub).despawn();
+            cmd.entity(sub).despawn();
             if let Some(main) = self.action_main_menu {
-                p.cmd.entity(main).insert(Visibility::Visible);
+                cmd.entity(main).insert(Visibility::Visible);
             }
         }
     }

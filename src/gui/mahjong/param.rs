@@ -51,11 +51,6 @@ impl<'w, 's> MahjongParam<'w, 's> {
     pub fn print_hierarchy(&self, entity: Entity) {
         print_hierarchy(entity, &self.names, &self.childrens);
     }
-
-    pub fn drain_events(&mut self) {
-        self.hovered_tile.read();
-        self.mouse_input.read();
-    }
 }
 
 // MahjongParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用

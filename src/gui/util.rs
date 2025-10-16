@@ -43,7 +43,7 @@ pub fn print_hierarchy(entity: Entity, names: &Query<&Name>, childrens: &Query<&
     print_entity_tree(entity, 0, names, childrens);
 }
 
-pub fn reparent_tranform(
+pub fn reparent_transform(
     child: Entity,
     new_parent: Entity,
     globals: &Query<&'static mut GlobalTransform>,

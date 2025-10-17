@@ -15,6 +15,12 @@ struct Entry {
     tf_show: Transform, // 牌山表示時の配置
 }
 
+impl Entry {
+    fn update(&self, flag: bool) {
+        self.tile.insert(if flag { self.tf_show } else { self.tf });
+    }
+}
+
 #[derive(Debug)]
 pub struct Wall {
     entity: Entity,
@@ -23,6 +29,7 @@ pub struct Wall {
     doras: Vec<Entry>,             // ドラ表示牌
     ura_doras: Vec<Entry>,         // 裏ドラ
     dora_count: usize,             // ドラ表示牌の枚数
+    show: bool,                    // 牌山を表示するかどうか
 }
 crate::impl_has_entity!(Wall);
 
@@ -39,6 +46,7 @@ impl Wall {
             doras: vec![],
             ura_doras: vec![],
             dora_count: 0,
+            show: false,
         }
     }
 
@@ -77,13 +85,11 @@ impl Wall {
                         rotation: Quat::from_rotation_x(-FRAC_PI_2),
                         scale: Vec3::ONE,
                     };
-                    tile.insert((ChildOf(wall), tf_show));
-                    self.tiles.push_back(Entry {
-                        tile,
-                        tf,
-                        tf_show,
-                        // wall_seat: s,
-                    });
+                    tile.insert(ChildOf(wall));
+
+                    let entry = Entry { tile, tf, tf_show };
+                    entry.update(self.show);
+                    self.tiles.push_back(entry);
                 }
             }
         }
@@ -139,8 +145,20 @@ impl Wall {
         let entry = &mut self.doras[self.dora_count];
         entry.tile.mutate(m_tile);
         entry.tf = entry.tf * Transform::from_rotation(Quat::from_rotation_x(PI));
-        entry.tile.insert(entry.tf_show);
+        entry.update(self.show);
         self.dora_count += 1;
+    }
+
+    pub fn set_show(&mut self, flag: bool) {
+        self.show = flag;
+
+        let it0 = self.tiles.iter();
+        let it1 = self.doras.iter();
+        let it2 = self.ura_doras.iter();
+        let it3 = self.replacements.iter();
+        for entry in it0.chain(it1.chain(it2.chain(it3))) {
+            entry.update(self.show);
+        }
     }
 }
 

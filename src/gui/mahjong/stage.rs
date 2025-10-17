@@ -68,8 +68,9 @@ impl GuiStage {
         let info = StageInfo::new();
         info.insert((ChildOf(entity), Transform::from_xyz(0.0, 0.001, 0.0)));
 
-        let wall = Wall::new();
+        let mut wall = Wall::new();
         wall.insert((ChildOf(entity), Transform::IDENTITY));
+        wall.set_show(true);
 
         let mut players = vec![];
         for seat in 0..SEAT {

@@ -7,7 +7,6 @@ mod yaku;
 
 pub use self::{
     evaluate::{evaluate_hand, evaluate_hand_ron, evaluate_hand_tsumo},
-    point::get_score_title,
     win::{
         calc_discards_to_chiitoitsu_tenpai, calc_discards_to_kokushimusou_tenpai,
         calc_discards_to_normal_tenpai, calc_tiles_to_chiitoitsu_win,

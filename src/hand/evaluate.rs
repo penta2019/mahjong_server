@@ -242,8 +242,7 @@ pub fn evaluate_hand(
                 });
             }
         }
-        let points = get_points(is_dealer, fu, fan, yakuman);
-        let title = get_score_title(fu, fan, yakuman);
+        let (points, title) = calc_points(is_dealer, fu, fan, yakuman);
         let score = if is_drawn {
             if is_dealer {
                 points.1 * 3

@@ -807,7 +807,7 @@ impl MahjongEngine {
         match self.round_result.as_ref().unwrap() {
             RoundResult::Tsumo => {
                 let score_ctx = evaluate_hand_tsumo(&stg, &self.ura_dora_wall).unwrap();
-                let (mut deal_in, mut non_dealer, mut dealer) = score_ctx.points;
+                let (mut ron, mut non_dealer, mut dealer) = score_ctx.points;
 
                 let pl = &stg.players[turn];
                 let mut d_scores = [0; SEAT]; // 得点変動
@@ -815,9 +815,9 @@ impl MahjongEngine {
                 // TODO: 大四喜と四槓子の包の同時発生, 包を含む2倍以上の役満時の点数計算
                 if let Some(pao) = pl.pao {
                     // 責任払い
-                    deal_in += honba_sticks as i32 * 300;
-                    d_scores[pao] -= deal_in;
-                    d_scores[turn] += deal_in;
+                    ron += honba_sticks as i32 * 300;
+                    d_scores[pao] -= ron;
+                    d_scores[turn] += ron;
                 } else {
                     // 積み棒
                     non_dealer += honba_sticks as i32 * 100;
@@ -901,19 +901,19 @@ impl MahjongEngine {
                 let mut total_d_scores = [0; SEAT];
                 for s in seats_sorted {
                     let score_ctx = evaluate_hand_ron(&stg, &self.ura_dora_wall, s).unwrap();
-                    let (deal_in, _, _) = score_ctx.points;
+                    let (ron, _, _) = score_ctx.points;
 
                     let pl = &stg.players[s];
                     let mut d_scores = [0; SEAT]; // 得点変動
 
                     if let Some(pao) = pl.pao {
                         // 責任払いが発生している場合,ロンの半分ずつの支払い
-                        d_scores[turn] -= deal_in / 2;
-                        d_scores[pao] -= deal_in / 2;
+                        d_scores[turn] -= ron / 2;
+                        d_scores[pao] -= ron / 2;
                     } else {
-                        d_scores[turn] -= deal_in; // 直撃を受けたプレイヤー
+                        d_scores[turn] -= ron; // 直撃を受けたプレイヤー
                     };
-                    d_scores[s] += deal_in; // 和了ったプレイヤー
+                    d_scores[s] += ron; // 和了ったプレイヤー
 
                     // 積み棒&供託(上家取り)
                     if is_first {

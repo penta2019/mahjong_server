@@ -328,7 +328,7 @@ Usage
     $ cargo run C -f FILE [-d]
 Options
     -d: print debug info
-    -f: read expresisons from file instead of a commandline expression
+    -f: read expresisons from file
 "
     );
 }

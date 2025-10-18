@@ -120,7 +120,7 @@ impl YakuContext {
         }
 
         // 副底
-        let mut fu = 20;
+        let mut fu: usize = 20;
 
         // 和了り方
         fu += if self.is_drawn {
@@ -135,16 +135,15 @@ impl YakuContext {
         for SetPair(tp, t) in &self.parsed_hand {
             match tp {
                 Pair => {
-                    fu += if t.is_doragon() {
-                        2
+                    if t.is_doragon() {
+                        fu += 2;
                     } else if t.is_hornor() {
-                        if t.1 == self.prevalent_wind || t.1 == self.seat_wind {
-                            2
-                        } else {
-                            0
+                        if t.1 == self.prevalent_wind {
+                            fu += 2;
                         }
-                    } else {
-                        0
+                        if t.1 == self.seat_wind {
+                            fu += 2;
+                        }
                     }
                 }
                 Koutsu => fu += if t.is_end() { 8 } else { 4 },
@@ -184,8 +183,7 @@ impl YakuContext {
             }
         }
 
-        #[allow(clippy::manual_div_ceil)] // unstableなので無視
-        let fu = (fu + 9) / 10 * 10; // １の位は切り上げ
+        fu = fu.div_ceil(10) * 10; // １の位は切り上げ
         if fu == 20 {
             30 // 例外: 喰いピンフ形
         } else {

@@ -168,7 +168,7 @@ impl Calculator {
     }
 
     fn run(&self) -> Verify {
-        if let Some(ctx) = evaluate_hand(
+        if let Some((ctx, fus)) = evaluate_hand(
             &self.hand,
             &self.melds,
             &self.doras,
@@ -184,11 +184,17 @@ impl Calculator {
                 println!("{:?}", ctx);
             }
 
-            let mut yakus = "".to_string();
-            for y in ctx.yakus {
-                let _ = write!(yakus, "{}({}), ", y.name, y.fan);
+            let mut fus_str = "".to_string();
+            for f in fus {
+                let _ = write!(fus_str, "{}[{}], ", f.1, f.0);
             }
-            println!("yakus: {}", yakus);
+            println!("fus: {}", fus_str);
+
+            let mut yakus_str = "".to_string();
+            for y in ctx.yakus {
+                let _ = write!(yakus_str, "{}[{}], ", y.name, y.fan);
+            }
+            println!("yakus: {}", yakus_str);
 
             println!(
                 "fu: {}, fan: {}, yakuman: {}, score: {}, {}",

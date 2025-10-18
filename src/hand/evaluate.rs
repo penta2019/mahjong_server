@@ -36,7 +36,7 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &[Tile]) -> Option<ScoreC
         vec![]
     };
 
-    if let Some(res) = evaluate_hand(
+    if let Some((ctx, _)) = evaluate_hand(
         &pl.hand,
         &pl.melds,
         &stg.doras,
@@ -47,9 +47,9 @@ pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &[Tile]) -> Option<ScoreC
         get_prevalent_wind(stg),
         get_seat_wind(stg, pl.seat),
         &yf,
-    ) && !res.yakus.is_empty()
+    ) && !ctx.yakus.is_empty()
     {
-        return Some(res);
+        return Some(ctx);
     }
 
     None
@@ -116,7 +116,7 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &[Tile], seat: Seat) -> Opt
         vec![]
     };
 
-    if let Some(res) = evaluate_hand(
+    if let Some((ctx, _)) = evaluate_hand(
         &hand,
         &pl.melds,
         &stg.doras,
@@ -127,9 +127,9 @@ pub fn evaluate_hand_ron(stg: &Stage, ura_dora_wall: &[Tile], seat: Seat) -> Opt
         get_prevalent_wind(stg),
         get_seat_wind(stg, pl.seat),
         &yf,
-    ) && !res.yakus.is_empty()
+    ) && !ctx.yakus.is_empty()
     {
-        return Some(res);
+        return Some(ctx);
     }
 
     None
@@ -150,7 +150,7 @@ pub fn evaluate_hand(
     prevalent_wind: Index,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Index,       // 自風 (同上)
     yaku_flags: &YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
-) -> Option<ScoreContext> {
+) -> Option<(ScoreContext, Vec<Fu>)> {
     let mut phs = vec![];
     phs.append(&mut parse_into_normal_win(hand));
     if melds.is_empty() {
@@ -196,9 +196,14 @@ pub fn evaluate_hand(
         0
     };
 
-    let mut results = vec![];
+    let mut ctxs = vec![];
     for ctx in wins {
-        let fu = ctx.calc_fu();
+        let fus = ctx.calc_fu();
+        let mut fu = fus.iter().map(|(fu, _)| fu).sum::<usize>(); // 符の総和
+        if fu != 25 {
+            fu = fu.div_ceil(10) * 10; // 七対子以外なら１の位は切り上げ
+        }
+
         let (yakus, mut fan, yakuman) = ctx.calc_yaku();
         if yakus.is_empty() {
             continue; // 無役
@@ -242,6 +247,7 @@ pub fn evaluate_hand(
                 });
             }
         }
+
         let (points, title) = calc_points(is_dealer, fu, fan, yakuman);
         let score = if is_drawn {
             if is_dealer {
@@ -252,18 +258,21 @@ pub fn evaluate_hand(
         } else {
             points.0
         };
-        results.push(ScoreContext {
-            yakus,
-            fu,
-            fan,
-            yakuman,
-            score,
-            points,
-            title,
-        });
+        ctxs.push((
+            ScoreContext {
+                yakus,
+                fu,
+                fan,
+                yakuman,
+                score,
+                points,
+                title,
+            },
+            fus,
+        ));
     }
 
     // 和了形に複数の解釈が可能な場合,最も得点の高いものを採用
-    results.sort_by_key(|r| (r.points.0, r.fan, r.fu));
-    results.pop()
+    ctxs.sort_by_key(|(ctx, _)| (ctx.points.0, ctx.fan, ctx.fu));
+    ctxs.pop()
 }

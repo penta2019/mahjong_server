@@ -8,6 +8,8 @@ use crate::model::*;
 
 use SetPairType::*;
 
+pub type Fu = (usize, &'static str);
+
 // 特殊形&特殊条件の役
 #[derive(Debug, Default, Clone)]
 pub struct YakuFlags {
@@ -111,24 +113,27 @@ impl YakuContext {
         }
     }
 
-    pub fn calc_fu(&self) -> usize {
+    pub fn calc_fu(&self) -> Vec<Fu> {
+        // 例外の平和,七対子は予め処理
         if is_pinfu(self) {
-            return if self.is_drawn { 20 } else { 30 };
+            if self.is_drawn {
+                return vec![(20, "平和ツモ")];
+            } else {
+                return vec![(20, "基本符"), (10, "門前ロン")];
+            }
         }
         if is_chiitoitsu(self) {
-            return 25;
+            return vec![(25, "七対子")];
         }
 
         // 副底
-        let mut fu: usize = 20;
+        let mut fu_list = vec![(20, "基本符")];
 
         // 和了り方
-        fu += if self.is_drawn {
-            2 // ツモ
+        if self.is_drawn {
+            fu_list.push((2, "ツモ"));
         } else if !self.is_open {
-            10 // 門前ロン
-        } else {
-            0
+            fu_list.push((10, "門前ロン"));
         };
 
         // 面子, 雀頭
@@ -136,46 +141,74 @@ impl YakuContext {
             match tp {
                 Pair => {
                     if t.is_doragon() {
-                        fu += 2;
+                        fu_list.push((2, "雀頭(三元牌)"));
                     } else if t.is_hornor() {
                         if t.1 == self.prevalent_wind {
-                            fu += 2;
+                            fu_list.push((2, "雀頭(場風)"));
                         }
                         if t.1 == self.seat_wind {
-                            fu += 2;
+                            fu_list.push((2, "雀頭(自風)"));
                         }
                     }
                 }
-                Koutsu => fu += if t.is_end() { 8 } else { 4 },
-                Pon => fu += if t.is_end() { 4 } else { 2 },
-                Minkan => fu += if t.is_end() { 16 } else { 8 },
-                Ankan => fu += if t.is_end() { 32 } else { 16 },
+                Koutsu => {
+                    if t.is_end() {
+                        fu_list.push((8, "暗刻(么九牌)"));
+                    } else {
+                        fu_list.push((4, "暗刻(中張牌)"));
+                    }
+                }
+                Pon => {
+                    if t.is_end() {
+                        fu_list.push((4, "明刻(么九牌)"));
+                    } else {
+                        fu_list.push((2, "明刻(中張牌)"));
+                    }
+                }
+                Minkan => {
+                    if t.is_end() {
+                        fu_list.push((16, "明槓(么九牌)"));
+                    } else {
+                        fu_list.push((8, "明槓(中張牌)"));
+                    }
+                }
+                Ankan => {
+                    if t.is_end() {
+                        fu_list.push((32, "暗槓(么九牌)"));
+                    } else {
+                        fu_list.push((16, "暗槓(中張牌)"));
+                    }
+                }
                 _ => {}
             }
         }
 
         // 待ちの形
+        // 平和は予め処理済み, 喰いピンフは最後に例外的に処理するため
+        // ここでは符が多くなるように待ちを自由に解釈して良い
+        // 0符 or 2符なので2符がつく待ちが見つかった段階でbreakする
         let wt = &self.winning_tile;
         for SetPair(tp, t) in &self.parsed_hand {
+            // 牌の種別が異なる場合はスキップ
             if t.0 != wt.0 {
                 continue;
             }
+
             match tp {
                 Shuntsu => {
                     // カンチャン待ち,ペンチャン7待ち,ペンチャン3待ち
-                    if t.1 + 1 == wt.1
-                        || (t.1 == wt.1 && wt.1 == 7)
-                        || (t.1 + 2 == wt.1 && wt.1 == 3)
-                    {
-                        fu += 2;
+                    if t.1 + 1 == wt.1 {
+                        fu_list.push((2, "嵌張待ち"));
+                        break;
+                    }
+                    if (t.1 == wt.1 && wt.1 == 7) || (t.1 + 2 == wt.1 && wt.1 == 3) {
+                        fu_list.push((2, "辺張待ち"));
                         break;
                     }
                 }
-                Koutsu => {} // シャンポン待ち
                 Pair => {
-                    // タンキ待ち, ノベタン待ち
                     if t.1 == wt.1 {
-                        fu += 2;
+                        fu_list.push((2, "単騎待ち"));
                         break;
                     }
                 }
@@ -183,12 +216,11 @@ impl YakuContext {
             }
         }
 
-        fu = fu.div_ceil(10) * 10; // １の位は切り上げ
-        if fu == 20 {
-            30 // 例外: 喰いピンフ形
-        } else {
-            fu
+        if fu_list.len() == 1 {
+            fu_list.push((10, "食い平和"));
         }
+
+        fu_list
     }
 }
 

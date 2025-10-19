@@ -59,10 +59,10 @@ impl EngineApp {
             write_tenhou: false,
             debug: false,
             names: [
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
+                "Nop".to_string(),
+                "Nop".to_string(),
+                "Nop".to_string(),
+                "Nop".to_string(),
             ],
         };
 

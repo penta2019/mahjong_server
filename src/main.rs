@@ -21,7 +21,7 @@ mod gui;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
-        error!("mode not specified");
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return;
     }
 

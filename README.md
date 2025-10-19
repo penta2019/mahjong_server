@@ -1,4 +1,5 @@
 # Mahjong Server (WIP)
+
 ## 概要
 日本リーチ麻雀のゲームサーバーです.  
 主にBot同士を対戦させることを目的にしています.  
@@ -9,18 +10,20 @@ Botは未実装でエンジンの動作確認のみができる状態です.
 * 麻雀エンジン  
 配牌, 鳴き, リーチ・聴牌・和了の判定, 符・役・得点の計算などゲーム進行に必要な要素すべて
 * Bot同士の対戦
-* 外部AI(akochan)を使った雀魂の自動対戦, 局の再現に必要な情報の書き出しと読み込みによるリプレイ
-* 
+実用的なBot(あるいはAI)は含まれていません
+* GUI(対戦, 観戦, 牌譜)
+
+## 未実装機能
+* 3人麻雀  
+実装するかも
 
 * ローカルルール, ローカル役  
 実装予定なし.
 
-* 3人麻雀  
-実装するかも
-
-## 動作に必要なもの 
-* Rustコンパイラ  
-rustc 1.90.0 で動作を確認
+## 動作要件
+* 動作環境: デスクトップPC (Linux, Windows, MacOS)
+* Rust言語 (rustc 1.90.0 以上)
+* 動作確認済み環境: Linux 6.17.1-2 (cachyos)
 
 ## 牌の文字列表現
 通常,萬子の1なら1mのように表現することが多いですが,プログラミングの命名規則や並び順の観点から本プログラムではm1のように通常と前後逆に表現しています.  
@@ -30,14 +33,34 @@ rustc 1.90.0 で動作を確認
 字牌: z1(東), z2(南), z3(西), z4(北), z5(白), z6(發) ,z7(中)  
 
 ## 使い方
-rustの実行環境をインストールして各種コマンドを実行してください.
+Rustのビルド環境をインストールしてコマンドを実行してください.
 依存ライブラリはコマンドの初回実行時に自動的にダウンロードされます.
 
-### 対戦モード (E)  
+### ビルドオプション
+「パフォーマンスを重視」する場合や「Bevy内部から発生するVulkanのValidationエラーを非表示」にしたい場合,
+Releaseモードでビルドしてください. デフォルトのDebugモードと比較して最大で30倍ほど速くなります.
+```
+cargo run --release
+```
 
+GUIを使用しない場合は--no-default-featuresオプションをつけて,
+Bevy(ゲームエンジン)をビルドから外すことでビルド時間を大幅に短縮できます.
+```
+cargo run --release --no-default-features
+```
+
+### 実行
+cargoコマンド(cargo run --release --)の後にアプリ自体の引数を指定して実行します.
+* 手役計算を行う例
+```
+cargo run --release -- C "m123456789z111z22 / EN,m1,z1 / 立直"
+```
+`--release`の後ろの`--`は以降の引数がアプリ自体に渡される引数であることを示すものです.
+
+### 対戦モード (E)  
 共通オプション一覧
 ```
--p sec (デフォルト値: 0.0)
+-p second (デフォルト値: 0.0)
     牌をツモる前に指定した時間だけ一時停止
 -r-round round (デフォルト値: 1)
     1: 4人東, 2: 4人南
@@ -60,13 +83,14 @@ rustの実行環境をインストールして各種コマンドを実行して�
 ```
 
 #### シングル実行
-単一の試合を実行します.  
-試合状況はwebsocketを通してブラウザから確認出来ます.  
+単一の試合を実行します. 
 
 固有オプション一覧
 ```
 -s seed (デフォルト値:現在のUnixTime(秒))
     牌山生成のシード値.
+-v
+    試合状況をGuiから観戦 (Gui actorを使用する場合は無効)
 -w
     ファイルに牌譜を出力
 -w-tenhou
@@ -76,22 +100,37 @@ rustの実行環境をインストールして各種コマンドを実行して�
 ```
 
 実行例  
-* 座席0を手動で操作.その他は七対子Bot
+* 七対子Bot同士の対戦をGuiから0.2秒の停止時間をつけて観戦
 ```
-cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
+cargo run --release -- E -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot -v -p 0.2
+```
+
+* 座席0をコンソールから手動で操作.その他は七対子Bot
+```
+cargo run --release -- E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
+```
+
+* 座席3(北家開始)をGUIから操作.その他は七対子Bot
+```
+cargo run --release -- E -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 Gui -p 0.2
+```
+
+* 座席0をGuiで操作(牌山&手牌表示可). その他はNop(ツモ切り). Guiデバッグ用
+```
+cargo run --release -- E -0 "Gui(false)"
 ```
 
 #### マルチプル実行
 複数の試合を実行して結果を集計します.   
-このモードでは入出力を行うActor(=Manual, MjaiEndpoint)は使用できません.  
-各actorの座席は試合開始時にランダムで決定されます.  
+このモードは主にBotのベンチマークを行うためのもので,入出力を行うActor(=Gui, Manual, MjaiEndpoint等)は使用できません.  
+各actorの座席はそれぞれの試合開始時にランダムで決定されます.
 
 固有オプション一覧
 ```
 -s seed (デフォルト値:現在のUnixTime(秒))
     牌山生成のシード値を生成するためのマスターのシード値.
 -g n_game (必須)
-    実行数する試合の数.このオプションを指定しない場合シングル実行になります.
+    実行数する試合の数.このオプションを指定しない場合,シングル実行になります.
 -t n_thread (デフォルト値: 16)
     同時に実行するスレッド数
 ```
@@ -99,19 +138,22 @@ cargo run E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 実行例  
 * 座席0はランダム打牌.その他は七対子Bot.1000半荘を32スレッドで実行した結果を集計.
 ```
-cargo run E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
+cargo run --release -- E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot
 ```
 
-* akochanに自動で打ってもらう
-```
-cargo run J -s -0 MjaiEndpoint    # 本体側
-akochan mjai_client 11601      # akochan側
-```
+試合の再現
+それぞれの試合のシード値と結果が出力されるため,内容が気になった局があればシード値をコピーして試合内容を再現することができます.
+これを可能にするためActor(Botまたはプレイヤーインターフェースのエンドポイント)は決定的な実装(同じシード値と卓状態に対して必ず同じ選択を行う)であることが強く奨励されます.
+つまりActorは乱数に対して以下のいずれかの方法で実装することが望ましいです.
+* シード値を固定する
+* 手牌などの決定的な要素からシード値を生成する
+* そもそも乱数を使用しない
 
-* ポート(12345)とタイムアウト(30秒)を設定したい場合
+例えば上の実行例で
+`587,   1ms,   59392500579177975, ac3: 7600(4), ac1:35700(1), ac2:31700(2), ac0:25000(3)`
+という実行結果が得られた場合,座席順を適切に並び替えてシード値を指定すれば局を再現できます.
 ```
-cargo run J -s -0 'MjaiEndpoint(127.0.0.1:12345,30)'    # 本体側
-akochan mjai_client 12345                               # akochan側
+cargo run --release -- E -s 59392500579177975 -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 RandomDiscard -v -p 0.2
 ```
 
 ### 牌譜リプレイモード (R)
@@ -143,16 +185,16 @@ E, J モードの-wオプションでファイルに書き出した牌譜(json)�
 
 * 手役を計算 (東場(E), 北家(N), ドラ表示牌(m1), 裏ドラ表示牌(z1))
 ```
-cargo run C "m123456789z111z22 / EN,m1,z1 / 立直"
+cargo run --release -- C "m123456789z111z22 / EN,m1,z1 / 立直"
 ```
 
 * ファイルの手牌データをまとめて検証
 ```
-cargo run C -f tests/win_hands.txt
+cargo run --release -- C -f tests/win_hands.txt
 ```
 
 ### Actor
-Actorとはゲームの操作を行う主体(Bot)のことです.  
+Actorはゲームの操作を行う主体(Bot)です.  
 オプションを指定可能なActorの場合, Actor(arg1,arg2,...)のように順番に引数で指定します.  
 後側の引数は省略可能ですべての引数を省略する場合は()は不要です. 省略した引数はデフォルト値が使用されます.
 
@@ -176,7 +218,7 @@ Actorとはゲームの操作を行う主体(Bot)のことです.
 * Nop  
 つねにNopを返すActor. (= 自分のツモ番ではツモ切り, 鳴き操作等一切なし)
 
-### Manual Actorの操作方法
+#### Manual Actorの操作方法
 可能な操作をエンジン側が提示するのでaction indexを指定します.  
 例外として打牌(Discard)の場合は直接,牌のシンボルを指定します.  
 Discardに渡されるリストは鳴きの後に捨てることが出来ない牌(面子の組み換え禁止)です.  
@@ -236,15 +278,13 @@ pub enum Action {
 }
 ```
 
-## 動作確認済みOS
-* Arch Linux (5.11.12-arch1-1)
+## 開発ガイド TODO
 
-## コーディング規約
 ### 命名規則
 基本的に麻雀英語wikiの表記に従いますが,役の名称はすべて日本語で統一します.
 
 ### 変数名省略
-
+```
 * general
 ty: type (予約語なのでrustプロジェクトで代わりに採用されている変数名を使用)
 ch: char
@@ -267,6 +307,23 @@ e(_): entity(_)
 ev(_): event(_)
 tf(_): transform(_)
 p: &mut MahjongParam (= param())
+```
 
-## Module構成
+### よく使うコマンド (自分用)
+* Linterでunused以外をチェック
+```
+cargo clippy -- -A unused
+```
+
+* バージョンアップ可能な外部クレートの確認 (outdatedのインストールが必要)
+```
+cargo outdated --root-deps-only
+```
+
+* 外部クレートのマイナーアップデート
+```
+cargo update
+```
+
+### モジュール図
 ![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg)

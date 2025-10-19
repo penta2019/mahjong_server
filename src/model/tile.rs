@@ -62,6 +62,11 @@ impl Tile {
     pub fn is_doragon(&self) -> bool {
         self.0 == TZ && DW <= self.1 && self.1 <= DR
     }
+
+    pub fn unicode(&self) -> char {
+        const TABLE: [&str; 4] = ["🀋🀇🀈🀉🀊🀋🀌🀍🀎🀏", "🀝🀙🀚🀛🀜🀝🀞🀟🀠🀡", "🀔🀐🀑🀒🀓🀔🀕🀖🀗🀘", " 🀀🀁🀂🀃🀄🀅🀆"];
+        TABLE[self.0].chars().nth(self.1).unwrap()
+    }
 }
 
 impl fmt::Display for Tile {

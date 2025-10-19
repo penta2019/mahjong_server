@@ -1,5 +1,5 @@
 use super::{parse::*, point::*, yaku::*};
-use crate::{control::common::*, model::*};
+use crate::{control::common::*, model::*, warn};
 
 pub fn evaluate_hand_tsumo(stg: &Stage, ura_dora_wall: &[Tile]) -> Option<ScoreContext> {
     let pl = &stg.players[stg.turn];
@@ -150,7 +150,7 @@ pub fn evaluate_hand(
     prevalent_wind: Index,  // 場風 (東: 1, 南: 2, 西: 3, 北: 4)
     seat_wind: Index,       // 自風 (同上)
     yaku_flags: &YakuFlags, // 和了形だった場合に自動的に付与される役(特殊条件役)のフラグ
-) -> Option<(ScoreContext, Vec<Fu>)> {
+) -> Option<(ScoreContext, YakuContext)> {
     let mut phs = vec![];
     phs.append(&mut parse_into_normal_win(hand));
     if melds.is_empty() {
@@ -158,15 +158,15 @@ pub fn evaluate_hand(
         phs.append(&mut parse_into_kokusimusou_win(hand));
     }
 
-    let mut wins = vec![]; // 和了形のリスト (無役を含む)
+    let mut yaku_ctxs = vec![]; // 和了形のリスト (無役を含む)
     let pm = parse_melds(melds);
     for mut ph in phs {
         ph.append(&mut pm.clone());
         match ph.len() {
-            0 | 5 | 7 => {} // 国士, 通常, 七対子
-            _ => continue,  // 無効な和了形
+            0 | 5 | 7 => {}                                    // 国士, 通常, 七対子
+            _ => warn!("invalid number of SetPair: {:?}", ph), // 無効な和了形
         }
-        wins.push(YakuContext::new(
+        yaku_ctxs.push(YakuContext::new(
             *hand,
             ph,
             winning_tile,
@@ -177,7 +177,7 @@ pub fn evaluate_hand(
         ));
     }
 
-    if wins.is_empty() {
+    if yaku_ctxs.is_empty() {
         return None; // 和了形以外
     }
 
@@ -197,14 +197,14 @@ pub fn evaluate_hand(
     };
 
     let mut ctxs = vec![];
-    for ctx in wins {
-        let fus = ctx.calc_fu();
+    for yctx in yaku_ctxs {
+        let fus = yctx.calc_fu();
         let mut fu = fus.iter().map(|(fu, _)| fu).sum::<usize>(); // 符の総和
         if fu != 25 {
             fu = fu.div_ceil(10) * 10; // 七対子以外なら１の位は切り上げ
         }
 
-        let (yakus, mut fan, yakuman) = ctx.calc_yaku();
+        let (yakus, mut fan, yakuman) = yctx.calc_yaku();
         if yakus.is_empty() {
             continue; // 無役
         }
@@ -214,7 +214,7 @@ pub fn evaluate_hand(
                 let fan = if y.yakuman > 0 {
                     y.yakuman
                 } else {
-                    if ctx.is_open() {
+                    if yctx.is_open() {
                         y.fan_open
                     } else {
                         y.fan_close
@@ -268,11 +268,11 @@ pub fn evaluate_hand(
                 points,
                 title,
             },
-            fus,
+            yctx,
         ));
     }
 
     // 和了形に複数の解釈が可能な場合,最も得点の高いものを採用
-    ctxs.sort_by_key(|(ctx, _)| (ctx.points.0, ctx.fan, ctx.fu));
+    ctxs.sort_by_key(|(sctx, _yctx)| (sctx.points.0, sctx.fan, sctx.fu));
     ctxs.pop()
 }

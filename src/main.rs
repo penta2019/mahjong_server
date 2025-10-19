@@ -20,6 +20,8 @@ mod gui;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+
+    // 引数がない場合,バージョン情報を表示して終了
     if args.len() < 2 {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return;

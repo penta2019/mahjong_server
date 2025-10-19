@@ -53,12 +53,7 @@ impl StageController {
     }
 
     pub fn get_names(&self) -> [String; SEAT] {
-        let mut names = [
-            "".to_string(),
-            "".to_string(),
-            "".to_string(),
-            "".to_string(),
-        ];
+        let mut names = [String::new(), String::new(), String::new(), String::new()];
         for s in 0..SEAT {
             for actor in &self.actors {
                 names[s] = actor.get_name().to_owned();
@@ -152,7 +147,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
                 player_inc_tile(pl, t);
             }
             let pl = &mut stg.players[s];
-            pl.winning_tiles = get_winning_tiles(pl);
+            pl.winning_tiles = calc_tiles_to_win(&pl.hand);
         } else {
             // 手牌が見えない場合,牌すべてz8(不明な牌)になる
             pl.hand[TZ][UK] = 13;
@@ -428,7 +423,7 @@ fn update_after_turn_action(stg: &mut Stage, event: &Event) {
     if pl.is_shown {
         // クライアントとして動作している場合,他家の手配は見えない
         if pl.drawn.is_none() || pl.drawn.unwrap().to_normal() != tile.to_normal() {
-            pl.winning_tiles = get_winning_tiles(pl);
+            pl.winning_tiles = calc_tiles_to_win(&pl.hand);
             for d in &pl.discards {
                 if pl.winning_tiles.contains(&d.tile.to_normal()) {
                     pl.is_furiten = true;
@@ -483,14 +478,4 @@ fn player_inc_tile(pl: &mut Player, tile: Tile) {
 #[inline]
 fn player_dec_tile(pl: &mut Player, tile: Tile) {
     dec_tile(&mut pl.hand, tile);
-}
-
-fn get_winning_tiles(pl: &Player) -> Vec<Tile> {
-    let wts0 = calc_tiles_to_kokushimusou_win(&pl.hand);
-    let wts1 = calc_tiles_to_normal_win(&pl.hand);
-    let wts2 = calc_tiles_to_chiitoitsu_win(&pl.hand);
-    let mut wts = [wts0, wts1, wts2].concat();
-    wts.sort();
-    wts.dedup();
-    wts
 }

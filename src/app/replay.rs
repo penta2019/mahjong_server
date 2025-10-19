@@ -26,10 +26,10 @@ impl ReplayApp {
             skip: String::new(),
             debug: false,
             // names: [
-            //     "".to_string(),
-            //     "".to_string(),
-            //     "".to_string(),
-            //     "".to_string(),
+            //     String::new(),
+            //     String::new(),
+            //     String::new(),
+            //     String::new(),
             // ],
         };
 

@@ -374,23 +374,11 @@ pub fn calc_possible_tenpai_discards(
     seat_wind: Index,
 ) -> Vec<Tenpai> {
     let mut comb: Vec<(Tile, Tile)> = vec![]; // (打牌, 和了牌)の組み合わせ
-    for (d, wts) in calc_discards_to_normal_tenpai(&pl.hand) {
+    for (d, wts) in calc_discards_to_win(&pl.hand) {
         for wt in wts {
             comb.push((d, wt));
         }
     }
-    for (d, wts) in calc_discards_to_chiitoitsu_tenpai(&pl.hand) {
-        for wt in wts {
-            comb.push((d, wt));
-        }
-    }
-    for (d, wts) in calc_discards_to_kokushimusou_tenpai(&pl.hand) {
-        for wt in wts {
-            comb.push((d, wt));
-        }
-    }
-    comb.sort();
-    comb.dedup();
 
     let yf = YakuFlags::default();
     let mut res: Vec<Tenpai> = vec![];

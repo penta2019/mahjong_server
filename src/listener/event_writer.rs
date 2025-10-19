@@ -41,10 +41,11 @@ impl Listener for EventWriter {
 
         self.record.push(json!(event));
         if write {
-            let _ = write_to_file(
+            write_to_file(
                 &format!("local/log/{}/{:02}.json", self.start_time, self.round_index),
                 &serde_json::to_string_pretty(&json!(self.record)).unwrap(),
-            );
+            )
+            .ok();
             self.record.clear();
             self.round_index += 1;
         }

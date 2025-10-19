@@ -6,17 +6,29 @@ use SetPairType::*;
 #[derive(Debug, Clone, Copy)]
 pub enum SetPairType {
     Pair,    // 雀頭
-    Shuntsu, // 順子
-    Koutsu,  // 刻子
-    Chi,     // チー
-    Pon,     // ポン
-    Minkan,  // 明槓 (大明槓 + 加槓)
+    Shuntsu, // 順子(手牌)
+    Koutsu,  // 刻子(手牌)
+    Chi,     // 順子(副露)
+    Pon,     // 刻子(副露)
+    Minkan,  // 明槓(大明槓 + 加槓)
     Ankan,   // 暗槓
 }
 
-// Tileは順子,チーの場合は先頭の牌
+// Tileは順子,チーの場合は先頭の牌 (赤5の情報は消える)
 #[derive(Debug, Clone, Copy)]
 pub struct SetPair(pub SetPairType, pub Tile);
+
+impl SetPair {
+    pub fn normal_tiles(&self) -> Vec<Tile> {
+        let t = self.1;
+        match self.0 {
+            Pair => vec![t, t],
+            Shuntsu | Chi => vec![t, Tile(t.0, t.1 + 1), Tile(t.0, t.1 + 2)],
+            Koutsu | Pon => vec![t, t, t],
+            Minkan | Ankan => vec![t, t, t, t],
+        }
+    }
+}
 
 pub type ParsedHand = Vec<SetPair>;
 
@@ -40,14 +52,19 @@ pub fn parse_melds(melds: &[Meld]) -> ParsedHand {
     res
 }
 
-// 牌種を順子と刻子に分解
-// 三連刻の場合2通り(刻子3つ, 順子3つ)の分割が存在する 四連刻は役満(四暗刻)なので無視
+// 列を刻子と順子に刻子優先で分解
+// 三連刻の場合2通り(刻子3つ, 順子3つ)の分割が存在する
+// レアケースだが順子として解釈したほうが高くなるケースが存在する
+// * 111222333: 一盃口,純全帯么九
+// * 222233334444: 二盃口
+// 四連刻は役満(四暗刻)なので順子は無視
 // 予め分解可能であることを確認しておくこと(分解できない場合assertに失敗)
 // TileRowが空(すべて0)の場合は分解可能とみなし[[]]を返却
 fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
     let mut ph = vec![];
     let (mut n0, mut n1, mut n2);
 
+    // 刻子優先で面子を前から抜き出す
     n0 = tr[1];
     n1 = tr[2];
     for i in 1..8 {
@@ -74,6 +91,7 @@ fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
     }
     assert!(n0 % 3 == 0 && n1 % 3 == 0);
 
+    // 字牌列または面子が3未満の場合は三連刻ではない
     if ti == TZ || ph.len() < 3 {
         return vec![ph];
     }
@@ -94,11 +112,12 @@ fn parse_row_into_sets(tr: &TileRow, ti: usize) -> Vec<ParsedHand> {
         }
     }
 
-    // 三連刻なし
+    // 三連刻ではない
     if n != 3 {
         return vec![ph];
     }
 
+    // 三連刻を順子とみなす場合を追加
     let mut ph2 = vec![];
     for &SetPair(tp, t) in &ph {
         if let Koutsu = tp

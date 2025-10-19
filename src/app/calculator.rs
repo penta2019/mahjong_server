@@ -4,13 +4,9 @@ use std::{
     io::{self, BufRead},
 };
 
-use crate::{
-    control::common::*,
-    error,
-    hand::{YakuFlags, evaluate_hand},
-    model::*,
-    util::misc::*,
-};
+use crate::{control::common::*, error, hand::*, model::*, util::misc::*};
+
+const INDENT: usize = 2;
 
 #[derive(Debug)]
 pub struct CalculatorApp {
@@ -27,8 +23,8 @@ impl CalculatorApp {
     }
 
     pub fn run(&mut self) {
-        let mut file_path = "".to_string();
-        let mut exp = "".to_string();
+        let mut file_path = String::new();
+        let mut exp = String::new();
         let mut it = self.args.iter();
         while let Some(s) = it.next() {
             match s.as_str() {
@@ -86,7 +82,7 @@ impl CalculatorApp {
     fn process_expression(&self, exp: &str) -> Res {
         let mut calculator = Calculator::new(self.detail);
         calculator.parse(exp)?;
-        calculator.run();
+        calculator.calculate();
         Ok(())
     }
 }
@@ -161,14 +157,58 @@ impl Calculator {
         }
 
         if self.detail {
-            println!("{:?}", self);
+            println!("{:#?}", self);
+            println!();
         }
 
         Ok(())
     }
 
-    fn run(&self) -> Verify {
-        if let Some((ctx, fus)) = evaluate_hand(
+    fn calculate(&mut self) -> Verify {
+        // 手牌の枚数を集計 (row[0]は赤5のフラグなのでスキップ)
+        let tile_num = self
+            .hand
+            .iter()
+            .map(|row| row[1..].iter().sum::<usize>())
+            .sum::<usize>();
+
+        let verify = match tile_num % 3 {
+            0 => {
+                // 麻雀のルール上,手牌の枚数が3の倍数になることはない
+                println!("手牌の枚数が不正です");
+                None
+            }
+            1 => {
+                // あと1枚(ツモまたはロン)で完成形 -> 和了牌計算
+                self.calculate_winnig_tile(0)
+            }
+            2 => {
+                // n面子+雀頭の完成形
+                self.calculate_win(0) // 和了形チェック -> 和了点計算
+                    .or_else(|| self.calculate_tenpai()) // 聴牌形チェック -> 聴牌打牌計算
+            }
+            _ => panic!(),
+        }
+        .unwrap_or_else(|| self.verify_no_socre());
+
+        println!("verify: {verify:?}");
+        verify
+    }
+
+    fn verify_no_socre(&self) -> Verify {
+        if self.verify {
+            if self.score == 0 {
+                Verify::Ok
+            } else {
+                Verify::Error
+            }
+        } else {
+            Verify::Skip
+        }
+    }
+
+    fn calculate_win(&self, indent_size: usize) -> Option<Verify> {
+        let Some((sctx, yctx)) = evaluate_hand(
             &self.hand,
             &self.melds,
             &self.doras,
@@ -179,62 +219,179 @@ impl Calculator {
             self.prevalent_wind,
             self.seat_wind,
             &self.yaku_flags,
-        ) {
-            if self.detail {
-                println!("{:?}", ctx);
-            }
-
-            let mut fus_str = "".to_string();
-            for f in fus {
-                let _ = write!(fus_str, "{}[{}], ", f.1, f.0);
-            }
-            println!("fus: {}", fus_str);
-
-            let mut yakus_str = "".to_string();
-            for y in ctx.yakus {
-                let _ = write!(yakus_str, "{}[{}], ", y.name, y.fan);
-            }
-            println!("yakus: {}", yakus_str);
-
-            println!(
-                "fu: {}, fan: {}, yakuman: {}, score: {}, {}",
-                ctx.fu, ctx.fan, ctx.yakuman, ctx.score, ctx.title
-            );
-
-            let verify = if self.verify {
-                if ctx.yakuman > 0 {
-                    // 役満以上は得点のみをチェック
-                    if ctx.score == self.score {
-                        Verify::Ok
-                    } else {
-                        Verify::Error
-                    }
-                } else {
-                    if ctx.fu == self.fu && ctx.fan == self.fan && ctx.score == self.score {
-                        Verify::Ok
-                    } else {
-                        Verify::Error
-                    }
-                }
+        ) else {
+            return if is_normal_win(&self.hand) {
+                println!("役無し");
+                Some(self.verify_no_socre())
             } else {
-                Verify::Skip
+                None
             };
-            println!("verify: {:?}", verify);
-            verify
+        };
+
+        let indent = " ".repeat(indent_size);
+        // println!("{indent}[和了点計算]");
+
+        if self.detail {
+            println!("{:#?}", sctx);
+            println!();
+            println!("{:#?}", yctx);
+            println!();
+        }
+
+        println!("{indent}和了牌: {}", self.winning_tile);
+
+        // 面子
+        // 面子の配列を生成
+        let mut sets: Vec<_> = yctx
+            .parsed_hand()
+            .clone()
+            .into_iter()
+            .map(|s| (s.normal_tiles(), s.0))
+            .collect();
+        // 辞書順で並び替える (手牌と副露は後で振り分けるので混ざってもOK)
+        sets.sort_by(|s0, s1| s0.0.cmp(&s1.0));
+        let mut hand_str = String::new();
+        let mut meld_str = String::new();
+        for set in sets {
+            let target = match set.1 {
+                SetPairType::Pair | SetPairType::Shuntsu | SetPairType::Koutsu => &mut hand_str,
+                _ => &mut meld_str,
+            };
+            if !target.is_empty() {
+                write!(target, ", ").ok();
+            }
+            write!(target, "{}", set.0[0]).ok();
+            for t in &set.0[1..] {
+                write!(target, "{}", t.1).ok();
+            }
+        }
+        print!("{indent}面子　: {}", hand_str);
+        if !meld_str.is_empty() {
+            print!(", ({})", meld_str);
+        }
+        println!();
+
+        // 符計算
+        let mut fus_str = String::new();
+        for fu in yctx.calc_fu() {
+            if !fus_str.is_empty() {
+                write!(fus_str, ", ").ok();
+            }
+            write!(fus_str, "{}[{}]", fu.1, fu.0).ok();
+        }
+        println!("{indent}符計算: {fus_str}");
+
+        // 役一覧
+        let mut yakus_str = String::new();
+        for y in sctx.yakus {
+            if !yakus_str.is_empty() {
+                write!(yakus_str, ", ").ok();
+            }
+            write!(yakus_str, "{}[{}]", y.name, y.fan).ok();
+        }
+        println!("{indent}役一覧: {yakus_str}");
+
+        // 和了
+        print!(
+            "{indent}和了　: {} {} ",
+            if self.is_dealer { "親" } else { "子" },
+            if self.is_drawn { "ツモ" } else { "ロン" }
+        );
+        let score_breakdown = if self.is_drawn {
+            if self.is_dealer {
+                format!("({}オール)", sctx.points.1)
+            } else {
+                format!("({}/{})", sctx.points.1, sctx.points.2)
+            }
         } else {
-            println!("not win hand");
-            let verify = if self.verify {
-                if self.score == 0 {
+            String::new()
+        };
+        if sctx.yakuman == 0 {
+            println!(
+                "{indent}{}符{}飜 {}{} {}",
+                sctx.fu, sctx.fan, sctx.score, score_breakdown, sctx.title
+            );
+        } else {
+            println!("{}{} {}", sctx.score, score_breakdown, sctx.title);
+        }
+
+        let verify = if self.verify {
+            if sctx.yakuman > 0 {
+                // 役満以上は得点のみをチェック
+                if sctx.score == self.score {
                     Verify::Ok
                 } else {
                     Verify::Error
                 }
             } else {
-                Verify::Skip
-            };
-            println!("verify: {:?}", verify);
-            verify
+                if sctx.fu == self.fu && sctx.fan == self.fan && sctx.score == self.score {
+                    Verify::Ok
+                } else {
+                    Verify::Error
+                }
+            }
+        } else {
+            Verify::Skip
+        };
+        Some(verify)
+    }
+
+    fn calculate_winnig_tile(&mut self, indent_size: usize) -> Option<Verify> {
+        let indent = " ".repeat(indent_size);
+        // println!("{indent}[和了牌計算]");
+
+        let tiles = calc_tiles_to_win(&self.hand);
+
+        if tiles.is_empty() {
+            println!("{indent}聴牌形ではありません");
+            return None;
         }
+
+        // print!("{indent}和了牌: {}", tiles[0]);
+        // for t in &tiles[1..] {
+        //     print!(", {}", t);
+        // }
+        // println!();
+
+        for tile in tiles {
+            inc_tile(&mut self.hand, tile);
+            self.winning_tile = tile;
+            self.calculate_win(indent_size);
+            dec_tile(&mut self.hand, tile);
+            println!();
+        }
+
+        None
+    }
+
+    fn calculate_tenpai(&mut self) -> Option<Verify> {
+        // println!("[聴牌打牌計算]");
+
+        let discards = calc_discards_to_win(&self.hand);
+
+        if discards.is_empty() {
+            println!("一向聴以上の手牌です");
+            return None;
+        }
+
+        println!("打牌 => 和了牌");
+        for (discard, tiles) in &discards {
+            print!("{discard} => {}", tiles[0]);
+            for tile in &tiles[1..] {
+                print!(", {}", tile);
+            }
+            println!();
+        }
+        println!();
+
+        for (discard, _) in &discards {
+            println!("打牌: {discard}");
+            dec_tile(&mut self.hand, *discard);
+            self.calculate_winnig_tile(INDENT);
+            inc_tile(&mut self.hand, *discard);
+        }
+
+        None
     }
 
     fn parse_stage_info(&mut self, input: &str) -> Res {
@@ -262,7 +419,7 @@ impl Calculator {
     }
 
     fn parse_hand_meld(&mut self, input: &str) -> Res {
-        let mut exp_hand = "".to_string();
+        let mut exp_hand = String::new();
         let mut exp_melds = vec![];
         for exp in input.split(',') {
             if exp_hand.is_empty() {
@@ -351,7 +508,7 @@ fn test_calculator() {
         } else {
             let mut calculator = Calculator::new(false);
             calculator.parse(&exp2).unwrap();
-            assert_ne!(Verify::Error, calculator.run());
+            assert_ne!(Verify::Error, calculator.calculate());
         }
     }
 }

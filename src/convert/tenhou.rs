@@ -153,7 +153,7 @@ impl TenhouSerializer {
                     let tn = t.to_normal();
                     for m in &stg.players[ev.seat].melds {
                         if m.tiles[0].to_normal() == tn {
-                            let mut meld = "".to_string();
+                            let mut meld = String::new();
                             for i in 0..3 {
                                 if m.froms[i] != ev.seat {
                                     meld += "k";

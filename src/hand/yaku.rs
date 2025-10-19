@@ -78,6 +78,10 @@ impl YakuContext {
         self.is_open
     }
 
+    pub fn parsed_hand(&self) -> &ParsedHand {
+        &self.parsed_hand
+    }
+
     // (役一覧, 飜数, 役満倍数)を返却. 役満ではない場合,役満倍率は0, 役一覧に鳴き0飜とドラは含まない
     pub fn calc_yaku(&self) -> (Vec<&'static YakuDefine>, usize, usize) {
         let mut yaku = vec![];

@@ -1,5 +1,8 @@
 use super::parse::parse_into_chiitoitsu_win;
-use crate::{control::common::tiles_with_red5, model::*};
+use crate::{
+    control::common::{count_tile, tiles_with_red5},
+    model::*,
+};
 
 // [完成形判定 (面子, 雀頭)]
 
@@ -106,16 +109,19 @@ pub fn calc_possibole_pairs(hand: &TileTable) -> Vec<Tile> {
 // [和了形判定]
 
 // 通常形
+#[allow(unused)]
 pub fn is_normal_win(hand: &TileTable) -> bool {
     !calc_possibole_pairs(hand).is_empty()
 }
 
 // 七対子
+#[allow(unused)]
 pub fn is_chiitoitsu_win(hand: &TileTable) -> bool {
     !parse_into_chiitoitsu_win(hand).is_empty()
 }
 
 // 国士無双
+#[allow(unused)]
 pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
     let mut count = 0;
     for ti in 0..TZ {
@@ -143,6 +149,17 @@ pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
 // 和了牌のリストを返却
 // 聴牌していない場合は空のリストを返却
 // この関数郡は赤5を考慮しない
+
+// すべての和了形 (通常形,七対子,国士無双)
+pub fn calc_tiles_to_win(hand: &TileTable) -> Vec<Tile> {
+    let wts0 = calc_tiles_to_normal_win(hand);
+    let wts1 = calc_tiles_to_chiitoitsu_win(hand);
+    let wts2 = calc_tiles_to_kokushimusou_win(hand);
+    let mut wts = [wts0, wts1, wts2].concat();
+    wts.sort();
+    wts.dedup();
+    wts
+}
 
 // 通常形
 pub fn calc_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
@@ -194,6 +211,8 @@ pub fn calc_tiles_to_normal_win(hand: &TileTable) -> Vec<Tile> {
         }
     }
 
+    // 手牌に既に4枚存在している牌は除外
+    res.retain(|t| count_tile(hand, *t) < 4);
     res
 }
 
@@ -279,6 +298,16 @@ pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
 // ツモ番において聴牌となる打牌と待ちの組み合わせの一覧を返却
 // 主にリーチ宣言が可能かどうかを確認する用途
 // この関数群は手牌の赤5を考慮する
+
+pub fn calc_discards_to_win(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
+    let ds0 = calc_discards_to_normal_tenpai(hand);
+    let ds1 = calc_discards_to_chiitoitsu_tenpai(hand);
+    let ds2 = calc_discards_to_kokushimusou_tenpai(hand);
+    let mut res = [ds0, ds1, ds2].concat();
+    res.sort();
+    res.dedup();
+    res
+}
 
 // 通常形
 pub fn calc_discards_to_normal_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {

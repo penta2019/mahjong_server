@@ -2,8 +2,10 @@ use bevy::color::palettes::basic::GREEN;
 
 use super::{
     action::ActionControl,
+    param::ActionParam,
     player::{GuiPlayer, HandMode},
     prelude::*,
+    setting::Setting,
     stage_info::StageInfo,
     wall::Wall,
 };
@@ -29,6 +31,8 @@ pub struct GuiStage {
     camera_seat: Seat,
     // カメラ座席の操作
     action_control: ActionControl,
+    // 卓の設定
+    setting: Setting,
     // カメラ座席以外のプレイヤーの手牌の表示フラグ
     show_hand: bool,
 }
@@ -37,9 +41,9 @@ crate::impl_has_entity!(GuiStage);
 impl GuiStage {
     pub fn new() -> Self {
         let p = param();
-        let cmd = cmd();
 
-        let entity = cmd
+        let entity = p
+            .cmd
             .spawn((
                 Name::new("Stage".to_string()),
                 Mesh3d(p.meshes.add(Plane3d::default().mesh().size(0.65, 0.65))),
@@ -51,7 +55,7 @@ impl GuiStage {
         // Light
         // 斜め4方向から照射 (牌はこれらのライトを無視してシェーダで独自に行う)
         for i in 0..4 {
-            cmd.spawn((
+            p.cmd.spawn((
                 DirectionalLight {
                     illuminance: 1_000.0,
                     shadows_enabled: false,
@@ -86,6 +90,8 @@ impl GuiStage {
 
         let action_control = ActionControl::new();
 
+        let setting = Setting::new();
+
         Self {
             entity,
             info,
@@ -94,6 +100,7 @@ impl GuiStage {
             last_tile: None,
             camera_seat: 0,
             action_control,
+            setting,
             show_hand: true,
         }
     }
@@ -102,6 +109,7 @@ impl GuiStage {
         self.despawn();
         self.info.destroy();
         self.action_control.destroy();
+        self.setting.destroy();
     }
 
     pub fn set_player(&mut self, seat: Seat) {
@@ -145,9 +153,9 @@ impl GuiStage {
             .handle_actions(&mut self.players[self.camera_seat], actions);
     }
 
-    pub fn handle_gui_events(&mut self) -> Option<SelectedAction> {
+    pub fn handle_gui_events(&mut self, action_param: &mut ActionParam) -> Option<SelectedAction> {
         self.action_control
-            .handle_gui_events(&mut self.players[self.camera_seat])
+            .handle_gui_events(action_param, &mut self.players[self.camera_seat])
     }
 
     fn event_new(&mut self, event: &EventNew) {

@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
 use super::{
-    param::{MahjongParam, with_param},
+    param::{ActionParam, MahjongParam, SettingParam, with_param},
     prelude::*,
     stage::GuiStage,
     tile_plugin::TilePlugin,
@@ -31,7 +31,15 @@ impl Plugin for MahjongPlugin {
         app.add_plugins(TilePlugin)
             .insert_resource(GuiMahjong::new(tx, rx))
             .add_systems(Startup, setup)
-            .add_systems(Update, mahjong_control);
+            .add_systems(
+                Update,
+                (
+                    mahjong_process_server_message,
+                    mahjong_handle_action_events,
+                    mahjong_handle_setting_events,
+                )
+                    .chain(),
+            );
     }
 }
 
@@ -44,9 +52,25 @@ fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
     cmd.insert_resource(InfoTexture(images.add(image)));
 }
 
-fn mahjong_control(mut param: MahjongParam, mut stage_control: ResMut<GuiMahjong>) {
+fn mahjong_process_server_message(mut gui_mahjong: ResMut<GuiMahjong>, mut param: MahjongParam) {
     with_param(&mut param, || {
-        stage_control.update();
+        gui_mahjong.process_server_message();
+    });
+}
+
+fn mahjong_handle_action_events(
+    mut gui_mahjong: ResMut<GuiMahjong>,
+    mut param: MahjongParam,
+    mut action_param: ActionParam,
+) {
+    with_param(&mut param, || {
+        gui_mahjong.handle_action_events(&mut action_param);
+    });
+}
+
+fn mahjong_handle_setting_events(mut gui_mahjong: ResMut<GuiMahjong>, mut param: MahjongParam) {
+    with_param(&mut param, || {
+        gui_mahjong.handle_setting_events();
     });
 }
 
@@ -68,7 +92,7 @@ impl GuiMahjong {
         }
     }
 
-    fn update(&mut self) {
+    fn process_server_message(&mut self) {
         while let Ok(msg) = self.rx.lock().unwrap().try_recv() {
             if let ServerMessage::Event(ev) = &msg
                 && let MjEvent::New(_) = ev.as_ref()
@@ -125,9 +149,11 @@ impl GuiMahjong {
                 ServerMessage::Log => todo!(),
             }
         }
+    }
 
+    fn handle_action_events(&mut self, action_params: &mut ActionParam) {
         if let Some(stage) = &mut self.stage
-            && let Some(act) = stage.handle_gui_events()
+            && let Some(act) = stage.handle_gui_events(action_params)
         {
             self.tx
                 .lock()
@@ -138,4 +164,6 @@ impl GuiMahjong {
 
         // 使用されなかったbevyのMessageは次のフレームには持ち越されない
     }
+
+    fn handle_setting_events(&mut self) {}
 }

@@ -6,6 +6,7 @@ use super::{
     super::{camera::CameraMove, util::print_hierarchy},
     action::GameButton,
     plugin::InfoTexture,
+    setting::SettingButton,
     tile_plugin::HoveredTile,
 };
 
@@ -17,33 +18,13 @@ pub struct MahjongParam<'w, 's> {
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
     pub asset_server: Res<'w, AssetServer>,
     pub globals: Query<'w, 's, &'static mut GlobalTransform>,
-
-    // 中央情報パネルのテクスチャ
-    pub info_texture: Res<'w, InfoTexture>,
-
-    // Game Button
-    pub game_buttons: Query<
-        'w,
-        's,
-        (
-            &'static mut GameButton,
-            &'static mut BorderColor,
-            &'static mut BackgroundColor,
-        ),
-    >,
-    pub button_interaction:
-        Query<'w, 's, (Entity, &'static Interaction), (Changed<Interaction>, With<GameButton>)>,
-
-    // MessageWriter
-    pub camera: MessageWriter<'w, CameraMove>,
-
-    // MessageReader
-    pub hovered_tile: MessageReader<'w, 's, HoveredTile>,
-    pub mouse_input: MessageReader<'w, 's, MouseButtonInput>,
-
     // for debug
     pub names: Query<'w, 's, &'static Name>,
     pub childrens: Query<'w, 's, &'static Children>,
+    // 中央情報パネルのテクスチャ
+    pub info_texture: Res<'w, InfoTexture>,
+    // カメラの移動
+    pub camera: MessageWriter<'w, CameraMove>,
 }
 
 impl<'w, 's> MahjongParam<'w, 's> {
@@ -55,7 +36,7 @@ impl<'w, 's> MahjongParam<'w, 's> {
 
 // MahjongParamをすべての関数にたらい回しにするのはあまりに冗長であるためグローバル変数を使用
 // 注意!!!!
-// * process_event以下の関数以外からは呼ばないこと,特にadd_systemsに登録する関数に注意
+// * GuiMahjongとその子孫以外からは呼ばないこと,特にadd_systemsに登録する関数に注意
 // * 戻り値のMahjongParamの参照を関数から返したり,ローカル変数以外に格納しないこと
 // * lifetimeを誤魔化しているため,borrow checkerは正しく機能しない
 //      (= 呼び出した関数内で状態が変化する可能性がある)
@@ -90,4 +71,40 @@ pub fn with_param<F: FnOnce()>(param: &mut MahjongParam, f: F) {
         f();
         MAHJONG_PARAM = None;
     };
+}
+
+#[derive(SystemParam)]
+pub struct ActionParam<'w, 's> {
+    // Game Button
+    pub game_buttons: Query<
+        'w,
+        's,
+        (
+            &'static mut GameButton,
+            &'static mut BorderColor,
+            &'static mut BackgroundColor,
+        ),
+    >, // 実装側から参照できるようにInteractionから分離
+    pub game_button_interactions:
+        Query<'w, 's, (Entity, &'static Interaction), (Changed<Interaction>, With<GameButton>)>,
+
+    // MessageReader
+    pub hovered_tile: MessageReader<'w, 's, HoveredTile>,
+    pub mouse_input: MessageReader<'w, 's, MouseButtonInput>,
+}
+
+#[derive(SystemParam)]
+pub struct SettingParam<'w, 's> {
+    // Setting Button
+    pub setting_buttons: Query<
+        'w,
+        's,
+        (
+            &'static mut SettingButton,
+            &'static mut BorderColor,
+            &'static mut BackgroundColor,
+        ),
+    >,
+    // pub setting_button_interactions:
+    //     Query<'w, 's, (Entity, &'static Interaction), (Changed<Interaction>, With<SettingButton>)>,
 }

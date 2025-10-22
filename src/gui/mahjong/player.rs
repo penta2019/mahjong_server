@@ -19,9 +19,7 @@ crate::impl_has_entity!(GuiPlayer);
 
 impl GuiPlayer {
     pub fn new() -> Self {
-        let cmd = cmd();
-
-        let entity = cmd.spawn(Name::new("Player")).id();
+        let entity = cmd().spawn(Name::new("Player")).id();
 
         let hand = GuiHand::new();
         hand.insert((ChildOf(entity), TF_CLOSE_HAND));

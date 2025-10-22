@@ -17,7 +17,6 @@ crate::impl_has_entity!(StageInfo);
 impl StageInfo {
     pub fn new() -> Self {
         let p = param();
-        let cmd = cmd();
 
         // テクスチャを中央パネルに貼る
         let mesh_handle = p.meshes.add(Plane3d::default().mesh().size(0.12, 0.12));
@@ -27,12 +26,14 @@ impl StageInfo {
             unlit: false,
             ..default()
         });
-        let entity = cmd
+        let entity = p
+            .cmd
             .spawn((Mesh3d(mesh_handle), MeshMaterial3d(material_handle)))
             .id();
 
         // UIをテクスチャにレンダリングするためのCamera2Dの初期化
-        let camera = cmd
+        let camera = p
+            .cmd
             .spawn((
                 Camera2d,
                 Camera {
@@ -46,7 +47,8 @@ impl StageInfo {
             .id();
 
         // UIのルートEntity
-        let ui = cmd
+        let ui = p
+            .cmd
             .spawn((
                 Name::new("StageInfo".to_string()),
                 Transform::IDENTITY,
@@ -125,9 +127,9 @@ impl StageInfo {
     }
 
     pub fn destroy(self) {
-        let p = param();
-        p.cmd.entity(self.camera).despawn();
-        p.cmd.entity(self.ui).despawn();
+        let cmd = cmd();
+        cmd.entity(self.camera).despawn();
+        cmd.entity(self.ui).despawn();
     }
 
     pub fn set_camera_seat(&self, seat: Seat) {

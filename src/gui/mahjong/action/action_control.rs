@@ -5,14 +5,15 @@ use bevy::input::ButtonState;
 use super::{
     super::{
         hand::{GuiHand, IsDrawn},
+        param::ActionParam,
         player::GuiPlayer,
         prelude::*,
     },
-    BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,
+    AutoButton, BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,
     action_menu::{create_main_action_menu, create_sub_action_menu},
     auto_menu::create_auto_menu,
 };
-use crate::{gui::mahjong::action::AutoButton, model::ActionType};
+use crate::model::ActionType;
 
 use ActionType::*;
 
@@ -55,8 +56,9 @@ pub struct ActionControl {
     riichi_discard_tiles: Vec<Tile>,
 }
 
-unsafe impl Send for ActionControl {} // *mut GuiPlayer用
-unsafe impl Sync for ActionControl {} // *mut GuiPlayer用
+// *mut GuiPlayer があるためResourceとして使用するために明示的に実装が必要
+unsafe impl Send for ActionControl {}
+unsafe impl Sync for ActionControl {}
 
 impl ActionControl {
     pub fn new() -> Self {
@@ -92,17 +94,6 @@ impl ActionControl {
 
         self.clear_actions();
 
-        // Newが届いた時点ではstageの生成がQueryに反映されていないため
-        // 次のイベントでフラグのリセット処理を実行
-        // TODO: この方法は同じUpdate内でeventを行う場合正しく動作しない
-        if self.auto_reset_request {
-            self.auto_reset_request = false;
-            self.set_auto_flag(AutoButton::Discard, false);
-            self.set_auto_flag(AutoButton::Sort, true);
-            self.set_auto_flag(AutoButton::Win, false);
-            self.set_auto_flag(AutoButton::Skip, false);
-        }
-
         if let MjEvent::New(_) = event {
             self.auto_reset_request = true
         }
@@ -123,14 +114,18 @@ impl ActionControl {
         self.player = None;
     }
 
-    pub fn handle_gui_events(&mut self, player: &mut GuiPlayer) -> Option<SelectedAction> {
+    pub fn handle_gui_events(
+        &mut self,
+        action_param: &mut ActionParam,
+        player: &mut GuiPlayer,
+    ) -> Option<SelectedAction> {
         self.player = Some(player as *mut GuiPlayer);
 
         let selected_act = [
-            self.handle_hovered_tile(),
-            self.handle_mouse_input(),
-            self.handle_action_buttons(),
-            self.handle_auto_action(),
+            self.handle_hovered_tile(action_param),
+            self.handle_mouse_input(action_param),
+            self.handle_action_buttons(action_param),
+            self.handle_auto_action(action_param),
         ]
         .into_iter()
         .fold(None, |a, b| a.or(b));
@@ -157,22 +152,29 @@ impl ActionControl {
         selected_act
     }
 
-    fn handle_hovered_tile(&mut self) -> Option<Action> {
-        for ev in param().hovered_tile.read() {
+    fn handle_hovered_tile(&mut self, action_param: &mut ActionParam) -> Option<Action> {
+        // ループの中で&mut借用するために中身をコピーして借用を解放
+        let hovered_tiles = action_param
+            .hovered_tile
+            .read()
+            .map(|ht| ht.entity)
+            .collect::<Vec<_>>();
+
+        for tile in hovered_tiles {
             if self.target_state == TargetState::Released {
-                self.set_target_tile(ev.entity);
+                self.set_target_tile(tile);
             } else {
-                if self.target_tile == ev.entity {
+                if self.target_tile == tile {
                     continue;
                 } else {
                     // 牌を選択して左クリックを押し込んだ状態の場合並び替えを実行
                     self.target_state = TargetState::Dragging;
                     if let Some(target_tile) = self.target_tile
-                        && let Some(new_target_tile) = ev.entity
+                        && let Some(new_target_tile) = tile
                         && find_tile(hand!(self).tiles(), new_target_tile).is_some()
                     {
                         if self.auto_flags.get(&AutoButton::Sort) == Some(&true) {
-                            self.set_auto_flag(AutoButton::Sort, false);
+                            self.set_auto_flag(action_param, AutoButton::Sort, false);
                         }
                         hand!(self).move_tile(target_tile, new_target_tile);
                     }
@@ -182,9 +184,9 @@ impl ActionControl {
         None
     }
 
-    fn handle_mouse_input(&mut self) -> Option<Action> {
+    fn handle_mouse_input(&mut self, action_param: &mut ActionParam) -> Option<Action> {
         let mut act = None;
-        for ev in param().mouse_input.read() {
+        for ev in action_param.mouse_input.read() {
             match ev.button {
                 MouseButton::Left => match ev.state {
                     ButtonState::Pressed => {
@@ -215,11 +217,12 @@ impl ActionControl {
         act
     }
 
-    fn handle_action_buttons(&mut self) -> Option<Action> {
-        let p = param();
+    fn handle_action_buttons(&mut self, action_param: &mut ActionParam) -> Option<Action> {
         let mut act = None;
-        for (entity, interaction) in &mut p.button_interaction {
-            let Ok((button, mut border, mut background)) = p.game_buttons.get_mut(entity) else {
+        for (entity, interaction) in &mut action_param.game_button_interactions {
+            let Ok((button, mut border, mut background)) =
+                action_param.game_buttons.get_mut(entity)
+            else {
                 continue;
             };
 
@@ -252,7 +255,18 @@ impl ActionControl {
         act
     }
 
-    fn handle_auto_action(&mut self) -> Option<Action> {
+    fn handle_auto_action(&mut self, action_param: &mut ActionParam) -> Option<Action> {
+        // Newが届いた時点ではstageの生成がQueryに反映されていないため
+        // 次のイベントでフラグのリセット処理を実行
+        // TODO: この方法は同じUpdate内でeventを行う場合正しく動作しない
+        if self.auto_reset_request {
+            self.auto_reset_request = false;
+            self.set_auto_flag(action_param, AutoButton::Discard, false);
+            self.set_auto_flag(action_param, AutoButton::Sort, true);
+            self.set_auto_flag(action_param, AutoButton::Win, false);
+            self.set_auto_flag(action_param, AutoButton::Skip, false);
+        }
+
         if let Some(acts) = &self.possible_actions {
             let acts = &acts.actions;
 
@@ -284,8 +298,8 @@ impl ActionControl {
         None
     }
 
-    fn set_auto_flag(&mut self, target: AutoButton, flag: bool) {
-        for (button, _, mut background) in &mut param().game_buttons {
+    fn set_auto_flag(&mut self, action_param: &mut ActionParam, target: AutoButton, flag: bool) {
+        for (button, _, mut background) in &mut action_param.game_buttons {
             let GameButton::Auto(auto_button) = *button else {
                 continue;
             };

@@ -338,7 +338,6 @@ impl Calculator {
 
     fn calculate_winnig_tile(&mut self, indent_size: usize) -> Option<Verify> {
         let indent = " ".repeat(indent_size);
-        // println!("{indent}[和了牌計算]");
 
         let tiles = calc_tiles_to_win(&self.hand);
 
@@ -346,12 +345,6 @@ impl Calculator {
             println!("{indent}聴牌形ではありません");
             return None;
         }
-
-        // print!("{indent}和了牌: {}", tiles[0]);
-        // for t in &tiles[1..] {
-        //     print!(", {}", t);
-        // }
-        // println!();
 
         for tile in tiles {
             inc_tile(&mut self.hand, tile);
@@ -365,8 +358,6 @@ impl Calculator {
     }
 
     fn calculate_tenpai(&mut self) -> Option<Verify> {
-        // println!("[聴牌打牌計算]");
-
         let discards = calc_discards_to_win(&self.hand);
 
         if discards.is_empty() {

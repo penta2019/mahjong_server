@@ -16,7 +16,6 @@ use crate::{
     listener::*,
     model::*,
     util::{
-        connection::TcpConnection,
         misc::*,
         waiter::{Waiter, waiter_waker},
     },
@@ -36,6 +35,7 @@ pub struct EngineApp {
     write: bool,
     write_tenhou: bool,
     debug: bool,
+    quiet: bool,
     names: [String; SEAT], // actor names
 }
 
@@ -58,6 +58,7 @@ impl EngineApp {
             write: false,
             write_tenhou: false,
             debug: false,
+            quiet: false,
             names: [
                 "Nop".to_string(),
                 "Nop".to_string(),
@@ -82,6 +83,7 @@ impl EngineApp {
                 "-w" => app.write = true,
                 "-w-tenhou" => app.write_tenhou = true,
                 "-d" => app.debug = true,
+                "-q" => app.quiet = true,
                 "-0" => app.names[0] = next_value(&mut it, s),
                 "-1" => app.names[1] = next_value(&mut it, s),
                 "-2" => app.names[2] = next_value(&mut it, s),
@@ -134,12 +136,9 @@ impl EngineApp {
 
     fn run_single_game(self, mut actors: [Box<dyn Actor>; 4]) {
         let mut listeners: Vec<Box<dyn Listener>> = vec![];
-
-        // Debug port
-        let conn = TcpConnection::new("127.0.0.1:52999");
-        listeners.push(Box::new(EventSender::new(Box::new(conn))));
-
-        listeners.push(Box::new(EventPrinter::new()));
+        if !self.quiet {
+            listeners.push(Box::new(EventPrinter::new()));
+        }
         if self.write {
             listeners.push(Box::new(EventWriter::new()));
         }

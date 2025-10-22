@@ -42,7 +42,10 @@ impl Listener for EventWriter {
         self.record.push(json!(event));
         if write {
             write_to_file(
-                &format!("local/log/{}/{:02}.json", self.start_time, self.round_index),
+                &format!(
+                    "local/paifu/{}/{:02}.json",
+                    self.start_time, self.round_index
+                ),
                 &serde_json::to_string_pretty(&json!(self.record)).unwrap(),
             )
             .ok();
@@ -89,7 +92,7 @@ impl Listener for TenhouEventWriter {
         if write {
             write_to_file(
                 &format!(
-                    "data_tenhou/{}/{:02}.json",
+                    "local/paifu_tenhou/{}/{:02}.json",
                     self.start_time, self.round_index
                 ),
                 &self.serializer.serialize(),

@@ -1,4 +1,4 @@
 Cargo.lock
 target
-private
+local
 *.blend1

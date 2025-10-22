@@ -1,8 +1,9 @@
 use std::sync::Mutex;
 
 use super::{
-    param::{ActionParam, MahjongParam, SettingParam, with_param},
+    param::{ActionParam, MahjongParam, with_param},
     prelude::*,
+    setting::{SettingParam, SettingProps},
     stage::GuiStage,
     tile_plugin::TilePlugin,
 };
@@ -68,16 +69,20 @@ fn mahjong_handle_action_events(
     });
 }
 
-fn mahjong_handle_setting_events(mut gui_mahjong: ResMut<GuiMahjong>, mut param: MahjongParam) {
+fn mahjong_handle_setting_events(
+    mut gui_mahjong: ResMut<GuiMahjong>,
+    mut param: MahjongParam,
+    mut setting_param: SettingParam,
+) {
     with_param(&mut param, || {
-        gui_mahjong.handle_setting_events();
+        gui_mahjong.handle_setting_events(&mut setting_param);
     });
 }
 
 #[derive(Resource, Debug)]
 struct GuiMahjong {
     stage: Option<GuiStage>,
-    seat: Seat,
+    player_seat: Option<Seat>,
     tx: Mutex<Tx>,
     rx: Mutex<Rx>,
 }
@@ -86,7 +91,7 @@ impl GuiMahjong {
     fn new(tx: Tx, rx: Rx) -> Self {
         Self {
             stage: None,
-            seat: 0,
+            player_seat: None,
             tx: Mutex::new(tx),
             rx: Mutex::new(rx),
         }
@@ -97,14 +102,23 @@ impl GuiMahjong {
             if let ServerMessage::Event(ev) = &msg
                 && let MjEvent::New(_) = ev.as_ref()
             {
+                let mut props = SettingProps {
+                    show_wall: false,
+                    show_hand: false,
+                    camera_seat: self.player_seat.unwrap_or(0),
+                };
                 // ステージ上のentityを再帰的にすべて削除
                 if let Some(stage) = self.stage.take() {
+                    props = stage.get_setting_props().clone();
                     stage.destroy();
                 }
 
                 // 空のステージを作成
                 let mut stage = GuiStage::new();
-                stage.set_player(self.seat);
+                if let Some(s) = self.player_seat {
+                    stage.set_player(s);
+                }
+                stage.set_setting_props(props);
                 self.stage = Some(stage);
             }
 
@@ -144,16 +158,16 @@ impl GuiMahjong {
                         .handle_actions(possible_actions);
                 }
                 ServerMessage::Info { seat } => {
-                    self.seat = seat; // このメッセージはEventNewより先に受信
+                    self.player_seat = Some(seat); // このメッセージはEventNewより先に受信
                 }
                 ServerMessage::Log => todo!(),
             }
         }
     }
 
-    fn handle_action_events(&mut self, action_params: &mut ActionParam) {
+    fn handle_action_events(&mut self, action_param: &mut ActionParam) {
         if let Some(stage) = &mut self.stage
-            && let Some(act) = stage.handle_gui_events(action_params)
+            && let Some(act) = stage.handle_action_events(action_param)
         {
             self.tx
                 .lock()
@@ -165,5 +179,9 @@ impl GuiMahjong {
         // 使用されなかったbevyのMessageは次のフレームには持ち越されない
     }
 
-    fn handle_setting_events(&mut self) {}
+    fn handle_setting_events(&mut self, setting_param: &mut SettingParam) {
+        if let Some(stage) = &mut self.stage {
+            stage.handle_setting_events(setting_param);
+        }
+    }
 }

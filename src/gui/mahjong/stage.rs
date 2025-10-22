@@ -5,7 +5,7 @@ use super::{
     param::ActionParam,
     player::{GuiPlayer, HandMode},
     prelude::*,
-    setting::Setting,
+    setting::{Setting, SettingParam, SettingProps},
     stage_info::StageInfo,
     wall::Wall,
 };
@@ -27,6 +27,8 @@ pub struct GuiStage {
     players: Vec<GuiPlayer>,
     // 副露に使用する最後に河に切られた牌
     last_tile: Option<(Seat, ActionType, Tile)>,
+    // プレイ可能な場合のプレイヤーの座席
+    player_seat: Option<Seat>,
     // カメラを配置するプレイヤーの座席
     camera_seat: Seat,
     // カメラ座席の操作
@@ -98,6 +100,7 @@ impl GuiStage {
             wall,
             players,
             last_tile: None,
+            player_seat: None,
             camera_seat: 0,
             action_control,
             setting,
@@ -113,22 +116,17 @@ impl GuiStage {
     }
 
     pub fn set_player(&mut self, seat: Seat) {
-        self.camera_seat = seat;
+        assert!(seat < SEAT);
+        self.player_seat = Some(seat);
+    }
 
-        self.info.set_camera_seat(seat);
+    pub fn get_setting_props(&self) -> &SettingProps {
+        self.setting.get_props()
+    }
 
-        let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
-        param().camera.write(CameraMove::look(pos, CAMERA_LOOK_AT));
-
-        for (s, player) in self.players.iter_mut().enumerate() {
-            if s == seat {
-                player.set_hand_mode(HandMode::Camera);
-            } else if self.show_hand {
-                player.set_hand_mode(HandMode::Open);
-            } else {
-                player.set_hand_mode(HandMode::Close);
-            }
-        }
+    pub fn set_setting_props(&mut self, props: SettingProps) {
+        self.setting.set_props(props);
+        self.apply_props();
     }
 
     pub fn handle_event(&mut self, event: &MjEvent) {
@@ -153,9 +151,58 @@ impl GuiStage {
             .handle_actions(&mut self.players[self.camera_seat], actions);
     }
 
-    pub fn handle_gui_events(&mut self, action_param: &mut ActionParam) -> Option<SelectedAction> {
-        self.action_control
-            .handle_gui_events(action_param, &mut self.players[self.camera_seat])
+    pub fn handle_action_events(
+        &mut self,
+        action_param: &mut ActionParam,
+    ) -> Option<SelectedAction> {
+        if let Some(seat) = self.player_seat
+            && seat == self.camera_seat
+        {
+            self.action_control.set_visibility(true);
+            self.action_control
+                .handle_gui_events(action_param, &mut self.players[self.camera_seat])
+        } else {
+            self.action_control.set_visibility(false);
+            None
+        }
+    }
+
+    pub fn handle_setting_events(&mut self, setting_param: &mut SettingParam) {
+        if self.setting.handle_gui_events(setting_param) {
+            self.apply_props();
+        }
+    }
+
+    fn apply_props(&mut self) {
+        let props = self.setting.get_props();
+        self.wall.set_show(props.show_wall);
+        self.show_hand = props.show_hand;
+        let seat = props.camera_seat; // propsの借用回避
+        self.set_camera_seat(seat);
+    }
+
+    fn set_camera_seat(&mut self, seat: Seat) {
+        assert!(seat < SEAT);
+        self.camera_seat = seat;
+
+        let mut props = self.setting.get_props().clone();
+        props.camera_seat = seat;
+        self.setting.set_props(props);
+
+        self.info.set_camera_seat(seat);
+
+        let pos = Quat::from_rotation_y(FRAC_PI_2 * seat as f32) * CAMERA_POS;
+        param().camera.write(CameraMove::look(pos, CAMERA_LOOK_AT));
+
+        for (s, player) in self.players.iter_mut().enumerate() {
+            if s == seat {
+                player.set_hand_mode(HandMode::Camera);
+            } else if self.show_hand {
+                player.set_hand_mode(HandMode::Open);
+            } else {
+                player.set_hand_mode(HandMode::Close);
+            }
+        }
     }
 
     fn event_new(&mut self, event: &EventNew) {

@@ -33,12 +33,14 @@ macro_rules! hand {
 
 #[derive(Debug)]
 pub struct ActionControl {
+    entity: Entity,
+    is_visible: bool,
+
     // イベント処理のpub関数が呼ばれた際にSomeをセットして抜ける際にNoneに戻す
     player: Option<*mut GuiPlayer>,
 
     // auto
     auto_reset_request: bool,
-    auto_menu: Entity,
     auto_flags: HashMap<AutoButton, bool>,
 
     // action
@@ -62,10 +64,28 @@ unsafe impl Sync for ActionControl {}
 
 impl ActionControl {
     pub fn new() -> Self {
+        let cmd = cmd();
+
+        let entity = cmd
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                }, // 子ノードが親ノードの範囲外に出るとクリップされるので画面全体を覆う
+                Pickable::IGNORE, // マウスのhover判定が吸われるのを防ぐ
+            ))
+            .id();
+
+        let auto_menu = create_auto_menu();
+        cmd.entity(auto_menu).insert(ChildOf(entity));
+
         Self {
+            entity,
+            is_visible: true,
             player: None,
             auto_reset_request: false,
-            auto_menu: create_auto_menu(),
             auto_flags: HashMap::new(),
             target_tile: None,
             target_state: TargetState::Released,
@@ -77,16 +97,20 @@ impl ActionControl {
     }
 
     pub fn destroy(self) {
-        for e in [
-            Some(self.auto_menu),
-            self.action_main_menu,
-            self.action_sub_menu,
-        ]
-        .into_iter()
-        .flatten()
-        {
-            cmd().entity(e).despawn();
+        cmd().entity(self.entity).despawn();
+    }
+
+    pub fn set_visibility(&mut self, visible: bool) {
+        if self.is_visible == visible {
+            return;
         }
+        self.is_visible = visible;
+
+        cmd().entity(self.entity).insert(if visible {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        });
     }
 
     pub fn handle_event(&mut self, player: &mut GuiPlayer, event: &MjEvent) {
@@ -106,7 +130,9 @@ impl ActionControl {
 
         let types = ordered_action_types(&actions.actions);
         if !types.is_empty() {
-            self.action_main_menu = Some(create_main_action_menu(&types));
+            let menu = create_main_action_menu(&types);
+            cmd().entity(menu).insert(ChildOf(self.entity));
+            self.action_main_menu = Some(menu);
         }
         self.possible_actions = Some(actions);
         self.update_target_tile_color();
@@ -350,7 +376,9 @@ impl ActionControl {
                     if let Some(menu) = self.action_main_menu {
                         cmd().entity(menu).insert(Visibility::Hidden);
                     }
-                    self.action_sub_menu = Some(create_sub_action_menu(&acts));
+                    let menu = create_sub_action_menu(&acts);
+                    cmd().entity(menu).insert(ChildOf(self.entity));
+                    self.action_sub_menu = Some(menu);
                 }
             }
         }

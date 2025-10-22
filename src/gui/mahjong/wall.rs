@@ -150,6 +150,9 @@ impl Wall {
     }
 
     pub fn set_show(&mut self, flag: bool) {
+        if self.show == flag {
+            return;
+        }
         self.show = flag;
 
         let it0 = self.tiles.iter();

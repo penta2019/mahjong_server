@@ -6,7 +6,6 @@ use super::{
     super::{camera::CameraMove, util::print_hierarchy},
     action::GameButton,
     plugin::InfoTexture,
-    setting::SettingButton,
     tile_plugin::HoveredTile,
 };
 
@@ -91,20 +90,4 @@ pub struct ActionParam<'w, 's> {
     // MessageReader
     pub hovered_tile: MessageReader<'w, 's, HoveredTile>,
     pub mouse_input: MessageReader<'w, 's, MouseButtonInput>,
-}
-
-#[derive(SystemParam)]
-pub struct SettingParam<'w, 's> {
-    // Setting Button
-    pub setting_buttons: Query<
-        'w,
-        's,
-        (
-            &'static mut SettingButton,
-            &'static mut BorderColor,
-            &'static mut BackgroundColor,
-        ),
-    >,
-    // pub setting_button_interactions:
-    //     Query<'w, 's, (Entity, &'static Interaction), (Changed<Interaction>, With<SettingButton>)>,
 }

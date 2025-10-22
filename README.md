@@ -3,7 +3,7 @@
 ## 概要
 日本リーチ麻雀のゲームサーバーです.  
 主にBot同士を対戦させることを目的にしています.  
-Botは未実装でエンジンの動作確認のみができる状態です.  
+Botは未実装で麻雀ゲームエンジンとGUIの動作確認のみができる状態です.  
 類似プロジェクト: Mjai(https://github.com/gimite/mjai)
 
 ## 主な機能
@@ -26,25 +26,33 @@ Botは未実装でエンジンの動作確認のみができる状態です.
 * 動作確認済み環境: Linux 6.17.1-2 (cachyos)
 
 ## 牌の文字列表現
-通常,萬子の1なら1mのように表現することが多いですが,プログラミングの命名規則や並び順の観点から本プログラムではm1のように通常と前後逆に表現しています.  
+一般的な1m(一萬)ではなく,前後を反転したm1で表現します.
 萬子: m1, m2, m3, m4, m0(赤5), m5, m6, m7, m8, m9  
 筒子: p1, p2, p3, p4, p0(赤5), p5, p6, p7, p8, p9  
 索子: s1, s2, s3, s4, s0(赤5), s5, s6, s7, s8, s9  
 字牌: z1(東), z2(南), z3(西), z4(北), z5(白), z6(發) ,z7(中)  
 
+<!-- この表現を使用する理由は以下のようなものです.
+* 牌の数字よりも種別の方がカテゴリとして大きいため先に指定すべきである.(=ソートの順序に影響)
+* 数字から始まる文字列は変数名として使用できない.
+* m123のような省略表現で種別が先に分からなければ数字を読み込んだ段階で牌を生成できない. -->
+
 ## 使い方
 Rustのビルド環境をインストールしてコマンドを実行してください.
-依存ライブラリはコマンドの初回実行時に自動的にダウンロードされます.
+依存ライブラリはコマンドの初回実行時にcargoが自動的にダウンロードします.
 
 ### ビルドオプション
-「パフォーマンスを重視」する場合や「Bevy内部から発生するVulkanのValidationエラーを非表示」にしたい場合,
-Releaseモードでビルドしてください. デフォルトのDebugモードと比較して最大で30倍ほど速くなります.
+<!-- 特に理由がなければ以下の理由によりReleaseモードでビルドすることをお勧めします.
+* デフォルトのDebugモードと比較して最大で30倍ほど高速
+* ビルドサイズが5GB未満, Debugモードでは15GB以上
+* VulkanのValidationエラーが非表示 -->
+
+Releaseモードでのビルド&実行. 正しく動けばバージョン情報が表示されます.
 ```
 cargo run --release
 ```
 
-GUIを使用しない場合は--no-default-featuresオプションをつけて,
-Bevy(ゲームエンジン)をビルドから外すことでビルド時間を大幅に短縮できます.
+GUI(Bevy)を使用しない場合は--no-default-featuresでビルド時間を大幅に削減できます.
 ```
 cargo run --release --no-default-features
 ```
@@ -92,7 +100,7 @@ cargo run --release -- C "m123456789z111z22 / EN,m1,z1 / 立直"
 -v
     試合状況をGuiから観戦 (Gui actorを使用する場合は無効)
 -w
-    ファイルに牌譜を出力
+    ファイルに牌譜を出力 (local/log/{seed値}/に局ごとに保存)
 -w-tenhou
     ファイルに牌譜を天鳳形式で出力 (https://tenhou.net/6/)
 -d
@@ -100,9 +108,9 @@ cargo run --release -- C "m123456789z111z22 / EN,m1,z1 / 立直"
 ```
 
 実行例  
-* 七対子Bot同士の対戦をGuiから0.2秒の停止時間をつけて観戦
+* 七対子Bot同士の対戦をGuiから0.3秒の停止時間をつけて観戦
 ```
-cargo run --release -- E -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot -v -p 0.2
+cargo run --release -- E -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuBot -v -p 0.3
 ```
 
 * 座席0をコンソールから手動で操作.その他は七対子Bot
@@ -112,7 +120,7 @@ cargo run --release -- E -0 Manual -1 TiitoitsuBot -2 TiitoitsuBot -3 TiitoitsuB
 
 * 座席3(北家開始)をGUIから操作.その他は七対子Bot
 ```
-cargo run --release -- E -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 Gui -p 0.2
+cargo run --release -- E -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 Gui -p 0.3
 ```
 
 * 座席0をGuiで操作(牌山&手牌表示可). その他はNop(ツモ切り). Guiデバッグ用
@@ -153,7 +161,12 @@ cargo run --release -- E -g 1000 -t 32 -0 RandomDiscard -1 TiitoitsuBot -2 Tiito
 `587,   1ms,   59392500579177975, ac3: 7600(4), ac1:35700(1), ac2:31700(2), ac0:25000(3)`
 という実行結果が得られた場合,座席順を適切に並び替えてシード値を指定すれば局を再現できます.
 ```
-cargo run --release -- E -s 59392500579177975 -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 RandomDiscard -v -p 0.2
+cargo run --release -- E -s 59392500579177975 -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 RandomDiscard -v -p 0.3
+```
+Actorの選択は実装に依存するため,バージョンが異なれば全く違う結果になる可能性があります.
+局情報を恒久的に保存したい場合は,"-w"または"-w-tenhou"オプションをつけることで牌譜(local/paifu)に書き出してください.
+```
+cargo run --release -- E -s 59392500579177975 -0 TiitoitsuBot -1 TiitoitsuBot -2 TiitoitsuBot -3 RandomDiscard -w -w-tenhou
 ```
 
 ### 牌譜リプレイモード (R)

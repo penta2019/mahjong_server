@@ -1,6 +1,8 @@
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
 #import bevy_pbr::lighting::{light, light_is_directional}
 #import bevy_pbr::mesh_view_bindings::view
+// https://github.com/bevyengine/bevy/blob/main/crates/bevy_pbr/src/render/mesh_view_bindings.wgsl
+// https://github.com/bevyengine/bevy/blob/main/crates/bevy_render/src/view/view.wgsl
 
 struct VertexInput {
     @builtin(instance_index) instance_index: u32,
@@ -59,12 +61,20 @@ fn fragment(
     // 背面色とテクスチャを配合
     let base_color = mix(back_color, texture_color, blend_factor);
 
-    // ライト（ワールド内の他のライトは無視して真上から平行光を照射）
+    // ライト（ワールド内の他のライトは無視してワールドの決まった方向から平行光を照射）
     let light_dir = normalize(vec3<f32>(0.0, -1.0, 0.0));
     let normal = normalize(in.world_normal);
     // 拡散反射
-    let diff = max(dot(normal, -light_dir), 0.0);
-    let color = base_color * (0.4 + diff * 0.6);
+    let diffuse = max(dot(normal, -light_dir), 0.0);
+    // スペキュラ反射
+    let shininess: f32 = 64.0; // 鋭さ（ハイライトの広がり）大きいほど鋭く、光沢が強く見える
+    let specular_strength: f32 = 0.5; // 強さ（光の強度）
+    let reflect_dir = reflect(light_dir, normal);
+    let spec_angle = max(dot(view_dir, reflect_dir), 0.0);
+    let specular = pow(spec_angle, shininess) * specular_strength;
+    let specular_color = vec4<f32>(vec3<f32>(1.0, 1.0, 1.0) * specular, 1.0);
+    // 最終的な発色
+    let color = base_color * (0.4 + diffuse * 0.6) + specular_color;
 
     // ハイライト,グレーアウト用のblende色を配合
     let blended = mix(color.rgb, material.blend.rgb, material.blend.a);

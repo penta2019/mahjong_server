@@ -40,16 +40,13 @@ impl Plugin for CameraPlugin {
             .add_systems(
                 Update,
                 (
-                    update_viewport,
-                    camera_event,
-                    (
-                        camera_move_by_keyboard,
-                        camera_look_by_mouse,
-                        window_focus_handler,
-                    )
-                        .run_if(in_state(CameraState::Fly)),
-                ),
-            );
+                    camera_move_by_keyboard,
+                    camera_look_by_mouse,
+                    window_focus_handler,
+                )
+                    .run_if(in_state(CameraState::Fly)),
+            )
+            .add_systems(PostUpdate, (update_viewport, camera_event));
     }
 }
 

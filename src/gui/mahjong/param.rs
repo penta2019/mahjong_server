@@ -1,12 +1,10 @@
 use std::thread::{self, ThreadId};
 
-use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput, prelude::*};
+use bevy::{ecs::system::SystemParam, prelude::*};
 
 use super::{
     super::{camera::CameraMove, util::print_hierarchy},
-    action::GameButton,
     plugin::InfoTexture,
-    tile_plugin::HoveredTile,
 };
 
 // stage_plugin::stage_main_loopから呼び出される関数(controlディレクトリのモジュール)から使用するパラメータ
@@ -70,24 +68,4 @@ pub fn with_param<F: FnOnce()>(param: &mut MahjongParam, f: F) {
         f();
         MAHJONG_PARAM = None;
     };
-}
-
-#[derive(SystemParam)]
-pub struct ActionParam<'w, 's> {
-    // Game Button
-    pub game_buttons: Query<
-        'w,
-        's,
-        (
-            &'static mut GameButton,
-            &'static mut BorderColor,
-            &'static mut BackgroundColor,
-        ),
-    >, // 実装側から参照できるようにInteractionから分離
-    pub game_button_interactions:
-        Query<'w, 's, (Entity, &'static Interaction), (Changed<Interaction>, With<GameButton>)>,
-
-    // MessageReader
-    pub hovered_tile: MessageReader<'w, 's, HoveredTile>,
-    pub mouse_input: MessageReader<'w, 's, MouseButtonInput>,
 }

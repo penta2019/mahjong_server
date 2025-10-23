@@ -5,11 +5,10 @@ use bevy::input::ButtonState;
 use super::{
     super::{
         hand::{GuiHand, IsDrawn},
-        param::ActionParam,
         player::GuiPlayer,
         prelude::*,
     },
-    AutoButton, BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,
+    ActionParam, AutoButton, BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,
     action_menu::{create_main_action_menu, create_sub_action_menu},
     auto_menu::create_auto_menu,
 };

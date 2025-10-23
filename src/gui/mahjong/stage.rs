@@ -1,8 +1,7 @@
 use bevy::color::palettes::basic::GREEN;
 
 use super::{
-    action::ActionControl,
-    param::ActionParam,
+    action::{ActionControl, ActionParam},
     player::{GuiPlayer, HandMode},
     prelude::*,
     setting::{Setting, SettingParam, SettingProps},

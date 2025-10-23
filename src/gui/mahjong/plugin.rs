@@ -1,7 +1,8 @@
 use std::sync::Mutex;
 
 use super::{
-    param::{ActionParam, MahjongParam, with_param},
+    action::ActionParam,
+    param::{MahjongParam, with_param},
     prelude::*,
     setting::{SettingParam, SettingProps},
     stage::GuiStage,

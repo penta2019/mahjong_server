@@ -55,8 +55,6 @@ fn setup(mut cmd: Commands, mut config: ResMut<MenuConfig>) {
                 justify_self: JustifySelf::Stretch,
                 align_self: AlignSelf::Stretch,
                 flex_direction: FlexDirection::Column,
-                // justify_content: JustifyContent::FlexStart,
-                // align_content: AlignContent::FlexStart,
                 align_items: AlignItems::FlexEnd,
                 row_gap: Val::Px(10.0),
                 ..default()

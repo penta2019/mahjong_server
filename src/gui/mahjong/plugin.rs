@@ -186,3 +186,51 @@ impl GuiMahjong {
         }
     }
 }
+
+#[allow(unused)]
+pub mod test {
+    use super::{super::popup_draw::PopupDraw, *};
+
+    #[derive(Resource, Debug, Default)]
+    pub struct MahjongTestResource {
+        stage: Option<GuiStage>,
+        popup: Option<PopupDraw>,
+    }
+
+    pub struct MahjongTestPlugin {}
+
+    impl MahjongTestPlugin {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    impl Plugin for MahjongTestPlugin {
+        fn build(&self, app: &mut App) {
+            app.add_plugins(TilePlugin)
+                .insert_resource(MahjongTestResource::default())
+                .add_systems(Startup, (setup, test_setup).chain())
+                .add_systems(Update, system);
+        }
+    }
+
+    fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongTestResource>) {
+        with_param(&mut param, || {
+            res.stage = Some(GuiStage::new());
+            res.popup = Some(PopupDraw::new(&EventDraw {
+                draw_type: DrawType::Kouhaiheikyoku,
+                round: 0,
+                dealer: 0,
+                names: Default::default(),
+                scores: [25000, 25000, 25000, 25000],
+                delta_scores: [0, 0, 0, 0],
+                nagashimangan_scores: [0, 0, 0, 0],
+                hands: [vec![], vec![], vec![], vec![]],
+            }));
+        });
+    }
+
+    fn system(mut param: MahjongParam) {
+        with_param(&mut param, || {});
+    }
+}

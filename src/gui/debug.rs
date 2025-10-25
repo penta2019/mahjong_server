@@ -53,28 +53,24 @@ fn setup(mut cmd: Commands) {
         ChildOf(container),
         Info::Fps,
         Text::new("fps: 0"),
-        Node { ..default() },
         Pickable::IGNORE,
     ));
     cmd.spawn((
         ChildOf(container),
         Info::Pos,
         Text::new("pos:"),
-        Node { ..default() },
         Pickable::IGNORE,
     ));
     cmd.spawn((
         ChildOf(container),
         Info::Yaw,
         Text::new("yaw:"),
-        Node { ..default() },
         Pickable::IGNORE,
     ));
     cmd.spawn((
         ChildOf(container),
         Info::Pitch,
         Text::new("pitch:"),
-        Node { ..default() },
         Pickable::IGNORE,
     ));
 }

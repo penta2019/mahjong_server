@@ -56,10 +56,10 @@ impl Setting {
                 Button,
                 Node {
                     position_type: PositionType::Absolute,
+                    left: Val::Percent(0.0),
+                    bottom: Val::Percent(0.0),
                     width: Val::Px(100.0),
                     height: Val::Px(32.0),
-                    bottom: Val::Percent(0.0),
-                    left: Val::Percent(0.0),
                     border: UiRect::all(Val::Px(1.0)),
                     // 内部のテキストを中央に表示(横方向)
                     justify_content: JustifyContent::Center,
@@ -87,16 +87,15 @@ impl Setting {
             .spawn((
                 Node {
                     position_type: PositionType::Absolute,
-                    width: Val::Px(200.0),
-                    bottom: Val::Px(32.0),
                     left: Val::Px(0.0),
+                    bottom: Val::Px(32.0),
+                    width: Val::Px(200.0),
                     border: UiRect::all(Val::Px(1.0)),
                     display: Display::Flex,
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 BorderColor::all(Color::BLACK),
-                // BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.9)),
                 Visibility::Hidden,
             ))
             .with_children(|c| {
@@ -235,7 +234,8 @@ fn create_button(button: SettingButton, text: &str) -> impl Bundle + use<> {
         button,
         Button,
         Node {
-            width: Val::Percent(100.0),
+            // width: Val::Percent(100.0),
+            justify_self: JustifySelf::Stretch,
             height: Val::Px(30.0),
             border: UiRect::all(Val::Px(1.0)),
             // 内部のテキストを中央に表示(横方向)

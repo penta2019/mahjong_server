@@ -68,9 +68,8 @@ impl ActionControl {
         let entity = cmd
             .spawn((
                 Node {
-                    position_type: PositionType::Absolute,
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    align_self: AlignSelf::Stretch,
+                    justify_self: JustifySelf::Stretch,
                     ..default()
                 }, // 子ノードが親ノードの範囲外に出るとクリップされるので画面全体を覆う
                 Pickable::IGNORE, // マウスのhover判定が吸われるのを防ぐ

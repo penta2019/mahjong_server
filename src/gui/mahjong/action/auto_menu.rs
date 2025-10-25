@@ -15,8 +15,8 @@ pub fn create_auto_menu() -> Entity {
     let bundle = (
         Node {
             position_type: PositionType::Absolute,
+            bottom: Val::Px(0.0),
             width: Val::Percent(100.0),
-            bottom: Val::Percent(0.0),
             display: Display::Flex,
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,

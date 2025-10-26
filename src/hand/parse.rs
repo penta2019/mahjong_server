@@ -5,7 +5,7 @@ use SetPairType::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum SetPairType {
-    Pair,    // 雀頭
+    Pair,    // 対子(雀頭または七対子)
     Shuntsu, // 順子(手牌)
     Koutsu,  // 刻子(手牌)
     Chi,     // 順子(副露)

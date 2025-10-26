@@ -74,7 +74,6 @@ impl CalculatorApp {
             } else if let Err(err) = self.process_expression(&exp) {
                 error!("{}", err);
             }
-            println!();
         }
         Ok(())
     }
@@ -180,7 +179,7 @@ impl Calculator {
             }
             1 => {
                 // あと1枚(ツモまたはロン)で完成形 -> 和了牌計算
-                self.calculate_winnig_tile(0)
+                self.calculate_winnig_tile()
             }
             2 => {
                 // n面子+雀頭の完成形
@@ -191,7 +190,11 @@ impl Calculator {
         }
         .unwrap_or_else(|| self.verify_no_socre());
 
-        println!("verify: {verify:?}");
+        if verify != Verify::Skip {
+            println!("verify: {verify:?}");
+        }
+        println!();
+
         verify
     }
 
@@ -208,6 +211,8 @@ impl Calculator {
     }
 
     fn calculate_win(&self, indent_size: usize) -> Option<Verify> {
+        let indent = " ".repeat(indent_size);
+
         let Some((sctx, yctx)) = evaluate_hand(
             &self.hand,
             &self.melds,
@@ -221,15 +226,12 @@ impl Calculator {
             &self.yaku_flags,
         ) else {
             return if is_normal_win(&self.hand) {
-                println!("役無し");
+                println!("{indent}和了牌: {} (役無し)", self.winning_tile);
                 Some(self.verify_no_socre())
             } else {
                 None
             };
         };
-
-        let indent = " ".repeat(indent_size);
-        // println!("{indent}[和了点計算]");
 
         if self.detail {
             println!("{:#?}", sctx);
@@ -336,20 +338,25 @@ impl Calculator {
         Some(verify)
     }
 
-    fn calculate_winnig_tile(&mut self, indent_size: usize) -> Option<Verify> {
-        let indent = " ".repeat(indent_size);
-
+    fn calculate_winnig_tile(&mut self) -> Option<Verify> {
         let tiles = calc_tiles_to_win(&self.hand);
 
         if tiles.is_empty() {
-            println!("{indent}聴牌形ではありません");
+            println!("聴牌形ではありません");
             return None;
         }
+
+        let mut tiles_str = String::new();
+        write!(tiles_str, "{}", tiles[0]).ok();
+        for t in &tiles[1..] {
+            write!(tiles_str, ", {}", t).ok();
+        }
+        println!("和了牌: {tiles_str}");
 
         for tile in tiles {
             inc_tile(&mut self.hand, tile);
             self.winning_tile = tile;
-            self.calculate_win(indent_size);
+            self.calculate_win(INDENT);
             dec_tile(&mut self.hand, tile);
             println!();
         }
@@ -365,21 +372,11 @@ impl Calculator {
             return None;
         }
 
-        println!("打牌 => 和了牌");
-        for (discard, tiles) in &discards {
-            print!("{discard} => {}", tiles[0]);
-            for tile in &tiles[1..] {
-                print!(", {}", tile);
-            }
-            println!();
-        }
-        println!();
-
-        for (discard, _) in &discards {
-            println!("打牌: {discard}");
-            dec_tile(&mut self.hand, *discard);
-            self.calculate_winnig_tile(INDENT);
-            inc_tile(&mut self.hand, *discard);
+        for (discard, _) in discards {
+            print!("打牌: {discard} => ");
+            dec_tile(&mut self.hand, discard);
+            self.calculate_winnig_tile();
+            inc_tile(&mut self.hand, discard);
         }
 
         None
@@ -478,8 +475,8 @@ fn print_usage() {
     error!(
         r"invalid input
 Usage
-    $ cargo run C EXPRESSION [-d]
-    $ cargo run C -f FILE [-d]
+    $ cargo run --release -- C EXPRESSION [-d]
+    $ cargo run --release -- C -f FILE [-d]
 Options
     -d: print debug info
     -f: read expresisons from file
@@ -487,6 +484,7 @@ Options
     );
 }
 
+// cargo test --release test_calculator
 #[test]
 fn test_calculator() {
     let file = File::open("tests/win_hands.txt").unwrap();

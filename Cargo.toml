@@ -13,6 +13,7 @@ bevy = { version = "0.17", features = ["dynamic_linking"], optional = true }
 [features]
 default = ["gui"]
 gui = ["bevy"]
+gui_dev = []
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

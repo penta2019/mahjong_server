@@ -12,14 +12,20 @@ use super::{
 pub type Tx = std::sync::mpsc::Sender<ClientMessage>;
 pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
 
+#[cfg(not(feature = "gui_dev"))]
+pub type MahjongPlugin = MahjongPluginReal;
+#[cfg(feature = "gui_dev")]
+pub type MahjongPlugin = dev::MahjongPluginDev; // cargo run --release --features gui_dev G
+
 #[derive(Resource)]
 pub struct InfoTexture(pub Handle<Image>);
 
-pub struct MahjongPlugin {
+pub struct MahjongPluginReal {
     txrx: std::sync::Mutex<Option<(Tx, Rx)>>,
 }
 
-impl MahjongPlugin {
+impl MahjongPluginReal {
+    #[allow(unused)]
     pub fn new(tx: Tx, rx: Rx) -> Self {
         Self {
             txrx: std::sync::Mutex::new(Some((tx, rx))),
@@ -27,7 +33,7 @@ impl MahjongPlugin {
     }
 }
 
-impl Plugin for MahjongPlugin {
+impl Plugin for MahjongPluginReal {
     fn build(&self, app: &mut App) {
         let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
         app.add_plugins(TilePlugin)
@@ -187,34 +193,34 @@ impl GuiMahjong {
     }
 }
 
-#[allow(unused)]
-pub mod test {
+pub mod dev {
     use super::{super::popup_draw::PopupDraw, *};
 
     #[derive(Resource, Debug, Default)]
-    pub struct MahjongTestResource {
+    pub struct MahjongResource {
         stage: Option<GuiStage>,
         popup: Option<PopupDraw>,
     }
 
-    pub struct MahjongTestPlugin {}
+    pub struct MahjongPluginDev {}
 
-    impl MahjongTestPlugin {
-        pub fn new() -> Self {
+    impl MahjongPluginDev {
+        #[allow(unused)]
+        pub fn new(_tx: Tx, _rx: Rx) -> Self {
             Self {}
         }
     }
 
-    impl Plugin for MahjongTestPlugin {
+    impl Plugin for MahjongPluginDev {
         fn build(&self, app: &mut App) {
             app.add_plugins(TilePlugin)
-                .insert_resource(MahjongTestResource::default())
+                .insert_resource(MahjongResource::default())
                 .add_systems(Startup, (setup, test_setup).chain())
                 .add_systems(Update, system);
         }
     }
 
-    fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongTestResource>) {
+    fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         with_param(&mut param, || {
             res.stage = Some(GuiStage::new());
             res.popup = Some(PopupDraw::new(&EventDraw {
@@ -230,7 +236,17 @@ pub mod test {
         });
     }
 
-    fn system(mut param: MahjongParam) {
+    fn system(
+        mut param: MahjongParam,
+        mut res: ResMut<MahjongResource>,
+        exit: MessageReader<AppExit>,
+    ) {
+        if !exit.is_empty()
+            && let Some(popup) = res.popup.take()
+        {
+            popup.destroy();
+        }
+
         with_param(&mut param, || {});
     }
 }

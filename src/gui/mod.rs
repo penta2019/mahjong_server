@@ -21,9 +21,6 @@ struct Context {
 }
 
 pub fn run(tx: Tx, rx: Rx) {
-    let target_plugin = mahjong::MahjongPlugin::new(tx, rx);
-    let _target_plugin = mahjong::MahjongTestPlugin::new();
-
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins,
@@ -33,7 +30,7 @@ pub fn run(tx: Tx, rx: Rx) {
         slider::SliderPlugin,
         menu::MenuPlugin,
         move_animation::MoveAnimationPlugin,
-        target_plugin,
+        mahjong::MahjongPlugin::new(tx, rx),
     ))
     .insert_resource(Context { can_fly: false })
     .add_systems(Update, keyboard_handler);

@@ -15,4 +15,4 @@ mod tile;
 mod tile_plugin;
 mod wall;
 
-pub use self::plugin::{MahjongPlugin, Rx, Tx, test::MahjongTestPlugin};
+pub use self::plugin::{MahjongPlugin, Rx, Tx};

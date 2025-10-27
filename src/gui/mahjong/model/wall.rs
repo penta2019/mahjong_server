@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use super::prelude::*;
+use super::super::prelude::*;
 
 // 牌山の基準位置 (一番右上の牌の中心座標)
 const TF_WALL: Transform = Transform::from_xyz(0.177, GuiTile::DEPTH * 1.5, 0.174);

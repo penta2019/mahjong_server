@@ -1,10 +1,12 @@
 use bevy::color::palettes::basic::GREEN;
 
 use super::{
-    action::{ActionControl, ActionParam},
+    super::{
+        action::{ActionControl, ActionParam},
+        prelude::*,
+        setting::{Setting, SettingParam, SettingProps},
+    },
     player::{GuiPlayer, HandMode},
-    prelude::*,
-    setting::{Setting, SettingParam, SettingProps},
     stage_info::StageInfo,
     wall::Wall,
 };

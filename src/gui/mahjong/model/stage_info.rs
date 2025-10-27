@@ -3,7 +3,7 @@ use bevy::{
     color::palettes::css::WHITE,
 };
 
-use super::prelude::*;
+use super::super::prelude::*;
 
 #[derive(Debug)]
 pub struct StageInfo {

@@ -1,4 +1,4 @@
-use super::prelude::*;
+use super::super::prelude::*;
 use crate::gui::move_animation::MoveAnimation;
 
 #[derive(Debug)]

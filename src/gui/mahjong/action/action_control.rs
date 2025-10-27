@@ -4,8 +4,7 @@ use bevy::input::ButtonState;
 
 use super::{
     super::{
-        hand::{GuiHand, IsDrawn},
-        player::GuiPlayer,
+        model::{GuiHand, GuiPlayer, IsDrawn},
         prelude::*,
     },
     ActionParam, AutoButton, BUTTON_ACTIVE, BUTTON_INACTIVE, GameButton,

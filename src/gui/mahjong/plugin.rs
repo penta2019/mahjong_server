@@ -2,10 +2,10 @@ use std::sync::Mutex;
 
 use super::{
     action::ActionParam,
+    model::GuiStage,
     param::{MahjongParam, with_param},
     prelude::*,
     setting::{SettingParam, SettingProps},
-    stage::GuiStage,
     tile_plugin::TilePlugin,
 };
 

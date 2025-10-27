@@ -10,7 +10,7 @@ use super::{
     stage_info::StageInfo,
     wall::Wall,
 };
-use crate::gui::camera::CameraMove;
+use crate::camera::CameraMove;
 
 pub const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.9, 0.8);
 pub const CAMERA_LOOK_AT: Vec3 = Vec3::new(0.0, -0.04, 0.0);

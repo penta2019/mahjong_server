@@ -1,10 +1,8 @@
 use bevy::prelude::*;
+use mahjong_core::model::{Action, ActionType};
 
 use super::{BUTTON_INACTIVE, GameButton};
-use crate::{
-    gui::mahjong::{param::cmd, text::create_text},
-    model::{Action, ActionType},
-};
+use crate::mahjong::{param::cmd, text::create_text};
 
 pub fn create_main_action_menu(action_types: &[ActionType]) -> Entity {
     let cmd = cmd();

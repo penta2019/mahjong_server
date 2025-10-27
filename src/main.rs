@@ -5,18 +5,20 @@
 // guiを無効化してビルド(--no-default-features)した際のunuse警告を無効化
 #![cfg_attr(not(feature = "gui"), allow(unused))]
 
-mod actor;
-mod app;
-mod control;
-mod convert;
-mod hand;
-mod listener;
-mod model;
-mod util;
+// mod actor;
+// mod app;
+// mod control;
+// mod convert;
+// mod hand;
+// mod listener;
+// mod model;
+// mod util;
 
-#[cfg(feature = "gui")]
-#[allow(clippy::type_complexity)]
-mod gui;
+// #[cfg(feature = "gui")]
+// #[allow(clippy::type_complexity)]
+// mod gui;
+
+use mahjong_core::app;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -46,7 +48,7 @@ fn main() {
             app::ClientApp::new(args2).run();
         }
         m => {
-            error!("unknown mode: {}", m)
+            eprintln!("unknown mode: {}", m);
         }
     }
 }

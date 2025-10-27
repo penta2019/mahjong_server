@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use crate::gui::move_animation::MoveAnimation;
+use crate::move_animation::MoveAnimation;
 
 #[derive(Debug)]
 pub struct GuiDiscard {

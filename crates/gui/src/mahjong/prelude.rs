@@ -8,4 +8,4 @@ pub use super::{
     param::{cmd, param},
     text::create_text,
 };
-pub use crate::model::{Event as MjEvent, *};
+pub use mahjong_core::model::{Event as MjEvent, *};

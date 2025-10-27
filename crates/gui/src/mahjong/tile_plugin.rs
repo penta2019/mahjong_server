@@ -11,7 +11,7 @@ use bevy::{
 };
 
 use super::super::move_animation::MoveAnimation;
-use crate::model::Tile;
+use mahjong_core::model::Tile;
 
 pub struct TilePlugin;
 

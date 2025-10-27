@@ -1,0 +1,9 @@
+[package]
+name = "mahjong_gui"
+version = "0.2.0"
+edition = "2024"
+
+[dependencies]
+mahjong_core = { path = "../core" }
+rand = "0.9"
+bevy = { version = "0.17", features = ["dynamic_linking"]}

@@ -3,9 +3,9 @@ mod action_menu;
 mod auto_menu;
 
 use bevy::{ecs::system::SystemParam, input::mouse::MouseButtonInput};
+use mahjong_core::model::{Action, ActionType};
 
 use super::{prelude::*, tile_plugin::HoveredTile};
-use crate::model::{Action, ActionType};
 
 pub use self::{action_control::ActionControl, auto_menu::AutoButton};
 

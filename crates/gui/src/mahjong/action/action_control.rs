@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy::input::ButtonState;
+use mahjong_core::model::ActionType;
 
 use super::{
     super::{
@@ -11,7 +12,6 @@ use super::{
     action_menu::{create_main_action_menu, create_sub_action_menu},
     auto_menu::create_auto_menu,
 };
-use crate::model::ActionType;
 
 use ActionType::*;
 

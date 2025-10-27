@@ -1,4 +1,4 @@
-// 麻雀のデータモデル
+// 麻雀のデータモデル モデルの操作を行う関数はcontrolに実装
 mod action;
 mod define;
 mod event;

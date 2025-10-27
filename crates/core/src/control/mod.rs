@@ -5,4 +5,5 @@ pub mod engine;
 pub mod listener;
 pub mod possible_actions;
 pub mod stage_controller;
+pub mod string;
 pub mod wall;

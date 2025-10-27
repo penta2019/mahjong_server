@@ -1,7 +1,7 @@
 use serde::{de, ser};
 
 use super::*;
-use crate::control::common::{tile_number_from_char, tile_type_from_char};
+use crate::control::string::{tile_number_from_char, tile_type_from_char};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Tile(pub Type, pub Tnum); // (type index, number index)
@@ -135,11 +135,11 @@ impl<'de> de::Deserialize<'de> for Tile {
     }
 }
 
-// [TileTable]
+// TileTable
 pub type TileRow = [usize; TNUM];
 pub type TileTable = [TileRow; TYPE];
 
-// [TileState]
+// TileState
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(tag = "t", content = "c")]
 pub enum TileState {

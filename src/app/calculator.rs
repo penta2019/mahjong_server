@@ -4,7 +4,13 @@ use std::{
     io::{self, BufRead},
 };
 
-use mahjong_core::{control::common::*, error, hand::*, model::*, util::misc::*};
+use mahjong_core::{
+    control::{common::*, string::*},
+    error,
+    hand::*,
+    model::*,
+    util::misc::*,
+};
 
 const INDENT: usize = 2;
 
@@ -104,8 +110,8 @@ struct Calculator {
     winning_tile: Tile,
     is_drawn: bool,
     is_dealer: bool,
-    prevalent_wind: Index,
-    seat_wind: Index,
+    prevalent_wind: Tnum,
+    seat_wind: Tnum,
     yaku_flags: YakuFlags,
     // score verify
     verify: bool,

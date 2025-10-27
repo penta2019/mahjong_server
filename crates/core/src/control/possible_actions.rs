@@ -370,8 +370,8 @@ fn calc_restricted_discards(act: &Action) -> Vec<Tile> {
 // 返り値: [{打牌, [{和了牌, 役の有無, フリテンの有無}]}]
 pub fn calc_possible_tenpai_discards(
     pl: &Player,
-    prevalent_wind: Index,
-    seat_wind: Index,
+    prevalent_wind: Tnum,
+    seat_wind: Tnum,
 ) -> Vec<Tenpai> {
     let mut comb: Vec<(Tile, Tile)> = vec![]; // (打牌, 和了牌)の組み合わせ
     for (d, wts) in calc_discards_to_win(&pl.hand) {
@@ -471,6 +471,7 @@ pub fn check_pao_for_selected_action(stg: &Stage, seat: Seat, act: &Action) -> b
 
 #[test]
 fn test_tenpai_discards() {
+    use super::string::tiles_from_string;
     let tiles = tiles_from_string("m11235s123999p123").unwrap();
     println!("{:?}", tiles);
     let mut pl = Player::default();

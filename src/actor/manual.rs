@@ -1,4 +1,8 @@
-use mahjong_core::{control::common::*, error, util::misc::prompt};
+use mahjong_core::{
+    control::{common::*, string::*},
+    error,
+    util::misc::prompt,
+};
 
 use super::*;
 

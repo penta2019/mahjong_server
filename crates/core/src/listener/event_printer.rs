@@ -20,6 +20,12 @@ impl EventPrinter {
     }
 }
 
+impl Default for EventPrinter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Listener for EventPrinter {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         use Event::*;

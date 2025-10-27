@@ -232,6 +232,12 @@ impl TenhouSerializer {
     }
 }
 
+impl Default for TenhouSerializer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // [TenhouDeserializer]
 // struct TenhouDeserializer {}
 

@@ -88,7 +88,7 @@ impl MessageHolder {
     //     self.cursor = 0;
     // }
 
-    pub fn next(&mut self) -> Option<&ServerMessage> {
+    pub fn next_message(&mut self) -> Option<&ServerMessage> {
         'skip: while self.cursor < self.messages.len() {
             let cursor = self.cursor;
             self.cursor += 1;

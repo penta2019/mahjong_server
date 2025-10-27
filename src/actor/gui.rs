@@ -91,7 +91,7 @@ impl Gui {
 
     fn flush(&mut self) {
         let mut shared = self.shared.lock().unwrap();
-        while let Some(msg) = self.messages.next() {
+        while let Some(msg) = self.messages.next_message() {
             shared.possible_actions = None;
             shared.selected_action = None;
             if let ServerMessage::Action(possible_actions) = msg {

@@ -1,12 +1,9 @@
 // 構造的な意味合いや一貫性を保つために以下のclippy警告は無効化
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::needless_range_loop)]
-#![allow(clippy::too_many_arguments)]
+// #![allow(clippy::too_many_arguments)]
 // guiを無効化してビルド(--no-default-features)した際のunuse警告を無効化
 #![cfg_attr(not(feature = "gui"), allow(unused))]
-
-// #[cfg(feature = "gui")]
-// #[allow(clippy::type_complexity)]
 
 mod actor;
 mod app;

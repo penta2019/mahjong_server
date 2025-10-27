@@ -8,6 +8,12 @@ impl Debug {
     }
 }
 
+impl Default for Debug {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Listener for Debug {
     fn notify_event(&mut self, stg: &Stage, event: &Event) {
         loop {

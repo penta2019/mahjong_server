@@ -1,3 +1,8 @@
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+
 mod camera;
 mod debug;
 mod mahjong;

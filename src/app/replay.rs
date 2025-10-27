@@ -96,7 +96,7 @@ impl ReplayApp {
         for p in paths {
             println!("source file: {:?}\n", p);
             let contents = std::fs::read_to_string(p).unwrap_or_else(error_exit);
-            let record = Event::from_string(&contents);
+            let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
             if let Event::New(ev) = &record[0]
                 && (ev.round, ev.dealer, ev.honba_sticks) < rkh

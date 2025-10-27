@@ -20,6 +20,12 @@ impl EventWriter {
     }
 }
 
+impl Default for EventWriter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Listener for EventWriter {
     fn notify_event(&mut self, _stg: &Stage, event: &Event) {
         let mut write = false;
@@ -70,6 +76,12 @@ impl TenhouEventWriter {
             round_index: 0,
             serializer: TenhouSerializer::new(),
         }
+    }
+}
+
+impl Default for TenhouEventWriter {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

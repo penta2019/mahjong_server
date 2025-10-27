@@ -7,7 +7,7 @@ use std::{
     thread,
 };
 
-use mahjong_core::model::{MessageHolder, SelectedAction};
+use mahjong_core::model::SelectedAction;
 
 use super::*;
 
@@ -157,5 +157,85 @@ impl Future for SelectFuture {
             return Poll::Pending;
         }
         Poll::Ready(shared.selected_action.take().unwrap().action)
+    }
+}
+
+#[derive(Debug)]
+struct MessageHolder {
+    seat: Seat,
+    conceal: bool,
+    messages: Vec<ServerMessage>,
+    cursor: usize,
+    act_id: u32,
+}
+
+impl MessageHolder {
+    fn new(seat: Seat, conceal: bool) -> Self {
+        Self {
+            seat,
+            conceal,
+            messages: vec![],
+            cursor: 0,
+            act_id: 0,
+        }
+    }
+
+    fn push_event(&mut self, mut event: Event) {
+        match &mut event {
+            Event::New(ev) => {
+                self.messages = vec![ServerMessage::Info { seat: self.seat }];
+                if self.conceal {
+                    for s in 0..SEAT {
+                        if s != self.seat {
+                            ev.hands[s].fill(Z8);
+                        }
+                    }
+                    ev.wall = vec![];
+                    ev.dora_wall = vec![];
+                    ev.ura_dora_wall = vec![];
+                    ev.replacement_wall = vec![];
+                }
+            }
+            Event::Deal(ev) => {
+                if self.conceal && self.seat != ev.seat {
+                    ev.tile = Z8;
+                }
+            }
+            _ => {}
+        };
+        self.messages.push(ServerMessage::Event(Box::new(event)));
+    }
+
+    fn push_actions(&mut self, actions: Vec<Action>, tenpais: Vec<Tenpai>) {
+        self.act_id += 1;
+        self.messages.push(ServerMessage::Action(PossibleActions {
+            id: self.act_id,
+            actions,
+            tenpais,
+        }));
+    }
+
+    // pub fn reset(&mut self) {
+    //     self.cursor = 0;
+    // }
+
+    fn next_message(&mut self) -> Option<&ServerMessage> {
+        'skip: while self.cursor < self.messages.len() {
+            let cursor = self.cursor;
+            self.cursor += 1;
+
+            // Actionよりも後ろにEventが存在する場合,失効済みなのでスキップ
+            if let ServerMessage::Action { .. } = &self.messages[cursor] {
+                for m in &self.messages[self.cursor..] {
+                    if let ServerMessage::Event(_) = m {
+                        continue 'skip;
+                    }
+                }
+            }
+
+            return Some(&self.messages[cursor]);
+        }
+
+        None
     }
 }

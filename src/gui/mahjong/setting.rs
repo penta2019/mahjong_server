@@ -70,16 +70,7 @@ impl Setting {
                 },
                 BorderColor::all(Color::BLACK),
                 BackgroundColor(BUTTON_INACTIVE),
-                children![(
-                    Text::new("Settings"),
-                    TextFont {
-                        // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                        font_size: 16.0,
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                    TextShadow::default(),
-                )],
+                children![create_text("settings".into(), 16.0)],
             ))
             .id();
 
@@ -246,15 +237,6 @@ fn create_button(button: SettingButton, text: &str) -> impl Bundle + use<> {
         },
         BackgroundColor(BUTTON_INACTIVE),
         BorderColor::all(BUTTON_INACTIVE),
-        children![(
-            Text::new(text),
-            TextFont {
-                // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                font_size: 16.0,
-                ..default()
-            },
-            TextColor(Color::srgb(0.9, 0.9, 0.9)),
-            TextShadow::default(),
-        )],
+        children![create_text(text.into(), 16.0)],
     )
 }

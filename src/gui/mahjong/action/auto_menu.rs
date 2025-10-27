@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{BUTTON_INACTIVE, GameButton};
-use crate::gui::mahjong::param::cmd;
+use crate::gui::mahjong::{param::cmd, text::create_text};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AutoButton {
@@ -51,15 +51,6 @@ fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {
         BorderRadius::all(Val::Px(4.0)),
         BorderColor::all(Color::BLACK),
         BackgroundColor(BUTTON_INACTIVE),
-        children![(
-            Text::new(text),
-            TextFont {
-                // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                font_size: 16.0,
-                ..default()
-            },
-            TextColor(Color::srgb(0.9, 0.9, 0.9)),
-            TextShadow::default(),
-        )],
+        children![create_text(text.into(), 16.0)],
     )
 }

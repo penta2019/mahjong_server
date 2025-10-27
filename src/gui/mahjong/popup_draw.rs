@@ -9,11 +9,6 @@ impl PopupDraw {
     pub fn new(event: &EventDraw) -> Self {
         let p = param();
 
-        let reason = match event.draw_type {
-            DrawType::Kouhaiheikyoku => "荒牌平局",
-            _ => "Draw",
-        };
-
         let entity = p
             .cmd
             .spawn((
@@ -25,7 +20,9 @@ impl PopupDraw {
                     ..default()
                 },
                 BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
-                children![(
+            ))
+            .with_children(|cmd| {
+                cmd.spawn((
                     Node {
                         position_type: PositionType::Absolute,
                         top: Val::Percent(10.0),
@@ -34,18 +31,26 @@ impl PopupDraw {
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![(
-                        Text::new(reason),
-                        TextFont {
-                            font: p.asset_server.load("font/NotoSerifCJKjp-Regular.otf"),
-                            font_size: 30.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                        TextShadow::default(),
-                    )]
-                )],
-            ))
+                    children![create_text(event.draw_type.to_string(), 40.0)],
+                ));
+
+                // let positions = [];
+                // for s in 0..1 {
+                //     cmd.spawn((
+                //         Node {
+                //             position_type: PositionType::Absolute,
+                //             top: Val::Percent(30.0),
+                //             width: Val::Px(200.0),
+                //             height: Val::Px(60.0),
+                //             justify_content: JustifyContent::Center,
+                //             align_items: AlignItems::Center,
+                //             ..default()
+                //         },
+                //         BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
+                //         children![create_text("25000".into(), 24.0)],
+                //     ));
+                // }
+            })
             .id();
 
         Self { entity }

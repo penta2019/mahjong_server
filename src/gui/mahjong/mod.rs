@@ -11,6 +11,7 @@ mod prelude;
 mod setting;
 mod stage;
 mod stage_info;
+mod text;
 mod tile;
 mod tile_plugin;
 mod wall;

@@ -12,9 +12,9 @@ use super::{
 pub type Tx = std::sync::mpsc::Sender<ClientMessage>;
 pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
 
-#[cfg(not(feature = "gui_dev"))]
+#[cfg(not(feature = "dev"))]
 pub type MahjongPlugin = MahjongPluginReal;
-#[cfg(feature = "gui_dev")]
+#[cfg(feature = "dev")]
 pub type MahjongPlugin = dev::MahjongPluginDev; // cargo run --release --features gui_dev G
 
 #[derive(Resource)]

@@ -9,4 +9,4 @@ rand = "0.9"
 bevy = { version = "0.17", features = ["dynamic_linking"]}
 
 [features]
-gui_dev = []
+dev = []

@@ -21,7 +21,7 @@ use mahjong_core::{
     error,
     model::*,
     util::misc::Res,
-    util::variant::*,
+    util::variant::{Arg, Variant},
 };
 
 trait ActorBuilder {

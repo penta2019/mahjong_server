@@ -1,6 +1,7 @@
 use std::{any::Any, fmt, future::Future, pin::Pin};
 
-use crate::{control::stage_controller::StageRef, listener::Listener, model::*, util::variant::*};
+use super::{listener::Listener, stage_controller::StageRef};
+use crate::{model::*, util::variant::*};
 
 #[derive(Debug, Clone)]
 pub struct Config {

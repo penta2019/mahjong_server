@@ -6,7 +6,7 @@ use std::{
 use serde_json::{Value, json};
 
 use crate::{
-    listener::Listener,
+    control::listener::Listener,
     model::*,
     util::{
         connection::{Connection, Message},

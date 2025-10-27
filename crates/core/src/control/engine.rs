@@ -1,19 +1,19 @@
 use std::task::{Context, Poll, Waker};
 
+use rand::prelude::*;
+
+use super::{
+    actor::Actor, common::*, listener::Listener, possible_actions::*,
+    stage_controller::StageController, wall::create_wall,
+};
 use crate::{
-    control::{
-        actor::Actor, common::*, possible_actions::*, stage_controller::StageController,
-        wall::create_wall,
-    },
     hand::{evaluate_hand_ron, evaluate_hand_tsumo},
-    listener::*,
     model::*,
     util::{
         misc::*,
         waiter::{Waiter, waiter_waker},
     },
 };
-use rand::prelude::*;
 
 use ActionType::*;
 

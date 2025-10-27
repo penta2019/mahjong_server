@@ -1,7 +1,7 @@
 use std::sync::mpsc;
 
 use mahjong_core::{
-    control::{actor::Actor, engine::MahjongEngine},
+    control::{actor::Actor, engine::MahjongEngine, listener::Listener},
     error, info,
     listener::*,
     model::*,

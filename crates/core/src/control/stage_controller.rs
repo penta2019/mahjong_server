@@ -1,10 +1,12 @@
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 
-use super::actor::{ActionFuture, Actor};
 use crate::{
-    control::common::*,
+    control::{
+        actor::{ActionFuture, Actor},
+        common::*,
+        listener::Listener,
+    },
     hand::*,
-    listener::Listener,
     model::*,
     util::misc::{Res, rank_by_rank_vec},
 };

@@ -15,10 +15,10 @@ use std::{any::Any, future::Future, pin::Pin};
 use mahjong_core::{
     control::{
         actor::{ActionFuture, Actor, Config, ready},
+        listener::Listener,
         stage_controller::StageRef,
     },
     error,
-    listener::Listener,
     model::*,
     util::misc::Res,
     util::variant::*,

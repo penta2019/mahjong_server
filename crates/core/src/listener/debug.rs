@@ -1,4 +1,4 @@
-use crate::{listener::Listener, model::*, util::misc::prompt};
+use crate::{control::listener::Listener, model::*, util::misc::prompt};
 
 pub struct Debug {}
 

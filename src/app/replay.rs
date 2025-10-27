@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use mahjong_core::{
-    control::{actor::Actor, stage_controller::StageController},
+    control::{actor::Actor, listener::Listener, stage_controller::StageController},
     error,
-    listener::{Debug, EventPrinter, Listener},
+    listener::{Debug, EventPrinter},
     model::*,
     util::misc::*,
 };

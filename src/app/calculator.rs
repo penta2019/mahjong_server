@@ -4,7 +4,7 @@ use std::{
     io::{self, BufRead},
 };
 
-use crate::{control::common::*, error, hand::*, model::*, util::misc::*};
+use mahjong_core::{control::common::*, error, hand::*, model::*, util::misc::*};
 
 const INDENT: usize = 2;
 

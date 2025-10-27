@@ -1,5 +1,6 @@
+use mahjong_core::control::common::count_tile;
+
 use super::*;
-use crate::control::common::count_tile;
 
 pub struct TiitoitsuBotBuilder;
 

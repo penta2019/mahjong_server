@@ -7,8 +7,9 @@ use std::{
     thread,
 };
 
-pub use super::*;
-use crate::model::{MessageHolder, SelectedAction};
+use mahjong_core::model::{MessageHolder, SelectedAction};
+
+use super::*;
 
 pub struct GuiBuilder;
 

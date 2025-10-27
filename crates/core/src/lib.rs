@@ -3,12 +3,9 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::too_many_arguments)]
 
-mod actor;
-mod control;
-mod convert;
-mod hand;
-mod listener;
-mod util;
-
-pub mod app;
+pub mod control;
+pub mod convert;
+pub mod hand;
+pub mod listener;
 pub mod model;
+pub mod util;

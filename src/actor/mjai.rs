@@ -5,10 +5,10 @@ use std::{
     thread,
 };
 
+use mahjong_core::{control::common::get_scores, convert::mjai::*, error, info, util::misc::*};
 use serde_json::{Value, json};
 
 use super::*;
-use crate::{control::common::get_scores, convert::mjai::*, error, info, util::misc::*};
 
 #[derive(Debug, Default)]
 struct SharedData {

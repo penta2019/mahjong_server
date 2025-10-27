@@ -16,6 +16,10 @@ pub enum Event {
 }
 
 impl Event {
+    pub fn from_string(text: &str) -> Vec<Self> {
+        serde_json::from_str(text).unwrap()
+    }
+
     #[inline]
     pub fn begin() -> Self {
         Self::Begin(EventBegin {})

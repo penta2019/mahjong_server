@@ -1,5 +1,6 @@
+use mahjong_core::{control::common::*, error, util::misc::prompt};
+
 use super::*;
-use crate::{control::common::*, error, util::misc::prompt};
 
 use ActionType::*;
 

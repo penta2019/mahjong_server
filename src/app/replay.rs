@@ -1,8 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use crate::{
-    actor::{Actor, create_actor},
-    control::stage_controller::StageController,
+use mahjong_core::{
+    control::{actor::Actor, stage_controller::StageController},
     error,
     listener::{Debug, EventPrinter, Listener},
     model::*,
@@ -97,7 +96,7 @@ impl ReplayApp {
         for p in paths {
             println!("source file: {:?}\n", p);
             let contents = std::fs::read_to_string(p).unwrap_or_else(error_exit);
-            let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
+            let record = Event::from_string(&contents);
 
             if let Event::New(ev) = &record[0]
                 && (ev.round, ev.dealer, ev.honba_sticks) < rkh
@@ -117,7 +116,7 @@ struct Replay {
 
 impl Replay {
     fn new(listeners: Vec<Box<dyn Listener>>) -> Self {
-        let nop = create_actor("Nop");
+        let nop = crate::actor::create_actor("Nop");
         let nops: [Box<dyn Actor>; SEAT] = [
             nop.clone_box(),
             nop.clone_box(),

@@ -4,16 +4,16 @@ use std::{
     thread,
 };
 
-use serde_json::{Value, json};
-
-use super::*;
-use crate::{
+use mahjong_core::{
     error,
     util::{
         connection::{Connection, Message, TcpConnection},
         misc::sleep,
     },
 };
+use serde_json::{Value, json};
+
+use super::*;
 
 pub struct EndpointBuilder;
 

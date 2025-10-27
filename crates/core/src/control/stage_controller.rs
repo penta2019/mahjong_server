@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 
+use super::actor::{ActionFuture, Actor};
 use crate::{
-    actor::{ActionFuture, Actor},
     control::common::*,
     hand::*,
     listener::Listener,

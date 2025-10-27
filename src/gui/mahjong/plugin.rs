@@ -194,7 +194,7 @@ impl GuiMahjong {
 }
 
 pub mod dev {
-    use super::{super::popup_draw::PopupDraw, *};
+    use super::{super::popup::PopupDraw, *};
 
     #[derive(Resource, Debug, Default)]
     pub struct MahjongResource {

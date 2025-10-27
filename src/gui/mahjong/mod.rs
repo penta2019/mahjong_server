@@ -6,7 +6,7 @@ mod meld;
 mod param;
 mod player;
 mod plugin;
-mod popup_draw;
+mod popup;
 mod prelude;
 mod setting;
 mod stage;

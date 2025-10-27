@@ -1,3 +1,5 @@
+use crate::mahjong::popup::player_info::PopupPlayerInfo;
+
 use super::super::prelude::*;
 
 #[derive(Debug)]
@@ -28,30 +30,29 @@ impl PopupDraw {
                         top: Val::Percent(10.0),
                         width: Val::Percent(100.0),
                         justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
                         ..default()
                     },
                     children![create_text(event.draw_type.to_string(), 40.0)],
                 ));
-
-                // let positions = [];
-                // for s in 0..1 {
-                //     cmd.spawn((
-                //         Node {
-                //             position_type: PositionType::Absolute,
-                //             top: Val::Percent(30.0),
-                //             width: Val::Px(200.0),
-                //             height: Val::Px(60.0),
-                //             justify_content: JustifyContent::Center,
-                //             align_items: AlignItems::Center,
-                //             ..default()
-                //         },
-                //         BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
-                //         children![create_text("25000".into(), 24.0)],
-                //     ));
-                // }
             })
             .id();
+
+        let score_container = p
+            .cmd
+            .spawn((
+                ChildOf(entity),
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Percent(60.0),
+                    width: Val::Percent(100.0),
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+            ))
+            .id();
+
+        let player_info = PopupPlayerInfo::new(3, 1);
+        player_info.insert(ChildOf(score_container));
 
         Self { entity }
     }

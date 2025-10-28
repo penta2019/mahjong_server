@@ -1,4 +1,4 @@
-use crate::mahjong::popup::player_info::PopupPlayerInfo;
+use crate::mahjong::popup::players_info::PopupPlayersInfo;
 
 use super::super::prelude::*;
 
@@ -8,8 +8,14 @@ pub struct PopupDraw {
 }
 
 impl PopupDraw {
-    pub fn new(event: &EventDraw) -> Self {
+    pub fn new(event: &EventDraw, camera_seat: Seat) -> Self {
         let p = param();
+
+        let draw_str = if event.nagashimangan_scores.iter().any(|score| *score != 0) {
+            "流し満貫".into()
+        } else {
+            event.draw_type.to_string()
+        };
 
         let entity = p
             .cmd
@@ -32,7 +38,7 @@ impl PopupDraw {
                         justify_content: JustifyContent::Center,
                         ..default()
                     },
-                    children![create_text(event.draw_type.to_string(), 40.0)],
+                    children![create_text(draw_str, 40.0)],
                 ));
             })
             .id();
@@ -51,7 +57,13 @@ impl PopupDraw {
             ))
             .id();
 
-        let player_info = PopupPlayerInfo::new(3, 1);
+        let player_info = PopupPlayersInfo::new(
+            camera_seat,
+            event.dealer,
+            &event.names,
+            &event.scores,
+            &event.delta_scores,
+        );
         player_info.insert(ChildOf(score_container));
 
         Self { entity }

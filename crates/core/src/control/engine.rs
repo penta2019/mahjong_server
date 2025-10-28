@@ -747,14 +747,18 @@ impl MahjongEngine {
                                     if is_dealer(&stg, s_nm) {
                                         nm_scores[s_nm] = 12000;
                                         for s in 0..SEAT {
-                                            if s_nm != s {
+                                            if s_nm == s {
+                                                d_scores[s] += 12000;
+                                            } else {
                                                 d_scores[s] -= 4000;
                                             }
                                         }
                                     } else {
                                         nm_scores[s_nm] = 8000;
                                         for s in 0..SEAT {
-                                            if s_nm != s {
+                                            if s_nm == s {
+                                                d_scores[s] += 8000;
+                                            } else {
                                                 if is_dealer(&stg, s) {
                                                     d_scores[s] -= 4000;
                                                 } else {

@@ -1,0 +1,117 @@
+use mahjong_core::control::common::{calc_seat_offset, calc_seat_wind};
+
+use crate::{impl_has_entity, mahjong::text::create_text_with_color};
+
+use super::super::{prelude::*, text::wind_to_char};
+
+#[derive(Debug)]
+pub struct PopupPlayersInfo {
+    entity: Entity,
+}
+
+impl_has_entity!(PopupPlayersInfo);
+
+impl PopupPlayersInfo {
+    pub fn new(
+        camera_seat: Seat,
+        dealer: Seat,
+        names: &[String; SEAT],
+        scores: &[Score; SEAT],
+        deltas: &[Score; SEAT],
+    ) -> Self {
+        let cmd = cmd();
+        let mut cols = vec![];
+
+        let entity = cmd
+            .spawn((Node {
+                align_self: AlignSelf::FlexStart,
+                align_content: AlignContent::Center,
+                ..default()
+            },))
+            .with_children(|cmd| {
+                for _ in 0..3 {
+                    let e = cmd
+                        .spawn((Node {
+                            flex_direction: FlexDirection::Column,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },))
+                        .id();
+                    cols.push(e);
+                }
+            })
+            .id();
+
+        // カメラがある座席基準のオフセットからseatへの変換配列
+        let mut offset_to_seat = [0; SEAT];
+        for s in 0..SEAT {
+            offset_to_seat[calc_seat_offset(camera_seat, s)] = s;
+        }
+
+        for offset_seat in [3, 2, 0, 1] {
+            let seat = offset_to_seat[offset_seat];
+            let wind = wind_to_char(calc_seat_wind(dealer, seat));
+            cmd.spawn(create_player_info(
+                wind,
+                &names[seat],
+                scores[seat],
+                deltas[seat],
+            ))
+            .insert(ChildOf(match offset_seat {
+                3 => cols[0], // 左
+                1 => cols[2], // 右
+                _ => cols[1], // 中央　上(2), 下(0)
+            }));
+        }
+
+        Self { entity }
+    }
+}
+
+fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> impl Bundle + use<> {
+    let font_size = 20.0;
+    let delta_str = if delta == 0 {
+        "".to_string()
+    } else {
+        format!(" {:+}", delta)
+    };
+    let delta_text = if delta > 0 {
+        create_text_with_color(delta_str, font_size, Color::srgb(1.0, 0.0, 0.0))
+    } else {
+        create_text_with_color(delta_str, font_size, Color::srgb(0.0, 1.0, 0.0))
+    };
+
+    (
+        Node {
+            width: Val::Px(180.0),
+            height: Val::Px(60.0),
+            border: UiRect::all(Val::Px(1.0)),
+            padding: UiRect::left(Val::Px(8.0)),
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.8)),
+        BorderColor::all(Color::srgba(0.2, 0.2, 0.2, 1.0)),
+        children![
+            create_text(format!("{}", wind), 32.0),
+            (
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(4.0),
+                    left: Val::Px(50.0),
+                    ..default()
+                },
+                create_text(format!("{}", name), font_size),
+            ),
+            (
+                Node {
+                    position_type: PositionType::Absolute,
+                    bottom: Val::Px(4.0),
+                    left: Val::Px(50.0),
+                    ..default()
+                },
+                children![create_text(format!("{}", score), font_size), delta_text]
+            )
+        ],
+    )
+}

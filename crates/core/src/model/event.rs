@@ -265,7 +265,7 @@ impl fmt::Display for DrawType {
                 DrawType::Suukansanra => "四槓散了",
                 DrawType::Suuchariichi => "四家立直",
                 DrawType::Sanchaho => "三家和",
-                DrawType::Kouhaiheikyoku => "荒廃平局",
+                DrawType::Kouhaiheikyoku => "荒牌平局",
             }
         )
     }

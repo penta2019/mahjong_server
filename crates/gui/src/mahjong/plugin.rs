@@ -223,16 +223,24 @@ pub mod dev {
     fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         with_param(&mut param, || {
             res.stage = Some(GuiStage::new());
-            res.popup = Some(PopupDraw::new(&EventDraw {
-                draw_type: DrawType::Kouhaiheikyoku,
-                round: 0,
-                dealer: 0,
-                names: Default::default(),
-                scores: [25000, 25000, 25000, 25000],
-                delta_scores: [0, 0, 0, 0],
-                nagashimangan_scores: [0, 0, 0, 0],
-                hands: [vec![], vec![], vec![], vec![]],
-            }));
+            res.popup = Some(PopupDraw::new(
+                &EventDraw {
+                    draw_type: DrawType::Kouhaiheikyoku,
+                    round: 0,
+                    dealer: 0,
+                    names: [
+                        "ああああ".into(),
+                        "いいいい".into(),
+                        "うううう".into(),
+                        "ええええ".into(),
+                    ],
+                    scores: [25000, 25000, 25000, 25000],
+                    delta_scores: [12000, -3000, -3000, -3000],
+                    nagashimangan_scores: [12000, 0, 0, 0],
+                    hands: [vec![], vec![], vec![], vec![]],
+                },
+                0,
+            ));
         });
     }
 

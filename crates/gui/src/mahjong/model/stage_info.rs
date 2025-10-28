@@ -2,6 +2,7 @@ use bevy::{
     camera::{RenderTarget, visibility::RenderLayers},
     color::palettes::css::WHITE,
 };
+use mahjong_core::control::{common::calc_prevalent_wind, string::wind_to_char_jp};
 
 use super::super::prelude::*;
 
@@ -73,7 +74,11 @@ impl StageInfo {
 
         let font = p.asset_server.load("font/NotoSerifCJKjp-Regular.otf");
 
-        let round_text = format!("{}{}局", wind[event.round], (event.dealer + 1));
+        let round_text = format!(
+            "{}{}局",
+            wind_to_char_jp(calc_prevalent_wind(event.round + 1)),
+            (event.dealer + 1)
+        );
         let round = p
             .cmd
             .spawn((

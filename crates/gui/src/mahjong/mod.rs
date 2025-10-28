@@ -1,9 +1,9 @@
 mod action;
+mod dialog;
 mod has_entity;
 mod model;
 mod param;
 mod plugin;
-mod popup;
 mod prelude;
 mod setting;
 mod text;

@@ -194,12 +194,12 @@ impl GuiMahjong {
 }
 
 pub mod dev {
-    use super::{super::popup::PopupDraw, *};
+    use super::{super::dialog::DrawDialog, *};
 
     #[derive(Resource, Debug, Default)]
     pub struct MahjongResource {
         stage: Option<GuiStage>,
-        popup: Option<PopupDraw>,
+        dialog: Option<DrawDialog>,
     }
 
     pub struct MahjongPluginDev {}
@@ -223,7 +223,7 @@ pub mod dev {
     fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         with_param(&mut param, || {
             res.stage = Some(GuiStage::new());
-            res.popup = Some(PopupDraw::new(
+            res.dialog = Some(DrawDialog::new(
                 &EventDraw {
                     draw_type: DrawType::Kouhaiheikyoku,
                     round: 0,
@@ -250,9 +250,9 @@ pub mod dev {
         exit: MessageReader<AppExit>,
     ) {
         if !exit.is_empty()
-            && let Some(popup) = res.popup.take()
+            && let Some(dialog) = res.dialog.take()
         {
-            popup.destroy();
+            dialog.destroy();
         }
 
         with_param(&mut param, || {});

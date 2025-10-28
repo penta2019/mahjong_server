@@ -2,4 +2,4 @@ mod draw;
 mod players_info;
 mod win;
 
-pub use self::draw::PopupDraw;
+pub use self::draw::DrawDialog;

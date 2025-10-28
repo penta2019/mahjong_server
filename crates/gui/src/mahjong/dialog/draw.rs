@@ -1,13 +1,13 @@
-use crate::mahjong::popup::players_info::PopupPlayersInfo;
+use crate::mahjong::dialog::players_info::PlayersInfo;
 
 use super::super::prelude::*;
 
 #[derive(Debug)]
-pub struct PopupDraw {
+pub struct DrawDialog {
     entity: Entity,
 }
 
-impl PopupDraw {
+impl DrawDialog {
     pub fn new(event: &EventDraw, camera_seat: Seat) -> Self {
         let p = param();
 
@@ -57,7 +57,7 @@ impl PopupDraw {
             ))
             .id();
 
-        let player_info = PopupPlayersInfo::new(
+        let player_info = PlayersInfo::new(
             camera_seat,
             event.dealer,
             &event.names,

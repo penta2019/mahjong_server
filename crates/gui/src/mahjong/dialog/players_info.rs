@@ -5,13 +5,13 @@ use crate::{impl_has_entity, mahjong::text::create_text_with_color};
 use super::super::{prelude::*, text::wind_to_char};
 
 #[derive(Debug)]
-pub struct PopupPlayersInfo {
+pub struct PlayersInfo {
     entity: Entity,
 }
 
-impl_has_entity!(PopupPlayersInfo);
+impl_has_entity!(PlayersInfo);
 
-impl PopupPlayersInfo {
+impl PlayersInfo {
     pub fn new(
         camera_seat: Seat,
         dealer: Seat,

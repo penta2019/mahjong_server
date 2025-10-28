@@ -194,7 +194,10 @@ impl GuiMahjong {
 }
 
 pub mod dev {
-    use super::{super::dialog::DrawDialog, *};
+    use super::{
+        super::dialog::{DrawDialog, OkButton, handle_dialog_ok_button},
+        *,
+    };
 
     #[derive(Resource, Debug, Default)]
     pub struct MahjongResource {
@@ -247,14 +250,17 @@ pub mod dev {
     fn system(
         mut param: MahjongParam,
         mut res: ResMut<MahjongResource>,
-        exit: MessageReader<AppExit>,
+        mut ok_buttons: Query<
+            (&'static Interaction, &'static mut BorderColor),
+            (Changed<Interaction>, With<OkButton>),
+        >,
     ) {
-        if !exit.is_empty()
-            && let Some(dialog) = res.dialog.take()
-        {
-            dialog.destroy();
-        }
-
-        with_param(&mut param, || {});
+        with_param(&mut param, || {
+            if handle_dialog_ok_button(&mut ok_buttons)
+                && let Some(dialog) = res.dialog.take()
+            {
+                dialog.destroy();
+            }
+        });
     }
 }

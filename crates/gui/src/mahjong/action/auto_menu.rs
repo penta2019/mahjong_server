@@ -42,9 +42,7 @@ fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {
             height: Val::Px(40.0),
             border: UiRect::all(Val::Px(1.0)),
             margin: UiRect::horizontal(Val::Px(5.0)),
-            // 内部のテキストを中央に表示(横方向)
             justify_content: JustifyContent::Center,
-            // 内部のテキストを中央に表示(縦方向)
             align_items: AlignItems::Center,
             ..default()
         },

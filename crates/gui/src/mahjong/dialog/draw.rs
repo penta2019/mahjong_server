@@ -1,4 +1,4 @@
-use crate::mahjong::dialog::players_info::PlayersInfo;
+use crate::mahjong::dialog::{create_ok_button, players_info::PlayersInfo};
 
 use super::super::prelude::*;
 
@@ -49,7 +49,7 @@ impl DrawDialog {
                 ChildOf(entity),
                 Node {
                     position_type: PositionType::Absolute,
-                    top: Val::Percent(60.0),
+                    bottom: Val::Percent(16.0),
                     width: Val::Percent(100.0),
                     justify_content: JustifyContent::Center,
                     ..default()
@@ -65,6 +65,18 @@ impl DrawDialog {
             &event.delta_scores,
         );
         player_info.insert(ChildOf(score_container));
+
+        p.cmd.spawn((
+            ChildOf(entity),
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Percent(4.0),
+                width: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            children![create_ok_button()],
+        ));
 
         Self { entity }
     }

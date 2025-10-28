@@ -1,3 +1,4 @@
+use super::common::calc_seat_offset;
 use crate::{
     model::*,
     util::misc::{Res, vec_count},
@@ -52,16 +53,6 @@ pub fn wind_to_char(ni: Tnum) -> char {
         WS => 'S',
         WW => 'W',
         WN => 'N',
-        _ => panic!("invalid wind index: {ni}"),
-    }
-}
-
-pub fn wind_to_char_jp(ni: Tnum) -> char {
-    match ni {
-        WE => '東',
-        WS => '南',
-        WW => '西',
-        WN => '北',
         _ => panic!("invalid wind index: {ni}"),
     }
 }
@@ -180,7 +171,7 @@ pub fn meld_to_string(m: &Meld, s: Seat) -> String {
         }
     }
     if m_t != Z8 {
-        let pos = 3 - (m_f + SEAT - s) % SEAT;
+        let pos = 3 - calc_seat_offset(s, m_f);
         tiles.insert(pos, (m_t, m_f));
     }
 

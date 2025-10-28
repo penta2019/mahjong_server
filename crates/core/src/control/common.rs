@@ -1,13 +1,18 @@
 use crate::model::*;
 
 #[inline]
+pub fn calc_seat_offset(base_seat: Seat, target_seat: Seat) -> Seat {
+    (target_seat + SEAT - base_seat) % SEAT
+}
+
+#[inline]
 pub fn calc_prevalent_wind(round: usize) -> Tnum {
     round % SEAT + 1 // WE | WS | WW | WN
 }
 
 #[inline]
 pub fn calc_seat_wind(dealer: Seat, seat: Seat) -> Tnum {
-    (seat + SEAT - dealer) % SEAT + 1 // WE | WS | WW | WN
+    calc_seat_offset(dealer, seat) + 1 // WE | WS | WW | WN
 }
 
 // Stage用関数

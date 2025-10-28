@@ -1,6 +1,8 @@
+use mahjong_core::control::common::{calc_seat_offset, calc_seat_wind};
+
 use crate::impl_has_entity;
 
-use super::super::prelude::*;
+use super::super::{prelude::*, text::wind_to_char};
 
 #[derive(Debug)]
 pub struct PopupPlayerInfo {
@@ -18,7 +20,7 @@ impl PopupPlayerInfo {
         // deltas: [Score; SEAT],
     ) -> Self {
         let cmd = cmd();
-        let mut rows = vec![];
+        let mut cols = vec![];
 
         let entity = cmd
             .spawn((Node {
@@ -35,17 +37,25 @@ impl PopupPlayerInfo {
                             ..default()
                         },))
                         .id();
-                    rows.push(e);
+                    cols.push(e);
                 }
             })
             .id();
 
+        // カメラがある座席基準のオフセットからseatへの変換配列
+        let mut offset_to_seat = [0; SEAT];
         for s in 0..SEAT {
+            offset_to_seat[calc_seat_offset(camera_seat, s)] = s;
+        }
+
+        for offset_seat in [3, 2, 0, 1] {
+            let seat = offset_to_seat[offset_seat];
+            let wind = wind_to_char(calc_seat_wind(dealer, seat));
             cmd.spawn((
-                ChildOf(match s {
-                    0 => rows[0],
-                    3 => rows[2],
-                    _ => rows[1],
+                ChildOf(match offset_seat {
+                    3 => cols[0], // 左
+                    1 => cols[2], // 右
+                    _ => cols[1], // 中央　上(2), 下(0)
                 }),
                 Node {
                     width: Val::Px(180.0),
@@ -56,6 +66,7 @@ impl PopupPlayerInfo {
                 },
                 BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.8)),
                 BorderColor::all(Color::srgba(0.2, 0.2, 0.2, 1.0)),
+                children![create_text(format!("{}({})", wind, seat), 20.0)],
             ));
         }
 

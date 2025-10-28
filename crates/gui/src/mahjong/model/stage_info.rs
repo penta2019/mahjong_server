@@ -2,9 +2,9 @@ use bevy::{
     camera::{RenderTarget, visibility::RenderLayers},
     color::palettes::css::WHITE,
 };
-use mahjong_core::control::{common::calc_prevalent_wind, string::wind_to_char_jp};
+use mahjong_core::control::common::calc_seat_wind;
 
-use super::super::prelude::*;
+use super::super::{prelude::*, text::wind_to_char};
 
 #[derive(Debug)]
 pub struct StageInfo {
@@ -69,16 +69,9 @@ impl StageInfo {
     pub fn init(&mut self, event: &EventNew) {
         let p = param();
 
-        let wind = ["東", "南", "西", "北"];
-        // let wind = ["E", "S", "W", "N"];
-
         let font = p.asset_server.load("font/NotoSerifCJKjp-Regular.otf");
 
-        let round_text = format!(
-            "{}{}局",
-            wind_to_char_jp(calc_prevalent_wind(event.round + 1)),
-            (event.dealer + 1)
-        );
+        let round_text = format!("{}{}局", wind_to_char(event.round + 1), (event.dealer + 1));
         let round = p
             .cmd
             .spawn((
@@ -97,7 +90,6 @@ impl StageInfo {
         self.round = Some(round);
 
         for s in 0..SEAT {
-            let i_wind = (s + SEAT - event.dealer) % SEAT;
             p.cmd.spawn((
                 ChildOf(self.ui),
                 Transform::from_rotation(Quat::from_rotation_z(s as f32 * FRAC_PI_2)),
@@ -105,7 +97,7 @@ impl StageInfo {
                 RenderLayers::layer(1),
                 children![
                     (
-                        Text2d(wind[i_wind].into()),
+                        Text2d(wind_to_char(calc_seat_wind(event.dealer, s)).into()),
                         TextFont {
                             font: font.clone(),
                             font_size: 60.0,

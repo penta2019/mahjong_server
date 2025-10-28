@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::model::*;
+use crate::{control::common::calc_seat_offset, model::*};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct TenhouLog {
@@ -133,7 +133,7 @@ impl TenhouSerializer {
             Event::Meld(ev) => match ev.meld_type {
                 MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
                     let (seat, _, d) = stg.last_tile.unwrap();
-                    let pos = 3 - (seat + SEAT - ev.seat) % SEAT;
+                    let pos = 3 - calc_seat_offset(ev.seat, seat);
                     let marker = match ev.meld_type {
                         MeldType::Chi => "c",
                         MeldType::Pon => "p",

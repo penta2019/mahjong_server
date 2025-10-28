@@ -1,4 +1,5 @@
 use bevy::color::palettes::basic::GREEN;
+use mahjong_core::control::common::calc_seat_offset;
 
 use super::{
     super::{
@@ -250,7 +251,7 @@ impl GuiStage {
         let meld_tile = match event.meld_type {
             MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
                 let target_seat = self.last_tile.unwrap().0;
-                meld_offset = (target_seat + SEAT - event.seat) % SEAT;
+                meld_offset = calc_seat_offset(event.seat, target_seat);
                 Some(self.players[target_seat].take_last_discard_tile())
             }
             _ => None,

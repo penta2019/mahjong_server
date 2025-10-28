@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use super::{
     action::ActionParam,
+    dialog::{Dialog, OkButtonQuery},
     model::GuiStage,
     param::{MahjongParam, with_param},
     prelude::*,
@@ -42,6 +43,7 @@ impl Plugin for MahjongPluginReal {
             .add_systems(
                 Update,
                 (
+                    mahjong_handle_dialog_event,
                     mahjong_process_server_message,
                     mahjong_handle_action_events,
                     mahjong_handle_setting_events,
@@ -58,6 +60,16 @@ fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
     use bevy::render::render_resource::TextureFormat;
     let image = Image::new_target_texture(512, 512, TextureFormat::bevy_default());
     cmd.insert_resource(InfoTexture(images.add(image)));
+}
+
+fn mahjong_handle_dialog_event(
+    mut gui_mahjong: ResMut<GuiMahjong>,
+    mut param: MahjongParam,
+    mut ok_buttons: OkButtonQuery,
+) {
+    with_param(&mut param, || {
+        gui_mahjong.handle_dialog_events(&mut ok_buttons);
+    });
 }
 
 fn mahjong_process_server_message(mut gui_mahjong: ResMut<GuiMahjong>, mut param: MahjongParam) {
@@ -104,7 +116,19 @@ impl GuiMahjong {
         }
     }
 
+    fn handle_dialog_events(&mut self, ok_buttons: &mut OkButtonQuery) {
+        if let Some(stage) = &mut self.stage {
+            stage.handle_dialog_events(ok_buttons);
+        }
+    }
+
     fn process_server_message(&mut self) {
+        if let Some(stage) = self.stage.as_ref()
+            && !stage.is_ready()
+        {
+            return;
+        }
+
         while let Ok(msg) = self.rx.lock().unwrap().try_recv() {
             if let ServerMessage::Event(ev) = &msg
                 && let MjEvent::New(_) = ev.as_ref()
@@ -195,7 +219,7 @@ impl GuiMahjong {
 
 pub mod dev {
     use super::{
-        super::dialog::{DrawDialog, OkButton, handle_dialog_ok_button},
+        super::dialog::{DrawDialog, OkButton},
         *,
     };
 
@@ -256,10 +280,12 @@ pub mod dev {
         >,
     ) {
         with_param(&mut param, || {
-            if handle_dialog_ok_button(&mut ok_buttons)
-                && let Some(dialog) = res.dialog.take()
-            {
-                dialog.destroy();
+            if let Some(mut dialog) = res.dialog.take() {
+                if dialog.handle_event(&mut ok_buttons) {
+                    Box::new(dialog).destroy();
+                } else {
+                    res.dialog = Some(dialog);
+                }
             }
         });
     }

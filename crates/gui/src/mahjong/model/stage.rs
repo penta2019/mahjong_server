@@ -4,6 +4,7 @@ use mahjong_core::control::common::calc_seat_offset;
 use super::{
     super::{
         action::{ActionControl, ActionParam},
+        dialog::{Dialog, DrawDialog, OkButtonQuery, WinDialog},
         prelude::*,
         setting::{Setting, SettingParam, SettingProps},
     },
@@ -39,6 +40,7 @@ pub struct GuiStage {
     setting: Setting,
     // カメラ座席以外のプレイヤーの手牌の表示フラグ
     show_hand: bool,
+    dialog: Option<Box<dyn Dialog>>,
 }
 crate::impl_has_entity!(GuiStage);
 
@@ -107,6 +109,7 @@ impl GuiStage {
             action_control,
             setting,
             show_hand: true,
+            dialog: None,
         }
     }
 
@@ -129,6 +132,20 @@ impl GuiStage {
     pub fn set_setting_props(&mut self, props: SettingProps) {
         self.setting.set_props(props);
         self.apply_props();
+    }
+
+    pub fn is_ready(&self) -> bool {
+        self.dialog.is_none()
+    }
+
+    pub fn handle_dialog_events(&mut self, ok_buttons: &mut OkButtonQuery) {
+        if let Some(mut dialog) = self.dialog.take() {
+            if dialog.handle_event(ok_buttons) {
+                dialog.destroy();
+            } else {
+                self.dialog = Some(dialog);
+            }
+        }
     }
 
     pub fn handle_event(&mut self, event: &MjEvent) {
@@ -266,7 +283,13 @@ impl GuiStage {
         self.wall.add_dora(event.tile);
     }
 
-    fn event_win(&mut self, _event: &EventWin) {}
+    fn event_win(&mut self, event: &EventWin) {
+        assert!(self.dialog.is_none());
+        self.dialog = Some(Box::new(WinDialog::new(event, self.camera_seat)));
+    }
 
-    fn event_draw(&mut self, _event: &EventDraw) {}
+    fn event_draw(&mut self, event: &EventDraw) {
+        assert!(self.dialog.is_none());
+        self.dialog = Some(Box::new(DrawDialog::new(event, self.camera_seat)));
+    }
 }

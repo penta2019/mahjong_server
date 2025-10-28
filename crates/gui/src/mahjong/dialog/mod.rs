@@ -4,19 +4,30 @@ mod win;
 
 use bevy::prelude::*;
 
-use super::text::create_text;
+use super::{prelude::*, text::create_text};
 
-pub use self::draw::DrawDialog;
+pub use self::{draw::DrawDialog, win::WinDialog};
 
 #[derive(Component, Debug)]
 pub struct OkButton;
 
-pub fn handle_dialog_ok_button(
-    buttons: &mut Query<
-        (&'static Interaction, &'static mut BorderColor),
-        (Changed<Interaction>, With<OkButton>),
-    >,
-) -> bool {
+pub type OkButtonQuery<'w, 's> = Query<
+    'w,
+    's,
+    (&'static Interaction, &'static mut BorderColor),
+    (Changed<Interaction>, With<OkButton>),
+>;
+
+pub trait Dialog: std::fmt::Debug + Sync + Send {
+    // Sync, SendはResourceに含めるために必要
+
+    // Dialogの処理が終了した場合はtrueを返却 呼び出し元からdestroy()を実行
+    fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool;
+
+    fn destroy(self: Box<Self>);
+}
+
+fn handle_dialog_ok_button(buttons: &mut OkButtonQuery) -> bool {
     for (iteraction, mut border) in buttons {
         match iteraction {
             Interaction::Pressed => return true,

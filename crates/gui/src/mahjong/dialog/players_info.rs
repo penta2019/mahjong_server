@@ -93,7 +93,7 @@ fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> imp
         BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.8)),
         BorderColor::all(Color::srgba(0.2, 0.2, 0.2, 1.0)),
         children![
-            create_text(format!("{}", wind), 32.0),
+            create_text(wind.to_string(), 32.0),
             (
                 Node {
                     position_type: PositionType::Absolute,
@@ -101,7 +101,7 @@ fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> imp
                     left: Val::Px(50.0),
                     ..default()
                 },
-                create_text(format!("{}", name), font_size),
+                create_text(name.to_string(), font_size),
             ),
             (
                 Node {
@@ -110,7 +110,7 @@ fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> imp
                     left: Val::Px(50.0),
                     ..default()
                 },
-                children![create_text(format!("{}", score), font_size), delta_text]
+                children![create_text(score.to_string(), font_size), delta_text]
             )
         ],
     )

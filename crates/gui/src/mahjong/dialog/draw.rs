@@ -1,6 +1,4 @@
-use crate::mahjong::dialog::{create_ok_button, players_info::PlayersInfo};
-
-use super::super::prelude::*;
+use super::{players_info::PlayersInfo, *};
 
 #[derive(Debug)]
 pub struct DrawDialog {
@@ -80,8 +78,14 @@ impl DrawDialog {
 
         Self { entity }
     }
+}
 
-    pub fn destroy(self) {
+impl Dialog for DrawDialog {
+    fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool {
+        handle_dialog_ok_button(ok_buttons)
+    }
+
+    fn destroy(self: Box<Self>) {
         cmd().entity(self.entity).despawn();
     }
 }

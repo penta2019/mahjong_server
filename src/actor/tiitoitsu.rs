@@ -7,7 +7,7 @@ pub struct TiitoitsuBotBuilder;
 impl ActorBuilder for TiitoitsuBotBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "TiitoitsuBot".to_string(),
+            name: "TiitoitsuBot".into(),
             args: vec![],
         }
     }

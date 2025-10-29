@@ -9,7 +9,7 @@ pub struct RandomDiscardBuilder;
 impl ActorBuilder for RandomDiscardBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "RandomDiscard".to_string(),
+            name: "RandomDiscard".into(),
             args: vec![],
         }
     }

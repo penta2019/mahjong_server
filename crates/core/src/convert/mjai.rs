@@ -108,7 +108,7 @@ pub enum MjaiEvent {
 impl MjaiEvent {
     pub fn hello() -> Self {
         Self::Hello {
-            protocol: "mjsonp".to_string(),
+            protocol: "mjsonp".into(),
             protocol_version: 3,
         }
     }
@@ -122,10 +122,10 @@ impl MjaiEvent {
         Self::StartGame {
             id,
             names: [
-                "Player0".to_string(),
-                "Player1".to_string(),
-                "Player2".to_string(),
-                "Player3".to_string(),
+                "Player0".into(),
+                "Player1".into(),
+                "Player2".into(),
+                "Player3".into(),
             ],
             kyoku_first,
             aka_flag: true,
@@ -145,7 +145,7 @@ impl MjaiEvent {
         assert!(doras.len() == 1);
         let wind = ["E", "S", "W", "N"];
         Self::StartKyoku {
-            bakaze: wind[round].to_string(),
+            bakaze: wind[round].into(),
             kyoku: dealer + 1,
             honba: honba_sticks,
             kyotaku: riichi_sticks,
@@ -160,7 +160,7 @@ impl MjaiEvent {
         let t = if id == seat {
             tile_to_mjai(tile)
         } else {
-            "?".to_string()
+            "?".into()
         };
         Self::Tsumo {
             actor: seat,
@@ -273,8 +273,8 @@ impl MjaiEvent {
             _ => "",
         };
         Self::Ryukyoku {
-            reason: reason.to_string(), // TODO
-            tehais: vec![],             // TODO
+            reason: reason.into(), // TODO
+            tehais: vec![],        // TODO
             tenpais: *is_tenpai,
             deltas: *deltas,
             scores: *scores,
@@ -385,7 +385,7 @@ impl MjaiAction {
             },
             ActionType::Kyushukyuhai => Self::Ryukyoku {
                 actor: seat,
-                reason: "kyushukyuhai".to_string(),
+                reason: "kyushukyuhai".into(),
             },
             ActionType::Nukidora => panic!(),
             ActionType::Chi => {
@@ -460,7 +460,7 @@ pub fn tile_to_mjai(t: Tile) -> String {
     if t.is_hornor() {
         assert!(WE <= t.1 && t.1 <= DR);
         let hornor = ["", "E", "S", "W", "N", "P", "F", "C"];
-        hornor[t.1].to_string()
+        hornor[t.1].into()
     } else {
         let tile_type = ["m", "p", "s"];
         format!(
@@ -518,7 +518,7 @@ fn create_tehais(hands: &[Vec<Tile>; SEAT], seat: usize) -> [Vec<String>; SEAT] 
             if seat == seat2 {
                 mjai_hand.push(tile_to_mjai(t));
             } else {
-                mjai_hand.push("?".to_string());
+                mjai_hand.push("?".into());
             }
         }
         mjai_hands[seat2] = mjai_hand;

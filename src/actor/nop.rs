@@ -5,7 +5,7 @@ pub struct NopBuilder;
 impl ActorBuilder for NopBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "Nop".to_string(),
+            name: "Nop".into(),
             args: vec![],
         }
     }

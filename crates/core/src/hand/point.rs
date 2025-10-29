@@ -42,7 +42,7 @@ fn get_score_title(base_point: Point, yakuman: usize) -> String {
         7 => "七倍役満",
         _ => "N倍役満",
     }
-    .to_string()
+    .into()
 }
 
 // 親の和了 (直撃, ツモ和了の子, ツモ和了の親)の支払いを返却

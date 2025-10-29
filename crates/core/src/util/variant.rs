@@ -71,7 +71,7 @@ impl Arg {
     #[allow(dead_code)]
     pub fn int(name: &str, value: i32) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             value: Variant::Int(value),
         }
     }
@@ -79,7 +79,7 @@ impl Arg {
     #[allow(dead_code)]
     pub fn float(name: &str, value: f32) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             value: Variant::Float(value),
         }
     }
@@ -87,7 +87,7 @@ impl Arg {
     #[allow(dead_code)]
     pub fn bool(name: &str, value: bool) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             value: Variant::Bool(value),
         }
     }
@@ -95,8 +95,8 @@ impl Arg {
     #[allow(dead_code)]
     pub fn string(name: &str, value: &str) -> Self {
         Self {
-            name: name.to_string(),
-            value: Variant::String(value.to_string()),
+            name: name.into(),
+            value: Variant::String(value.into()),
         }
     }
 }

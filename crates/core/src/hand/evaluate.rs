@@ -221,7 +221,7 @@ pub fn evaluate_hand(
                     }
                 };
                 Yaku {
-                    name: y.name.to_string(),
+                    name: y.name.into(),
                     fan,
                 }
             })
@@ -230,19 +230,19 @@ pub fn evaluate_hand(
             fan += n_dora + n_red_dora + n_ura_dora;
             if n_dora != 0 {
                 yakus.push(Yaku {
-                    name: "ドラ".to_string(),
+                    name: "ドラ".into(),
                     fan: n_dora,
                 });
             }
             if n_red_dora != 0 {
                 yakus.push(Yaku {
-                    name: "赤ドラ".to_string(),
+                    name: "赤ドラ".into(),
                     fan: n_red_dora,
                 });
             }
             if n_ura_dora != 0 {
                 yakus.push(Yaku {
-                    name: "裏ドラ".to_string(),
+                    name: "裏ドラ".into(),
                     fan: n_ura_dora,
                 });
             }

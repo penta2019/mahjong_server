@@ -13,7 +13,7 @@ pub struct ManualBuilder;
 impl ActorBuilder for ManualBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "Manual".to_string(),
+            name: "Manual".into(),
             args: vec![],
         }
     }
@@ -73,7 +73,7 @@ impl Actor for Manual {
 
         for (i, act) in acts.iter().enumerate() {
             let i = if act.ty == Discard {
-                "_".to_string()
+                "_".into()
             } else {
                 i.to_string()
             };

@@ -5,7 +5,7 @@ pub struct NullBuilder;
 impl ActorBuilder for NullBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "Null".to_string(),
+            name: "Null".into(),
             args: vec![],
         }
     }

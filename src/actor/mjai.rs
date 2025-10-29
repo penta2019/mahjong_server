@@ -26,7 +26,7 @@ pub struct MjaiEndpointBuilder;
 impl ActorBuilder for MjaiEndpointBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "MjaiEndpoint".to_string(),
+            name: "MjaiEndpoint".into(),
             args: vec![
                 Arg::string("addr", "127.0.0.1:11601"),
                 Arg::int("timeout", 10),

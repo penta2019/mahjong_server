@@ -68,10 +68,10 @@ impl PlayersInfo {
     }
 }
 
-fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> impl Bundle + use<> {
+fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> impl Bundle {
     let font_size = 20.0;
     let delta_str = if delta == 0 {
-        "".to_string()
+        "".into()
     } else {
         format!(" {:+}", delta)
     };
@@ -93,7 +93,7 @@ fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> imp
         BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.8)),
         BorderColor::all(Color::srgba(0.2, 0.2, 0.2, 1.0)),
         children![
-            create_text(wind.to_string(), 32.0),
+            create_text(wind.into(), 32.0),
             (
                 Node {
                     position_type: PositionType::Absolute,
@@ -101,7 +101,7 @@ fn create_player_info(wind: char, name: &str, score: Score, delta: Score) -> imp
                     left: Val::Px(50.0),
                     ..default()
                 },
-                create_text(name.to_string(), font_size),
+                create_text(name.into(), font_size),
             ),
             (
                 Node {

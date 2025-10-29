@@ -90,3 +90,5 @@ impl Dialog for DrawDialog {
         }
     }
 }
+
+// fn create_yaku_view() -> impl Bundle {}

@@ -220,7 +220,7 @@ impl Setting {
     }
 }
 
-fn create_button(button: SettingButton, text: &str) -> impl Bundle + use<> {
+fn create_button(button: SettingButton, text: &str) -> impl Bundle {
     (
         button,
         Button,

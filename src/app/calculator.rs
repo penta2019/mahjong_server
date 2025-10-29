@@ -414,7 +414,7 @@ impl Calculator {
 
     fn parse_hand_meld(&mut self, input: &str) -> Res {
         let mut exp_hand = String::new();
-        let mut exp_melds = vec![];
+        let mut exp_melds: Vec<String> = vec![];
         for exp in input.split(',') {
             if exp_hand.is_empty() {
                 if exp.ends_with('+') {
@@ -422,7 +422,7 @@ impl Calculator {
                 }
                 exp_hand = exp.replace('+', "");
             } else {
-                exp_melds.push(exp.to_string());
+                exp_melds.push(exp.into());
             }
         }
 

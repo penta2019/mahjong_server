@@ -24,7 +24,7 @@ pub struct TenhouLog {
 impl TenhouLog {
     pub fn new() -> Self {
         let mut log = Self::default();
-        log.rule.disp = "東喰赤".to_string();
+        log.rule.disp = "東喰赤".into();
         log.rule.aka = 1;
         log
     }
@@ -171,7 +171,7 @@ impl TenhouSerializer {
                         .iter()
                         .map(|&t| tile_to_tenhou(t).to_string())
                         .collect();
-                    meld.insert(3, "a".to_string());
+                    meld.insert(3, "a".into());
                     k.players[ev.seat].discards.push(json!(meld.concat()));
                 }
             },
@@ -180,7 +180,7 @@ impl TenhouSerializer {
                 k.doras.push(tile_to_tenhou(ev.tile));
             }
             Event::Win(ev) => {
-                k.result = "和了".to_string();
+                k.result = "和了".into();
                 k.ura_doras = tiles_to_tenhou(&ev.ura_doras);
                 for ctx in &ev.contexts {
                     let score_ctx = &ctx.score_context;
@@ -196,7 +196,7 @@ impl TenhouSerializer {
                         } else {
                             &score_ctx.title
                         }
-                        .to_string()
+                        .into()
                     };
                     if ctx.is_drawn {
                         if score_ctx.points.2 == 0 {
@@ -218,7 +218,7 @@ impl TenhouSerializer {
             }
             Event::Draw(ev) => {
                 // TODO
-                k.result = "流局".to_string();
+                k.result = "流局".into();
                 k.result_detail
                     .push(ev.delta_scores.iter().map(|&p| json!(p)).collect());
             }

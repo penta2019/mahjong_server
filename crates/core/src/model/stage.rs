@@ -108,7 +108,7 @@ impl fmt::Display for Player {
         let drawn = if let Some(d) = self.drawn {
             d.to_string()
         } else {
-            "None".to_string()
+            "None".into()
         };
         let hand = vec_to_string(&tiles_from_tile_table(&self.hand));
         let discards = vec_to_string(&self.discards);

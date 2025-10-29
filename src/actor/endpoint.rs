@@ -20,7 +20,7 @@ pub struct EndpointBuilder;
 impl ActorBuilder for EndpointBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "Endpoint".to_string(),
+            name: "Endpoint".into(),
             args: vec![
                 Arg::bool("debug", false),
                 Arg::string("addr", "127.0.0.1:52010"),

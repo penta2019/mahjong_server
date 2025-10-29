@@ -51,7 +51,7 @@ pub fn create_sub_action_menu(actions: &[Action]) -> Entity {
     menu
 }
 
-fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> {
+fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle {
     (
         GameButton::Main(ty),
         Button,
@@ -72,7 +72,7 @@ fn create_main_action_button(ty: ActionType, text: &str) -> impl Bundle + use<> 
     )
 }
 
-fn create_sub_action_button(action: Action) -> impl Bundle + use<> {
+fn create_sub_action_button(action: Action) -> impl Bundle {
     // let tiles: Vec<_> = action.tiles.iter().map(|t| GuiTile::new(*t)).collect();
     let text: String = action.tiles.iter().map(|t| t.to_string()).collect();
     (

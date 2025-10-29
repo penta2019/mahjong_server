@@ -16,7 +16,7 @@ pub struct GuiBuilder;
 impl ActorBuilder for GuiBuilder {
     fn get_default_config(&self) -> Config {
         Config {
-            name: "Gui".to_string(),
+            name: "Gui".into(),
             args: vec![Arg::bool("conceal", true)],
         }
     }

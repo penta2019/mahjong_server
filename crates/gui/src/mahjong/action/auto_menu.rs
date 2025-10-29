@@ -33,7 +33,7 @@ pub fn create_auto_menu() -> Entity {
     cmd().spawn(bundle).id()
 }
 
-fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle + use<> {
+fn create_auto_button(button: AutoButton, text: &str) -> impl Bundle {
     (
         GameButton::Auto(button),
         Button,

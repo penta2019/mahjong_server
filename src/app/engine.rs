@@ -47,12 +47,7 @@ impl EngineApp {
             write_tenhou: false,
             debug: false,
             quiet: false,
-            names: [
-                "Nop".to_string(),
-                "Nop".to_string(),
-                "Nop".to_string(),
-                "Nop".to_string(),
-            ],
+            names: ["Nop".into(), "Nop".into(), "Nop".into(), "Nop".into()],
         };
 
         let mut it = args.iter();

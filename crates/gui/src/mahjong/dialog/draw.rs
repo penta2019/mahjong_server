@@ -68,7 +68,7 @@ impl DrawDialog {
             ChildOf(entity),
             Node {
                 position_type: PositionType::Absolute,
-                bottom: Val::Percent(4.0),
+                bottom: Val::Px(8.0),
                 width: Val::Percent(100.0),
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -82,10 +82,11 @@ impl DrawDialog {
 
 impl Dialog for DrawDialog {
     fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool {
-        handle_dialog_ok_button(ok_buttons)
-    }
-
-    fn destroy(self: Box<Self>) {
-        cmd().entity(self.entity).despawn();
+        if handle_dialog_ok_button(ok_buttons) {
+            cmd().entity(self.entity).despawn();
+            true
+        } else {
+            false
+        }
     }
 }

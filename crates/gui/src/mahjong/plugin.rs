@@ -218,15 +218,12 @@ impl GuiMahjong {
 }
 
 pub mod dev {
-    use super::{
-        super::dialog::{DrawDialog, OkButton},
-        *,
-    };
+    use super::*;
 
     #[derive(Resource, Debug, Default)]
     pub struct MahjongResource {
         stage: Option<GuiStage>,
-        dialog: Option<DrawDialog>,
+        dialog: Option<Box<dyn Dialog>>,
     }
 
     pub struct MahjongPluginDev {}
@@ -250,42 +247,93 @@ pub mod dev {
     fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         with_param(&mut param, || {
             res.stage = Some(GuiStage::new());
-            res.dialog = Some(DrawDialog::new(
-                &EventDraw {
-                    draw_type: DrawType::Kouhaiheikyoku,
+            let names = [
+                "ああああ".into(),
+                "いいいい".into(),
+                "うううう".into(),
+                "ええええ".into(),
+            ];
+            // res.dialog = Some(Box::new(super::super::dialog::DrawDialog::new(
+            //     &EventDraw {
+            //         draw_type: DrawType::Kouhaiheikyoku,
+            //         round: 0,
+            //         dealer: 0,
+            //         names,
+            //         scores: [25000, 25000, 25000, 25000],
+            //         delta_scores: [12000, -3000, -3000, -3000],
+            //         nagashimangan_scores: [12000, 0, 0, 0],
+            //         hands: [vec![], vec![], vec![], vec![]],
+            //     },
+            //     0,
+            // )));
+            res.dialog = Some(Box::new(super::super::dialog::WinDialog::new(
+                &EventWin {
                     round: 0,
                     dealer: 0,
-                    names: [
-                        "ああああ".into(),
-                        "いいいい".into(),
-                        "うううう".into(),
-                        "ええええ".into(),
-                    ],
-                    scores: [25000, 25000, 25000, 25000],
-                    delta_scores: [12000, -3000, -3000, -3000],
-                    nagashimangan_scores: [12000, 0, 0, 0],
-                    hands: [vec![], vec![], vec![], vec![]],
+                    honba_sticks: 0,
+                    riichi_sticks: 0,
+                    doras: vec![],                              // ドラ表示牌
+                    ura_doras: vec![],                          // 裏ドラ表示牌
+                    names,                                      // プレイヤー名
+                    scores: [25000, 25000, 25000, 25000],       // 変化前のスコア
+                    delta_scores: [12000, -3000, -3000, -3000], // scores + delta_scores = new_scores
+                    contexts: vec![WinContext {
+                        seat: 0,
+                        hand: vec![],
+                        winning_tile: Tile(TM, 1),
+                        melds: vec![],
+                        is_dealer: true,
+                        is_drawn: true,
+                        is_riichi: true,
+                        pao: None,
+                        delta_scores: [12000, -3000, -3000, -3000],
+                        score_context: ScoreContext {
+                            yakus: vec![
+                                Yaku {
+                                    name: "立直".into(),
+                                    fan: 1,
+                                },
+                                Yaku {
+                                    name: "平和".into(),
+                                    fan: 1,
+                                },
+                                Yaku {
+                                    name: "自摸".into(),
+                                    fan: 1,
+                                },
+                                Yaku {
+                                    name: "断么九".into(),
+                                    fan: 1,
+                                },
+                                Yaku {
+                                    name: "ドラ".into(),
+                                    fan: 1,
+                                },
+                            ],
+                            fu: 30,
+                            fan: 5,
+                            yakuman: 0,
+                            score: 12000,
+                            points: (12000, 3000, 0),
+                            title: "満貫".into(),
+                        },
+                    }],
                 },
                 0,
-            ));
+            )));
         });
     }
 
     fn system(
         mut param: MahjongParam,
         mut res: ResMut<MahjongResource>,
-        mut ok_buttons: Query<
-            (&'static Interaction, &'static mut BorderColor),
-            (Changed<Interaction>, With<OkButton>),
-        >,
+        mut ok_buttons: OkButtonQuery,
     ) {
         with_param(&mut param, || {
-            if let Some(mut dialog) = res.dialog.take() {
-                if dialog.handle_event(&mut ok_buttons) {
-                    Box::new(dialog).destroy();
-                } else {
-                    res.dialog = Some(dialog);
-                }
+            if let Some(mut dialog) = res.dialog.take()
+                && !dialog.handle_event(&mut ok_buttons)
+            {
+                res.dialog = Some(dialog);
             }
         });
     }

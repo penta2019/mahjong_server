@@ -23,8 +23,6 @@ pub trait Dialog: std::fmt::Debug + Sync + Send {
 
     // Dialogの処理が終了した場合はtrueを返却 呼び出し元からdestroy()を実行
     fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool;
-
-    fn destroy(self: Box<Self>);
 }
 
 fn handle_dialog_ok_button(buttons: &mut OkButtonQuery) -> bool {

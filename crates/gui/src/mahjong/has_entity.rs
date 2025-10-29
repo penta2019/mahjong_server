@@ -1,5 +1,6 @@
 use super::{super::util::reparent_transform, prelude::*};
 
+// model構造体に対して実装するトレイト
 pub trait HasEntity {
     fn entity(&self) -> Entity;
 

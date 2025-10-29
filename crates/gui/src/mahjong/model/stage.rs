@@ -139,12 +139,10 @@ impl GuiStage {
     }
 
     pub fn handle_dialog_events(&mut self, ok_buttons: &mut OkButtonQuery) {
-        if let Some(mut dialog) = self.dialog.take() {
-            if dialog.handle_event(ok_buttons) {
-                dialog.destroy();
-            } else {
-                self.dialog = Some(dialog);
-            }
+        if let Some(mut dialog) = self.dialog.take()
+            && !dialog.handle_event(ok_buttons)
+        {
+            self.dialog = Some(dialog);
         }
     }
 

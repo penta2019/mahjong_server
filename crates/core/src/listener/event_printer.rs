@@ -35,8 +35,12 @@ impl Listener for EventPrinter {
             Begin(_) => {
                 println!("Begin");
             }
-            New(_) => {
+            New(ev) => {
                 println!("New");
+                for s in 0..SEAT {
+                    println!("player{s}: {}", ev.names[s]);
+                }
+                println!();
                 println!("{}", stg);
             }
             Deal(ev) => {

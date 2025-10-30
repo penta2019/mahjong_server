@@ -307,20 +307,20 @@ impl Calculator {
         );
         let score_breakdown = if self.is_drawn {
             if self.is_dealer {
-                format!("({}オール)", sctx.points.1)
+                format!("({}点オール)", sctx.points.1)
             } else {
-                format!("({}/{})", sctx.points.1, sctx.points.2)
+                format!("({}点・{}点)", sctx.points.1, sctx.points.2)
             }
         } else {
             String::new()
         };
         if sctx.yakuman == 0 {
             println!(
-                "{indent}{}符{}飜 {}{} {}",
+                "{}符{}飜 {}点{} {}",
                 sctx.fu, sctx.fan, sctx.score, score_breakdown, sctx.title
             );
         } else {
-            println!("{}{} {}", sctx.score, score_breakdown, sctx.title);
+            println!("{}点{} {}", sctx.score, score_breakdown, sctx.title);
         }
 
         let verify = if self.verify {

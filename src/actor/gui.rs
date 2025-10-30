@@ -129,6 +129,10 @@ impl Actor for Gui {
         &self.config
     }
 
+    fn get_name(&self) -> &str {
+        "Player"
+    }
+
     fn try_as_any_mut(&mut self) -> Option<&mut dyn Any> {
         Some(self)
     }

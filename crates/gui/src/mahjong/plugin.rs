@@ -258,6 +258,7 @@ pub mod dev {
             //         draw_type: DrawType::Kouhaiheikyoku,
             //         round: 0,
             //         dealer: 0,
+            //         honba: 0,
             //         names,
             //         scores: [25000, 25000, 25000, 25000],
             //         delta_scores: [12000, -3000, -3000, -3000],

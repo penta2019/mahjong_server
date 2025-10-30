@@ -35,6 +35,16 @@ pub fn wind_to_char_jp(ti: Tnum) -> char {
     ['?', '東', '南', '西', '北'][ti]
 }
 
-pub fn round_string(round: usize, dealer: Seat) -> String {
-    format!("{}{}局", wind_to_char_jp(round % 4 + 1), dealer + 1)
+pub fn round_string(round: usize, dealer: Seat, honba: Option<usize>) -> String {
+    let honba_str = if let Some(h) = honba {
+        format!(" {h}本場")
+    } else {
+        "".into()
+    };
+    format!(
+        "{}{}局{}",
+        wind_to_char_jp(round % 4 + 1),
+        dealer + 1,
+        honba_str
+    )
 }

@@ -77,7 +77,7 @@ impl StageInfo {
         let round = p
             .cmd
             .spawn((
-                Text2d(round_string(event.round, event.dealer)),
+                Text2d(round_string(event.round, event.dealer, None)),
                 TextFont {
                     font: font.clone(),
                     font_size: 80.0,

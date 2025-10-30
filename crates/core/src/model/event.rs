@@ -129,6 +129,7 @@ impl Event {
         draw_type: DrawType,
         round: usize,
         dealer: Seat,
+        honba: usize,
         names: [String; SEAT],
         scores: [Point; SEAT],
         delta_scores: [Point; SEAT],
@@ -139,6 +140,7 @@ impl Event {
             draw_type,
             round,
             dealer,
+            honba,
             names,
             scores,
             delta_scores,
@@ -231,6 +233,7 @@ pub struct EventDraw {
     pub draw_type: DrawType,
     pub round: usize,
     pub dealer: Seat,
+    pub honba: usize,
     pub names: [String; SEAT],               // プレイヤー名
     pub scores: [Point; SEAT],               // 変化前のスコア
     pub delta_scores: [Point; SEAT],         // 聴牌,流し満貫による点数変動

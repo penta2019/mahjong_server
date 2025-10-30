@@ -158,12 +158,11 @@ impl WinDialog {
             &self.event.scores,
             &self.event.delta_scores,
         );
-        let round_title = format!(
-            "{} {}本場",
-            round_string(self.event.round, self.event.dealer),
-            self.event.honba
+        self.entity = create_round_dialog(
+            round_string(self.event.round, self.event.dealer, Some(self.event.honba)),
+            "".into(),
+            players_info,
         );
-        self.entity = create_round_dialog(round_title, "".into(), players_info);
         true
     }
 }

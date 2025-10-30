@@ -19,8 +19,7 @@ impl DrawDialog {
             &event.delta_scores,
         );
 
-        let round_title = round_string(event.round, event.dealer);
-
+        let round_title = round_string(event.round, event.dealer, Some(event.honba));
         let draw_str = if event.nagashimangan_scores.iter().any(|score| *score != 0) {
             "流し満貫".into()
         } else {

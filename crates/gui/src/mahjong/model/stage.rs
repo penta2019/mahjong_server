@@ -4,7 +4,7 @@ use mahjong_core::control::common::calc_seat_offset;
 use super::{
     super::{
         action::{ActionControl, ActionParam},
-        dialog::{Dialog, DrawDialog, OkButtonQuery, WinDialog},
+        dialog::{Dialog, DrawDialog, OkButtonQuery, RoundDialog, WinDialog},
         prelude::*,
         setting::{Setting, SettingParam, SettingProps},
     },
@@ -133,6 +133,10 @@ impl GuiStage {
     pub fn set_setting_props(&mut self, props: SettingProps) {
         self.setting.set_props(props);
         self.apply_props();
+    }
+
+    pub fn show_round_dialog(&mut self, event: &EventNew) {
+        self.dialog = Some(Box::new(RoundDialog::new(event, self.camera_seat)));
     }
 
     pub fn is_ready(&self) -> bool {

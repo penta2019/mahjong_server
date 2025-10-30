@@ -1,12 +1,13 @@
 mod draw;
 mod players_info;
+mod round;
 mod win;
 
 use bevy::prelude::*;
 
 use super::{prelude::*, text::create_text};
 
-pub use self::{draw::DrawDialog, win::WinDialog};
+pub use self::{draw::DrawDialog, round::RoundDialog, win::WinDialog};
 
 #[derive(Component, Debug)]
 pub struct OkButton;

@@ -98,6 +98,7 @@ struct GuiMahjong {
     player_seat: Option<Seat>,
     tx: Mutex<Tx>,
     rx: Mutex<Rx>,
+    next_msg: Option<ServerMessage>, // mpscはpeekを実装していないがpeekを行う必要がある
 }
 
 impl GuiMahjong {
@@ -107,6 +108,7 @@ impl GuiMahjong {
             player_seat: None,
             tx: Mutex::new(tx),
             rx: Mutex::new(rx),
+            next_msg: None,
         }
     }
 
@@ -123,30 +125,42 @@ impl GuiMahjong {
             return;
         }
 
-        while let Ok(msg) = self.rx.lock().unwrap().try_recv() {
-            if let ServerMessage::Event(ev) = &msg
-                && let MjEvent::New(_) = ev.as_ref()
-            {
-                let mut props = SettingProps {
-                    show_wall: false,
-                    show_hand: false,
-                    camera_seat: self.player_seat.unwrap_or(0),
-                };
-                // ステージ上のentityを再帰的にすべて削除
-                if let Some(stage) = self.stage.take() {
-                    props = stage.get_setting_props().clone();
-                    stage.destroy();
-                }
+        if self.next_msg.is_none() {
+            self.next_msg = self.rx.lock().unwrap().try_recv().ok();
+        }
 
-                // 空のステージを作成
-                let mut stage = GuiStage::new();
-                if let Some(s) = self.player_seat {
-                    stage.set_player(s);
-                }
-                stage.set_setting_props(props);
-                self.stage = Some(stage);
+        if let Some(ServerMessage::Event(ev)) = &self.next_msg
+            && let MjEvent::New(event_new) = ev.as_ref()
+        {
+            let mut props = SettingProps {
+                show_wall: false,
+                show_hand: false,
+                camera_seat: self.player_seat.unwrap_or(0),
+            };
+
+            let is_first_stage = self.stage.is_none();
+
+            // ステージ上のentityを再帰的にすべて削除
+            if let Some(stage) = self.stage.take() {
+                props = stage.get_setting_props().clone();
+                stage.destroy();
             }
 
+            // 空のステージを作成
+            let mut stage = GuiStage::new();
+            if let Some(s) = self.player_seat {
+                stage.set_player(s);
+            }
+            stage.set_setting_props(props);
+            self.stage = Some(stage);
+
+            if is_first_stage {
+                self.stage.as_mut().unwrap().show_round_dialog(event_new);
+                return;
+            }
+        }
+
+        if let Some(msg) = self.next_msg.take() {
             match msg {
                 ServerMessage::Event(event) => {
                     match event.as_ref() {
@@ -159,7 +173,6 @@ impl GuiMahjong {
                     // 一度のUpdateで複数のEventの更新を行うとGlobalTransformに
                     // GuiTileのentityが追加される前にreparent_transformsformから
                     // Query::get()が呼び出され失敗する
-                    break;
                 }
                 ServerMessage::Action(possible_actions) => {
                     // Nopのみしか選択肢がない場合は即時応答
@@ -174,7 +187,6 @@ impl GuiMahjong {
                                 action: Action::nop(),
                             }))
                             .unwrap();
-                        break;
                     }
 
                     self.stage

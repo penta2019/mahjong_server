@@ -31,6 +31,10 @@ pub fn create_text_with_color(text: String, font_size: f32, color: Color) -> imp
     )
 }
 
-pub fn wind_to_char(ti: Tnum) -> char {
+pub fn wind_to_char_jp(ti: Tnum) -> char {
     ['?', '東', '南', '西', '北'][ti]
+}
+
+pub fn round_string(round: usize, dealer: Seat) -> String {
+    format!("{}{}局", wind_to_char_jp(round % 4 + 1), dealer + 1)
 }

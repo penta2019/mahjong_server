@@ -4,7 +4,10 @@ use bevy::{
 };
 use mahjong_core::control::common::calc_seat_wind;
 
-use super::super::{prelude::*, text::wind_to_char};
+use super::super::{
+    prelude::*,
+    text::{round_string, wind_to_char_jp},
+};
 
 #[derive(Debug)]
 pub struct StageInfo {
@@ -71,11 +74,10 @@ impl StageInfo {
 
         let font = p.asset_server.load("font/NotoSerifCJKjp-Regular.otf");
 
-        let round_text = format!("{}{}局", wind_to_char(event.round + 1), (event.dealer + 1));
         let round = p
             .cmd
             .spawn((
-                Text2d(round_text),
+                Text2d(round_string(event.round, event.dealer)),
                 TextFont {
                     font: font.clone(),
                     font_size: 80.0,
@@ -97,7 +99,7 @@ impl StageInfo {
                 RenderLayers::layer(1),
                 children![
                     (
-                        Text2d(wind_to_char(calc_seat_wind(event.dealer, s)).into()),
+                        Text2d(wind_to_char_jp(calc_seat_wind(event.dealer, s)).into()),
                         TextFont {
                             font: font.clone(),
                             font_size: 60.0,

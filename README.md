@@ -23,7 +23,7 @@ Botは未実装で麻雀ゲームエンジンとGUIの動作確認のみがで�
 ## 動作要件
 * 動作環境: デスクトップPC (Linux, Windows, MacOS)
 * Rust言語 (rustc 1.90.0 以上)
-* 動作確認済み環境: Linux 6.17.1-2 (cachyos)
+* 動作確認済み環境: Linux 6.17.5-2 (CachyOS)
 
 ## 牌の文字列表現
 一般的な1m(一萬)ではなく,前後を反転したm1で表現します.
@@ -348,5 +348,5 @@ cargo outdated --root-deps-only
 cargo update
 ```
 
-### モジュール図
-![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg)
+<!-- ### モジュール図
+![Module図](https://docs.google.com/drawings/d/1ICPNqMZtNBjq2bn346FyGhPzWb3xY_PXw1GExJ1N4IM/export/svg) -->

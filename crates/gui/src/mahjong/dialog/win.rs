@@ -1,4 +1,14 @@
-use super::{super::prelude::*, *};
+use mahjong_core::control::common::calc_seat_wind;
+
+use crate::mahjong::dialog::players_info::{create_players_info, create_round_dialog};
+
+use super::{
+    super::{
+        prelude::*,
+        text::{round_string, wind_to_char_jp},
+    },
+    *,
+};
 
 #[derive(Debug)]
 pub struct WinDialog {
@@ -6,6 +16,7 @@ pub struct WinDialog {
     event: EventWin,
     camera_seat: Seat,
     next_win_index: usize,
+    is_score_result: bool,
 }
 
 impl WinDialog {
@@ -15,15 +26,15 @@ impl WinDialog {
             event: event.clone(),
             camera_seat,
             next_win_index: 0,
+            is_score_result: false,
         };
-        obj.next_win();
+        obj.show_next_win();
         obj
     }
 
-    fn next_win(&mut self) -> bool {
+    fn show_next_win(&mut self) -> bool {
         let cmd = cmd();
 
-        cmd.entity(self.entity).despawn();
         if self.next_win_index >= self.event.contexts.len() {
             return false;
         }
@@ -43,6 +54,20 @@ impl WinDialog {
                 BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
             ))
             .id();
+
+        let wind = wind_to_char_jp(calc_seat_wind(self.event.dealer, ctx.seat));
+        let name = &self.event.names[ctx.seat];
+        let win_type = if ctx.is_drawn { "ツモ" } else { "ロン" };
+        // プレイヤー (風,名前)
+        cmd.spawn((
+            ChildOf(entity),
+            Node {
+                margin: UiRect::vertical(Val::Px(8.0)),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            children![create_text(format!("{wind}家 {name} {win_type}"), 32.0)],
+        ));
 
         // 手牌
         cmd.spawn((
@@ -119,11 +144,44 @@ impl WinDialog {
 
         true
     }
+
+    fn show_result(&mut self) -> bool {
+        if self.is_score_result {
+            return false;
+        }
+        self.is_score_result = true;
+
+        let players_info = create_players_info(
+            self.camera_seat,
+            self.event.dealer,
+            &self.event.names,
+            &self.event.scores,
+            &self.event.delta_scores,
+        );
+        let round_title = format!(
+            "{} {}本場",
+            round_string(self.event.round, self.event.dealer),
+            self.event.honba_sticks
+        );
+        self.entity = create_round_dialog(round_title, "".into(), players_info);
+        true
+    }
 }
 
 impl Dialog for WinDialog {
     fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool {
-        handle_dialog_ok_button(ok_buttons) && !self.next_win()
+        if handle_dialog_ok_button(ok_buttons) {
+            cmd().entity(self.entity).despawn();
+            if self.show_next_win() {
+                return false;
+            }
+            if self.show_result() {
+                return false;
+            }
+            return true;
+        }
+
+        false
     }
 }
 

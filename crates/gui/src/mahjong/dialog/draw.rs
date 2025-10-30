@@ -1,4 +1,8 @@
-use super::{players_info::PlayersInfo, *};
+use super::{
+    super::text::round_string,
+    players_info::{create_players_info, create_round_dialog},
+    *,
+};
 
 #[derive(Debug)]
 pub struct DrawDialog {
@@ -7,7 +11,15 @@ pub struct DrawDialog {
 
 impl DrawDialog {
     pub fn new(event: &EventDraw, camera_seat: Seat) -> Self {
-        let p = param();
+        let players_info = create_players_info(
+            camera_seat,
+            event.dealer,
+            &event.names,
+            &event.scores,
+            &event.delta_scores,
+        );
+
+        let round_title = round_string(event.round, event.dealer);
 
         let draw_str = if event.nagashimangan_scores.iter().any(|score| *score != 0) {
             "流し満貫".into()
@@ -15,66 +27,7 @@ impl DrawDialog {
             event.draw_type.to_string()
         };
 
-        let entity = p
-            .cmd
-            .spawn((
-                Node {
-                    justify_self: JustifySelf::Center,
-                    align_self: AlignSelf::Center,
-                    width: Val::Px(600.0),
-                    height: Val::Px(400.0),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
-            ))
-            .with_children(|cmd| {
-                cmd.spawn((
-                    Node {
-                        position_type: PositionType::Absolute,
-                        top: Val::Percent(10.0),
-                        width: Val::Percent(100.0),
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    children![create_text(draw_str, 40.0)],
-                ));
-            })
-            .id();
-
-        let score_container = p
-            .cmd
-            .spawn((
-                ChildOf(entity),
-                Node {
-                    position_type: PositionType::Absolute,
-                    bottom: Val::Percent(16.0),
-                    width: Val::Percent(100.0),
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-            ))
-            .id();
-
-        let player_info = PlayersInfo::new(
-            camera_seat,
-            event.dealer,
-            &event.names,
-            &event.scores,
-            &event.delta_scores,
-        );
-        player_info.insert(ChildOf(score_container));
-
-        p.cmd.spawn((
-            ChildOf(entity),
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(8.0),
-                width: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            children![create_ok_button()],
-        ));
+        let entity = create_round_dialog(round_title, draw_str, players_info);
 
         Self { entity }
     }
@@ -90,5 +43,3 @@ impl Dialog for DrawDialog {
         }
     }
 }
-
-// fn create_yaku_view() -> impl Bundle {}

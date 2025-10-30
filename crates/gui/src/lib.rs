@@ -2,6 +2,7 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
+#![cfg_attr(feature = "dev", allow(unused))]
 
 mod camera;
 mod debug;

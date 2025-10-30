@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use super::{
     action::ActionParam,
-    dialog::{Dialog, OkButtonQuery},
+    dialog::OkButtonQuery,
     model::GuiStage,
     param::{MahjongParam, with_param},
     prelude::*,
@@ -13,20 +13,14 @@ use super::{
 pub type Tx = std::sync::mpsc::Sender<ClientMessage>;
 pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
 
-#[cfg(not(feature = "dev"))]
-pub type MahjongPlugin = MahjongPluginReal;
-#[cfg(feature = "dev")]
-pub type MahjongPlugin = dev::MahjongPluginDev; // cargo run --release --features gui_dev G
-
 #[derive(Resource)]
 pub struct InfoTexture(pub Handle<Image>);
 
-pub struct MahjongPluginReal {
+pub struct MahjongPlugin {
     txrx: std::sync::Mutex<Option<(Tx, Rx)>>,
 }
 
-impl MahjongPluginReal {
-    #[allow(unused)]
+impl MahjongPlugin {
     pub fn new(tx: Tx, rx: Rx) -> Self {
         Self {
             txrx: std::sync::Mutex::new(Some((tx, rx))),
@@ -34,7 +28,7 @@ impl MahjongPluginReal {
     }
 }
 
-impl Plugin for MahjongPluginReal {
+impl Plugin for MahjongPlugin {
     fn build(&self, app: &mut App) {
         let (tx, rx) = self.txrx.lock().unwrap().take().unwrap();
         app.add_plugins(TilePlugin)
@@ -214,171 +208,5 @@ impl GuiMahjong {
         if let Some(stage) = &mut self.stage {
             stage.handle_setting_events(setting_param);
         }
-    }
-}
-
-pub mod dev {
-    use super::*;
-
-    #[derive(Resource, Debug, Default)]
-    pub struct MahjongResource {
-        stage: Option<GuiStage>,
-        dialog: Option<Box<dyn Dialog>>,
-    }
-
-    pub struct MahjongPluginDev {}
-
-    impl MahjongPluginDev {
-        #[allow(unused)]
-        pub fn new(_tx: Tx, _rx: Rx) -> Self {
-            Self {}
-        }
-    }
-
-    impl Plugin for MahjongPluginDev {
-        fn build(&self, app: &mut App) {
-            app.add_plugins(TilePlugin)
-                .insert_resource(MahjongResource::default())
-                .add_systems(Startup, (setup, test_setup).chain())
-                .add_systems(Update, system);
-        }
-    }
-
-    fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
-        with_param(&mut param, || {
-            res.stage = Some(GuiStage::new());
-            let names = [
-                "ああああ".into(),
-                "いいいい".into(),
-                "うううう".into(),
-                "ええええ".into(),
-            ];
-            // res.dialog = Some(Box::new(super::super::dialog::DrawDialog::new(
-            //     &EventDraw {
-            //         draw_type: DrawType::Kouhaiheikyoku,
-            //         round: 0,
-            //         dealer: 0,
-            //         honba: 0,
-            //         names,
-            //         scores: [25000, 25000, 25000, 25000],
-            //         delta_scores: [12000, -3000, -3000, -3000],
-            //         nagashimangan_scores: [12000, 0, 0, 0],
-            //         hands: [vec![], vec![], vec![], vec![]],
-            //     },
-            //     0,
-            // )));
-            res.dialog = Some(Box::new(super::super::dialog::WinDialog::new(
-                &EventWin {
-                    round: 0,
-                    dealer: 0,
-                    honba: 0,
-                    riichi_sticks: 0,
-                    doras: vec![],                              // ドラ表示牌
-                    ura_doras: vec![],                          // 裏ドラ表示牌
-                    names,                                      // プレイヤー名
-                    scores: [25000, 25000, 25000, 25000],       // 変化前のスコア
-                    delta_scores: [12000, -3000, -3000, -3000], // scores + delta_scores = new_scores
-                    contexts: vec![
-                        WinContext {
-                            seat: 0,
-                            hand: vec![],
-                            winning_tile: Tile(TM, 1),
-                            melds: vec![],
-                            is_dealer: true,
-                            is_drawn: true,
-                            is_riichi: true,
-                            pao: None,
-                            delta_scores: [12000, -3000, -3000, -3000],
-                            score_context: ScoreContext {
-                                yakus: vec![
-                                    Yaku {
-                                        name: "立直".into(),
-                                        fan: 1,
-                                    },
-                                    Yaku {
-                                        name: "平和".into(),
-                                        fan: 2,
-                                    },
-                                    Yaku {
-                                        name: "門前清自摸和".into(),
-                                        fan: 3,
-                                    },
-                                    Yaku {
-                                        name: "断么九".into(),
-                                        fan: 4,
-                                    },
-                                    Yaku {
-                                        name: "ドラ".into(),
-                                        fan: 1,
-                                    },
-                                    Yaku {
-                                        name: "立直".into(),
-                                        fan: 1,
-                                    },
-                                    Yaku {
-                                        name: "平和".into(),
-                                        fan: 1,
-                                    },
-                                ],
-                                fu: 30,
-                                fan: 5,
-                                yakuman: 0,
-                                score: 12000,
-                                points: (12000, 3000, 0),
-                                title: "満貫".into(),
-                            },
-                        },
-                        WinContext {
-                            seat: 1,
-                            hand: vec![],
-                            winning_tile: Tile(TM, 1),
-                            melds: vec![],
-                            is_dealer: false,
-                            is_drawn: true,
-                            is_riichi: true,
-                            pao: None,
-                            delta_scores: [12000, -3000, -3000, -3000],
-                            score_context: ScoreContext {
-                                yakus: vec![
-                                    Yaku {
-                                        name: "立直".into(),
-                                        fan: 1,
-                                    },
-                                    Yaku {
-                                        name: "門前清自摸和".into(),
-                                        fan: 1,
-                                    },
-                                    Yaku {
-                                        name: "平和".into(),
-                                        fan: 1,
-                                    },
-                                ],
-                                fu: 20,
-                                fan: 3,
-                                yakuman: 0,
-                                score: 5200,
-                                points: (5200, 1300, 2600),
-                                title: "".into(),
-                            },
-                        },
-                    ],
-                },
-                0,
-            )));
-        });
-    }
-
-    fn system(
-        mut param: MahjongParam,
-        mut res: ResMut<MahjongResource>,
-        mut ok_buttons: OkButtonQuery,
-    ) {
-        with_param(&mut param, || {
-            if let Some(mut dialog) = res.dialog.take()
-                && !dialog.handle_event(&mut ok_buttons)
-            {
-                res.dialog = Some(dialog);
-            }
-        });
     }
 }

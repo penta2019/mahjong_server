@@ -147,7 +147,7 @@ impl MjaiEvent {
         Self::StartKyoku {
             bakaze: wind[round].into(),
             kyoku: dealer + 1,
-            honba: honba,
+            honba,
             kyotaku: riichi_sticks,
             oya: dealer,
             dora_marker: tile_to_mjai(doras[0]),

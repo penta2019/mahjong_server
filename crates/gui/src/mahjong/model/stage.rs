@@ -40,6 +40,7 @@ pub struct GuiStage {
     setting: Setting,
     // カメラ座席以外のプレイヤーの手牌の表示フラグ
     show_hand: bool,
+    // 各種Dialog (試合開始, 流局, 和了, 試合終了 等)
     dialog: Option<Box<dyn Dialog>>,
 }
 crate::impl_has_entity!(GuiStage);

@@ -9,4 +9,12 @@ mod setting;
 mod text;
 mod tile_plugin;
 
-pub use self::plugin::{MahjongPlugin, Rx, Tx};
+#[allow(unused)]
+mod plugin_dev;
+
+#[cfg(not(feature = "dev"))]
+pub type MahjongPlugin = plugin::MahjongPlugin;
+#[cfg(feature = "dev")]
+pub type MahjongPlugin = plugin_dev::MahjongPlugin; // cargo run --release --features gui_dev G
+
+pub use self::plugin::{Rx, Tx};

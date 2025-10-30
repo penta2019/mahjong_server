@@ -29,7 +29,7 @@ enum RoundResult {
 struct NextRoundInfo {
     round: usize,
     dealer: Seat,
-    honba_sticks: usize,
+    honba: usize,
     riichi_sticks: usize,
     scores: [Score; SEAT],
 }
@@ -73,7 +73,7 @@ impl MahjongEngine {
         let next_round_info = NextRoundInfo {
             round: 0,
             dealer: 0,
-            honba_sticks: 0,
+            honba: 0,
             riichi_sticks: 0,
             scores: [rule.initial_score; SEAT],
         };
@@ -229,7 +229,7 @@ impl MahjongEngine {
             self.rule.clone(),
             rn.round,
             rn.dealer,
-            rn.honba_sticks,
+            rn.honba,
             rn.riichi_sticks,
             doras,
             self.ctrl.get_names(),
@@ -542,7 +542,7 @@ impl MahjongEngine {
         let stg = self.get_stage();
         let mut round = stg.round;
         let mut dealer = stg.dealer;
-        let mut honba_sticks = stg.honba_sticks;
+        let mut honba = stg.honba;
         let mut riichi_sticks = stg.riichi_sticks;
         let turn = stg.turn;
         let mut need_dealer_change = false; // 親の交代
@@ -557,13 +557,13 @@ impl MahjongEngine {
                 // TODO: 大四喜と四槓子の包の同時発生, 包を含む2倍以上の役満時の点数計算
                 if let Some(pao) = pl.pao {
                     // 責任払い
-                    ron += honba_sticks as i32 * 300;
+                    ron += honba as i32 * 300;
                     d_scores[pao] -= ron;
                     d_scores[turn] += ron;
                 } else {
                     // 積み棒
-                    non_dealer += honba_sticks as i32 * 100;
-                    dealer += honba_sticks as i32 * 100;
+                    non_dealer += honba as i32 * 100;
+                    dealer += honba as i32 * 100;
 
                     for s in 0..SEAT {
                         if s != turn {
@@ -587,7 +587,7 @@ impl MahjongEngine {
                 riichi_sticks = 0;
                 // 和了が子の場合 積み棒をリセットして親交代
                 if !is_dealer(&stg, turn) {
-                    honba_sticks = 0;
+                    honba = 0;
                     need_dealer_change = true;
                 }
 
@@ -615,7 +615,7 @@ impl MahjongEngine {
                 let event = Event::win(
                     stg.round,
                     stg.dealer,
-                    stg.honba_sticks,
+                    stg.honba,
                     stg.riichi_sticks,
                     stg.doras.clone(),
                     ura_doras,
@@ -662,11 +662,11 @@ impl MahjongEngine {
                         is_first = false;
                         if let Some(pao) = pl.pao {
                             // 積み棒は責任払い優先
-                            d_scores[pao] -= honba_sticks as i32 * 300;
+                            d_scores[pao] -= honba as i32 * 300;
                         } else {
-                            d_scores[turn] -= honba_sticks as i32 * 300;
+                            d_scores[turn] -= honba as i32 * 300;
                         }
-                        d_scores[s] += honba_sticks as i32 * 300;
+                        d_scores[s] += honba as i32 * 300;
                         d_scores[s] += riichi_sticks as i32 * 1000;
                     }
 
@@ -693,7 +693,7 @@ impl MahjongEngine {
                 riichi_sticks = 0;
                 // 子の和了がある場合は積み棒をリセット
                 if seats.iter().any(|&s| !is_dealer(&stg, s)) {
-                    honba_sticks = 0;
+                    honba = 0;
                 }
                 // 和了が子しかいない場合は親交代
                 need_dealer_change = seats.iter().all(|&s| !is_dealer(&stg, s));
@@ -702,7 +702,7 @@ impl MahjongEngine {
                 let event = Event::win(
                     stg.round,
                     stg.dealer,
-                    stg.honba_sticks,
+                    stg.honba,
                     stg.riichi_sticks,
                     stg.doras.clone(),
                     ura_doras,
@@ -826,7 +826,7 @@ impl MahjongEngine {
                         self.handle_event(event);
                     }
                 }
-                honba_sticks += 1;
+                honba += 1;
             }
         }
 
@@ -844,7 +844,7 @@ impl MahjongEngine {
         self.next_round_info = NextRoundInfo {
             round,
             dealer,
-            honba_sticks,
+            honba,
             riichi_sticks,
             scores,
         };

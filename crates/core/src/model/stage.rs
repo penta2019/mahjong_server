@@ -16,7 +16,7 @@ pub struct Stage {
     pub rule: Rule,                                  // ゲーム設定
     pub round: usize,                                // 場 (東:0, 南:1, 西:2, 北:3)
     pub dealer: Seat,                                // 局 (0~3 = 親のseat)
-    pub honba_sticks: usize,                         // 本場
+    pub honba: usize,                                // 本場
     pub riichi_sticks: usize,                        // リーチ棒の供託
     pub turn: Seat,                                  // ツモ番のプレイヤーの座席
     pub step: usize,                                 // ステップ op関数を呼び出す毎に+1する
@@ -33,8 +33,8 @@ impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
-            "round: {}, dealer: {}, honba_sticks: {}, riichi_sticks: {}",
-            self.round, self.dealer, self.honba_sticks, self.riichi_sticks,
+            "round: {}, dealer: {}, honba: {}, riichi_sticks: {}",
+            self.round, self.dealer, self.honba, self.riichi_sticks,
         )?;
         writeln!(
             f,

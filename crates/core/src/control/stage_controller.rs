@@ -126,7 +126,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
     stg.rule = event.rule.clone();
     stg.round = event.round;
     stg.dealer = event.dealer;
-    stg.honba_sticks = event.honba_sticks;
+    stg.honba = event.honba;
     stg.riichi_sticks = event.riichi_sticks;
     stg.turn = (event.dealer + 3) % SEAT; // 親の14枚目(ツモ)でturn=dealerになる
     stg.wall_count = event.wall_count;

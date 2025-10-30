@@ -145,7 +145,7 @@ impl MjaiEndpoint {
             self.seat,
             event.round,
             event.dealer,
-            event.honba_sticks,
+            event.honba,
             event.riichi_sticks,
             &event.doras,
             &event.hands,

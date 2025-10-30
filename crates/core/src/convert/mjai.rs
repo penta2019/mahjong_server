@@ -136,7 +136,7 @@ impl MjaiEvent {
         id: Seat,
         round: usize,
         dealer: Seat,
-        honba_sticks: usize,
+        honba: usize,
         riichi_sticks: usize,
         doras: &[Tile],
         hands: &[Vec<Tile>; SEAT],
@@ -147,7 +147,7 @@ impl MjaiEvent {
         Self::StartKyoku {
             bakaze: wind[round].into(),
             kyoku: dealer + 1,
-            honba: honba_sticks,
+            honba: honba,
             kyotaku: riichi_sticks,
             oya: dealer,
             dora_marker: tile_to_mjai(doras[0]),

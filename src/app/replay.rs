@@ -99,7 +99,7 @@ impl ReplayApp {
             let record: Vec<Event> = serde_json::from_str(&contents).unwrap();
 
             if let Event::New(ev) = &record[0]
-                && (ev.round, ev.dealer, ev.honba_sticks) < rkh
+                && (ev.round, ev.dealer, ev.honba) < rkh
             {
                 continue;
             }

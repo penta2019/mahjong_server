@@ -161,7 +161,7 @@ impl WinDialog {
         let round_title = format!(
             "{} {}本場",
             round_string(self.event.round, self.event.dealer),
-            self.event.honba_sticks
+            self.event.honba
         );
         self.entity = create_round_dialog(round_title, "".into(), players_info);
         true

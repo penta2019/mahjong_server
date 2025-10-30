@@ -49,7 +49,7 @@ struct TenhouPlayer {
 #[derive(Debug, Default)]
 struct TenhouRound {
     dealer: Seat,
-    honba_sticks: usize,
+    honba: usize,
     riichi_sticks: usize,
     scores: [Score; SEAT],
     doras: Vec<i64>,
@@ -62,7 +62,7 @@ struct TenhouRound {
 impl TenhouRound {
     fn to_log(&self) -> Value {
         let mut v = vec![
-            json!([self.dealer, self.honba_sticks, self.riichi_sticks]),
+            json!([self.dealer, self.honba, self.riichi_sticks]),
             json!(self.scores),
             json!(self.doras),
             json!(self.ura_doras),
@@ -104,7 +104,7 @@ impl TenhouSerializer {
                 self.dealer = TenhouRound::default();
                 let k = &mut self.dealer;
                 k.dealer = ev.round * 4 + ev.dealer;
-                k.honba_sticks = ev.honba_sticks;
+                k.honba = ev.honba;
                 k.riichi_sticks = ev.riichi_sticks;
                 k.doras = tiles_to_tenhou(&ev.doras);
                 k.scores = ev.scores;

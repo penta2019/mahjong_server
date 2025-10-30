@@ -26,7 +26,7 @@ impl Event {
         rule: Rule,
         round: usize,
         dealer: Seat,
-        honba_sticks: usize,
+        honba: usize,
         riichi_sticks: usize,
         doras: Vec<Tile>,
         names: [String; SEAT],
@@ -43,7 +43,7 @@ impl Event {
             rule,
             round,
             dealer,
-            honba_sticks,
+            honba,
             riichi_sticks,
             doras,
             names,
@@ -101,7 +101,7 @@ impl Event {
     pub fn win(
         round: usize,
         dealer: Seat,
-        honba_sticks: usize,
+        honba: usize,
         riichi_sticks: usize,
         doras: Vec<Tile>,
         ura_doras: Vec<Tile>,
@@ -113,7 +113,7 @@ impl Event {
         Self::Win(EventWin {
             round,
             dealer,
-            honba_sticks,
+            honba,
             riichi_sticks,
             doras,
             ura_doras,
@@ -161,7 +161,7 @@ pub struct EventNew {
     pub rule: Rule,                  // ゲーム設定
     pub round: usize,                // 場風
     pub dealer: Seat,                // 局
-    pub honba_sticks: usize,         // 本場
+    pub honba: usize,                // 本場
     pub riichi_sticks: usize,        // 供託(リーチ棒)
     pub doras: Vec<Tile>,            // ドラ表示牌
     pub names: [String; SEAT],       // プレイヤー名
@@ -215,7 +215,7 @@ pub struct EventWin {
     // StageControllerにとって必要なデータはdelta_scoresのみ
     pub round: usize,
     pub dealer: Seat,
-    pub honba_sticks: usize,
+    pub honba: usize,
     pub riichi_sticks: usize,
     pub doras: Vec<Tile>,            // ドラ表示牌
     pub ura_doras: Vec<Tile>,        // 裏ドラ表示牌

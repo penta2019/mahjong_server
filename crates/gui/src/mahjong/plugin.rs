@@ -270,7 +270,7 @@ pub mod dev {
                 &EventWin {
                     round: 0,
                     dealer: 0,
-                    honba_sticks: 0,
+                    honba: 0,
                     riichi_sticks: 0,
                     doras: vec![],                              // ドラ表示牌
                     ura_doras: vec![],                          // 裏ドラ表示牌

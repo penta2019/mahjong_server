@@ -1,5 +1,6 @@
 use rand::prelude::*;
 
+use super::{common::dec_tile, string::tiles_from_string};
 use crate::model::*;
 
 pub fn create_wall(seed: u64, n_red5: usize) -> Vec<Tile> {
@@ -35,21 +36,16 @@ pub fn create_wall_debug(seed: u64, n_red5: usize) -> Vec<Tile> {
     let replacement = vec![]; // 最大4
     let hands = [
         // 最大13x4
-        vec![
-            "m1", "m1", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m9", "m9",
-        ], // seat0
-        vec![], // seat1
-        vec![], // seat2
-        vec![], // seat3
+        vec![],                                        // seat0
+        tiles_from_string("m112233445566z1").unwrap(), // seat1
+        tiles_from_string("p112233445566z1").unwrap(), // seat2
+        tiles_from_string("s112233445566z1").unwrap(), // seat3
     ];
-    let deal = vec!["m1", "m0"]; // ツモ山 最初の牌は親番の14枚目
+    let deal = vec![Tile(TZ, 1)]; // ツモ山 最初の牌は親番の14枚目
 
     let mut tt: TileTable = [[4; 10]; 4];
-    tt[TM][5] = 4 - n_red5;
     tt[TM][0] = n_red5;
-    tt[TP][5] = 4 - n_red5;
     tt[TP][0] = n_red5;
-    tt[TS][5] = 4 - n_red5;
     tt[TS][0] = n_red5;
     tt[TZ][0] = 0;
     tt[TZ][8] = 0;
@@ -66,10 +62,11 @@ pub fn create_wall_debug(seed: u64, n_red5: usize) -> Vec<Tile> {
 
     // 余った牌をランダムにシャッフル
     let mut remain = Vec::new();
+    println!("{tt:?}");
     for ti in 0..TYPE {
         for ni in 0..TNUM {
             while tt[ti][ni] != 0 {
-                tt[ti][ni] -= 1;
+                dec_tile(&mut tt, Tile(ti, ni));
                 remain.push(Tile(ti, ni))
             }
         }
@@ -78,34 +75,34 @@ pub fn create_wall_debug(seed: u64, n_red5: usize) -> Vec<Tile> {
     remain.shuffle(&mut rng);
 
     let mut wall = Vec::new();
-    append_tiles_from_symbol(&mut wall, &dora);
+    append_tiles(&mut wall, &dora);
     move_tiles(&mut remain, &mut wall, 5 - dora.len());
-    append_tiles_from_symbol(&mut wall, &ura_dora);
+    append_tiles(&mut wall, &ura_dora);
     move_tiles(&mut remain, &mut wall, 5 - ura_dora.len());
-    append_tiles_from_symbol(&mut wall, &replacement);
+    append_tiles(&mut wall, &replacement);
     move_tiles(&mut remain, &mut wall, 4 - replacement.len());
     for h in &hands {
-        append_tiles_from_symbol(&mut wall, h);
+        append_tiles(&mut wall, h);
         move_tiles(&mut remain, &mut wall, 13 - h.len());
     }
-    append_tiles_from_symbol(&mut wall, &deal);
+    append_tiles(&mut wall, &deal);
     move_tiles(&mut remain, &mut wall, 136 - 14 - 13 * 4 - deal.len());
 
+    println!("{wall:?}");
+    println!("{remain:?}");
     assert!(remain.is_empty());
     wall
 }
 
-fn subtract_tile_table(tt: &mut TileTable, tiles: &[&str]) {
-    for tn in tiles {
-        let t = Tile::from_symbol(tn);
-        tt[t.0][t.1] -= 1;
+fn subtract_tile_table(tt: &mut TileTable, tiles: &[Tile]) {
+    for t in tiles {
+        dec_tile(tt, *t);
     }
 }
 
-fn append_tiles_from_symbol(v: &mut Vec<Tile>, tiles: &[&str]) {
-    for tn in tiles {
-        let t = Tile::from_symbol(tn);
-        v.push(t);
+fn append_tiles(v: &mut Vec<Tile>, tiles: &[Tile]) {
+    for t in tiles {
+        v.push(*t);
     }
 }
 

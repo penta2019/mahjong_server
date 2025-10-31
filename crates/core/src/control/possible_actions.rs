@@ -383,6 +383,9 @@ pub fn calc_possible_tenpai_discards(
     let yf = YakuFlags::default();
     let mut res: Vec<Tenpai> = vec![];
     for (d, wt) in comb {
+        if pl.is_riichi && d != pl.drawn.unwrap() {
+            continue;
+        }
         if res.is_empty() || res.last().unwrap().discard_tile != d {
             res.push(Tenpai {
                 discard_tile: d,

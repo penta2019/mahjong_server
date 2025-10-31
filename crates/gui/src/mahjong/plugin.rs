@@ -187,6 +187,7 @@ impl GuiMahjong {
                                 action: Action::nop(),
                             }))
                             .unwrap();
+                        return;
                     }
 
                     self.stage

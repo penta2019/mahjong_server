@@ -22,7 +22,7 @@ Botは未実装で麻雀ゲームエンジンとGUIの動作確認のみがで�
 
 ## 動作要件
 * 動作環境: デスクトップPC (Linux, Windows, MacOS)
-* Rust言語 (rustc 1.90.0 以上)
+* Rust言語 (rustc 1.91.0で動作確認)
 * 動作確認済み環境: Linux 6.17.5-2 (CachyOS)
 
 ## 牌の文字列表現

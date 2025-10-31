@@ -318,6 +318,7 @@ impl ActionControl {
                 return Some(Action::nop());
             }
         }
+
         None
     }
 

@@ -206,6 +206,7 @@ impl MahjongEngine {
 
         // 山の初期化
         self.wall = create_wall(self.rng.next_u64(), self.rule.red5);
+        // self.wall = super::wall::create_wall_debug(self.rng.next_u64(), self.rule.red5);
 
         // 王牌
         self.dora_wall = self.draw_tiles(5); // ドラ表示牌
@@ -426,7 +427,7 @@ impl MahjongEngine {
         let mut pon: Meld = None;
         let mut chi: Meld = None;
 
-        let mut selected_actions = vec![];
+        let mut selected_actions = vec![]; // actionそのものではなくFutureであることに注意
         let mut completed_actors = vec![];
         for s in 0..SEAT {
             if acts_list[s].len() > 1 {
@@ -634,7 +635,6 @@ impl MahjongEngine {
                     let s = s % SEAT;
                     if seats.contains(&s) {
                         seats_sorted.push(s);
-                        break;
                     }
                 }
 

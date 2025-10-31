@@ -152,8 +152,11 @@ impl GuiStage {
     }
 
     pub fn handle_event(&mut self, event: &MjEvent) {
-        self.action_control
-            .handle_event(&mut self.players[self.camera_seat], event);
+        if let Some(seat) = self.player_seat {
+            self.action_control
+                .handle_event(&mut self.players[seat], event);
+        }
+
         match event {
             MjEvent::Begin(_ev) => {}
             MjEvent::New(ev) => self.event_new(ev),
@@ -169,8 +172,10 @@ impl GuiStage {
     }
 
     pub fn handle_actions(&mut self, actions: PossibleActions) {
-        self.action_control
-            .handle_actions(&mut self.players[self.camera_seat], actions);
+        if let Some(seat) = self.player_seat {
+            self.action_control
+                .handle_actions(&mut self.players[seat], actions);
+        }
     }
 
     pub fn handle_action_events(
@@ -182,7 +187,7 @@ impl GuiStage {
         {
             self.action_control.set_visibility(true);
             self.action_control
-                .handle_gui_events(action_param, &mut self.players[self.camera_seat])
+                .handle_gui_events(action_param, &mut self.players[seat])
         } else {
             self.action_control.set_visibility(false);
             None
@@ -227,6 +232,12 @@ impl GuiStage {
         }
     }
 
+    fn confirm_discard_tile(&mut self) {
+        if let Some((seat, ActionType::Discard, _)) = self.last_tile.take() {
+            self.players[seat].confirm_discard_tile();
+        }
+    }
+
     fn event_new(&mut self, event: &EventNew) {
         self.info.init(event);
         self.info.set_camera_seat(self.camera_seat);
@@ -242,9 +253,7 @@ impl GuiStage {
     }
 
     fn event_deal(&mut self, event: &EventDeal) {
-        if let Some((seat, ActionType::Discard, _)) = self.last_tile.take() {
-            self.players[seat].confirm_discard_tile();
-        }
+        self.confirm_discard_tile();
 
         let mut tile = self.wall.take_tile(event.is_replacement);
         if tile.tile() != Z8 && event.tile != Z8 {
@@ -287,12 +296,11 @@ impl GuiStage {
     }
 
     fn event_win(&mut self, event: &EventWin) {
-        assert!(self.dialog.is_none());
         self.dialog = Some(Box::new(WinDialog::new(event, self.camera_seat)));
     }
 
     fn event_draw(&mut self, event: &EventDraw) {
-        assert!(self.dialog.is_none());
+        self.confirm_discard_tile();
         self.dialog = Some(Box::new(DrawDialog::new(event, self.camera_seat)));
     }
 }

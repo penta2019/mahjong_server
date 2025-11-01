@@ -53,10 +53,16 @@ impl YakuContext {
     ) -> Self {
         let pair_tile = get_pair(&parsed_hand);
         let winning_tile = winning_tile.to_normal(); // 赤5は通常5に変換
-        let counts = count_type(&parsed_hand);
+        let counts = count_type(
+            &parsed_hand,
+            if is_drawn { None } else { Some(winning_tile) },
+        );
         let iipeikou_count = count_iipeikou(&parsed_hand);
         let yakuhai_check = check_yakuhai(&parsed_hand);
         let is_open = counts.chi + counts.pon + counts.minkan != 0;
+
+        // println!("parsed_hand: {parsed_hand:?}");
+        // println!("counts: {counts:?}");
 
         Self {
             hand,
@@ -254,13 +260,31 @@ fn get_pair(ph: &ParsedHand) -> Tile {
     Z8 // 雀頭なし(国士無双)
 }
 
-fn count_type(ph: &ParsedHand) -> Counts {
+fn count_type(ph: &ParsedHand, ron_tile: Option<Tile>) -> Counts {
     let mut cnt = Counts::default();
+    let mut ron_shuntu = false;
+    let mut ron_koutsu = false;
     for SetPair(tp, t) in ph {
         match tp {
             Pair => cnt.pair += 1,
-            Shuntsu => cnt.shuntsu += 1,
-            Koutsu => cnt.koutsu += 1,
+            Shuntsu => {
+                cnt.shuntsu += 1;
+                if let Some(rt) = ron_tile
+                    && rt.0 == t.0
+                    && t.1 <= rt.1
+                    && rt.1 <= t.1 + 2
+                {
+                    ron_shuntu = true;
+                }
+            }
+            Koutsu => {
+                cnt.koutsu += 1;
+                if let Some(rt) = ron_tile
+                    && rt == *t
+                {
+                    ron_koutsu = true;
+                }
+            }
             Chi => cnt.chi += 1,
             Pon => cnt.pon += 1,
             Minkan => cnt.minkan += 1,
@@ -276,6 +300,11 @@ fn count_type(ph: &ParsedHand) -> Counts {
     cnt.koutsu_total = cnt.koutsu + cnt.pon + cnt.minkan + cnt.ankan;
     cnt.ankou_total = cnt.koutsu + cnt.ankan;
     cnt.kantsu_total = cnt.minkan + cnt.ankan;
+
+    // ロンした牌が刻子の構成牌でなおかつ別の順子の一部としてみなすこともできない場合,暗刻として扱わない
+    if !ron_shuntu && ron_koutsu {
+        cnt.ankou_total -= 1;
+    }
 
     cnt
 }
@@ -755,26 +784,12 @@ fn is_toitoihou(ctx: &YakuContext) -> bool {
 
 // 三暗刻
 fn is_sanankou(ctx: &YakuContext) -> bool {
-    if ctx.counts.ankou_total < 3 {
-        return false;
-    }
-
-    let mut cnt = 0;
-    for SetPair(tp, t) in &ctx.parsed_hand {
-        if let Koutsu = tp {
-            if !ctx.is_drawn && ctx.winning_tile == *t {
-                continue;
-            }
-            cnt += 1;
-        }
-    }
-
-    cnt == 3
+    ctx.counts.ankou_total == 3
 }
 
 // 四暗刻
 fn is_suuankou(ctx: &YakuContext) -> bool {
-    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile && ctx.is_drawn
+    ctx.counts.ankou_total == 4 && ctx.winning_tile != ctx.pair_tile
 }
 
 // 四暗刻単騎

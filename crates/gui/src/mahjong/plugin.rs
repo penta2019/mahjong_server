@@ -1,4 +1,7 @@
-use std::sync::Mutex;
+use std::{
+    sync::Mutex,
+    time::{Duration, Instant},
+};
 
 use super::{
     action::ActionParam,
@@ -99,6 +102,7 @@ struct GuiMahjong {
     tx: Mutex<Tx>,
     rx: Mutex<Rx>,
     next_msg: Option<ServerMessage>, // mpscはpeekを実装していないがpeekを行う必要がある
+    next_event_time: Instant,
 }
 
 impl GuiMahjong {
@@ -109,6 +113,7 @@ impl GuiMahjong {
             tx: Mutex::new(tx),
             rx: Mutex::new(rx),
             next_msg: None,
+            next_event_time: Instant::now() - Duration::from_secs(1),
         }
     }
 
@@ -160,6 +165,13 @@ impl GuiMahjong {
             }
         }
 
+        if let Some(ServerMessage::Event(_)) = self.next_msg
+            && Instant::now() < self.next_event_time
+        {
+            // Event同士は0.2秒の間隔を開ける
+            return;
+        }
+
         if let Some(msg) = self.next_msg.take() {
             match msg {
                 ServerMessage::Event(event) => {
@@ -168,6 +180,7 @@ impl GuiMahjong {
                         MjEvent::End(_ev) => {}
                         _ => self.stage.as_mut().unwrap().handle_event(&event),
                     }
+                    self.next_event_time = Instant::now() + Duration::from_millis(300);
 
                     // TODO
                     // 一度のUpdateで複数のEventの更新を行うとGlobalTransformに

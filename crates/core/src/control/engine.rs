@@ -34,6 +34,26 @@ struct NextRoundInfo {
     scores: [Score; SEAT],
 }
 
+impl NextRoundInfo {
+    fn from_stage(stg: &Stage) -> Self {
+        Self {
+            round: stg.round,
+            dealer: stg.dealer,
+            honba: stg.honba,
+            riichi_sticks: stg.riichi_sticks,
+            scores: [0; SEAT],
+        }
+    }
+
+    fn change_dealer(&mut self) {
+        self.dealer += 1;
+        if self.dealer == SEAT {
+            self.dealer = 0;
+            self.round += 1;
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct MahjongEngine {
     seed: u64,               // 牌山生成用の乱数のシード値
@@ -540,322 +560,324 @@ impl MahjongEngine {
     }
 
     fn do_event_win_draw(&mut self) {
-        let stg = self.get_stage();
-        let mut round = stg.round;
-        let mut dealer = stg.dealer;
-        let mut honba = stg.honba;
-        let mut riichi_sticks = stg.riichi_sticks;
-        let turn = stg.turn;
-        let mut need_dealer_change = false; // 親の交代
-        match self.round_result.as_ref().unwrap() {
-            RoundResult::Tsumo => {
-                let score_ctx = evaluate_hand_tsumo(&stg, &self.ura_dora_wall).unwrap();
-                let (mut ron, mut non_dealer, mut dealer) = score_ctx.points;
-
-                let pl = &stg.players[turn];
-                let mut d_scores = [0; SEAT]; // 得点変動
-
-                // TODO: 大四喜と四槓子の包の同時発生, 包を含む2倍以上の役満時の点数計算
-                if let Some(pao) = pl.pao {
-                    // 責任払い
-                    ron += honba as i32 * 300;
-                    d_scores[pao] -= ron;
-                    d_scores[turn] += ron;
-                } else {
-                    // 積み棒
-                    non_dealer += honba as i32 * 100;
-                    dealer += honba as i32 * 100;
-
-                    for s in 0..SEAT {
-                        if s != turn {
-                            if !is_dealer(&stg, s) {
-                                // 子の支払い
-                                d_scores[s] -= non_dealer;
-                                d_scores[turn] += non_dealer;
-                            } else {
-                                // 親の支払い
-                                d_scores[s] -= dealer;
-                                d_scores[turn] += dealer;
-                            }
-                        };
-                    }
-                }
-
-                // 供託
-                d_scores[turn] += riichi_sticks as i32 * 1000;
-
-                // stage情報
-                riichi_sticks = 0;
-                // 和了が子の場合 積み棒をリセットして親交代
-                if !is_dealer(&stg, turn) {
-                    honba = 0;
-                    need_dealer_change = true;
-                }
-
-                let mut h = pl.hand;
-                let wt = pl.drawn.unwrap();
-                // 和了牌は手牌から外す
-                h[wt.0][wt.1] -= 1;
-                if wt.1 == 0 {
-                    h[wt.0][5] -= 1
-                }
-                let win_ctx = WinContext {
-                    seat: turn,
-                    hand: tiles_from_tile_table(&h),
-                    winning_tile: wt,
-                    melds: pl.melds.clone(),
-                    is_dealer: is_dealer(&stg, turn),
-                    is_drawn: true,
-                    is_riichi: pl.riichi.is_some(),
-                    pao: pl.pao,
-                    delta_scores: d_scores,
-                    score_context: score_ctx,
-                };
-                let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                let scores = get_scores(&stg);
-                let event = Event::win(
-                    stg.round,
-                    stg.dealer,
-                    stg.honba,
-                    stg.riichi_sticks,
-                    stg.doras.clone(),
-                    ura_doras,
-                    self.ctrl.get_names(),
-                    scores,
-                    d_scores,
-                    vec![win_ctx],
-                );
-                drop(stg);
-                self.handle_event(event);
-            }
-            RoundResult::Ron(seats) => {
-                // 放銃者から一番近いプレイヤー順にソート
-                let mut seats_sorted = vec![];
-                for s in turn + 1..turn + SEAT {
-                    let s = s % SEAT;
-                    if seats.contains(&s) {
-                        seats_sorted.push(s);
-                    }
-                }
-
-                let mut is_first = true; // 上家取り
-                let mut ctxs = vec![];
-                let mut total_d_scores = [0; SEAT];
-                for s in seats_sorted {
-                    let score_ctx = evaluate_hand_ron(&stg, &self.ura_dora_wall, s).unwrap();
-                    let (ron, _, _) = score_ctx.points;
-
-                    let pl = &stg.players[s];
-                    let mut d_scores = [0; SEAT]; // 得点変動
-
-                    if let Some(pao) = pl.pao {
-                        // 責任払いが発生している場合,ロンの半分ずつの支払い
-                        d_scores[turn] -= ron / 2;
-                        d_scores[pao] -= ron / 2;
-                    } else {
-                        d_scores[turn] -= ron; // 直撃を受けたプレイヤー
-                    };
-                    d_scores[s] += ron; // 和了ったプレイヤー
-
-                    // 積み棒&供託(上家取り)
-                    if is_first {
-                        is_first = false;
-                        if let Some(pao) = pl.pao {
-                            // 積み棒は責任払い優先
-                            d_scores[pao] -= honba as i32 * 300;
-                        } else {
-                            d_scores[turn] -= honba as i32 * 300;
-                        }
-                        d_scores[s] += honba as i32 * 300;
-                        d_scores[s] += riichi_sticks as i32 * 1000;
-                    }
-
-                    for s in 0..SEAT {
-                        total_d_scores[s] += d_scores[s];
-                    }
-
-                    let win_ctx = WinContext {
-                        seat: s,
-                        hand: tiles_from_tile_table(&pl.hand),
-                        winning_tile: stg.last_tile.unwrap().2,
-                        melds: pl.melds.clone(),
-                        is_dealer: is_dealer(&stg, s),
-                        is_drawn: false,
-                        is_riichi: pl.riichi.is_some(),
-                        pao: pl.pao,
-                        delta_scores: d_scores,
-                        score_context: score_ctx,
-                    };
-                    ctxs.push(win_ctx);
-                }
-
-                // stage情報
-                riichi_sticks = 0;
-                // 子の和了がある場合は積み棒をリセット
-                if seats.iter().any(|&s| !is_dealer(&stg, s)) {
-                    honba = 0;
-                }
-                // 和了が子しかいない場合は親交代
-                need_dealer_change = seats.iter().all(|&s| !is_dealer(&stg, s));
-
-                let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-                let event = Event::win(
-                    stg.round,
-                    stg.dealer,
-                    stg.honba,
-                    stg.riichi_sticks,
-                    stg.doras.clone(),
-                    ura_doras,
-                    self.ctrl.get_names(),
-                    get_scores(&stg),
-                    total_d_scores,
-                    ctxs,
-                );
-                drop(stg);
-                self.handle_event(event);
-            }
-            RoundResult::Draw(type_) => {
-                match type_ {
-                    DrawType::Kouhaiheikyoku => {
-                        // 聴牌集計
-                        let mut tenpais = [false; SEAT];
-                        let mut n_tenpai = 0;
-                        let mut nagashimangan = false;
-                        for s in 0..SEAT {
-                            let pl = &stg.players[s];
-                            tenpais[s] = !pl.winning_tiles.is_empty();
-                            nagashimangan |= pl.is_nagashimangan;
-                            if tenpais[s] {
-                                n_tenpai += 1;
-                            }
-                        }
-
-                        let mut hands = [vec![], vec![], vec![], vec![]];
-                        for s in 0..SEAT {
-                            if tenpais[s] {
-                                hands[s] = tiles_from_tile_table(&stg.players[s].hand);
-                            }
-                        }
-
-                        // プレイヤーごとの得点変動
-                        let mut d_scores = [0; SEAT];
-                        let mut nm_scores = [0; SEAT]; // 流し満貫スコア
-                        if nagashimangan {
-                            // 流し満貫スコア集計
-                            for s_nm in 0..SEAT {
-                                if stg.players[s_nm].is_nagashimangan {
-                                    if is_dealer(&stg, s_nm) {
-                                        nm_scores[s_nm] = 12000;
-                                        for s in 0..SEAT {
-                                            if s_nm == s {
-                                                d_scores[s] += 12000;
-                                            } else {
-                                                d_scores[s] -= 4000;
-                                            }
-                                        }
-                                    } else {
-                                        nm_scores[s_nm] = 8000;
-                                        for s in 0..SEAT {
-                                            if s_nm == s {
-                                                d_scores[s] += 8000;
-                                            } else {
-                                                if is_dealer(&stg, s) {
-                                                    d_scores[s] -= 4000;
-                                                } else {
-                                                    d_scores[s] -= 2000;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            // 流局時の聴牌人数による得点変動
-                            let (pay, recv) = match n_tenpai {
-                                0 => (0, 0), // 全員ノーテン
-                                1 => (1000, 3000),
-                                2 => (1500, 1500),
-                                3 => (3000, 1000),
-                                4 => (0, 0), // 全員聴牌
-                                _ => panic!(),
-                            };
-
-                            for s in 0..SEAT {
-                                d_scores[s] = if tenpais[s] { recv } else { -pay };
-                            }
-                        }
-
-                        let event = Event::draw(
-                            DrawType::Kouhaiheikyoku,
-                            stg.round,
-                            stg.dealer,
-                            stg.honba,
-                            self.ctrl.get_names(),
-                            get_scores(&stg),
-                            d_scores,
-                            nm_scores,
-                            hands,
-                        );
-                        drop(stg);
-                        self.handle_event(event);
-                        need_dealer_change = !tenpais[dealer];
-                    }
-                    _ => {
-                        let open_seats: Vec<Seat> = match type_ {
-                            DrawType::Kouhaiheikyoku | DrawType::Unknown => panic!(),
-                            DrawType::Suufuurenda | DrawType::Suukansanra => vec![],
-                            DrawType::Kyushukyuhai => vec![turn],
-                            DrawType::Sanchaho => (0..SEAT).filter(|&s| s != turn).collect(),
-                            DrawType::Suuchariichi => (0..SEAT).collect(),
-                        };
-                        let mut hands = [vec![], vec![], vec![], vec![]];
-                        for s in open_seats {
-                            hands[s] = tiles_from_tile_table(&stg.players[s].hand);
-                        }
-
-                        let event = Event::draw(
-                            *type_,
-                            stg.round,
-                            stg.dealer,
-                            stg.honba,
-                            self.ctrl.get_names(),
-                            get_scores(&stg),
-                            [0; SEAT],
-                            [0; SEAT],
-                            hands,
-                        );
-                        drop(stg);
-                        self.handle_event(event);
-                    }
-                }
-                honba += 1;
-            }
-        }
-
-        // 親交代
-        if need_dealer_change {
-            dealer += 1;
-            if dealer == SEAT {
-                dealer = 0;
-                round += 1;
-            }
-        }
-
-        let scores = get_scores(&self.get_stage());
-        // stage情報更新
-        self.next_round_info = NextRoundInfo {
-            round,
-            dealer,
-            honba,
-            riichi_sticks,
-            scores,
+        let (event, mut next_round_info) = match self.round_result.take().unwrap() {
+            RoundResult::Tsumo => self.round_result_tusmo(),
+            RoundResult::Ron(seats) => self.round_result_ron(&seats),
+            RoundResult::Draw(type_) => match type_ {
+                DrawType::Kouhaiheikyoku => self.round_result_draw(),
+                _ => self.round_result_abortive_draw(type_),
+            },
         };
 
-        self.round_result = None;
+        self.handle_event(event);
+        next_round_info.scores = get_scores(&self.get_stage());
+        self.next_round_info = next_round_info;
     }
 
     fn do_event_end(&mut self) {
         self.handle_event(Event::end());
+    }
+
+    fn round_result_tusmo(&self) -> (Event, NextRoundInfo) {
+        let stg = self.get_stage();
+        let turn = stg.turn;
+        let mut round_info = NextRoundInfo::from_stage(&stg);
+
+        let score_ctx = evaluate_hand_tsumo(&stg, &self.ura_dora_wall).unwrap();
+        let (mut ron, mut non_dealer, mut dealer) = score_ctx.points;
+
+        let pl = &stg.players[turn];
+        let mut d_scores = [0; SEAT]; // 得点変動
+
+        // TODO: 大四喜と四槓子の包の同時発生, 包を含む2倍以上の役満時の点数計算
+        if let Some(pao) = pl.pao {
+            // 責任払い
+            ron += stg.honba as i32 * 300;
+            d_scores[pao] -= ron;
+            d_scores[turn] += ron;
+        } else {
+            // 積み棒
+            non_dealer += stg.honba as i32 * 100;
+            dealer += stg.honba as i32 * 100;
+
+            for s in 0..SEAT {
+                if s != turn {
+                    if !is_dealer(&stg, s) {
+                        // 子の支払い
+                        d_scores[s] -= non_dealer;
+                        d_scores[turn] += non_dealer;
+                    } else {
+                        // 親の支払い
+                        d_scores[s] -= dealer;
+                        d_scores[turn] += dealer;
+                    }
+                };
+            }
+        }
+
+        // 供託
+        d_scores[turn] += stg.riichi_sticks as i32 * 1000;
+
+        // stage情報
+        round_info.riichi_sticks = 0;
+        // 和了が子の場合 積み棒をリセットして親交代
+        if !is_dealer(&stg, turn) {
+            round_info.honba = 0;
+            round_info.change_dealer();
+        }
+
+        let mut h = pl.hand;
+        let wt = pl.drawn.unwrap();
+        // 和了牌は手牌から外す
+        h[wt.0][wt.1] -= 1;
+        if wt.1 == 0 {
+            h[wt.0][5] -= 1
+        }
+        let win_ctx = WinContext {
+            seat: turn,
+            hand: tiles_from_tile_table(&h),
+            winning_tile: wt,
+            melds: pl.melds.clone(),
+            is_dealer: is_dealer(&stg, turn),
+            is_drawn: true,
+            is_riichi: pl.riichi.is_some(),
+            pao: pl.pao,
+            delta_scores: d_scores,
+            score_context: score_ctx,
+        };
+        let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
+        let scores = get_scores(&stg);
+        let event = Event::win(
+            stg.round,
+            stg.dealer,
+            stg.honba,
+            stg.riichi_sticks,
+            stg.doras.clone(),
+            ura_doras,
+            self.ctrl.get_names(),
+            scores,
+            d_scores,
+            vec![win_ctx],
+        );
+
+        (event, round_info)
+    }
+
+    fn round_result_ron(&self, seats: &[Seat]) -> (Event, NextRoundInfo) {
+        let stg = self.get_stage();
+        let turn = stg.turn;
+        let mut round_info = NextRoundInfo::from_stage(&stg);
+
+        // 放銃者から一番近いプレイヤー順にソート
+        let mut seats_sorted = vec![];
+        for s in turn + 1..turn + SEAT {
+            let s = s % SEAT;
+            if seats.contains(&s) {
+                seats_sorted.push(s);
+            }
+        }
+
+        let mut is_first = true; // 上家取り
+        let mut ctxs = vec![];
+        let mut total_d_scores = [0; SEAT];
+        for s in seats_sorted {
+            let score_ctx = evaluate_hand_ron(&stg, &self.ura_dora_wall, s).unwrap();
+            let (ron, _, _) = score_ctx.points;
+
+            let pl = &stg.players[s];
+            let mut d_scores = [0; SEAT]; // 得点変動
+
+            if let Some(pao) = pl.pao {
+                // 責任払いが発生している場合,ロンの半分ずつの支払い
+                d_scores[turn] -= ron / 2;
+                d_scores[pao] -= ron / 2;
+            } else {
+                d_scores[turn] -= ron; // 直撃を受けたプレイヤー
+            };
+            d_scores[s] += ron; // 和了ったプレイヤー
+
+            // 積み棒&供託(上家取り)
+            if is_first {
+                is_first = false;
+                if let Some(pao) = pl.pao {
+                    // 積み棒は責任払い優先
+                    d_scores[pao] -= stg.honba as i32 * 300;
+                } else {
+                    d_scores[turn] -= stg.honba as i32 * 300;
+                }
+                d_scores[s] += stg.honba as i32 * 300;
+                d_scores[s] += stg.riichi_sticks as i32 * 1000;
+            }
+
+            for s in 0..SEAT {
+                total_d_scores[s] += d_scores[s];
+            }
+
+            let win_ctx = WinContext {
+                seat: s,
+                hand: tiles_from_tile_table(&pl.hand),
+                winning_tile: stg.last_tile.unwrap().2,
+                melds: pl.melds.clone(),
+                is_dealer: is_dealer(&stg, s),
+                is_drawn: false,
+                is_riichi: pl.riichi.is_some(),
+                pao: pl.pao,
+                delta_scores: d_scores,
+                score_context: score_ctx,
+            };
+            ctxs.push(win_ctx);
+        }
+
+        // stage情報
+        round_info.riichi_sticks = 0;
+        // 子の和了がある場合は積み棒をリセット
+        if seats.iter().any(|&s| !is_dealer(&stg, s)) {
+            round_info.honba = 0;
+        }
+        // 和了が子しかいない場合は親交代
+        if seats.iter().all(|&s| !is_dealer(&stg, s)) {
+            round_info.change_dealer();
+        }
+
+        let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
+        let event = Event::win(
+            stg.round,
+            stg.dealer,
+            stg.honba,
+            stg.riichi_sticks,
+            stg.doras.clone(),
+            ura_doras,
+            self.ctrl.get_names(),
+            get_scores(&stg),
+            total_d_scores,
+            ctxs,
+        );
+
+        (event, round_info)
+    }
+
+    fn round_result_draw(&self) -> (Event, NextRoundInfo) {
+        let stg = self.get_stage();
+        let mut round_info = NextRoundInfo::from_stage(&stg);
+        round_info.honba += 1;
+
+        // 聴牌集計
+        let mut tenpais = [false; SEAT];
+        let mut n_tenpai = 0;
+        let mut nagashimangan = false;
+        for s in 0..SEAT {
+            let pl = &stg.players[s];
+            tenpais[s] = !pl.winning_tiles.is_empty();
+            nagashimangan |= pl.is_nagashimangan;
+            if tenpais[s] {
+                n_tenpai += 1;
+            }
+        }
+
+        let mut hands = [vec![], vec![], vec![], vec![]];
+        for s in 0..SEAT {
+            if tenpais[s] {
+                hands[s] = tiles_from_tile_table(&stg.players[s].hand);
+            }
+        }
+
+        // プレイヤーごとの得点変動
+        let mut d_scores = [0; SEAT];
+        let mut nm_scores = [0; SEAT]; // 流し満貫スコア
+        if nagashimangan {
+            // 流し満貫スコア集計
+            for s_nm in 0..SEAT {
+                if stg.players[s_nm].is_nagashimangan {
+                    if is_dealer(&stg, s_nm) {
+                        nm_scores[s_nm] = 12000;
+                        for s in 0..SEAT {
+                            if s_nm == s {
+                                d_scores[s] += 12000;
+                            } else {
+                                d_scores[s] -= 4000;
+                            }
+                        }
+                    } else {
+                        nm_scores[s_nm] = 8000;
+                        for s in 0..SEAT {
+                            if s_nm == s {
+                                d_scores[s] += 8000;
+                            } else {
+                                if is_dealer(&stg, s) {
+                                    d_scores[s] -= 4000;
+                                } else {
+                                    d_scores[s] -= 2000;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // 流局時の聴牌人数による得点変動
+            let (pay, recv) = match n_tenpai {
+                0 => (0, 0), // 全員ノーテン
+                1 => (1000, 3000),
+                2 => (1500, 1500),
+                3 => (3000, 1000),
+                4 => (0, 0), // 全員聴牌
+                _ => panic!(),
+            };
+
+            for s in 0..SEAT {
+                d_scores[s] = if tenpais[s] { recv } else { -pay };
+            }
+        }
+
+        if !tenpais[stg.dealer] {
+            round_info.change_dealer();
+        }
+
+        let event = Event::draw(
+            DrawType::Kouhaiheikyoku,
+            stg.round,
+            stg.dealer,
+            stg.honba,
+            self.ctrl.get_names(),
+            get_scores(&stg),
+            d_scores,
+            nm_scores,
+            hands,
+        );
+
+        (event, round_info)
+    }
+
+    fn round_result_abortive_draw(&self, type_: DrawType) -> (Event, NextRoundInfo) {
+        let stg = self.get_stage();
+        let mut round_info = NextRoundInfo::from_stage(&stg);
+        round_info.honba += 1;
+
+        let open_seats: Vec<Seat> = match type_ {
+            DrawType::Kouhaiheikyoku | DrawType::Unknown => panic!(),
+            DrawType::Suufuurenda | DrawType::Suukansanra => vec![],
+            DrawType::Kyushukyuhai => vec![stg.turn],
+            DrawType::Sanchaho => (0..SEAT).filter(|&s| s != stg.turn).collect(),
+            DrawType::Suuchariichi => (0..SEAT).collect(),
+        };
+        let mut hands = [vec![], vec![], vec![], vec![]];
+        for s in open_seats {
+            hands[s] = tiles_from_tile_table(&stg.players[s].hand);
+        }
+
+        let event = Event::draw(
+            type_,
+            stg.round,
+            stg.dealer,
+            stg.honba,
+            self.ctrl.get_names(),
+            get_scores(&stg),
+            [0; SEAT],
+            [0; SEAT],
+            hands,
+        );
+
+        (event, round_info)
     }
 
     fn draw_tile(&mut self) -> Tile {

@@ -5,6 +5,7 @@ use mahjong_core::{
     error,
     listener::{Debug, EventPrinter},
     model::*,
+    serde_json,
     util::misc::*,
 };
 

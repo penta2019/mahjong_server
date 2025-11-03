@@ -1,4 +1,4 @@
-use rand::{prelude::IndexedRandom, rng};
+use mahjong_core::rand::prelude::*;
 
 use super::super::prelude::*;
 use crate::move_animation::MoveAnimation;
@@ -90,7 +90,7 @@ impl GuiHand {
                 .filter(|(_, t)| t.tile() == Z8)
                 .map(|(i, _)| i)
                 .collect::<Vec<usize>>();
-            if let Some(pos) = pos_candidates.choose(&mut rng()) {
+            if let Some(pos) = pos_candidates.choose(&mut ThreadRng::default()) {
                 *pos
             } else {
                 panic!("{} not found in hand", m_tile);

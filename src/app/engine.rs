@@ -5,9 +5,9 @@ use mahjong_core::{
     error, info,
     listener::*,
     model::*,
+    rand::prelude::*,
     util::misc::*,
 };
-use rand::prelude::*;
 
 use crate::actor::*;
 
@@ -189,7 +189,7 @@ impl EngineApp {
         let mut n_game = 0;
         let mut n_thread = 0;
         let mut n_game_end = 0;
-        let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(self.seed);
+        let mut rng: StdRng = SeedableRng::seed_from_u64(self.seed);
         let (tx, rx) = mpsc::channel();
         let mut sum_delta_scores = [0; SEAT];
         let mut sum_ranks = [0; SEAT];

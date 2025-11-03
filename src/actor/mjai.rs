@@ -5,8 +5,13 @@ use std::{
     thread,
 };
 
-use mahjong_core::{control::common::get_scores, convert::mjai::*, error, info, util::misc::*};
-use serde_json::{Value, json};
+use mahjong_core::{
+    control::common::get_scores,
+    convert::mjai::*,
+    error, info,
+    serde_json::{self, Value, json},
+    util::misc::*,
+};
 
 use super::*;
 

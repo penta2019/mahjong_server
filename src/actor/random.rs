@@ -1,6 +1,4 @@
-use rand::Rng;
-
-use mahjong_core::control::common::count_tile;
+use mahjong_core::{control::common::count_tile, rand::prelude::*};
 
 use super::*;
 
@@ -22,7 +20,7 @@ impl ActorBuilder for RandomDiscardBuilder {
 #[derive(Clone)]
 pub struct RandomDiscard {
     config: Config,
-    rng: rand::rngs::StdRng,
+    rng: StdRng,
     stage: StageRef,
     seat: Seat,
 }
@@ -31,7 +29,7 @@ impl RandomDiscard {
     pub fn from_config(config: Config) -> Self {
         Self {
             config,
-            rng: rand::SeedableRng::seed_from_u64(0),
+            rng: SeedableRng::seed_from_u64(0),
             stage: StageRef::default(),
             seat: NO_SEAT,
         }

@@ -10,7 +10,7 @@ use crate::{
     hand::{evaluate_hand_ron, evaluate_hand_tsumo},
     model::*,
     util::{
-        misc::*,
+        misc::{sleep, vec_to_string},
         waiter::{Waiter, waiter_waker},
     },
 };

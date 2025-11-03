@@ -1,7 +1,9 @@
-use serde_json::{Value, json};
-
-use crate::{
-    control::listener::Listener, convert::tenhou::TenhouSerializer, model::*, util::misc::*,
+use mahjong_core::{
+    control::listener::Listener,
+    convert::tenhou::TenhouSerializer,
+    model::*,
+    serde_json::{self, Value, json},
+    util::misc::*,
 };
 
 // [EventWriter]

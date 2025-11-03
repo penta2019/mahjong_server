@@ -3,13 +3,12 @@ use std::sync::mpsc;
 use mahjong_core::{
     control::{actor::Actor, engine::MahjongEngine, listener::Listener},
     error, info,
-    listener::*,
     model::*,
     rand::prelude::*,
     util::misc::*,
 };
 
-use crate::actor::*;
+use crate::{actor::*, listener::*};
 
 // [App]
 #[derive(Debug)]
@@ -126,7 +125,7 @@ impl EngineApp {
             listeners.push(Box::new(EventWriter::new()));
         }
         if self.write_tenhou {
-            listeners.push(Box::new(mahjong_core::listener::TenhouEventWriter::new()));
+            listeners.push(Box::new(crate::listener::TenhouEventWriter::new()));
         }
         if self.debug {
             listeners.push(Box::new(Debug::new()));

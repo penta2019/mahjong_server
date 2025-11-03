@@ -1,4 +1,4 @@
-use crate::{control::listener::Listener, model::*, util::misc::vec_to_string};
+use mahjong_core::{control::listener::Listener, model::*, util::misc::vec_to_string};
 
 // [StagePrinter]
 #[derive(Debug)]

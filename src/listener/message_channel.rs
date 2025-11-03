@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use crate::{control::listener::Listener, model::*};
+use mahjong_core::{control::listener::Listener, model::*};
 
 pub struct MessageChannel {
     event_tx: Sender<ServerMessage>,

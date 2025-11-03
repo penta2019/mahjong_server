@@ -3,11 +3,10 @@ use std::{
     thread,
 };
 
-use serde_json::{Value, json};
-
-use crate::{
+use mahjong_core::{
     control::listener::Listener,
     model::*,
+    serde_json::{Value, json},
     util::{
         connection::{Connection, Message},
         misc::sleep,

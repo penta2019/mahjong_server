@@ -3,11 +3,12 @@ use std::path::{Path, PathBuf};
 use mahjong_core::{
     control::{actor::Actor, listener::Listener, stage_controller::StageController},
     error,
-    listener::{Debug, EventPrinter},
     model::*,
     serde_json,
     util::misc::*,
 };
+
+use crate::listener::{Debug, EventPrinter};
 
 #[derive(Debug)]
 pub struct ReplayApp {

@@ -57,7 +57,7 @@ fn fragment(
     let edge_thickness = mix(0.0005, 0.015, pow(saturate(angle_factor), 8));
     let z = in.local_position.z + 0.003;
     let blend_factor = clamp(z / edge_thickness, 0.0, 1.0);
-    
+
     // 背面色とテクスチャを配合
     let base_color = mix(back_color, texture_color, blend_factor);
 

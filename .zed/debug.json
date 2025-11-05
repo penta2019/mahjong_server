@@ -1,0 +1,16 @@
+[
+  {
+    "adapter": "CodeLLDB",
+    "label": "Debug Bevy Server",
+    "request": "launch",
+    "build": {
+      "command": "cargo build --no-default-features"
+    },
+    "program": "target/debug/mahjong_server",
+    "args": ["C", "-f", "tests/win_hands.txt"],
+    "cwd": ".",
+    "env": {
+      "LD_LIBRARY_PATH": "target/debug"
+    }
+  }
+]

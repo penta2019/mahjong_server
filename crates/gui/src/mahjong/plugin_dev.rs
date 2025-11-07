@@ -10,7 +10,8 @@ use super::{
 
 #[derive(Resource, Debug, Default)]
 pub struct MahjongResource {
-    stage: Option<GuiStage>,
+    stage: Stage,
+    gui_stage: Option<GuiStage>, // 初期化はwith_paramの内部から行う
     dialog: Option<Box<dyn Dialog>>,
 }
 
@@ -40,14 +41,16 @@ fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
 
 fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
     with_param(&mut param, || {
-        res.stage = Some(GuiStage::new());
-
+        res.gui_stage = Some(GuiStage::new());
         let camera_seat = 0;
+
         // res.dialog = Some(Box::new(super::dialog::DrawDialog::new(
+        //     &res.stage,
         //     &create_draw_event(),
         //     camera_seat,
         // )));
         res.dialog = Some(Box::new(super::dialog::WinDialog::new(
+            &res.stage,
             &create_win_event(),
             camera_seat,
         )));
@@ -69,19 +72,8 @@ fn system(
 }
 
 fn create_draw_event() -> EventDraw {
-    let names = [
-        "ああああ".into(),
-        "いいいい".into(),
-        "うううう".into(),
-        "ええええ".into(),
-    ];
     EventDraw {
         draw_type: DrawType::Kouhaiheikyoku,
-        round: 0,
-        dealer: 0,
-        honba: 0,
-        names,
-        scores: [25000, 25000, 25000, 25000],
         delta_scores: [12000, -3000, -3000, -3000],
         nagashimangan_scores: [12000, 0, 0, 0],
         hands: [vec![], vec![], vec![], vec![]],
@@ -89,21 +81,9 @@ fn create_draw_event() -> EventDraw {
 }
 
 fn create_win_event() -> EventWin {
-    let names = [
-        "ああああ".into(),
-        "いいいい".into(),
-        "うううう".into(),
-        "ええええ".into(),
-    ];
     EventWin {
-        round: 0,
-        dealer: 0,
-        honba: 0,
-        riichi_sticks: 0,
-        doras: vec![],                              // ドラ表示牌
-        ura_doras: vec![],                          // 裏ドラ表示牌
-        names,                                      // プレイヤー名
-        scores: [25000, 25000, 25000, 25000],       // 変化前のスコア
+        // ドラ表示牌
+        ura_doras: vec![], // 裏ドラ表示牌                            // プレイヤー名
         delta_scores: [12000, -3000, -3000, -3000], // scores + delta_scores = new_scores
         contexts: vec![
             WinContext {
@@ -113,7 +93,6 @@ fn create_win_event() -> EventWin {
                 melds: vec![],
                 is_dealer: true,
                 is_drawn: true,
-                is_riichi: true,
                 pao: None,
                 delta_scores: [12000, -3000, -3000, -3000],
                 score_context: ScoreContext {
@@ -162,7 +141,6 @@ fn create_win_event() -> EventWin {
                 melds: vec![],
                 is_dealer: false,
                 is_drawn: true,
-                is_riichi: true,
                 pao: None,
                 delta_scores: [12000, -3000, -3000, -3000],
                 score_context: ScoreContext {

@@ -72,26 +72,10 @@ impl StageController {
             }
         }
 
-        {
-            // stageのRwLockReadGuardを獲得しているActorがある場合ここでブロックされる
-            // これはActorがStageRefから獲得したGuardをドロップし忘れた場合や
-            // 非同期で動作しているActorの反応を待たずに他の高優先度のactionが選択された場合に起こる
-            let stg = &mut self.stage.try_write().unwrap();
-            match event {
-                Event::Begin(ev) => event_begin(stg, ev),
-                Event::New(ev) => event_new(stg, ev),
-                Event::Deal(ev) => event_deal(stg, ev),
-                Event::Discard(ev) => event_discard(stg, ev),
-                Event::Meld(ev) => event_meld(stg, ev),
-                Event::Nukidora(ev) => event_nukidora(stg, ev),
-                Event::Dora(ev) => event_dora(stg, ev),
-                Event::Win(ev) => event_win(stg, ev),
-                Event::Draw(ev) => event_draw(stg, ev),
-                Event::End(ev) => event_end(stg, ev),
-            }
-            update_after_turn_action(stg, event);
-            stg.step += 1;
-        }
+        // stageのRwLockReadGuardを獲得しているActorがある場合ここでブロックされる
+        // これはActorがStageRefから獲得したGuardをドロップし忘れた場合や
+        // 非同期で動作しているActorの反応を待たずに他の高優先度のactionが選択された場合に起こる
+        apply_event(&mut self.stage.try_write().unwrap(), event);
 
         let stg = self.stage.try_read().unwrap();
         // Actorより先にListenrsにイベントを通知
@@ -118,6 +102,23 @@ impl StageController {
     }
 }
 
+pub fn apply_event(stg: &mut Stage, event: &Event) {
+    match event {
+        Event::Begin(ev) => event_begin(stg, ev),
+        Event::New(ev) => event_new(stg, ev),
+        Event::Deal(ev) => event_deal(stg, ev),
+        Event::Discard(ev) => event_discard(stg, ev),
+        Event::Meld(ev) => event_meld(stg, ev),
+        Event::Nukidora(ev) => event_nukidora(stg, ev),
+        Event::Dora(ev) => event_dora(stg, ev),
+        Event::Win(ev) => event_win(stg, ev),
+        Event::Draw(ev) => event_draw(stg, ev),
+        Event::End(ev) => event_end(stg, ev),
+    }
+    update_after_turn_action(stg, event);
+    stg.step += 1;
+}
+
 // [Event]
 fn event_begin(_stg: &mut Stage, _event: &EventBegin) {}
 
@@ -138,6 +139,7 @@ fn event_new(stg: &mut Stage, event: &EventNew) {
         let ph = &event.hands[s];
         let pl = &mut stg.players[s];
         pl.seat = s;
+        pl.name = event.names[s].clone();
         pl.is_shown = !ph.is_empty() && !ph.contains(&Z8);
         pl.is_menzen = true;
         pl.is_nagashimangan = true;

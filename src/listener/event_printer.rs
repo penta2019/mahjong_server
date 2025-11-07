@@ -68,7 +68,7 @@ impl Listener for EventPrinter {
             }
             Win(ev) => {
                 println!("Win");
-                println!("doras: {}", vec_to_string(&ev.doras));
+                println!("doras: {}", vec_to_string(&stg.doras));
                 println!("ura_doras: {}", vec_to_string(&ev.ura_doras));
                 println!("{:?}", ev.contexts);
                 self.print_score_change(stg, &ev.delta_scores);

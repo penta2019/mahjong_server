@@ -1,3 +1,5 @@
+use mahjong_core::control::common::{get_names, get_scores};
+
 use super::{
     super::text::round_string,
     players_info::{create_players_info, create_round_dialog},
@@ -10,16 +12,16 @@ pub struct DrawDialog {
 }
 
 impl DrawDialog {
-    pub fn new(event: &EventDraw, camera_seat: Seat) -> Self {
+    pub fn new(stage: &Stage, event: &EventDraw, camera_seat: Seat) -> Self {
         let players_info = create_players_info(
             camera_seat,
-            event.dealer,
-            &event.names,
-            &event.scores,
+            stage.dealer,
+            &get_names(stage),
+            &get_scores(stage),
             &event.delta_scores,
         );
 
-        let round_title = round_string(event.round, event.dealer, Some(event.honba));
+        let round_title = round_string(stage.round, stage.dealer, Some(stage.honba));
         let draw_str = if event.nagashimangan_scores.iter().any(|score| *score != 0) {
             "流し満貫".into()
         } else {

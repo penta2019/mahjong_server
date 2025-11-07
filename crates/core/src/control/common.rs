@@ -39,6 +39,14 @@ pub fn get_scores(stg: &Stage) -> [Score; SEAT] {
     scores
 }
 
+pub fn get_names(stg: &Stage) -> [String; SEAT] {
+    let mut names = [""; SEAT];
+    for s in 0..SEAT {
+        names[s] = &stg.players[s].name;
+    }
+    names.map(|name| name.into())
+}
+
 // ダブル立直, 天和, 地和の判定用
 pub fn is_no_meld_turn1(stg: &Stage, seat: Seat) -> bool {
     if !stg.players[seat].discards.is_empty() {

@@ -1,5 +1,5 @@
 use bevy::color::palettes::basic::GREEN;
-use mahjong_core::control::common::calc_seat_offset;
+use mahjong_core::control::{common::calc_seat_offset, stage_controller::apply_event};
 
 use super::{
     super::{
@@ -22,6 +22,8 @@ pub struct GuiStage {
     // stage Entity
     // 殆どのEntityはこのEntityの子孫なので,これをdespawn()すればほぼ消える
     entity: Entity,
+    // プレイヤー名
+    stage: Stage,
     // 中央情報パネル
     info: StageInfo,
     // 牌山
@@ -101,6 +103,7 @@ impl GuiStage {
 
         Self {
             entity,
+            stage: default(),
             info,
             wall,
             players,
@@ -156,6 +159,8 @@ impl GuiStage {
             self.action_control
                 .handle_event(&mut self.players[seat], event);
         }
+
+        apply_event(&mut self.stage, event);
 
         match event {
             MjEvent::Begin(_ev) => {}
@@ -296,11 +301,19 @@ impl GuiStage {
     }
 
     fn event_win(&mut self, event: &EventWin) {
-        self.dialog = Some(Box::new(WinDialog::new(event, self.camera_seat)));
+        self.dialog = Some(Box::new(WinDialog::new(
+            &self.stage,
+            event,
+            self.camera_seat,
+        )));
     }
 
     fn event_draw(&mut self, event: &EventDraw) {
         self.confirm_discard_tile();
-        self.dialog = Some(Box::new(DrawDialog::new(event, self.camera_seat)));
+        self.dialog = Some(Box::new(DrawDialog::new(
+            &self.stage,
+            event,
+            self.camera_seat,
+        )));
     }
 }

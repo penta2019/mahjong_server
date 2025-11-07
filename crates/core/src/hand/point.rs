@@ -56,7 +56,7 @@ pub fn calc_points(is_dealer: bool, fu: usize, fan: usize, yakuman: usize) -> (P
     }
 }
 
-// cargo test --release print_points_table -- --nocapture
+// cargo test --release -p mahjong_core print_points_table -- --nocapture
 #[test]
 fn print_points_table() {
     let fu_list = [20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110];

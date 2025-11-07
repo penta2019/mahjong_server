@@ -1,18 +1,22 @@
-use mahjong_core::control::common::calc_seat_wind;
-
-use crate::mahjong::dialog::players_info::{create_players_info, create_round_dialog};
+use mahjong_core::control::common::{calc_seat_wind, get_names, get_scores};
 
 use super::{
     super::{
         prelude::*,
         text::{round_string, wind_to_char_jp},
     },
+    players_info::{create_players_info, create_round_dialog},
     *,
 };
 
 #[derive(Debug)]
 pub struct WinDialog {
     entity: Entity,
+    round: usize,
+    dealer: Seat,
+    honba: usize,
+    names: [String; SEAT],
+    scores: [Score; SEAT],
     event: EventWin,
     camera_seat: Seat,
     next_win_index: usize,
@@ -20,9 +24,14 @@ pub struct WinDialog {
 }
 
 impl WinDialog {
-    pub fn new(event: &EventWin, camera_seat: Seat) -> Self {
+    pub fn new(stage: &Stage, event: &EventWin, camera_seat: Seat) -> Self {
         let mut obj = Self {
             entity: cmd().spawn_empty().id(),
+            round: stage.round,
+            dealer: stage.dealer,
+            honba: stage.honba,
+            names: get_names(stage),
+            scores: get_scores(stage),
             event: event.clone(),
             camera_seat,
             next_win_index: 0,
@@ -55,8 +64,8 @@ impl WinDialog {
             ))
             .id();
 
-        let wind = wind_to_char_jp(calc_seat_wind(self.event.dealer, ctx.seat));
-        let name = &self.event.names[ctx.seat];
+        let wind = wind_to_char_jp(calc_seat_wind(self.dealer, ctx.seat));
+        let name = &self.names[ctx.seat];
         let win_type = if ctx.is_drawn { "ツモ" } else { "ロン" };
         // プレイヤー (風,名前)
         cmd.spawn((
@@ -153,13 +162,13 @@ impl WinDialog {
 
         let players_info = create_players_info(
             self.camera_seat,
-            self.event.dealer,
-            &self.event.names,
-            &self.event.scores,
+            self.dealer,
+            &self.names,
+            &self.scores,
             &self.event.delta_scores,
         );
         self.entity = create_round_dialog(
-            round_string(self.event.round, self.event.dealer, Some(self.event.honba)),
+            round_string(self.round, self.dealer, Some(self.honba)),
             "".into(),
             players_info,
         );

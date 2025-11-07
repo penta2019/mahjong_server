@@ -640,25 +640,12 @@ impl MahjongEngine {
             melds: pl.melds.clone(),
             is_dealer: is_dealer(&stg, turn),
             is_drawn: true,
-            is_riichi: pl.riichi.is_some(),
             pao: pl.pao,
             delta_scores: d_scores,
             score_context: score_ctx,
         };
         let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-        let scores = get_scores(&stg);
-        let event = Event::win(
-            stg.round,
-            stg.dealer,
-            stg.honba,
-            stg.riichi_sticks,
-            stg.doras.clone(),
-            ura_doras,
-            self.ctrl.get_names(),
-            scores,
-            d_scores,
-            vec![win_ctx],
-        );
+        let event = Event::win(ura_doras, d_scores, vec![win_ctx]);
 
         (event, round_info)
     }
@@ -720,7 +707,6 @@ impl MahjongEngine {
                 melds: pl.melds.clone(),
                 is_dealer: is_dealer(&stg, s),
                 is_drawn: false,
-                is_riichi: pl.riichi.is_some(),
                 pao: pl.pao,
                 delta_scores: d_scores,
                 score_context: score_ctx,
@@ -740,18 +726,7 @@ impl MahjongEngine {
         }
 
         let ura_doras = self.ura_dora_wall[0..stg.doras.len()].to_vec();
-        let event = Event::win(
-            stg.round,
-            stg.dealer,
-            stg.honba,
-            stg.riichi_sticks,
-            stg.doras.clone(),
-            ura_doras,
-            self.ctrl.get_names(),
-            get_scores(&stg),
-            total_d_scores,
-            ctxs,
-        );
+        let event = Event::win(ura_doras, total_d_scores, ctxs);
 
         (event, round_info)
     }
@@ -833,17 +808,7 @@ impl MahjongEngine {
             round_info.change_dealer();
         }
 
-        let event = Event::draw(
-            DrawType::Kouhaiheikyoku,
-            stg.round,
-            stg.dealer,
-            stg.honba,
-            self.ctrl.get_names(),
-            get_scores(&stg),
-            d_scores,
-            nm_scores,
-            hands,
-        );
+        let event = Event::draw(DrawType::Kouhaiheikyoku, d_scores, nm_scores, hands);
 
         (event, round_info)
     }
@@ -865,17 +830,7 @@ impl MahjongEngine {
             hands[s] = tiles_from_tile_table(&stg.players[s].hand);
         }
 
-        let event = Event::draw(
-            type_,
-            stg.round,
-            stg.dealer,
-            stg.honba,
-            self.ctrl.get_names(),
-            get_scores(&stg),
-            [0; SEAT],
-            [0; SEAT],
-            hands,
-        );
+        let event = Event::draw(type_, [0; SEAT], [0; SEAT], hands);
 
         (event, round_info)
     }

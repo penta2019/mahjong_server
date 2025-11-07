@@ -78,6 +78,7 @@ impl fmt::Display for Stage {
 #[derive(Debug, Default, Serialize)]
 pub struct Player {
     pub seat: Seat,               // 座席番号(場・局が変わってもゲーム終了まで不変)
+    pub name: String,             // プレイヤー名
     pub score: Score,             // 得点
     pub hand: TileTable,          // 手牌(4x10の配列)
     pub drawn: Option<Tile>,      // ツモ牌
@@ -115,8 +116,9 @@ impl fmt::Display for Player {
         let melds = vec_to_string(&self.melds);
         writeln!(
             f,
-            "seat: {}, score: {}, riichi: {:?}, nukidora: {}, drawn: {}",
+            "seat: {}, name: {}, score: {}, riichi: {:?}, nukidora: {}, drawn: {}",
             self.seat,
+            self.name,
             self.score,
             self.riichi,
             self.nukidoras.len(),

@@ -1,5 +1,6 @@
 use super::*;
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {
@@ -99,26 +100,12 @@ impl Event {
 
     #[inline]
     pub fn win(
-        round: usize,
-        dealer: Seat,
-        honba: usize,
-        riichi_sticks: usize,
-        doras: Vec<Tile>,
         ura_doras: Vec<Tile>,
-        names: [String; SEAT],
-        scores: [Point; SEAT],
         delta_scores: [Point; SEAT],
         contexts: Vec<WinContext>,
     ) -> Self {
         Self::Win(EventWin {
-            round,
-            dealer,
-            honba,
-            riichi_sticks,
-            doras,
             ura_doras,
-            names,
-            scores,
             delta_scores,
             contexts,
         })
@@ -127,22 +114,12 @@ impl Event {
     #[inline]
     pub fn draw(
         draw_type: DrawType,
-        round: usize,
-        dealer: Seat,
-        honba: usize,
-        names: [String; SEAT],
-        scores: [Point; SEAT],
         delta_scores: [Point; SEAT],
         nagashimangan_scores: [Point; SEAT],
         hands: [Vec<Tile>; SEAT],
     ) -> Self {
         Self::Draw(EventDraw {
             draw_type,
-            round,
-            dealer,
-            honba,
-            names,
-            scores,
             delta_scores,
             nagashimangan_scores,
             hands,
@@ -213,16 +190,7 @@ pub struct EventDora {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventWin {
-    // Stageを見れば明らかにわかることであっても和了結果表示に必要な情報はすべてここに含める
-    // StageControllerにとって必要なデータはdelta_scoresのみ
-    pub round: usize,
-    pub dealer: Seat,
-    pub honba: usize,
-    pub riichi_sticks: usize,
-    pub doras: Vec<Tile>,            // ドラ表示牌
     pub ura_doras: Vec<Tile>,        // 裏ドラ表示牌
-    pub names: [String; SEAT],       // プレイヤー名
-    pub scores: [Point; SEAT],       // 変化前のスコア
     pub delta_scores: [Point; SEAT], // scores + delta_scores = new_scores
     pub contexts: Vec<WinContext>,
 }
@@ -231,14 +199,9 @@ pub struct EventWin {
 pub struct EventDraw {
     // EventWin同様に流局表示に必要な情報をすべて含める
     pub draw_type: DrawType,
-    pub round: usize,
-    pub dealer: Seat,
-    pub honba: usize,
-    pub names: [String; SEAT],               // プレイヤー名
-    pub scores: [Point; SEAT],               // 変化前のスコア
-    pub delta_scores: [Point; SEAT],         // 聴牌,流し満貫による点数変動
+    pub delta_scores: [Point; SEAT], // 聴牌,流し満貫による点数変動
     pub nagashimangan_scores: [Point; SEAT], // 流し満貫のスコア (該当者がいない場合すべて0)
-    pub hands: [Vec<Tile>; SEAT],            // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
+    pub hands: [Vec<Tile>; SEAT],    // 聴牌していたプレイヤーの手牌 (ノーテンは空の配列)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

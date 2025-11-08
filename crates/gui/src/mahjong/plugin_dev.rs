@@ -44,6 +44,11 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         res.gui_stage = Some(GuiStage::new());
         let camera_seat = 0;
 
+        for s in 0..SEAT {
+            res.stage.players[s].score = 25000;
+            res.stage.players[s].name = format!("Player{}", s);
+        }
+
         // res.dialog = Some(Box::new(super::dialog::DrawDialog::new(
         //     &res.stage,
         //     &create_draw_event(),

@@ -177,7 +177,6 @@ impl GuiMahjong {
                 ServerMessage::Event(event) => {
                     match event.as_ref() {
                         MjEvent::Begin(_ev) => {}
-                        MjEvent::End(_ev) => {}
                         _ => self.stage.as_mut().unwrap().handle_event(&event),
                     }
                     self.next_event_time = Instant::now() + Duration::from_millis(300);

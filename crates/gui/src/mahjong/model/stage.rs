@@ -4,7 +4,7 @@ use mahjong_core::control::{common::calc_seat_offset, stage_controller::apply_ev
 use super::{
     super::{
         action::{ActionControl, ActionParam},
-        dialog::{Dialog, DrawDialog, OkButtonQuery, RoundDialog, WinDialog},
+        dialog::{Dialog, DrawDialog, EndDialog, OkButtonQuery, RoundDialog, WinDialog},
         prelude::*,
         setting::{Setting, SettingParam, SettingProps},
     },
@@ -22,7 +22,7 @@ pub struct GuiStage {
     // stage Entity
     // 殆どのEntityはこのEntityの子孫なので,これをdespawn()すればほぼ消える
     entity: Entity,
-    // プレイヤー名
+    // Dialog表示用のStage情報
     stage: Stage,
     // 中央情報パネル
     info: StageInfo,
@@ -163,7 +163,7 @@ impl GuiStage {
         apply_event(&mut self.stage, event);
 
         match event {
-            MjEvent::Begin(_ev) => {}
+            MjEvent::Begin(_ev) => unreachable!(),
             MjEvent::New(ev) => self.event_new(ev),
             MjEvent::Deal(ev) => self.event_deal(ev),
             MjEvent::Discard(ev) => self.event_discard(ev),
@@ -172,7 +172,7 @@ impl GuiStage {
             MjEvent::Dora(ev) => self.event_dora(ev),
             MjEvent::Win(ev) => self.event_win(ev),
             MjEvent::Draw(ev) => self.event_draw(ev),
-            MjEvent::End(_ev) => {}
+            MjEvent::End(ev) => self.event_end(ev),
         }
     }
 
@@ -315,5 +315,9 @@ impl GuiStage {
             event,
             self.camera_seat,
         )));
+    }
+
+    fn event_end(&mut self, _event: &EventEnd) {
+        self.dialog = Some(Box::new(EndDialog::new(&self.stage)))
     }
 }

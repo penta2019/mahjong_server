@@ -44,21 +44,26 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         res.gui_stage = Some(GuiStage::new());
         let camera_seat = 0;
 
-        for s in 0..SEAT {
-            res.stage.players[s].score = 25000;
-            res.stage.players[s].name = format!("Player{}", s);
-        }
+        res.stage.players[0].score = 25000;
+        res.stage.players[1].score = 25000;
+        res.stage.players[2].score = 25000;
+        res.stage.players[3].score = 25000;
+        res.stage.players[0].name = "Player0".into();
+        res.stage.players[1].name = "プレイヤー1".into();
+        res.stage.players[2].name = "Pl2".into();
+        res.stage.players[3].name = "4P".into();
 
         // res.dialog = Some(Box::new(super::dialog::DrawDialog::new(
         //     &res.stage,
         //     &create_draw_event(),
         //     camera_seat,
         // )));
-        res.dialog = Some(Box::new(super::dialog::WinDialog::new(
-            &res.stage,
-            &create_win_event(),
-            camera_seat,
-        )));
+        // res.dialog = Some(Box::new(super::dialog::WinDialog::new(
+        //     &res.stage,
+        //     &create_win_event(),
+        //     camera_seat,
+        // )));
+        res.dialog = Some(Box::new(super::dialog::EndDialog::new(&res.stage)));
     });
 }
 

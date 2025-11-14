@@ -11,6 +11,7 @@ mod menu;
 mod move_animation;
 mod slider;
 mod util;
+// mod render_layer;
 
 use bevy::prelude::*;
 
@@ -36,6 +37,7 @@ pub fn run(tx: Tx, rx: Rx) {
         slider::SliderPlugin,
         menu::MenuPlugin,
         move_animation::MoveAnimationPlugin,
+        // render_layer::RenderLayerPlugin,
         mahjong::MahjongPlugin::new(tx, rx),
     ))
     .insert_resource(Context { can_fly: false })

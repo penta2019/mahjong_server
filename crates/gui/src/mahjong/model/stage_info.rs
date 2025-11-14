@@ -9,6 +9,8 @@ use super::super::{
     text::{round_string, wind_to_char_jp},
 };
 
+const LAYER: RenderLayers = RenderLayers::layer(2);
+
 #[derive(Debug)]
 pub struct StageInfo {
     entity: Entity,
@@ -46,7 +48,7 @@ impl StageInfo {
                     target: RenderTarget::Image(p.info_texture.0.clone().into()),
                     ..default()
                 },
-                RenderLayers::layer(1),
+                LAYER,
             ))
             .id();
 
@@ -57,7 +59,7 @@ impl StageInfo {
                 Name::new("StageInfo".to_string()),
                 Transform::IDENTITY,
                 Visibility::Visible,
-                RenderLayers::layer(1),
+                LAYER,
             ))
             .id();
 
@@ -86,7 +88,7 @@ impl StageInfo {
                 TextColor(WHITE.into()),
                 ChildOf(self.ui),
                 Transform::IDENTITY,
-                RenderLayers::layer(1),
+                LAYER,
             ))
             .id();
         self.round = Some(round);
@@ -96,7 +98,7 @@ impl StageInfo {
                 ChildOf(self.ui),
                 Transform::from_rotation(Quat::from_rotation_z(s as f32 * FRAC_PI_2)),
                 Visibility::Visible,
-                RenderLayers::layer(1),
+                LAYER,
                 children![
                     (
                         Text2d(wind_to_char_jp(calc_seat_wind(event.dealer, s)).into()),
@@ -107,7 +109,7 @@ impl StageInfo {
                         },
                         TextColor(WHITE.into()),
                         Transform::from_xyz(-150.0, -200.0, 0.0),
-                        RenderLayers::layer(1),
+                        LAYER,
                     ),
                     (
                         Text2d(event.scores[s].to_string()),
@@ -118,7 +120,7 @@ impl StageInfo {
                         },
                         TextColor(WHITE.into()),
                         Transform::from_xyz(0.0, -200.0, 0.0),
-                        RenderLayers::layer(1),
+                        LAYER,
                     )
                 ],
             ));

@@ -1,6 +1,8 @@
+use bevy::camera::visibility::RenderLayers;
+
 use super::super::{
     prelude::*,
-    tile_plugin::{TileBlend, TileMutate, create_tile},
+    tile_plugin::{TileBlend, TileMutate, create_tile, create_tile_with_layer},
 };
 
 #[derive(Debug)]
@@ -22,6 +24,12 @@ impl GuiTile {
     pub fn new(tile: Tile) -> Self {
         let p = param();
         let entity = create_tile(&mut p.cmd, &p.asset_server, tile);
+        Self { entity, tile }
+    }
+
+    pub fn with_layer(tile: Tile, layer: &RenderLayers) -> Self {
+        let p = param();
+        let entity = create_tile_with_layer(&mut p.cmd, &p.asset_server, tile, layer.clone());
         Self { entity, tile }
     }
 

@@ -1,13 +1,7 @@
 use bevy::{
-    gltf::GltfMaterialName,
-    image::{ImageFilterMode, ImageSampler, ImageSamplerDescriptor},
-    input::mouse::MouseMotion,
-    picking::pointer::PointerInteraction,
-    prelude::*,
-    reflect::TypePath,
-    render::render_resource::AsBindGroup,
-    scene::SceneInstanceReady,
-    shader::ShaderRef,
+    camera::visibility::RenderLayers, gltf::GltfMaterialName, input::mouse::MouseMotion,
+    picking::pointer::PointerInteraction, prelude::*, render::render_resource::AsBindGroup,
+    scene::SceneInstanceReady, shader::ShaderRef,
 };
 
 use super::super::move_animation::MoveAnimation;
@@ -20,8 +14,6 @@ impl Plugin for TilePlugin {
         app.add_plugins(MaterialPlugin::<TileMaterial>::default())
             .add_observer(tile_texture)
             .add_message::<HoveredTile>()
-            // .add_systems(Startup, setup)
-            .add_systems(Update, on_image_loaded)
             .add_systems(PreUpdate, tile_hover)
             .add_systems(PostUpdate, (tile_mutate, tile_blend));
     }
@@ -39,7 +31,10 @@ pub struct TileMutate(pub Tile);
 pub struct TileBlend(pub LinearRgba);
 
 #[derive(Component, Debug)]
-struct TileInit(Tile);
+struct TileInit {
+    tile: Tile,
+    layer: Option<RenderLayers>,
+}
 
 #[derive(Component, Debug)]
 struct TileComponent {
@@ -72,12 +67,32 @@ impl Material for TileMaterial {
     }
 }
 
+#[inline]
 pub fn create_tile(cmd: &mut Commands, asset_server: &AssetServer, tile: Tile) -> Entity {
+    create_tile_impl(cmd, asset_server, tile, None)
+}
+
+#[inline]
+pub fn create_tile_with_layer(
+    cmd: &mut Commands,
+    asset_server: &AssetServer,
+    tile: Tile,
+    layer: RenderLayers,
+) -> Entity {
+    create_tile_impl(cmd, asset_server, tile, Some(layer))
+}
+
+fn create_tile_impl(
+    cmd: &mut Commands,
+    asset_server: &AssetServer,
+    tile: Tile,
+    layer: Option<RenderLayers>,
+) -> Entity {
     let tile_model = asset_server.load(GltfAssetLabel::Scene(0).from_asset("tile/tile.glb"));
     cmd.spawn((
         Name::new(format!("Tile({tile})")),
         SceneRoot(tile_model),
-        TileInit(tile),
+        TileInit { tile, layer },
     ))
     .id()
 }
@@ -92,7 +107,7 @@ fn tile_texture(
     gltf_materials: Query<&GltfMaterialName>,
 ) {
     let e_tile = ready.event_target();
-    let Ok(TileInit(tile)) = tile_inits.get(e_tile) else {
+    let Ok(tile_init) = tile_inits.get(e_tile) else {
         return; // Tile以外の物も流れてくることに注意
     };
 
@@ -102,7 +117,7 @@ fn tile_texture(
         if let Ok(name) = gltf_materials.get(e_descendant)
             && name.0.as_str() == "default"
         {
-            let texture = asset_server.load(tile_path(*tile));
+            let texture = asset_server.load(tile_path(tile_init.tile));
             let material = tile_materials.add(TileMaterial {
                 texture,
                 blend: Vec4::new(0.0, 0.0, 0.0, 0.0),
@@ -116,27 +131,10 @@ fn tile_texture(
             cmd.entity(e_tile)
                 .remove::<TileInit>()
                 .insert(TileComponent { material });
-        }
-    }
-}
-
-fn on_image_loaded(
-    mut events: MessageReader<AssetEvent<Image>>,
-    mut images: ResMut<Assets<Image>>,
-) {
-    for event in events.read() {
-        if let AssetEvent::Added { id } = event
-            && let Some(image) = images.get_mut(*id)
-        {
-            // TODO: Tile Texture以外にもこの設定が反映される
-            let sampler = ImageSamplerDescriptor {
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
-                anisotropy_clamp: 8,
-                ..default()
-            };
-            image.sampler = ImageSampler::Descriptor(sampler);
+            if let Some(layer) = &tile_init.layer {
+                cmd.entity(e_descendant).insert(layer.clone());
+                cmd.entity(e_tile).insert(layer.clone());
+            }
         }
     }
 }

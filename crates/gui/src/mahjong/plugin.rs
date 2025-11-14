@@ -3,6 +3,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use bevy::camera::{RenderTarget, visibility::RenderLayers};
+
 use super::{
     action::ActionParam,
     dialog::OkButtonQuery,
@@ -15,6 +17,10 @@ use super::{
 
 pub type Tx = std::sync::mpsc::Sender<ClientMessage>;
 pub type Rx = std::sync::mpsc::Receiver<ServerMessage>;
+
+pub const UI3D_LAYER: RenderLayers = RenderLayers::layer(1);
+// #[derive(Resource)]
+// pub struct Ui3dTexture(pub Handle<Image>);
 
 #[derive(Resource)]
 pub struct InfoTexture(pub Handle<Image>);
@@ -50,13 +56,45 @@ impl Plugin for MahjongPlugin {
     }
 }
 
-fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
+pub fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
+    use bevy::render::render_resource::TextureFormat;
+
     // 中央パネルのテクスチャを初期化
     // レンダリング用のカメラより先に初期化される必要があるためここで実行
     // 公式のExamplesでは同時に初期化しているが多くの初期化処理を一度に行う場合に正しく動作しない
-    use bevy::render::render_resource::TextureFormat;
     let image = Image::new_target_texture(512, 512, TextureFormat::bevy_default());
     cmd.insert_resource(InfoTexture(images.add(image)));
+
+    // 3DオブジェクトをUIにオーバーレイするためのテクスチャとカメラ
+    let image = Image::new_target_texture(1600, 1200, TextureFormat::bevy_default());
+    let image = images.add(image);
+    cmd.spawn((
+        Camera3d::default(),
+        Camera {
+            order: 1,
+            clear_color: ClearColorConfig::None,
+            target: RenderTarget::Image(image.clone().into()),
+            ..default()
+        },
+        Transform::from_translation(Vec3::new(0.0, 0.0, 1.0)),
+        Projection::from(PerspectiveProjection {
+            fov: 20.0_f32.to_radians(),
+            aspect_ratio: 4.0 / 3.0,
+            ..default()
+        }),
+        UI3D_LAYER,
+    ));
+    // 当たり判定のない透明なテクスチャで画面全体を覆う
+    cmd.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            ..default()
+        },
+        ImageNode { image, ..default() },
+        ZIndex(1),
+        Pickable::IGNORE,
+    ));
 }
 
 fn mahjong_handle_dialog_event(

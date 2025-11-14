@@ -44,7 +44,7 @@ fn setup(mut cmd: Commands) {
                 row_gap: Val::Px(4.0),
                 ..default()
             },
-            ZIndex(0),
+            ZIndex(128),
             Visibility::Hidden,
             Pickable::IGNORE,
         ))

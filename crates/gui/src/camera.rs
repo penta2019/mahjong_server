@@ -30,6 +30,7 @@ impl Plugin for CameraPlugin {
             ..default()
         };
         ctx.set_mouse_sensitivity(30.0);
+        ctx.set_pitch(-45.0_f32.to_radians());
 
         app.insert_state(CameraState::Fix)
             .insert_resource(ctx)
@@ -140,13 +141,7 @@ impl CameraMove {
     }
 }
 
-fn setup(mut cmd: Commands, mut context: ResMut<CameraContext>) {
-    context.set_pitch(-45.0_f32.to_radians());
-    let tf_camera = Transform {
-        translation: Vec3::new(0.0, 1.0, 1.0),
-        rotation: context.camera_rotation(),
-        scale: Vec3::ONE,
-    };
+fn setup(mut cmd: Commands, context: ResMut<CameraContext>) {
     cmd.spawn((
         MainCamera,
         Camera3d::default(),
@@ -154,8 +149,13 @@ fn setup(mut cmd: Commands, mut context: ResMut<CameraContext>) {
             fov: 20.0_f32.to_radians(),
             ..default()
         }),
-        tf_camera,
+        Transform {
+            translation: Vec3::new(0.0, 1.0, 1.0),
+            rotation: context.camera_rotation(),
+            scale: Vec3::ONE,
+        },
         Msaa::Sample8,
+        IsDefaultUiCamera, // 2DのUIはこのカメラに描画
     ));
 }
 

@@ -3,7 +3,7 @@ use super::{
     dialog::{Dialog, OkButtonQuery},
     model::GuiStage,
     param::{MahjongParam, with_param},
-    plugin::InfoTexture,
+    plugin::{InfoTexture, UI3D_LAYER, setup},
     prelude::*,
     tile_plugin::TilePlugin,
 };
@@ -11,6 +11,7 @@ use super::{
 #[derive(Resource, Debug, Default)]
 pub struct MahjongResource {
     stage: Stage,
+    tile: Option<GuiTile>,
     gui_stage: Option<GuiStage>, // 初期化はwith_paramの内部から行う
     dialog: Option<Box<dyn Dialog>>,
 }
@@ -33,17 +34,9 @@ impl Plugin for MahjongPlugin {
     }
 }
 
-fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>) {
-    use bevy::render::render_resource::TextureFormat;
-    let image = Image::new_target_texture(512, 512, TextureFormat::bevy_default());
-    cmd.insert_resource(InfoTexture(images.add(image)));
-}
-
 fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
     with_param(&mut param, || {
         res.gui_stage = Some(GuiStage::new());
-        let camera_seat = 0;
-
         res.stage.players[0].score = 25000;
         res.stage.players[1].score = 25000;
         res.stage.players[2].score = 25000;
@@ -53,6 +46,7 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         res.stage.players[2].name = "Pl2".into();
         res.stage.players[3].name = "4P".into();
 
+        let camera_seat = 0;
         // res.dialog = Some(Box::new(super::dialog::DrawDialog::new(
         //     &res.stage,
         //     &create_draw_event(),
@@ -64,6 +58,11 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         //     camera_seat,
         // )));
         res.dialog = Some(Box::new(super::dialog::EndDialog::new(&res.stage)));
+
+        // GuiTile::new(Tile(TM, 9)).insert(PropagateRenderLayer::new(&RenderLayers::layer(1)));
+        // GuiTile::new(Tile(TM, 9));
+        GuiTile::with_layer(Tile(TM, 9), &UI3D_LAYER).insert(Transform::from_xyz(0.0, 0.0, 0.0));
+        GuiTile::with_layer(Tile(TM, 9), &UI3D_LAYER).insert(Transform::from_xyz(-0.021, 0.0, 0.0));
     });
 }
 

@@ -1,17 +1,19 @@
 use super::{
     Rx, Tx,
+    action::create_tile_set,
     dialog::{Dialog, OkButtonQuery},
     model::GuiStage,
     param::{MahjongParam, with_param},
-    plugin::{InfoTexture, UI3D_LAYER, setup},
+    plugin::{InfoTexture, setup},
     prelude::*,
     tile_plugin::TilePlugin,
 };
+use crate::ui3d::{UI3D_LAYER, Ui3dTransform};
 
 #[derive(Resource, Debug, Default)]
 pub struct MahjongResource {
     stage: Stage,
-    tile: Option<GuiTile>,
+    tile: Option<Entity>,
     gui_stage: Option<GuiStage>, // 初期化はwith_paramの内部から行う
     dialog: Option<Box<dyn Dialog>>,
 }
@@ -59,10 +61,29 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         // )));
         res.dialog = Some(Box::new(super::dialog::EndDialog::new(&res.stage)));
 
-        // GuiTile::new(Tile(TM, 9)).insert(PropagateRenderLayer::new(&RenderLayers::layer(1)));
-        // GuiTile::new(Tile(TM, 9));
-        GuiTile::with_layer(Tile(TM, 9), &UI3D_LAYER).insert(Transform::from_xyz(0.0, 0.0, 0.0));
-        GuiTile::with_layer(Tile(TM, 9), &UI3D_LAYER).insert(Transform::from_xyz(-0.021, 0.0, 0.0));
+        let node0 = cmd()
+            .spawn(Node {
+                justify_self: JustifySelf::Stretch,
+                align_self: AlignSelf::Stretch,
+                ..default()
+            })
+            .id();
+        let node = cmd()
+            .spawn((
+                ChildOf(node0),
+                Node {
+                    position_type: PositionType::Absolute,
+                    bottom: Val::Percent(25.0),
+                    right: Val::Percent(25.0),
+                    ..default()
+                },
+            ))
+            .id();
+        let tile_set = create_tile_set(&vec![Tile(TM, 8), Tile(TM, 9)]);
+        res.tile = Some(tile_set);
+        cmd()
+            .entity(tile_set)
+            .insert(Ui3dTransform::new(node, Quat::IDENTITY, Vec3::splat(1.0)));
     });
 }
 
@@ -76,6 +97,11 @@ fn system(
             && !dialog.handle_event(&mut ok_buttons)
         {
             res.dialog = Some(dialog);
+        } else {
+            if let Some(t) = res.tile.take() {
+                println!("despawn: {t}");
+                cmd().entity(t).insert(Transform::from_xyz(0.0, 0.0, 0.0));
+            }
         }
     });
 }

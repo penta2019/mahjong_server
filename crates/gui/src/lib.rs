@@ -10,8 +10,8 @@ mod mahjong;
 mod menu;
 mod move_animation;
 mod slider;
+mod ui3d;
 mod util;
-// mod render_layer;
 
 use bevy::prelude::*;
 
@@ -33,11 +33,11 @@ pub fn run(tx: Tx, rx: Rx) {
         DefaultPlugins,
         MeshPickingPlugin,
         camera::CameraPlugin::new(ViewportMode::AspectRatio(4.0 / 3.0)),
+        ui3d::Ui3dPlugin::new(1600, 1200, 0.0004),
         debug::DebugPlugin,
         slider::SliderPlugin,
         menu::MenuPlugin,
         move_animation::MoveAnimationPlugin,
-        // render_layer::RenderLayerPlugin,
         mahjong::MahjongPlugin::new(tx, rx),
     ))
     .insert_resource(Context { can_fly: false })

@@ -51,7 +51,8 @@ pub struct ActionControl {
     // * 複数存在する場合 -> サブメニューで候補一覧を表示
     action_main_menu: Option<Entity>,
     // 同じActionTypeが複数ある場合の候補一覧またはリーチ時のキャンセルボタンを表示するサブメニュー
-    action_sub_menu: Option<Entity>,
+    // Vec<Entity>は牌の組み合わせ表示
+    action_sub_menu: Option<(Entity, Vec<Entity>)>,
     // リーチ宣言牌として可能な打牌一覧, リーチ時以外は空
     riichi_discard_tiles: Vec<Tile>,
 }
@@ -375,7 +376,7 @@ impl ActionControl {
                         cmd().entity(menu).insert(Visibility::Hidden);
                     }
                     let menu = create_sub_action_menu(&acts);
-                    cmd().entity(menu).insert(ChildOf(self.entity));
+                    cmd().entity(menu.0).insert(ChildOf(self.entity));
                     self.action_sub_menu = Some(menu);
                 }
             }
@@ -390,8 +391,15 @@ impl ActionControl {
         if let Some(menu) = self.action_main_menu.take() {
             cmd().entity(menu).despawn();
         }
+        self.clear_sub_menu();
+    }
+
+    fn clear_sub_menu(&mut self) {
         if let Some(menu) = self.action_sub_menu.take() {
-            cmd().entity(menu).despawn();
+            cmd().entity(menu.0).despawn();
+            for tile_set in menu.1 {
+                cmd().entity(tile_set).despawn();
+            }
         }
     }
 
@@ -459,13 +467,10 @@ impl ActionControl {
     }
 
     fn cancel_sub_menu(&mut self) {
-        if let Some(sub) = self.action_sub_menu.take() {
-            let cmd = cmd();
-            self.set_riichi(vec![]);
-            cmd.entity(sub).despawn();
-            if let Some(main) = self.action_main_menu {
-                cmd.entity(main).insert(Visibility::Visible);
-            }
+        self.clear_sub_menu();
+        self.set_riichi(vec![]);
+        if let Some(main) = self.action_main_menu {
+            cmd().entity(main).insert(Visibility::Visible);
         }
     }
 
@@ -525,21 +530,22 @@ impl ActionControl {
 }
 
 fn ordered_action_types(actions: &[Action]) -> Vec<ActionType> {
+    // 下の要素ほど右側に表示される
     let mut types: Vec<_> = [
-        Nop,
-        // turn action
+        // call action
+        Chi,
+        Pon,
+        Minkan,
+        Ron,
         // Discard,
-        Tsumo,
-        Riichi,
         Ankan,
         Kakan,
         Kyushukyuhai,
         Nukidora,
-        // call action
-        Ron,
-        Chi,
-        Pon,
-        Minkan,
+        Riichi,
+        Tsumo,
+        // スキップ 打牌できない場合に表示(鳴き,立直中など)
+        Nop,
     ]
     .into_iter()
     .filter(|t| actions.iter().any(|a| a.ty == *t))

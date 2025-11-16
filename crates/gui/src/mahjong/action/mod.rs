@@ -7,7 +7,9 @@ use mahjong_core::model::{Action, ActionType};
 
 use super::{prelude::*, tile_plugin::HoveredTile};
 
-pub use self::{action_control::ActionControl, auto_menu::AutoButton};
+pub use self::{
+    action_control::ActionControl, action_menu::create_tile_set, auto_menu::AutoButton,
+};
 
 const BUTTON_ACTIVE: Color = Color::srgba(0.15, 0.40, 0.15, 0.8);
 const BUTTON_INACTIVE: Color = Color::srgba(0.15, 0.15, 0.15, 0.8);

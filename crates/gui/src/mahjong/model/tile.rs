@@ -1,9 +1,8 @@
-use bevy::camera::visibility::RenderLayers;
-
 use super::super::{
     prelude::*,
     tile_plugin::{TileBlend, TileMutate, create_tile, create_tile_with_layer},
 };
+use crate::ui3d::UI3D_LAYER;
 
 #[derive(Debug)]
 pub struct GuiTile {
@@ -27,9 +26,9 @@ impl GuiTile {
         Self { entity, tile }
     }
 
-    pub fn with_layer(tile: Tile, layer: &RenderLayers) -> Self {
+    pub fn ui(tile: Tile) -> Self {
         let p = param();
-        let entity = create_tile_with_layer(&mut p.cmd, &p.asset_server, tile, layer.clone());
+        let entity = create_tile_with_layer(&mut p.cmd, &p.asset_server, tile, UI3D_LAYER.clone());
         Self { entity, tile }
     }
 

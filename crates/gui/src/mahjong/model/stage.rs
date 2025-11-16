@@ -160,8 +160,6 @@ impl GuiStage {
                 .handle_event(&mut self.players[seat], event);
         }
 
-        apply_event(&mut self.stage, event);
-
         match event {
             MjEvent::Begin(_ev) => unreachable!(),
             MjEvent::New(ev) => self.event_new(ev),
@@ -174,6 +172,8 @@ impl GuiStage {
             MjEvent::Draw(ev) => self.event_draw(ev),
             MjEvent::End(ev) => self.event_end(ev),
         }
+
+        apply_event(&mut self.stage, event);
     }
 
     pub fn handle_actions(&mut self, actions: PossibleActions) {

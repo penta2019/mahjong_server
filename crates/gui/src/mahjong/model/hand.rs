@@ -27,12 +27,11 @@ impl GuiHand {
         }
     }
 
-    pub fn init(&mut self, m_tiles: &[Tile]) {
-        for t in m_tiles {
-            let tile = GuiTile::new(*t);
+    pub fn init(&mut self, tiles: Vec<GuiTile>) {
+        for tile in &tiles {
             tile.insert((ChildOf(self.entity), self.tf_new_tile(false)));
-            self.tiles.push(tile);
         }
+        self.tiles = tiles;
     }
 
     pub fn deal_tile(&mut self, tile: GuiTile) {

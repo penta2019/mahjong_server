@@ -71,8 +71,8 @@ impl GuiPlayer {
         self.hand.insert(tf);
     }
 
-    pub fn init_hand(&mut self, m_tiles: &[Tile]) {
-        self.hand.init(m_tiles);
+    pub fn init_hand(&mut self, tiles: Vec<GuiTile>) {
+        self.hand.init(tiles);
         self.hand.align();
     }
 

@@ -253,7 +253,8 @@ impl GuiStage {
         }
 
         for seat in 0..SEAT {
-            self.players[seat].init_hand(&event.hands[seat]);
+            self.players[seat]
+                .init_hand(event.hands[seat].iter().map(|t| GuiTile::new(*t)).collect());
         }
     }
 

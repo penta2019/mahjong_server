@@ -1,8 +1,5 @@
 use super::parse::parse_into_chiitoitsu_win;
-use crate::{
-    control::common::{count_tile, tiles_with_red5},
-    model::*,
-};
+use crate::{control::common::count_tile, model::*};
 
 // [完成形判定 (面子, 雀頭)]
 
@@ -148,7 +145,6 @@ pub fn is_kokushimusou_win(hand: &TileTable) -> bool {
 // [和了牌判定]
 // 和了牌のリストを返却
 // 聴牌していない場合は空のリストを返却
-// この関数郡は赤5を考慮しない
 
 // すべての和了形 (通常形,七対子,国士無双)
 pub fn calc_tiles_to_win(hand: &TileTable) -> Vec<Tile> {
@@ -297,7 +293,6 @@ pub fn calc_tiles_to_kokushimusou_win(hand: &TileTable) -> Vec<Tile> {
 // [聴牌捨て牌判定]
 // ツモ番において聴牌となる打牌と待ちの組み合わせの一覧を返却
 // 主にリーチ宣言が可能かどうかを確認する用途
-// この関数群は手牌の赤5を考慮する
 
 pub fn calc_discards_to_win(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)> {
     let ds0 = calc_discards_to_normal_tenpai(hand);
@@ -326,7 +321,7 @@ pub fn calc_discards_to_normal_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Tile>)
         }
     }
 
-    discards_with_red5(&hand, res)
+    res
 }
 
 // 七対子
@@ -383,7 +378,7 @@ pub fn calc_discards_to_chiitoitsu_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<Ti
         _ => panic!(),
     }
 
-    discards_with_red5(hand, res)
+    res
 }
 
 // 国士無双
@@ -422,18 +417,5 @@ pub fn calc_discards_to_kokushimusou_tenpai(hand: &TileTable) -> Vec<(Tile, Vec<
         }
     }
 
-    discards_with_red5(&hand, res)
-}
-
-fn discards_with_red5(
-    hand: &TileTable,
-    discards: Vec<(Tile, Vec<Tile>)>,
-) -> Vec<(Tile, Vec<Tile>)> {
-    let mut res = vec![];
-    for (t, wins) in discards {
-        for t2 in tiles_with_red5(hand, t) {
-            res.push((t2, wins.clone()))
-        }
-    }
     res
 }

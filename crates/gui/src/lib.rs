@@ -33,7 +33,7 @@ pub fn run(tx: Tx, rx: Rx) {
         DefaultPlugins,
         MeshPickingPlugin,
         camera::CameraPlugin::new(ViewportMode::AspectRatio(4.0 / 3.0)),
-        ui3d::Ui3dPlugin::new(1600, 1200, 0.0004),
+        ui3d::Ui3dPlugin::new(1600, 1200, 0.0003),
         debug::DebugPlugin,
         slider::SliderPlugin,
         menu::MenuPlugin,

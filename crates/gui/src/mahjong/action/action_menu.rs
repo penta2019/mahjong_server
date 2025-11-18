@@ -34,7 +34,7 @@ pub fn create_sub_action_menu(actions: &[Action]) -> (Entity, Vec<Entity>) {
             display: Display::Flex,
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::End,
-            align_items: AlignItems::Center,
+            align_items: AlignItems::End,
             ..default()
         })
         .id();

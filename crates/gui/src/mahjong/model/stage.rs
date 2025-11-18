@@ -278,21 +278,22 @@ impl GuiStage {
     }
 
     fn event_meld(&mut self, event: &EventMeld) {
-        // 鳴いたプレイヤーから半時計回りに見た牌を捨てたプレイヤーの座席
-        // 自身(0), 下家(1), 対面(2), 上家(3)
-        let mut meld_offset = 0;
-
         // 他家が捨てた牌
         let meld_tile = match event.meld_type {
             MeldType::Chi | MeldType::Pon | MeldType::Minkan => {
                 let target_seat = self.last_tile.unwrap().0;
-                meld_offset = calc_seat_offset(event.seat, target_seat);
-                Some(self.players[target_seat].take_last_discard_tile())
+                // 鳴いたプレイヤーから半時計回りに見た牌を捨てたプレイヤーの座席
+                // 自身(0), 下家(1), 対面(2), 上家(3)
+                let meld_offset = calc_seat_offset(event.seat, target_seat);
+                Some((
+                    self.players[target_seat].take_last_discard_tile(),
+                    meld_offset,
+                ))
             }
             _ => None,
         };
 
-        self.players[event.seat].meld(&event.consumed, meld_tile, meld_offset);
+        self.players[event.seat].meld(&event.consumed, meld_tile);
     }
 
     fn event_nukidora(&mut self, _event: &EventNukidora) {}

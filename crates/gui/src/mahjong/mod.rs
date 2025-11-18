@@ -10,7 +10,7 @@ mod text;
 mod tile_plugin;
 
 #[allow(unused)]
-mod plugin_dev;
+mod plugin_dev; // 開発用動作テストプラグイン
 
 #[cfg(not(feature = "dev"))]
 pub type MahjongPlugin = plugin::MahjongPlugin;

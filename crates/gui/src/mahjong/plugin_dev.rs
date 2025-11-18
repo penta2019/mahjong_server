@@ -1,3 +1,5 @@
+use mahjong_core::control::string::tiles_from_string;
+
 use super::{
     Rx, Tx,
     action::create_tile_set,
@@ -54,36 +56,36 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         //     &create_draw_event(),
         //     camera_seat,
         // )));
-        // res.dialog = Some(Box::new(super::dialog::WinDialog::new(
-        //     &res.stage,
-        //     &create_win_event(),
-        //     camera_seat,
-        // )));
-        res.dialog = Some(Box::new(super::dialog::EndDialog::new(&res.stage)));
+        res.dialog = Some(Box::new(super::dialog::WinDialog::new(
+            &res.stage,
+            &create_win_event(),
+            camera_seat,
+        )));
+        // res.dialog = Some(Box::new(super::dialog::EndDialog::new(&res.stage)));
 
-        let node0 = cmd()
-            .spawn(Node {
-                justify_self: JustifySelf::Stretch,
-                align_self: AlignSelf::Stretch,
-                ..default()
-            })
-            .id();
-        let node = cmd()
-            .spawn((
-                ChildOf(node0),
-                Node {
-                    position_type: PositionType::Absolute,
-                    bottom: Val::Percent(25.0),
-                    right: Val::Percent(25.0),
-                    ..default()
-                },
-            ))
-            .id();
-        let tile_set = create_tile_set(&vec![Tile(TM, 8), Tile(TM, 9)]);
-        res.tile = Some(tile_set);
-        cmd()
-            .entity(tile_set)
-            .insert(Ui3dTransform::new(node, Quat::IDENTITY, Vec3::splat(1.0)));
+        // let node0 = cmd()
+        //     .spawn(Node {
+        //         justify_self: JustifySelf::Stretch,
+        //         align_self: AlignSelf::Stretch,
+        //         ..default()
+        //     })
+        //     .id();
+        // let node = cmd()
+        //     .spawn((
+        //         ChildOf(node0),
+        //         Node {
+        //             position_type: PositionType::Absolute,
+        //             bottom: Val::Percent(25.0),
+        //             right: Val::Percent(25.0),
+        //             ..default()
+        //         },
+        //     ))
+        //     .id();
+        // let tile_set = create_tile_set(&vec![Tile(TM, 8), Tile(TM, 9)]);
+        // res.tile = Some(tile_set);
+        // cmd()
+        //     .entity(tile_set)
+        //     .insert(Ui3dTransform::new(node, Quat::IDENTITY, Vec3::splat(1.0)));
     });
 }
 
@@ -123,9 +125,34 @@ fn create_win_event() -> EventWin {
         contexts: vec![
             WinContext {
                 seat: 0,
-                hand: vec![],
-                winning_tile: Tile(TM, 1),
-                melds: vec![],
+                hand: tiles_from_string("m5").unwrap(),
+                winning_tile: Tile(TM, 0),
+                melds: vec![
+                    Meld {
+                        step: 0,
+                        meld_type: MeldType::Minkan,
+                        tiles: tiles_from_string("m1111").unwrap(),
+                        froms: vec![0, 0, 0, 1],
+                    },
+                    Meld {
+                        step: 0,
+                        meld_type: MeldType::Kakan,
+                        tiles: tiles_from_string("m4444").unwrap(),
+                        froms: vec![0, 0, 3, 0],
+                    },
+                    Meld {
+                        step: 0,
+                        meld_type: MeldType::Minkan,
+                        tiles: tiles_from_string("m2222").unwrap(),
+                        froms: vec![0, 0, 0, 2],
+                    },
+                    Meld {
+                        step: 0,
+                        meld_type: MeldType::Minkan,
+                        tiles: tiles_from_string("m3333").unwrap(),
+                        froms: vec![0, 0, 0, 3],
+                    },
+                ],
                 is_dealer: true,
                 is_drawn: true,
                 pao: None,
@@ -171,7 +198,7 @@ fn create_win_event() -> EventWin {
             },
             WinContext {
                 seat: 1,
-                hand: vec![],
+                hand: tiles_from_string("m1112223334445").unwrap(),
                 winning_tile: Tile(TM, 1),
                 melds: vec![],
                 is_dealer: false,

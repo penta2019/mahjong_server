@@ -1,6 +1,7 @@
 use super::super::prelude::*;
 use crate::move_animation::MoveAnimation;
 
+// 一番右の牌の右端が基準位置
 #[derive(Debug)]
 pub struct GuiMeld {
     entity: Entity,
@@ -19,20 +20,25 @@ impl GuiMeld {
         }
     }
 
+    pub fn width(&self) -> f32 {
+        -self.item_ofsset_x
+    }
+
     pub fn meld(
         &mut self,
-        mut tiles: Vec<GuiTile>,
-        meld_tile: Option<GuiTile>,
-        meld_offset: usize,
+        self_tiles: Vec<GuiTile>,
+        meld_tile: Option<(GuiTile, usize)>,
+        animate: bool,
     ) {
-        let mut meld_item_width = GuiTile::WIDTH * tiles.len() as f32;
+        let mut meld_item_width = GuiTile::WIDTH * self_tiles.len() as f32;
         if meld_tile.is_some() {
             meld_item_width += GuiTile::HEIGHT;
         }
 
+        let mut tiles = self_tiles;
         let mut meld_index = None;
         let mut tfs = [Transform::IDENTITY; 4];
-        if let Some(meld_tile) = meld_tile {
+        if let Some((meld_tile, meld_offset)) = meld_tile {
             meld_index = Some(3 - meld_offset);
             if tiles.len() == 3 && meld_offset == 1 {
                 // 下家から大明槓する場合は鳴いた牌を一番右に移動
@@ -43,7 +49,7 @@ impl GuiMeld {
             match tiles.len() {
                 1 => {
                     // 加槓: すでに存在するGuiMeldItemに牌を加えるので例外的な処理が必要
-                    self.meld_kakan(tiles.pop().unwrap());
+                    self.meld_kakan(tiles.pop().unwrap(), animate);
                     return;
                 }
                 4 => {
@@ -58,26 +64,24 @@ impl GuiMeld {
         }
 
         let mut meld_item = GuiMeldItem::new();
-        self.item_ofsset_x -= meld_item_width + GuiTile::WIDTH / 4.0;
+        self.item_ofsset_x -= meld_item_width + GuiTile::WIDTH * 0.25;
         meld_item.insert((
             ChildOf(self.entity),
             Transform::from_xyz(self.item_ofsset_x, 0.0, 0.0),
         ));
 
         if let Some(i) = meld_index {
-            tfs[i].rotation = Quat::from_rotation_z(if meld_offset == 1 {
-                // 下家からの鳴きは右向き
-                -FRAC_PI_2
-            } else {
+            tfs[i].rotation = Quat::from_rotation_z(if i < 2 {
                 // 対面,上家からの鳴きは左向き
                 FRAC_PI_2
+            } else {
+                // 下家からの鳴きは右向き
+                -FRAC_PI_2
             });
         }
 
         let mut offset_x = 0.0; // 次の牌の基準位置
         for (i, tile) in tiles.iter().enumerate() {
-            tfs[i].translation = tile.transform_from(self.entity).translation;
-
             let mut move_to = Vec3::new(offset_x, 0.0, 0.0);
             if Some(i) == meld_index {
                 let frac_diff_2 = (GuiTile::HEIGHT - GuiTile::WIDTH) / 2.0;
@@ -88,11 +92,17 @@ impl GuiMeld {
                 offset_x += GuiTile::WIDTH;
             }
 
-            tile.insert((
-                ChildOf(meld_item.entity()),
-                tfs[i],
-                MoveAnimation::new(move_to),
-            ));
+            if animate {
+                tfs[i].translation = tile.transform_from(self.entity).translation;
+                tile.insert((
+                    ChildOf(meld_item.entity()),
+                    tfs[i],
+                    MoveAnimation::new(move_to),
+                ));
+            } else {
+                tfs[i].translation = move_to;
+                tile.insert((ChildOf(meld_item.entity()), tfs[i]));
+            }
         }
 
         meld_item.tiles = tiles;
@@ -100,7 +110,7 @@ impl GuiMeld {
         self.items.push(meld_item);
     }
 
-    fn meld_kakan(&mut self, tile: GuiTile) {
+    fn meld_kakan(&mut self, tile: GuiTile, animate: bool) {
         let normal = tile.tile().to_normal();
         let meld_item = self
             .items
@@ -112,7 +122,6 @@ impl GuiMeld {
         // 加槓と対象となるポンをどこから鳴いているかで向きを決定
         let e_meld_item = meld_item.entity();
         let mut tf = Transform::IDENTITY;
-        tf.translation = tile.transform_from(e_meld_item).translation;
         tf.rotation = Quat::from_rotation_z(if meld_index == 2 {
             // 下家からなら右向き
             -FRAC_PI_2
@@ -128,7 +137,13 @@ impl GuiMeld {
             0.0,
         );
 
-        tile.insert((ChildOf(e_meld_item), tf, MoveAnimation::new(move_to)));
+        if animate {
+            tf.translation = tile.transform_from(e_meld_item).translation;
+            tile.insert((ChildOf(e_meld_item), tf, MoveAnimation::new(move_to)));
+        } else {
+            tf.translation = move_to;
+            tile.insert((ChildOf(e_meld_item), tf));
+        }
 
         meld_item.tiles.push(tile);
     }

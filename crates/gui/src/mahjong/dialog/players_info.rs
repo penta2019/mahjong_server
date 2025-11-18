@@ -2,28 +2,15 @@ use mahjong_core::control::common::{calc_seat_offset, calc_seat_wind};
 
 use crate::mahjong::text::create_text_with_color;
 
-use super::{
-    super::{prelude::*, text::wind_to_char_jp},
-    create_ok_button,
-};
+use super::{super::text::wind_to_char_jp, *};
 
 pub fn create_round_dialog(title: String, sub_title: String, players_info: Entity) -> Entity {
     let cmd = cmd();
 
     let entity = cmd
         .spawn((
-            Node {
-                justify_self: JustifySelf::Center,
-                align_self: AlignSelf::Center,
-                width: Val::Px(600.0),
-                height: Val::Px(400.0),
-                padding: UiRect::top(Val::Px(8.0)),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                row_gap: Val::Px(16.0),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
+            create_dialog_node(),
+            DIALOG_BACKGROUND,
             children![create_text(title, 40.0), create_text(sub_title, 30.0)],
         ))
         .id();

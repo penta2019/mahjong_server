@@ -11,18 +11,8 @@ impl EndDialog {
 
         let entity = cmd
             .spawn((
-                Node {
-                    justify_self: JustifySelf::Center,
-                    align_self: AlignSelf::Center,
-                    width: Val::Px(600.0),
-                    height: Val::Px(400.0),
-                    padding: UiRect::top(Val::Px(8.0)),
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    row_gap: Val::Px(16.0),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.9)),
+                create_dialog_node(),
+                DIALOG_BACKGROUND,
                 children![create_text("終局".into(), 40.0)],
             ))
             .id();

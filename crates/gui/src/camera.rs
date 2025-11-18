@@ -38,6 +38,7 @@ impl Plugin for CameraPlugin {
             .add_systems(Startup, setup)
             .add_systems(OnEnter(CameraState::Fly), state_fly)
             .add_systems(OnEnter(CameraState::Fix), state_fix)
+            .add_systems(PreUpdate, update_viewport)
             .add_systems(
                 Update,
                 (
@@ -47,7 +48,7 @@ impl Plugin for CameraPlugin {
                 )
                     .run_if(in_state(CameraState::Fly)),
             )
-            .add_systems(PostUpdate, (update_viewport, camera_event));
+            .add_systems(PostUpdate, camera_event);
     }
 }
 

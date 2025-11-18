@@ -11,6 +11,7 @@ struct Config {
     width: u32,
     height: u32,
     scale: f32,
+    wait_frame: u32,
 }
 
 pub struct Ui3dPlugin {
@@ -24,6 +25,7 @@ impl Ui3dPlugin {
                 width,
                 height,
                 scale,
+                wait_frame: 3, // 起動直後数フレームはviewportが確定していないため待機する用
             },
         }
     }
@@ -98,13 +100,18 @@ fn setup(mut cmd: Commands, mut images: ResMut<Assets<Image>>, config: Res<Confi
 
 fn update_transform(
     mut cmd: Commands,
-    config: Res<Config>,
+    mut config: ResMut<Config>,
     viewport_node: Single<&ComputedNode, With<Ui3dViewport>>,
     camera: Single<(&GlobalTransform, &Camera), With<Ui3dCamera>>,
     node_tfs: Query<&UiGlobalTransform, With<Node>>,
     ui3d_tfs: Query<(Entity, &Ui3dTransform)>,
 ) {
     if ui3d_tfs.is_empty() {
+        return;
+    }
+
+    if config.wait_frame > 0 {
+        config.wait_frame -= 1;
         return;
     }
 

@@ -20,10 +20,12 @@ pub type OkButtonQuery<'w, 's> = Query<
     (Changed<Interaction>, With<OkButton>),
 >;
 
+const DIALOG_BACKGROUND: BackgroundColor = BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.95));
+
 pub trait Dialog: std::fmt::Debug + Sync + Send {
     // Sync, SendはResourceに含めるために必要
 
-    // Dialogの処理が終了した場合はtrueを返却 呼び出し元からdestroy()を実行
+    // Dialogの処理が終了した場合はtrueを返却
     fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool;
 }
 
@@ -36,6 +38,20 @@ fn handle_dialog_ok_button(buttons: &mut OkButtonQuery) -> bool {
         };
     }
     false
+}
+
+fn create_dialog_node() -> Node {
+    Node {
+        justify_self: JustifySelf::Center,
+        align_self: AlignSelf::Center,
+        width: Val::Px(640.0),
+        height: Val::Px(400.0),
+        padding: UiRect::top(Val::Px(8.0)),
+        flex_direction: FlexDirection::Column,
+        align_items: AlignItems::Center,
+        row_gap: Val::Px(16.0),
+        ..default()
+    }
 }
 
 fn create_ok_button() -> impl Bundle {

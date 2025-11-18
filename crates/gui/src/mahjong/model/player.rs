@@ -28,7 +28,7 @@ impl GuiPlayer {
         discard.insert((
             ChildOf(entity),
             Transform {
-                translation: Vec3::new(-0.05, GuiTile::DEPTH / 2.0, 0.074),
+                translation: Vec3::new(-GuiTile::WIDTH * 2.5, GuiTile::DEPTH / 2.0, 0.074),
                 rotation: Quat::from_rotation_x(-FRAC_PI_2),
                 scale: Vec3::ONE,
             },
@@ -73,11 +73,11 @@ impl GuiPlayer {
 
     pub fn init_hand(&mut self, tiles: Vec<GuiTile>) {
         self.hand.init(tiles);
-        self.hand.align();
+        self.hand.align(true);
     }
 
     pub fn deal_tile(&mut self, tile: GuiTile) {
-        self.hand.deal_tile(tile);
+        self.hand.deal_tile(tile, true);
     }
 
     pub fn discard_tile(&mut self, m_tile: Tile, is_drawn: bool, is_riichi: bool) {
@@ -86,20 +86,20 @@ impl GuiPlayer {
         }
         let tile = self.take_tile_from_hand(m_tile, is_drawn);
         self.discard.push_tile(tile);
-        self.hand.align();
+        self.hand.align(true);
     }
 
     pub fn confirm_discard_tile(&mut self) {
         self.discard.confirm_last_tile();
     }
 
-    pub fn meld(&mut self, m_tiles: &[Tile], meld_tile: Option<GuiTile>, meld_offset: usize) {
-        let tiles_from_hand: Vec<GuiTile> = m_tiles
+    pub fn meld(&mut self, self_tiles: &[Tile], meld_tile: Option<(GuiTile, usize)>) {
+        let self_tiles: Vec<GuiTile> = self_tiles
             .iter()
             .map(|t| self.take_tile_from_hand(*t, false))
             .collect();
-        self.meld.meld(tiles_from_hand, meld_tile, meld_offset);
-        self.hand.align();
+        self.meld.meld(self_tiles, meld_tile, true);
+        self.hand.align(true);
     }
 
     pub fn take_last_discard_tile(&mut self) -> GuiTile {

@@ -8,7 +8,7 @@ pub type IsDrawn = bool;
 #[derive(Debug)]
 pub struct GuiHand {
     entity: Entity,
-    tiles: Vec<GuiTile>,
+    tiles: Vec<GuiTile>, // 一番左の牌の下側中心奥が基準位置
     drawn_tile: Option<Entity>,
     preferred_tile: Option<Entity>,
     do_sort: bool,
@@ -27,6 +27,12 @@ impl GuiHand {
         }
     }
 
+    // 一番左の牌の下側左奥が基準位置から右端までの長さ
+    pub fn width(&self) -> f32 {
+        GuiTile::WIDTH
+            * (self.tiles.len() as f32 + if self.drawn_tile.is_some() { 0.5 } else { 0.0 })
+    }
+
     pub fn init(&mut self, tiles: Vec<GuiTile>) {
         for tile in &tiles {
             tile.insert((ChildOf(self.entity), self.tf_new_tile(false)));
@@ -34,17 +40,22 @@ impl GuiHand {
         self.tiles = tiles;
     }
 
-    pub fn deal_tile(&mut self, tile: GuiTile) {
+    pub fn deal_tile(&mut self, tile: GuiTile, animate: bool) {
         self.drawn_tile = Some(tile.entity());
 
-        let mut tf_from = tile.transform_from(self.entity);
-        let tf_to = self.tf_new_tile(true);
-        tf_from.rotation = tf_to.rotation;
-        tile.insert((
-            ChildOf(self.entity),
-            tf_from,
-            MoveAnimation::new(tf_to.translation),
-        ));
+        if animate {
+            let mut tf_from = tile.transform_from(self.entity);
+            let tf_to = self.tf_new_tile(true);
+            tf_from.rotation = tf_to.rotation;
+            tile.insert((
+                ChildOf(self.entity),
+                tf_from,
+                MoveAnimation::new(tf_to.translation),
+            ));
+        } else {
+            let tf_to = self.tf_new_tile(true);
+            tile.insert((ChildOf(self.entity), tf_to));
+        }
 
         self.tiles.push(tile);
     }
@@ -125,7 +136,7 @@ impl GuiHand {
     pub fn set_sort(&mut self, flag: bool) {
         self.do_sort = flag;
         if self.do_sort {
-            self.align();
+            self.align(true);
         }
     }
 
@@ -139,27 +150,29 @@ impl GuiHand {
             self.tiles.insert(to, tile);
         }
         self.set_sort(false);
-        self.align();
+        self.align(true);
     }
 
     pub fn set_preferred_tile(&mut self, e_tile: Entity) {
         self.preferred_tile = Some(e_tile);
     }
 
-    pub fn align(&mut self) {
+    pub fn align(&mut self, animate: bool) {
         if self.do_sort {
             self.tiles.sort_by_key(|t| t.tile());
         }
 
         for (i, tile) in self.tiles.iter().enumerate() {
-            tile.insert(
-                MoveAnimation::new(Vec3::new(
-                    GuiTile::WIDTH * i as f32,
-                    GuiTile::HEIGHT / 2.0,
-                    GuiTile::DEPTH / 2.0,
-                ))
-                .with_frame(6),
+            let pos = Vec3::new(
+                GuiTile::WIDTH * i as f32,
+                GuiTile::HEIGHT / 2.0,
+                GuiTile::DEPTH / 2.0,
             );
+            if animate {
+                tile.insert(MoveAnimation::new(pos).with_frame(6));
+            } else {
+                tile.insert(Transform::from_translation(pos));
+            }
         }
     }
 

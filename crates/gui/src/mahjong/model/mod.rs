@@ -9,6 +9,7 @@ mod wall;
 
 pub use self::{
     hand::{GuiHand, IsDrawn},
+    meld::GuiMeld,
     player::GuiPlayer,
     stage::GuiStage,
     tile::GuiTile,

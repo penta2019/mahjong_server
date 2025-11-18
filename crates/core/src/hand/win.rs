@@ -1,6 +1,8 @@
 use super::parse::parse_into_chiitoitsu_win;
 use crate::{control::common::count_tile, model::*};
 
+// このモジュールの関数は赤5を通常の5として扱う
+
 // [完成形判定 (面子, 雀頭)]
 
 // それぞれの牌種について"枚数を3で割った余り"と"余り数の集計"を返却

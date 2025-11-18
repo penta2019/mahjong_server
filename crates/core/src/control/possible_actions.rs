@@ -375,13 +375,19 @@ pub fn calc_possible_tenpai_discards(
 ) -> Vec<Tenpai> {
     let mut comb: Vec<(Tile, Tile)> = vec![]; // (打牌, 和了牌)の組み合わせ
     for (d, wts) in calc_discards_to_win(&pl.hand) {
-        for wt in wts {
-            comb.push((d, wt));
+        for d2 in tiles_with_red5(&pl.hand, d) {
+            for wt in &wts {
+                comb.push((d2, *wt));
+            }
         }
     }
+    if comb.is_empty() {
+        return vec![];
+    }
 
-    let yf = YakuFlags::default();
     let mut res: Vec<Tenpai> = vec![];
+    let yf = YakuFlags::default();
+    let mut hand = pl.hand;
     for (d, wt) in comb {
         if pl.is_riichi && d != pl.drawn.unwrap() {
             continue;
@@ -394,11 +400,10 @@ pub fn calc_possible_tenpai_discards(
             })
         }
 
-        let mut h = pl.hand;
-        dec_tile(&mut h, d);
-        inc_tile(&mut h, wt);
+        dec_tile(&mut hand, d);
+        inc_tile(&mut hand, wt);
         let sc = evaluate_hand(
-            &h,
+            &hand,
             &pl.melds,
             &[],
             &[],
@@ -409,6 +414,9 @@ pub fn calc_possible_tenpai_discards(
             seat_wind,
             &yf,
         );
+        dec_tile(&mut hand, wt);
+        inc_tile(&mut hand, d);
+
         let wt_info = WinningTile {
             tile: wt,
             has_yaku: sc.is_some(),

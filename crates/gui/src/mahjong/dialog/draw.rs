@@ -1,10 +1,6 @@
 use mahjong_core::control::common::{get_names, get_scores};
 
-use super::{
-    super::text::round_string,
-    players_info::{create_players_info, create_round_dialog},
-    *,
-};
+use super::*;
 
 #[derive(Debug)]
 pub struct DrawDialog {

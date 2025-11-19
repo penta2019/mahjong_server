@@ -1,11 +1,7 @@
 use mahjong_core::control::common::{calc_seat_offset, calc_seat_wind, get_names, get_scores};
 
 use super::{
-    super::{
-        model::{GuiHand, GuiMeld},
-        text::{round_string, wind_to_char_jp},
-    },
-    players_info::{create_players_info, create_round_dialog},
+    super::model::{GuiHand, GuiMeld},
     *,
 };
 use crate::ui3d::Ui3dTransform;

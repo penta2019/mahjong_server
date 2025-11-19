@@ -1,8 +1,51 @@
 use mahjong_core::control::common::{calc_seat_offset, calc_seat_wind};
 
+use super::*;
 use crate::mahjong::text::create_text_with_color;
 
-use super::{super::text::wind_to_char_jp, *};
+pub fn handle_dialog_ok_button(buttons: &mut OkButtonQuery) -> bool {
+    for (iteraction, mut border) in buttons {
+        match iteraction {
+            Interaction::Pressed => return true,
+            Interaction::Hovered => border.set_all(Color::WHITE),
+            Interaction::None => border.set_all(Color::BLACK),
+        };
+    }
+    false
+}
+
+pub fn create_dialog_node() -> Node {
+    Node {
+        justify_self: JustifySelf::Center,
+        align_self: AlignSelf::Center,
+        width: Val::Px(640.0),
+        height: Val::Px(400.0),
+        padding: UiRect::top(Val::Px(8.0)),
+        flex_direction: FlexDirection::Column,
+        align_items: AlignItems::Center,
+        row_gap: Val::Px(16.0),
+        ..default()
+    }
+}
+
+pub fn create_ok_button() -> impl Bundle {
+    (
+        OkButton,
+        Button,
+        Node {
+            width: Val::Px(100.0),
+            height: Val::Px(32.0),
+            border: UiRect::all(Val::Px(1.0)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        // BorderRadius::all(Val::Px(4.0)),
+        BorderColor::all(Color::BLACK),
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.1)),
+        children![create_text("OK".into(), 20.0)],
+    )
+}
 
 pub fn create_round_dialog(title: String, sub_title: String, players_info: Entity) -> Entity {
     let cmd = cmd();

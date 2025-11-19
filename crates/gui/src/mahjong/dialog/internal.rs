@@ -14,36 +14,45 @@ pub fn handle_dialog_ok_button(buttons: &mut OkButtonQuery) -> bool {
     false
 }
 
-pub fn create_dialog_node() -> Node {
-    Node {
-        justify_self: JustifySelf::Center,
-        align_self: AlignSelf::Center,
-        width: Val::Px(640.0),
-        height: Val::Px(400.0),
-        padding: UiRect::top(Val::Px(8.0)),
-        flex_direction: FlexDirection::Column,
-        align_items: AlignItems::Center,
-        row_gap: Val::Px(16.0),
-        ..default()
-    }
-}
-
-pub fn create_ok_button() -> impl Bundle {
+pub fn create_dialog() -> impl Bundle {
     (
-        OkButton,
-        Button,
         Node {
-            width: Val::Px(100.0),
-            height: Val::Px(32.0),
-            border: UiRect::all(Val::Px(1.0)),
-            justify_content: JustifyContent::Center,
+            justify_self: JustifySelf::Center,
+            align_self: AlignSelf::Center,
+            width: Val::Px(640.0),
+            height: Val::Px(400.0),
+            padding: UiRect::top(Val::Px(8.0)),
+            flex_direction: FlexDirection::Column,
             align_items: AlignItems::Center,
+            row_gap: Val::Px(16.0),
             ..default()
         },
-        // BorderRadius::all(Val::Px(4.0)),
-        BorderColor::all(Color::BLACK),
-        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.1)),
-        children![create_text("OK".into(), 20.0)],
+        BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.95)),
+        // OKボタン
+        children![(
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(8.0),
+                width: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            children![(
+                OkButton,
+                Button,
+                Node {
+                    width: Val::Px(100.0),
+                    height: Val::Px(32.0),
+                    border: UiRect::all(Val::Px(1.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BorderColor::all(Color::BLACK),
+                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.1)),
+                children![create_text("OK".into(), 20.0)],
+            )],
+        )],
     )
 }
 
@@ -51,11 +60,11 @@ pub fn create_round_dialog(title: String, sub_title: String, players_info: Entit
     let cmd = cmd();
 
     let entity = cmd
-        .spawn((
-            create_dialog_node(),
-            DIALOG_BACKGROUND,
-            children![create_text(title, 40.0), create_text(sub_title, 30.0)],
-        ))
+        .spawn(create_dialog())
+        .with_children(|cmd| {
+            cmd.spawn(create_text(title, 40.0));
+            cmd.spawn(create_text(sub_title, 30.0));
+        })
         .id();
 
     cmd.spawn((
@@ -69,18 +78,6 @@ pub fn create_round_dialog(title: String, sub_title: String, players_info: Entit
         },
     ))
     .add_child(players_info);
-
-    cmd.spawn((
-        ChildOf(entity),
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(8.0),
-            width: Val::Percent(100.0),
-            justify_content: JustifyContent::Center,
-            ..default()
-        },
-        children![create_ok_button()],
-    ));
 
     entity
 }

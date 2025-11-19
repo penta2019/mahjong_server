@@ -53,7 +53,7 @@ impl WinDialog {
         let ctx = &self.event.contexts[self.next_win_index];
         self.next_win_index += 1;
 
-        let entity = cmd.spawn((create_dialog_node(), DIALOG_BACKGROUND)).id();
+        let entity = cmd.spawn(create_dialog()).id();
 
         // プレイヤー (風,名前)
         let wind = wind_to_char_jp(calc_seat_wind(self.dealer, ctx.seat));
@@ -171,19 +171,6 @@ impl WinDialog {
             children![create_text(format!("{} {}", title_str, point_str), 24.0)],
         ));
 
-        // OKボタン
-        cmd.spawn((
-            ChildOf(entity),
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(8.0),
-                width: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            children![create_ok_button()],
-        ));
-
         self.entity = entity;
 
         true
@@ -237,7 +224,6 @@ fn create_yaku_view(yaku: &[Yaku], is_yakuman: bool) -> Entity {
 
     let entity = cmd
         .spawn((Node {
-            // justify_content: JustifyContent::Center,
             column_gap: Val::Px(16.0),
             ..default()
         },))
@@ -253,7 +239,6 @@ fn create_yaku_view(yaku: &[Yaku], is_yakuman: bool) -> Entity {
                 ChildOf(entity),
                 Node {
                     width: Val::Px(128.0),
-                    // margin: UiRect::left(Val::Px(32.0)),
                     flex_direction: FlexDirection::Column,
                     align_items: if is_yakuman {
                         AlignItems::Center
@@ -270,7 +255,6 @@ fn create_yaku_view(yaku: &[Yaku], is_yakuman: bool) -> Entity {
             .spawn((
                 ChildOf(entity),
                 Node {
-                    // margin: UiRect::left(Val::Px(16.0)),
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::FlexEnd, // '飜'の文字が縦に綺麗に揃うように右寄せ
                     ..default()

@@ -10,11 +10,8 @@ impl EndDialog {
         let cmd = cmd();
 
         let entity = cmd
-            .spawn((
-                create_dialog_node(),
-                DIALOG_BACKGROUND,
-                children![create_text("終局".into(), 40.0)],
-            ))
+            .spawn(create_dialog())
+            .with_child(create_text("終局".into(), 40.0))
             .id();
 
         let mut players: Vec<(usize, String)> = stage
@@ -36,18 +33,6 @@ impl EndDialog {
                 cmd.spawn(create_text(format!("{}位    {}", rank, name), 25.0));
             }
         });
-
-        cmd.spawn((
-            ChildOf(entity),
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(8.0),
-                width: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            children![create_ok_button()],
-        ));
 
         Self { entity }
     }

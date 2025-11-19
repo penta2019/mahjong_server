@@ -24,8 +24,6 @@ pub type OkButtonQuery<'w, 's> = Query<
     (Changed<Interaction>, With<OkButton>),
 >;
 
-const DIALOG_BACKGROUND: BackgroundColor = BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.95));
-
 pub trait Dialog: std::fmt::Debug + Sync + Send {
     // Sync, SendはResourceに含めるために必要
 

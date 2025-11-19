@@ -198,8 +198,8 @@ fn create_win_event() -> EventWin {
             },
             WinContext {
                 seat: 1,
-                hand: tiles_from_string("m1112223334445").unwrap(),
-                winning_tile: Tile(TM, 1),
+                hand: tiles_from_string("z1112223334445").unwrap(),
+                winning_tile: Tile(TZ, 5),
                 melds: vec![],
                 is_dealer: false,
                 is_drawn: true,
@@ -208,24 +208,28 @@ fn create_win_event() -> EventWin {
                 score_context: ScoreContext {
                     yakus: vec![
                         Yaku {
-                            name: "立直".into(),
+                            name: "天和".into(),
                             fan: 1,
                         },
                         Yaku {
-                            name: "門前清自摸和".into(),
-                            fan: 1,
+                            name: "四暗刻単騎".into(),
+                            fan: 2,
                         },
                         Yaku {
-                            name: "平和".into(),
+                            name: "大四喜".into(),
+                            fan: 2,
+                        },
+                        Yaku {
+                            name: "字一色".into(),
                             fan: 1,
                         },
                     ],
                     fu: 20,
-                    fan: 3,
-                    yakuman: 0,
-                    score: 5200,
-                    points: (5200, 1300, 2600),
-                    title: "".into(),
+                    fan: 0,
+                    yakuman: 6,
+                    score: 32000 * 6,
+                    points: (32000 * 6, 8000 * 6, 16000 * 6),
+                    title: "六倍役満".into(),
                 },
             },
         ],

@@ -102,7 +102,6 @@ impl WinDialog {
             let (self_tiles, meld_tile) = parse_meld(ctx.seat, m_meld);
             let mut self_tiles: Vec<GuiTile> = self_tiles.iter().map(|t| GuiTile::ui(*t)).collect();
             let meld_tile = meld_tile.map(|(t, i)| (GuiTile::ui(t), i));
-            println!("{self_tiles:?}, {meld_tile:?}");
             match m_meld.meld_type {
                 MeldType::Kakan => {
                     let kanan_tile = self_tiles.pop().unwrap();
@@ -133,6 +132,8 @@ impl WinDialog {
             // BackgroundColor(Color::srgba(0.0, 1.0, 0.0, 1.0)),
         ));
 
+        let sctx = &ctx.score_context;
+
         // 役
         cmd.spawn((
             ChildOf(entity),
@@ -141,14 +142,13 @@ impl WinDialog {
                 ..default()
             },
         ))
-        .add_child(create_yaku_view(&ctx.score_context.yakus));
+        .add_child(create_yaku_view(&sctx.yakus, sctx.yakuman != 0));
 
         // 得点
-        let sctx = &ctx.score_context;
-        let title_str = if sctx.title.is_empty() {
-            format!("{}符{}飜", sctx.fu, sctx.fan)
+        let title_str = if sctx.yakuman == 0 {
+            format!("{}符{}飜 {}", sctx.fu, sctx.fan, sctx.title)
         } else {
-            ctx.score_context.title.clone()
+            sctx.title.clone()
         };
         let point_str = if ctx.is_drawn {
             // ツモ
@@ -232,7 +232,7 @@ impl Dialog for WinDialog {
     }
 }
 
-fn create_yaku_view(yaku: &[Yaku]) -> Entity {
+fn create_yaku_view(yaku: &[Yaku], is_yakuman: bool) -> Entity {
     let cmd = cmd();
 
     let entity = cmd
@@ -255,6 +255,11 @@ fn create_yaku_view(yaku: &[Yaku]) -> Entity {
                     width: Val::Px(128.0),
                     // margin: UiRect::left(Val::Px(32.0)),
                     flex_direction: FlexDirection::Column,
+                    align_items: if is_yakuman {
+                        AlignItems::Center
+                    } else {
+                        AlignItems::FlexStart
+                    },
                     ..default()
                 },
             ))
@@ -279,8 +284,10 @@ fn create_yaku_view(yaku: &[Yaku]) -> Entity {
     for (i, y) in yaku.iter().enumerate() {
         cmd.spawn(create_text(y.name.clone(), 20.0))
             .insert(ChildOf(cols[i / yakus_in_col].0));
-        cmd.spawn(create_text(y.fan.to_string() + "飜", 20.0))
-            .insert(ChildOf(cols[i / yakus_in_col].1));
+        if !is_yakuman {
+            cmd.spawn(create_text(y.fan.to_string() + "飜", 20.0))
+                .insert(ChildOf(cols[i / yakus_in_col].1));
+        }
     }
     entity
 }

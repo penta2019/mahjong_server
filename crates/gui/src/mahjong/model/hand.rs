@@ -17,7 +17,7 @@ crate::impl_has_entity!(GuiHand);
 
 impl GuiHand {
     pub fn new() -> Self {
-        let entity = cmd().spawn((Name::new("Hand"), Transform::default())).id();
+        let entity = cmd().spawn((Name::new("Hand"), Transform::IDENTITY)).id();
         Self {
             entity,
             tiles: vec![],

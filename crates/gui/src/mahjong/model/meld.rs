@@ -12,7 +12,7 @@ crate::impl_has_entity!(GuiMeld);
 
 impl GuiMeld {
     pub fn new() -> Self {
-        let entity = cmd().spawn((Name::new("Meld"), Transform::default())).id();
+        let entity = cmd().spawn((Name::new("Meld"), Transform::IDENTITY)).id();
         Self {
             entity,
             items: vec![],

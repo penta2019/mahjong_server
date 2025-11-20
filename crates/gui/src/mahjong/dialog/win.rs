@@ -9,7 +9,6 @@ use crate::ui3d::Ui3dTransform;
 #[derive(Debug)]
 pub struct WinDialog {
     entity: Entity,
-    ui3d: Entity,
     hand: GuiHand,
     meld: GuiMeld,
     round: usize,
@@ -27,8 +26,7 @@ pub struct WinDialog {
 impl WinDialog {
     pub fn new(stage: &Stage, event: &EventWin, camera_seat: Seat) -> Self {
         let mut obj = Self {
-            entity: cmd().spawn_empty().id(),
-            ui3d: cmd().spawn_empty().id(),
+            entity: cmd().spawn(Transform::IDENTITY).id(),
             hand: GuiHand::new(),
             meld: GuiMeld::new(),
             round: stage.round,
@@ -55,7 +53,7 @@ impl WinDialog {
         let ctx = &self.event.contexts[self.next_win_index];
         self.next_win_index += 1;
 
-        let entity = cmd.spawn(create_dialog()).insert(Transform::default()).id();
+        let entity = cmd.spawn(create_dialog()).insert(Transform::IDENTITY).id();
 
         // プレイヤー (風,名前)
         let wind = wind_to_char_jp(calc_seat_wind(self.dealer, ctx.seat));
@@ -82,14 +80,16 @@ impl WinDialog {
             ))
             .id();
         let ui3d = cmd
-            .spawn(Ui3dTransform::new(
-                ui3d_area,
-                Quat::from_rotation_y(5.0_f32.to_radians())
-                    * Quat::from_rotation_x(10.0_f32.to_radians()),
-                Vec3::ONE,
+            .spawn((
+                ChildOf(entity),
+                Ui3dTransform::new(
+                    ui3d_area,
+                    Quat::from_rotation_y(5.0_f32.to_radians())
+                        * Quat::from_rotation_x(10.0_f32.to_radians()),
+                    Vec3::ONE,
+                ),
             ))
             .id();
-        self.ui3d = ui3d;
 
         // 手牌
         let hand = &mut self.hand;
@@ -239,7 +239,6 @@ impl WinDialog {
         cmd.spawn((
             ChildOf(entity),
             Node {
-                // height: Val::Px(50.0),
                 justify_content: JustifyContent::Center,
                 ..default()
             },
@@ -269,7 +268,6 @@ impl WinDialog {
             "".into(),
             players_info,
         );
-        self.ui3d = cmd().spawn_empty().id();
         true
     }
 }
@@ -278,7 +276,6 @@ impl Dialog for WinDialog {
     fn handle_event(&mut self, ok_buttons: &mut OkButtonQuery) -> bool {
         if handle_dialog_ok_button(ok_buttons) {
             cmd().entity(self.entity).despawn();
-            cmd().entity(self.ui3d).despawn();
             self.hand = GuiHand::new();
             self.meld = GuiMeld::new();
             if self.show_next_win() {

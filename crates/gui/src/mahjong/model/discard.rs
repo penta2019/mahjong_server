@@ -19,7 +19,7 @@ impl GuiDiscard {
 
     pub fn new() -> Self {
         let entity = cmd()
-            .spawn((Name::new("Discard"), Transform::default()))
+            .spawn((Name::new("Discard"), Transform::IDENTITY))
             .id();
         Self {
             entity,
@@ -43,7 +43,7 @@ impl GuiDiscard {
                 last_pos + Vec3::new(GuiTile::WIDTH, 0.0, 0.0)
             }
         } else {
-            Vec3::default()
+            Vec3::ZERO
         };
         let mut rot = Quat::IDENTITY;
 

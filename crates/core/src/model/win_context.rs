@@ -29,6 +29,7 @@ pub struct WinContext {
     pub melds: Vec<Meld>,            // 副露
     pub is_dealer: bool,             // 親番フラグ
     pub is_drawn: bool,              // ツモフラグ
+    pub is_riichi: bool,             // 立直フラグ
     pub pao: Option<Seat>,           // 責任払い
     pub delta_scores: [Point; SEAT], // この和了による点数変動 (ダブロン時の他の和了者の点数は含まない)
     pub score_context: ScoreContext, // スコア計算に関する情報

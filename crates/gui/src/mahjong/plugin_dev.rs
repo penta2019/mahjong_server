@@ -49,6 +49,7 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         res.stage.players[1].name = "プレイヤー1".into();
         res.stage.players[2].name = "Pl2".into();
         res.stage.players[3].name = "4P".into();
+        res.stage.doras = tiles_from_string("m123").unwrap();
 
         let camera_seat = 0;
         // res.dialog = Some(Box::new(super::dialog::DrawDialog::new(
@@ -85,7 +86,7 @@ fn test_setup(mut param: MahjongParam, mut res: ResMut<MahjongResource>) {
         // res.tile = Some(tile_set);
         // cmd()
         //     .entity(tile_set)
-        //     .insert(Ui3dTransform::new(node, Quat::IDENTITY, Vec3::splat(1.0)));
+        //     .insert(Ui3dTransform::new(node, Quat::IDENTITY, Vec3::ONE));
     });
 }
 
@@ -120,8 +121,8 @@ fn create_draw_event() -> EventDraw {
 fn create_win_event() -> EventWin {
     EventWin {
         // ドラ表示牌
-        ura_doras: vec![], // 裏ドラ表示牌                            // プレイヤー名
-        delta_scores: [12000, -3000, -3000, -3000], // scores + delta_scores = new_scores
+        ura_doras: tiles_from_string("p123").unwrap(), // 裏ドラ表示牌                            // プレイヤー名
+        delta_scores: [12000, -3000, -3000, -3000],    // scores + delta_scores = new_scores
         contexts: vec![
             WinContext {
                 seat: 0,
@@ -155,6 +156,7 @@ fn create_win_event() -> EventWin {
                 ],
                 is_dealer: true,
                 is_drawn: true,
+                is_riichi: true,
                 pao: None,
                 delta_scores: [12000, -3000, -3000, -3000],
                 score_context: ScoreContext {
@@ -203,6 +205,7 @@ fn create_win_event() -> EventWin {
                 melds: vec![],
                 is_dealer: false,
                 is_drawn: true,
+                is_riichi: false,
                 pao: None,
                 delta_scores: [12000, -3000, -3000, -3000],
                 score_context: ScoreContext {

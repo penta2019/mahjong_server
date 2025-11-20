@@ -17,6 +17,7 @@ pub struct WinDialog {
     honba: usize,
     names: [String; SEAT],
     scores: [Score; SEAT],
+    doras: Vec<Tile>,
     event: EventWin,
     camera_seat: Seat,
     next_win_index: usize,
@@ -35,6 +36,7 @@ impl WinDialog {
             honba: stage.honba,
             names: get_names(stage),
             scores: get_scores(stage),
+            doras: stage.doras.clone(),
             event: event.clone(),
             camera_seat,
             next_win_index: 0,
@@ -53,7 +55,7 @@ impl WinDialog {
         let ctx = &self.event.contexts[self.next_win_index];
         self.next_win_index += 1;
 
-        let entity = cmd.spawn(create_dialog()).id();
+        let entity = cmd.spawn(create_dialog()).insert(Transform::default()).id();
 
         // プレイヤー (風,名前)
         let wind = wind_to_char_jp(calc_seat_wind(self.dealer, ctx.seat));
@@ -63,7 +65,6 @@ impl WinDialog {
             ChildOf(entity),
             Node {
                 margin: UiRect::vertical(Val::Px(8.0)),
-                justify_content: JustifyContent::Center,
                 ..default()
             },
             children![create_text(format!("{wind}家 {name} {win_type}"), 32.0)],
@@ -85,7 +86,7 @@ impl WinDialog {
                 ui3d_area,
                 Quat::from_rotation_y(5.0_f32.to_radians())
                     * Quat::from_rotation_x(10.0_f32.to_radians()),
-                Vec3::splat(1.0),
+                Vec3::ONE,
             ))
             .id();
         self.ui3d = ui3d;
@@ -122,14 +123,88 @@ impl WinDialog {
         x_offset += hand.width() + meld.width() + GuiTile::WIDTH * 0.25;
         meld.insert((ChildOf(ui3d), Transform::from_xyz(x_offset, 0.0, 0.0)));
 
-        // ドラ,裏ドラ
+        // ドラ,裏ドラ 表示領域
+        let dora_area = cmd
+            .spawn((
+                ChildOf(entity),
+                Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Px(28.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                // BackgroundColor(Color::srgba(0.0, 1.0, 0.0, 1.0)),
+            ))
+            .id();
+
+        // ドラ表示牌
         cmd.spawn((
-            ChildOf(entity),
+            ChildOf(dora_area),
             Node {
-                height: Val::Px(24.0),
+                width: Val::Percent(10.0),
+                justify_content: JustifyContent::End,
                 ..default()
             },
-            // BackgroundColor(Color::srgba(0.0, 1.0, 0.0, 1.0)),
+            children![create_text("ドラ".into(), 16.0)],
+        ));
+        let dora_view = cmd
+            .spawn((
+                ChildOf(dora_area),
+                Node {
+                    width: Val::Percent(25.0),
+                    ..default()
+                },
+            ))
+            .id();
+        cmd.entity(create_dora_view(&self.doras)).insert((
+            ChildOf(entity),
+            Ui3dTransform::new(
+                dora_view,
+                Quat::from_rotation_y(5.0_f32.to_radians())
+                    * Quat::from_rotation_x(10.0_f32.to_radians()),
+                Vec3::ONE,
+            ),
+        ));
+
+        // 裏ドラ表示牌
+        if ctx.is_riichi {
+            cmd.spawn((
+                ChildOf(dora_area),
+                Node {
+                    width: Val::Percent(10.0),
+                    justify_content: JustifyContent::End,
+                    ..default()
+                },
+                children![create_text("裏ドラ".into(), 16.0)],
+            ));
+            let ura_dora_view = cmd
+                .spawn((
+                    ChildOf(dora_area),
+                    Node {
+                        width: Val::Percent(25.0),
+                        ..default()
+                    },
+                ))
+                .id();
+            cmd.entity(create_dora_view(&self.event.ura_doras)).insert((
+                ChildOf(entity),
+                Ui3dTransform::new(
+                    ura_dora_view,
+                    Quat::from_rotation_y(5.0_f32.to_radians())
+                        * Quat::from_rotation_x(10.0_f32.to_radians()),
+                    Vec3::ONE,
+                ),
+            ));
+        }
+
+        // ドラ裏ドラ表示牌が中央に来るようにパッディング
+        cmd.spawn((
+            ChildOf(dora_area),
+            Node {
+                width: Val::Percent(10.0),
+                ..default()
+            },
         ));
 
         let sctx = &ctx.score_context;
@@ -217,6 +292,37 @@ impl Dialog for WinDialog {
 
         false
     }
+}
+
+fn create_dora_view(doras: &[Tile]) -> Entity {
+    let cmd = cmd();
+
+    let entity = cmd.spawn_empty().id();
+
+    // 要素が5個(MAX)未満のときは5個になるようにZ8を詰める
+    let dora_max = 5;
+    let mut doras = doras.to_owned();
+    doras.append(&mut vec![Z8; dora_max - usize::min(doras.len(), dora_max)]);
+
+    let doras: Vec<GuiTile> = doras.into_iter().map(GuiTile::ui).collect();
+    let mut offset_x = -GuiTile::WIDTH * (usize::max(doras.len(), 1) - 1) as f32 * 0.5;
+    for tile in doras {
+        tile.insert((
+            ChildOf(entity),
+            Transform {
+                translation: Vec3::new(offset_x, 0.0, 0.0),
+                rotation: if tile.tile() == Z8 {
+                    Quat::from_rotation_x(PI)
+                } else {
+                    Quat::IDENTITY
+                },
+                scale: Vec3::ONE,
+            },
+        ));
+        offset_x += GuiTile::WIDTH;
+    }
+
+    entity
 }
 
 fn create_yaku_view(yaku: &[Yaku], is_yakuman: bool) -> Entity {

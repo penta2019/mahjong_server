@@ -125,8 +125,7 @@ fn update_transform(
             // 正しい位置に移動する前のエンティティが一瞬描画されるのを防ぐ
             // Visibility::Hiddenや描画範囲外に移動するとbevyのバグでクラッシュするのでscaleを0にする
             // おそらく,モデル読み込み,又はカスタムシェーダー周りの不具合 (bevy 0.17.2)
-            cmd.entity(entity)
-                .insert(Transform::from_scale(Vec3::splat(0.0)));
+            cmd.entity(entity).insert(Transform::from_scale(Vec3::ZERO));
             continue;
         }
 

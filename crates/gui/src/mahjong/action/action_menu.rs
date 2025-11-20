@@ -47,11 +47,8 @@ pub fn create_sub_action_menu(actions: &[Action]) -> (Entity, Vec<Entity>) {
             .id();
         if !act.tiles.is_empty() {
             let tile_set = create_tile_set(&act.tiles);
-            cmd.entity(tile_set).insert(Ui3dTransform::new(
-                button,
-                Quat::IDENTITY,
-                Vec3::splat(1.0),
-            ));
+            cmd.entity(tile_set)
+                .insert(Ui3dTransform::new(button, Quat::IDENTITY, Vec3::ONE));
             tile_sets.push(tile_set);
         }
     }
